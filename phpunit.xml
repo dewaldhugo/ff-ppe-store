@@ -29,6 +29,7 @@
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
+        <env name="PRODUCTS_DISK_PATH" value="framework/testing/disks/products"/>
         <env name="SCOUT_DRIVER" value="null"/>
         <env name="SCOUT_PREFIX" value="testing_"/>
         <env name="SCOUT_QUEUE" value="false"/>

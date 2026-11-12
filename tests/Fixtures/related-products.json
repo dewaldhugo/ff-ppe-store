@@ -1,0 +1,125 @@
+{
+  "_note": "Test-only fixture: two products sharing a brand and name (slug collision). The first lists the second, and one unknown product, as related.",
+  "products": [
+    {
+      "vendor_code": "SJ",
+      "vendor_product_id": "900001",
+      "product_type": "safety-footwear",
+      "status": "published",
+      "brand": "Safety Jogger",
+      "collections": ["safety-shoes"],
+      "ranges": [],
+      "attributes": {
+        "name": "Duplicate",
+        "title": "Duplicate Safety Shoe",
+        "short_description": null,
+        "description": null,
+        "key_points": [],
+        "safety_class": "S3",
+        "features": ["SRC"],
+        "standards": [],
+        "toecap": null,
+        "midsole": null,
+        "outsole": null,
+        "upper": null,
+        "lining": null,
+        "cut": "Low",
+        "fastening": null,
+        "industries": [],
+        "gender": "Unisex",
+        "country_of_origin": "CN",
+        "video_url": null,
+        "certificates": []
+      },
+      "meta": {
+        "commodity_code": null,
+        "related_vendor_product_ids": ["900002", "999999"]
+      },
+      "colours": [{ "name": "Black", "hex": "000000" }],
+      "variants": [
+        {
+          "sku": "SJ-T900001",
+          "ean": null,
+          "colour": "Black",
+          "shoe_size": "9",
+          "eu_size": "43",
+          "stock": 5,
+          "price": 5000,
+          "compare_price": null,
+          "cost_price": 3000,
+          "tax_class": "standard",
+          "weight_kg": null,
+          "length_mm": null,
+          "width_mm": null,
+          "height_mm": null,
+          "meta": {
+            "vendor_sku": "T900001",
+            "vendor_product_name": "DUPLICATE",
+            "vendor_colour": "black",
+            "vendor_size": "43"
+          }
+        }
+      ]
+    },
+    {
+      "vendor_code": "SJ",
+      "vendor_product_id": "900002",
+      "product_type": "safety-footwear",
+      "status": "published",
+      "brand": "Safety Jogger",
+      "collections": ["safety-shoes"],
+      "ranges": [],
+      "attributes": {
+        "name": "Duplicate",
+        "title": "Duplicate Safety Shoe",
+        "short_description": null,
+        "description": null,
+        "key_points": [],
+        "safety_class": "S3",
+        "features": ["SRC"],
+        "standards": [],
+        "toecap": null,
+        "midsole": null,
+        "outsole": null,
+        "upper": null,
+        "lining": null,
+        "cut": "Low",
+        "fastening": null,
+        "industries": [],
+        "gender": "Unisex",
+        "country_of_origin": "CN",
+        "video_url": null,
+        "certificates": []
+      },
+      "meta": {
+        "commodity_code": null,
+        "related_vendor_product_ids": []
+      },
+      "colours": [{ "name": "Black", "hex": "000000" }],
+      "variants": [
+        {
+          "sku": "SJ-T900002",
+          "ean": null,
+          "colour": "Black",
+          "shoe_size": "9",
+          "eu_size": "43",
+          "stock": 5,
+          "price": 5000,
+          "compare_price": null,
+          "cost_price": 3000,
+          "tax_class": "standard",
+          "weight_kg": null,
+          "length_mm": null,
+          "width_mm": null,
+          "height_mm": null,
+          "meta": {
+            "vendor_sku": "T900002",
+            "vendor_product_name": "DUPLICATE",
+            "vendor_colour": "black",
+            "vendor_size": "43"
+          }
+        }
+      ]
+    }
+  ]
+}

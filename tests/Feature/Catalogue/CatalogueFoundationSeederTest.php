@@ -56,9 +56,7 @@ function foundationSnapshot(): array
     return $snapshot;
 }
 
-beforeEach(function (): void {
-    $this->seed(CatalogueFoundationSeeder::class);
-});
+// The foundation data is seeded once per test run (see Tests\TestCase).
 
 it('creates the channel, currency, language and customer group', function (): void {
     expect(Channel::query()->where('handle', 'webstore')->where('default', true)->exists())->toBeTrue()

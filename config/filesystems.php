@@ -51,7 +51,7 @@ return [
         // public/storage link, so no extra symlink is needed.
         'products' => [
             'driver' => 'local',
-            'root' => storage_path('app/public/products'),
+            'root' => storage_path(env('PRODUCTS_DISK_PATH', 'app/public/products')),
             'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/storage/products',
             'visibility' => 'public',
             'throw' => true,
