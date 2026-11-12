@@ -26,6 +26,14 @@ Produce a plan first, listing every assumption you make about the data contract.
 5. **Storefront layout.** Livewire 3 and Tailwind. Header with category navigation built from the `categories` collection group, search box, footer. Mobile-first and accessible (semantic HTML, keyboard navigable, visible focus states). Plain, professional styling for now; design comes later.
 6. **Category listing page** (`/c/{slug}`). Products in the collection and its descendants. Facets: brand, safety class, features, UK size, colour, gender, price range, in stock only. Facet counts come from Meilisearch. Filter state lives in the query string so filtered URLs can be shared and indexed. Sorting: relevance, price ascending, price descending, newest. Pagination of 24.
 7. **Product detail page** (`/p/{slug}`). Gallery that switches to the selected colour's images. Colour swatches and UK size selector (EU size shown as secondary text). Sizes without stock are shown but disabled. Price, compare price when present, stock message ("In stock", "Only 3 left", "Out of stock"). Specification table built from attributes (safety class, features with plain-English labels, standards, toecap, midsole, outsole, upper, lining, cut). Description and short description. Optional video embed. Related products from `related_vendor_product_ids` where those products exist and are published. Product structured data (JSON-LD `Product` with `offers` per variant) and correct canonical URL.
+   Variant selection rules (each covered by a Pest test):
+   - Add to cart requires a value for every option the product has (colour and shoe_size for footwear).
+   - An option with only one value is auto-selected and shown as text, not a picker.
+   - Products with a single variant and no options can be added directly.
+   - Option values that would lead to a non-existent or out-of-stock variant are shown but disabled, re-evaluated after each selection.
+   - Pre-select the first in-stock colour. Never pre-select a size.
+   - Clicking Add to cart with a required option missing highlights that picker with "Please select a size" (or the relevant option name).
+   - The selected colour is reflected in the URL query string (`?colour=navy`) and restored on load.
 8. **Price display.** Prices are stored ex VAT. Show inc VAT by default with an inc/ex VAT toggle in the header, remembered in the session. For `zero-protective` variants, assume the individual-use rate (0%) until checkout and show a short note that VAT applies when buying for employees. Use Lunar's pricing and tax system for the calculation; do not hand-roll VAT maths.
 9. **Feature labels.** A single source for mapping feature codes to customer labels and tooltips (for example `SRC` to "Slip resistant (SRC)", `ESD` to "ESD, electrostatic dissipative", `METAL_FREE` to "Metal free"), used by both facets and the product page.
 
@@ -38,7 +46,7 @@ Produce a plan first, listing every assumption you make about the data contract.
 - Out-of-stock products (SX310 in the fixtures) appear in listings with an out-of-stock badge and are excluded when "in stock only" is selected.
 - The FS9 product page shows the same price with the toggle on inc or ex VAT (0% rate); the Ligero page shows a 20% difference.
 - Pest feature tests cover: foundation seeder idempotency, inc/ex VAT display per tax class, listing filters and counts, product page variant selection, JSON-LD output. All tests and Pint pass.
-- No file inside the ingestion area exists or was touched.
+- No file inside the ingestion area exists or was touched, other than the three `*_vendorsync_*` migrations creating `vendors`, `vendor_products` and `vendor_offers`.
 
 ## Out of scope for this phase
 
