@@ -1,5 +1,5 @@
 {
-  "_note": "Contract-shaped fixture derived from real vendor samples. Prices are GBP pence EX VAT: cost x 1.5 capped at RRP ex VAT. SJ UK sizes use a provisional EU-to-UK table. SX310 price is a placeholder (unauthenticated sample).",
+  "_note": "Contract-shaped fixture derived from real vendor samples. Prices are GBP pence EX VAT: cost x 1.5 capped at RRP ex VAT. SJ UK sizes use a provisional EU-to-UK table. SX310 price is a placeholder (unauthenticated sample). cost_price is the vendor trade cost in GBP pence ex VAT (null where the sample had no authenticated price).",
   "products": [
     {
       "vendor_code": "SJ",
@@ -93,7 +93,8 @@
             "vendor_product_name": "LIGERO",
             "vendor_colour": "navy",
             "vendor_size": "36"
-          }
+          },
+          "cost_price": 4593
         },
         {
           "sku": "SJ-1492537",
@@ -114,7 +115,8 @@
             "vendor_product_name": "LIGERO",
             "vendor_colour": "navy",
             "vendor_size": "37"
-          }
+          },
+          "cost_price": 4593
         },
         {
           "sku": "SJ-1492552",
@@ -135,7 +137,8 @@
             "vendor_product_name": "LIGERO",
             "vendor_colour": "navy",
             "vendor_size": "38"
-          }
+          },
+          "cost_price": 4593
         },
         {
           "sku": "SJ-1492567",
@@ -156,7 +159,8 @@
             "vendor_product_name": "LIGERO",
             "vendor_colour": "navy",
             "vendor_size": "39"
-          }
+          },
+          "cost_price": 4593
         },
         {
           "sku": "SJ-1492582",
@@ -177,7 +181,8 @@
             "vendor_product_name": "LIGERO",
             "vendor_colour": "navy",
             "vendor_size": "40"
-          }
+          },
+          "cost_price": 4593
         },
         {
           "sku": "SJ-1454454",
@@ -198,7 +203,8 @@
             "vendor_product_name": "LIGERO",
             "vendor_colour": "navy",
             "vendor_size": "41"
-          }
+          },
+          "cost_price": 4593
         },
         {
           "sku": "SJ-1492607",
@@ -219,7 +225,8 @@
             "vendor_product_name": "LIGERO",
             "vendor_colour": "navy",
             "vendor_size": "42"
-          }
+          },
+          "cost_price": 4593
         },
         {
           "sku": "SJ-1492622",
@@ -240,7 +247,8 @@
             "vendor_product_name": "LIGERO",
             "vendor_colour": "navy",
             "vendor_size": "43"
-          }
+          },
+          "cost_price": 4593
         },
         {
           "sku": "SJ-1492637",
@@ -261,7 +269,8 @@
             "vendor_product_name": "LIGERO",
             "vendor_colour": "navy",
             "vendor_size": "44"
-          }
+          },
+          "cost_price": 4593
         },
         {
           "sku": "SJ-1492652",
@@ -282,7 +291,8 @@
             "vendor_product_name": "LIGERO",
             "vendor_colour": "navy",
             "vendor_size": "45"
-          }
+          },
+          "cost_price": 4593
         },
         {
           "sku": "SJ-1492667",
@@ -303,7 +313,8 @@
             "vendor_product_name": "LIGERO",
             "vendor_colour": "navy",
             "vendor_size": "46"
-          }
+          },
+          "cost_price": 4593
         },
         {
           "sku": "SJ-1492682",
@@ -324,7 +335,8 @@
             "vendor_product_name": "LIGERO",
             "vendor_colour": "navy",
             "vendor_size": "47"
-          }
+          },
+          "cost_price": 4593
         },
         {
           "sku": "SJ-1492520",
@@ -345,7 +357,8 @@
             "vendor_product_name": "LIGERO",
             "vendor_colour": "black",
             "vendor_size": "36"
-          }
+          },
+          "cost_price": 4593
         },
         {
           "sku": "SJ-1492535",
@@ -366,7 +379,8 @@
             "vendor_product_name": "LIGERO",
             "vendor_colour": "black",
             "vendor_size": "37"
-          }
+          },
+          "cost_price": 4593
         },
         {
           "sku": "SJ-1492550",
@@ -387,7 +401,8 @@
             "vendor_product_name": "LIGERO",
             "vendor_colour": "black",
             "vendor_size": "38"
-          }
+          },
+          "cost_price": 4593
         },
         {
           "sku": "SJ-1492565",
@@ -408,7 +423,8 @@
             "vendor_product_name": "LIGERO",
             "vendor_colour": "black",
             "vendor_size": "39"
-          }
+          },
+          "cost_price": 4593
         },
         {
           "sku": "SJ-1492580",
@@ -429,7 +445,8 @@
             "vendor_product_name": "LIGERO",
             "vendor_colour": "black",
             "vendor_size": "40"
-          }
+          },
+          "cost_price": 4593
         },
         {
           "sku": "SJ-1481428",
@@ -450,7 +467,8 @@
             "vendor_product_name": "LIGERO",
             "vendor_colour": "black",
             "vendor_size": "41"
-          }
+          },
+          "cost_price": 4593
         },
         {
           "sku": "SJ-1492605",
@@ -471,7 +489,8 @@
             "vendor_product_name": "LIGERO",
             "vendor_colour": "black",
             "vendor_size": "42"
-          }
+          },
+          "cost_price": 4593
         },
         {
           "sku": "SJ-1492620",
@@ -492,7 +511,8 @@
             "vendor_product_name": "LIGERO",
             "vendor_colour": "black",
             "vendor_size": "43"
-          }
+          },
+          "cost_price": 4593
         },
         {
           "sku": "SJ-1492635",
@@ -513,7 +533,8 @@
             "vendor_product_name": "LIGERO",
             "vendor_colour": "black",
             "vendor_size": "44"
-          }
+          },
+          "cost_price": 4593
         },
         {
           "sku": "SJ-1492650",
@@ -534,7 +555,8 @@
             "vendor_product_name": "LIGERO",
             "vendor_colour": "black",
             "vendor_size": "45"
-          }
+          },
+          "cost_price": 4593
         },
         {
           "sku": "SJ-1492665",
@@ -555,7 +577,8 @@
             "vendor_product_name": "LIGERO",
             "vendor_colour": "black",
             "vendor_size": "46"
-          }
+          },
+          "cost_price": 4593
         },
         {
           "sku": "SJ-1492680",
@@ -576,7 +599,8 @@
             "vendor_product_name": "LIGERO",
             "vendor_colour": "black",
             "vendor_size": "47"
-          }
+          },
+          "cost_price": 4593
         },
         {
           "sku": "SJ-1492523",
@@ -597,7 +621,8 @@
             "vendor_product_name": "LIGERO",
             "vendor_colour": "orange",
             "vendor_size": "36"
-          }
+          },
+          "cost_price": 4593
         },
         {
           "sku": "SJ-1492538",
@@ -618,7 +643,8 @@
             "vendor_product_name": "LIGERO",
             "vendor_colour": "orange",
             "vendor_size": "37"
-          }
+          },
+          "cost_price": 4593
         },
         {
           "sku": "SJ-1492553",
@@ -639,7 +665,8 @@
             "vendor_product_name": "LIGERO",
             "vendor_colour": "orange",
             "vendor_size": "38"
-          }
+          },
+          "cost_price": 4593
         },
         {
           "sku": "SJ-1492568",
@@ -660,7 +687,8 @@
             "vendor_product_name": "LIGERO",
             "vendor_colour": "orange",
             "vendor_size": "39"
-          }
+          },
+          "cost_price": 4593
         },
         {
           "sku": "SJ-1492583",
@@ -681,7 +709,8 @@
             "vendor_product_name": "LIGERO",
             "vendor_colour": "orange",
             "vendor_size": "40"
-          }
+          },
+          "cost_price": 4593
         },
         {
           "sku": "SJ-1454453",
@@ -702,7 +731,8 @@
             "vendor_product_name": "LIGERO",
             "vendor_colour": "orange",
             "vendor_size": "41"
-          }
+          },
+          "cost_price": 4593
         },
         {
           "sku": "SJ-1492608",
@@ -723,7 +753,8 @@
             "vendor_product_name": "LIGERO",
             "vendor_colour": "orange",
             "vendor_size": "42"
-          }
+          },
+          "cost_price": 4593
         },
         {
           "sku": "SJ-1492623",
@@ -744,7 +775,8 @@
             "vendor_product_name": "LIGERO",
             "vendor_colour": "orange",
             "vendor_size": "43"
-          }
+          },
+          "cost_price": 4593
         },
         {
           "sku": "SJ-1492638",
@@ -765,7 +797,8 @@
             "vendor_product_name": "LIGERO",
             "vendor_colour": "orange",
             "vendor_size": "44"
-          }
+          },
+          "cost_price": 4593
         },
         {
           "sku": "SJ-1492653",
@@ -786,7 +819,8 @@
             "vendor_product_name": "LIGERO",
             "vendor_colour": "orange",
             "vendor_size": "45"
-          }
+          },
+          "cost_price": 4593
         },
         {
           "sku": "SJ-1492668",
@@ -807,7 +841,8 @@
             "vendor_product_name": "LIGERO",
             "vendor_colour": "orange",
             "vendor_size": "46"
-          }
+          },
+          "cost_price": 4593
         },
         {
           "sku": "SJ-1492683",
@@ -828,7 +863,8 @@
             "vendor_product_name": "LIGERO",
             "vendor_colour": "orange",
             "vendor_size": "47"
-          }
+          },
+          "cost_price": 4593
         }
       ]
     },
@@ -918,7 +954,8 @@
             "vendor_product_name": "SX310",
             "vendor_colour": "dark red",
             "vendor_size": "39"
-          }
+          },
+          "cost_price": null
         },
         {
           "sku": "SJ-1342251",
@@ -939,7 +976,8 @@
             "vendor_product_name": "SX310",
             "vendor_colour": "dark red",
             "vendor_size": "40"
-          }
+          },
+          "cost_price": null
         },
         {
           "sku": "SJ-1342253",
@@ -960,7 +998,8 @@
             "vendor_product_name": "SX310",
             "vendor_colour": "dark red",
             "vendor_size": "41"
-          }
+          },
+          "cost_price": null
         },
         {
           "sku": "SJ-1342255",
@@ -981,7 +1020,8 @@
             "vendor_product_name": "SX310",
             "vendor_colour": "dark red",
             "vendor_size": "42"
-          }
+          },
+          "cost_price": null
         },
         {
           "sku": "SJ-1342257",
@@ -1002,7 +1042,8 @@
             "vendor_product_name": "SX310",
             "vendor_colour": "dark red",
             "vendor_size": "43"
-          }
+          },
+          "cost_price": null
         },
         {
           "sku": "SJ-1342259",
@@ -1023,7 +1064,8 @@
             "vendor_product_name": "SX310",
             "vendor_colour": "dark red",
             "vendor_size": "44"
-          }
+          },
+          "cost_price": null
         },
         {
           "sku": "SJ-1342261",
@@ -1044,7 +1086,8 @@
             "vendor_product_name": "SX310",
             "vendor_colour": "dark red",
             "vendor_size": "45"
-          }
+          },
+          "cost_price": null
         },
         {
           "sku": "SJ-1342263",
@@ -1065,7 +1108,8 @@
             "vendor_product_name": "SX310",
             "vendor_colour": "dark red",
             "vendor_size": "46"
-          }
+          },
+          "cost_price": null
         },
         {
           "sku": "SJ-1342265",
@@ -1086,7 +1130,8 @@
             "vendor_product_name": "SX310",
             "vendor_colour": "dark red",
             "vendor_size": "47"
-          }
+          },
+          "cost_price": null
         },
         {
           "sku": "SJ-1342267",
@@ -1107,7 +1152,8 @@
             "vendor_product_name": "SX310",
             "vendor_colour": "dark red",
             "vendor_size": "48"
-          }
+          },
+          "cost_price": null
         }
       ]
     },
@@ -1118,7 +1164,7 @@
       "status": "published",
       "brand": "Magnum",
       "collections": [
-        "safety-boots"
+        "occupational-footwear"
       ],
       "ranges": [],
       "attributes": {
@@ -1187,7 +1233,8 @@
             "vendor_product_name": "Classic Uniform Boot",
             "vendor_colour": "Black",
             "vendor_size": "3"
-          }
+          },
+          "cost_price": 5849
         },
         {
           "sku": "FS-00252-02628-04",
@@ -1208,7 +1255,8 @@
             "vendor_product_name": "Classic Uniform Boot",
             "vendor_colour": "Black",
             "vendor_size": "4"
-          }
+          },
+          "cost_price": 5849
         },
         {
           "sku": "FS-00252-02628-05",
@@ -1229,7 +1277,8 @@
             "vendor_product_name": "Classic Uniform Boot",
             "vendor_colour": "Black",
             "vendor_size": "5"
-          }
+          },
+          "cost_price": 5849
         },
         {
           "sku": "FS-00252-02628-07",
@@ -1250,7 +1299,8 @@
             "vendor_product_name": "Classic Uniform Boot",
             "vendor_colour": "Black",
             "vendor_size": "7"
-          }
+          },
+          "cost_price": 5849
         },
         {
           "sku": "FS-00252-02628-13",
@@ -1271,7 +1321,8 @@
             "vendor_product_name": "Classic Uniform Boot",
             "vendor_colour": "Black",
             "vendor_size": "13"
-          }
+          },
+          "cost_price": 5849
         },
         {
           "sku": "FS-00252-02628-14",
@@ -1292,7 +1343,8 @@
             "vendor_product_name": "Classic Uniform Boot",
             "vendor_colour": "Black",
             "vendor_size": "14"
-          }
+          },
+          "cost_price": 5849
         }
       ]
     },
@@ -1375,7 +1427,8 @@
             "vendor_product_name": "FS9 Goodyear Welted Safety Boot",
             "vendor_colour": "Black",
             "vendor_size": "4"
-          }
+          },
+          "cost_price": 3499
         },
         {
           "sku": "FS-01049-00848-03",
@@ -1396,7 +1449,8 @@
             "vendor_product_name": "FS9 Goodyear Welted Safety Boot",
             "vendor_colour": "Black",
             "vendor_size": "5"
-          }
+          },
+          "cost_price": 3499
         },
         {
           "sku": "FS-01049-00848-04",
@@ -1417,7 +1471,8 @@
             "vendor_product_name": "FS9 Goodyear Welted Safety Boot",
             "vendor_colour": "Black",
             "vendor_size": "6"
-          }
+          },
+          "cost_price": 3499
         },
         {
           "sku": "FS-01049-00848-05",
@@ -1438,7 +1493,8 @@
             "vendor_product_name": "FS9 Goodyear Welted Safety Boot",
             "vendor_colour": "Black",
             "vendor_size": "7"
-          }
+          },
+          "cost_price": 3499
         },
         {
           "sku": "FS-01049-00848-08",
@@ -1459,7 +1515,8 @@
             "vendor_product_name": "FS9 Goodyear Welted Safety Boot",
             "vendor_colour": "Black",
             "vendor_size": "10"
-          }
+          },
+          "cost_price": 3499
         },
         {
           "sku": "FS-01049-00848-09",
@@ -1480,7 +1537,8 @@
             "vendor_product_name": "FS9 Goodyear Welted Safety Boot",
             "vendor_colour": "Black",
             "vendor_size": "11"
-          }
+          },
+          "cost_price": 3499
         },
         {
           "sku": "FS-01049-00848-10",
@@ -1501,7 +1559,8 @@
             "vendor_product_name": "FS9 Goodyear Welted Safety Boot",
             "vendor_colour": "Black",
             "vendor_size": "12"
-          }
+          },
+          "cost_price": 3499
         }
       ]
     },
@@ -1512,7 +1571,7 @@
       "status": "published",
       "brand": "Amblers Safety",
       "collections": [
-        "safety-boots"
+        "safety-shoes"
       ],
       "ranges": [
         "clearance"
@@ -1584,7 +1643,8 @@
             "vendor_product_name": "FS65 Gibson Lace Safety Shoes",
             "vendor_colour": "Black",
             "vendor_size": "5"
-          }
+          },
+          "cost_price": 2699
         },
         {
           "sku": "FS-01055-00821-04",
@@ -1605,7 +1665,8 @@
             "vendor_product_name": "FS65 Gibson Lace Safety Shoes",
             "vendor_colour": "Black",
             "vendor_size": "6"
-          }
+          },
+          "cost_price": 2699
         },
         {
           "sku": "FS-01055-00821-10",
@@ -1626,7 +1687,8 @@
             "vendor_product_name": "FS65 Gibson Lace Safety Shoes",
             "vendor_colour": "Black",
             "vendor_size": "12"
-          }
+          },
+          "cost_price": 2699
         }
       ]
     },
@@ -1705,7 +1767,8 @@
             "vendor_product_name": "FS30C Lace-up Safety Boot",
             "vendor_colour": "Black",
             "vendor_size": "5"
-          }
+          },
+          "cost_price": 2699
         },
         {
           "sku": "FS-00345-00772-04",
@@ -1726,7 +1789,8 @@
             "vendor_product_name": "FS30C Lace-up Safety Boot",
             "vendor_colour": "Black",
             "vendor_size": "6"
-          }
+          },
+          "cost_price": 2699
         },
         {
           "sku": "FS-00345-00772-05",
@@ -1747,7 +1811,8 @@
             "vendor_product_name": "FS30C Lace-up Safety Boot",
             "vendor_colour": "Black",
             "vendor_size": "7"
-          }
+          },
+          "cost_price": 2699
         }
       ]
     },
@@ -1825,7 +1890,8 @@
             "vendor_product_name": "Eva",
             "vendor_colour": "Blue",
             "vendor_size": "3"
-          }
+          },
+          "cost_price": 999
         },
         {
           "sku": "FS-00048-00480-04",
@@ -1846,7 +1912,8 @@
             "vendor_product_name": "Eva",
             "vendor_colour": "Blue",
             "vendor_size": "4"
-          }
+          },
+          "cost_price": 999
         },
         {
           "sku": "FS-00048-00480-05",
@@ -1867,7 +1934,8 @@
             "vendor_product_name": "Eva",
             "vendor_colour": "Blue",
             "vendor_size": "5"
-          }
+          },
+          "cost_price": 999
         },
         {
           "sku": "FS-00048-00480-06",
@@ -1888,7 +1956,8 @@
             "vendor_product_name": "Eva",
             "vendor_colour": "Blue",
             "vendor_size": "6"
-          }
+          },
+          "cost_price": 999
         },
         {
           "sku": "FS-00048-00480-07",
@@ -1909,7 +1978,8 @@
             "vendor_product_name": "Eva",
             "vendor_colour": "Blue",
             "vendor_size": "7"
-          }
+          },
+          "cost_price": 999
         },
         {
           "sku": "FS-00048-00480-08",
@@ -1930,7 +2000,8 @@
             "vendor_product_name": "Eva",
             "vendor_colour": "Blue",
             "vendor_size": "8"
-          }
+          },
+          "cost_price": 999
         },
         {
           "sku": "FS-00048-00480-09",
@@ -1951,7 +2022,8 @@
             "vendor_product_name": "Eva",
             "vendor_colour": "Blue",
             "vendor_size": "9"
-          }
+          },
+          "cost_price": 999
         }
       ]
     },
@@ -2022,7 +2094,8 @@
             "vendor_product_name": "Twin Gusset Slipper",
             "vendor_colour": "Brown",
             "vendor_size": "6"
-          }
+          },
+          "cost_price": 1749
         },
         {
           "sku": "FS-00052-00095-02",
@@ -2043,7 +2116,8 @@
             "vendor_product_name": "Twin Gusset Slipper",
             "vendor_colour": "Brown",
             "vendor_size": "7"
-          }
+          },
+          "cost_price": 1749
         },
         {
           "sku": "FS-00052-00095-03",
@@ -2064,7 +2138,8 @@
             "vendor_product_name": "Twin Gusset Slipper",
             "vendor_colour": "Brown",
             "vendor_size": "8"
-          }
+          },
+          "cost_price": 1749
         },
         {
           "sku": "FS-00052-00095-04",
@@ -2085,7 +2160,8 @@
             "vendor_product_name": "Twin Gusset Slipper",
             "vendor_colour": "Brown",
             "vendor_size": "9"
-          }
+          },
+          "cost_price": 1749
         },
         {
           "sku": "FS-00052-00095-05",
@@ -2106,7 +2182,8 @@
             "vendor_product_name": "Twin Gusset Slipper",
             "vendor_colour": "Brown",
             "vendor_size": "10"
-          }
+          },
+          "cost_price": 1749
         },
         {
           "sku": "FS-00052-00095-06",
@@ -2127,7 +2204,8 @@
             "vendor_product_name": "Twin Gusset Slipper",
             "vendor_colour": "Brown",
             "vendor_size": "11"
-          }
+          },
+          "cost_price": 1749
         },
         {
           "sku": "FS-00052-00095-07",
@@ -2148,7 +2226,8 @@
             "vendor_product_name": "Twin Gusset Slipper",
             "vendor_colour": "Brown",
             "vendor_size": "12"
-          }
+          },
+          "cost_price": 1749
         },
         {
           "sku": "FS-00052-00095-08",
@@ -2169,7 +2248,8 @@
             "vendor_product_name": "Twin Gusset Slipper",
             "vendor_colour": "Brown",
             "vendor_size": "13"
-          }
+          },
+          "cost_price": 1749
         }
       ]
     }
