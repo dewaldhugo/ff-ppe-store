@@ -37,6 +37,7 @@ The ingestion module writes data in exactly this shape. The storefront depends o
 ### Channel, currency, tax
 - One channel, handle `webstore`.
 - One currency, `GBP`, default, 2 decimal places. Prices are integers in pence.
+- One customer group, handle `retail`, default.
 - Prices are stored **exclusive of VAT** (`lunar.pricing.stored_inclusive_of_tax = false`). The same product can carry different VAT for different customers (see VAT below), so a single VAT-inclusive price cannot be stored.
 - Tax zone `uk` (default zone). Three tax classes, identified by handle through the key registry (see Contract handles), because Lunar tax classes have no handle column:
   - `standard`: 20%.
@@ -48,7 +49,6 @@ The ingestion module writes data in exactly this shape. The storefront depends o
 
 - The storefront asks at checkout whether the customer is buying for employees. If yes, `zero-protective` lines are charged at 20%; otherwise at 0%. Store the answer on the order (meta `buying_for_employees`).
 - Display prices in the customer's mode: inc VAT by default, with an inc/ex VAT toggle remembered per session. Business buyers expect ex VAT prices.
-- One customer group, handle `retail`, default.
 - In Lunar the `zero-protective` class carries the individual-use rate (0%). The 20% employer rate is applied by the tax driver at checkout, not by a second tax class.
 
 ### Contract handles (key registry)
@@ -121,7 +121,7 @@ Every safety-footwear variant has exactly one `colour` value and one `shoe_size`
 - Lunar products have no meta column. `vendor_code`, `vendor_product_id` and `commodity_code` live in `vendor_products` (see Vendor tables).
 - Related products are Lunar's native product associations of type `cross-sell`. The writer resolves the vendor's related product IDs to Lunar products and creates an association for each one that exists.
 - Products the vendor marks as clearance are added to the `clearance` collection in the `ranges` group.
-- URLs: Lunar URL records, default language `en`. The product slug is `Str::slug(brand . ' ' . name)`, e.g. `safety-jogger-ligero`. On collision a numeric suffix is appended (`-2`, `-3`, ...) in order of creation. This rule is implemented once, in the action `App\Domain\Catalogue\Urls\GenerateProductSlug`, which the fixture seeder and the ingestion module both call. Lunar's automatic URL generator is disabled.
+- URLs: Lunar URL records, default language `en`. The product slug is `Str::slug(brand . ' ' . name)`, e.g. `safety-jogger-ligero`. On collision a numeric suffix is appended (`-2`, `-3`, ...) in order of creation. This rule is implemented once, in the action `App\Domain\Catalogue\Urls\GenerateProductSlug`, which the fixture seeder and the ingestion module both call. Lunar's automatic URL generator is disabled. A product's slug is set once when the product is created and is never changed afterwards, including by the ingestion module when a vendor renames a product. Renamed products keep their original URL.
 
 ### Collections
 - Collection group `categories`: the customer-facing category tree, e.g. Safety Footwear > Safety Trainers, Safety Boots, Safety Shoes; Occupational Footwear; Slippers. Products belong to one or more leaf collections.
@@ -147,6 +147,7 @@ Vendor identity and ordering data live here, not in Lunar.
 - `vendor_offers`: `product_variant_id` (Lunar variant), `vendor_id`, `vendor_sku`, `vendor_product_name`, `vendor_colour`, `vendor_size`, `ean` (may be null), `cost_price` (pence ex VAT, may be null), `stock`, `last_seen_at`. Unique on (`vendor_id`, `vendor_sku`). Non-unique index on `product_variant_id`. The `vendor_*` values are the vendor's own wording, used to place orders manually.
 - The same Lunar product or variant may be supplied by more than one vendor, so neither table is unique on the Lunar ID. At launch each variant has one offer.
 - Cost is never derived from the selling price. It comes only from `vendor_offers.cost_price`.
+- The ingestion module adds further tables and columns (raw payloads, RRP, vendor status, change hashes) through new `*_vendorsync_*` migrations. The storefront never depends on them.
 
 ### Search index
 
@@ -162,7 +163,7 @@ One Meilisearch document per product, written by Lunar's product indexing throug
 
 ## Conventions
 
-- PHP 8.3+, strict types, `final` classes by default, constructor property promotion.
+- PHP 8.4, strict types, `final` classes by default, constructor property promotion.
 - Domain code under `app/Domain/{Area}`, Livewire components under `app/Livewire/{Area}`.
 - Money is never a float. Use Lunar's `Price` and `Money` objects or integers in pence.
 - Use Lunar's models, actions, pipelines and events. Do not duplicate cart, pricing, tax or order logic that Lunar already provides. If Lunar cannot do something, explain why before writing custom logic.
