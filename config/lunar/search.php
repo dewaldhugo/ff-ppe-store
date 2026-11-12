@@ -1,5 +1,6 @@
 <?php
 
+use App\Domain\Catalogue\Search\StorefrontProductIndexer;
 use Lunar\Models\Brand;
 use Lunar\Models\Collection;
 use Lunar\Models\Customer;
@@ -10,7 +11,6 @@ use Lunar\Search\BrandIndexer;
 use Lunar\Search\CollectionIndexer;
 use Lunar\Search\CustomerIndexer;
 use Lunar\Search\OrderIndexer;
-use Lunar\Search\ProductIndexer;
 use Lunar\Search\ProductOptionIndexer;
 
 return [
@@ -62,7 +62,7 @@ return [
         Collection::class => CollectionIndexer::class,
         Customer::class => CustomerIndexer::class,
         Order::class => OrderIndexer::class,
-        Product::class => ProductIndexer::class,
+        Product::class => StorefrontProductIndexer::class,
         ProductOption::class => ProductOptionIndexer::class,
     ],
 

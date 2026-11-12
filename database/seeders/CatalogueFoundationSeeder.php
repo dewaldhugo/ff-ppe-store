@@ -113,26 +113,46 @@ final class CatalogueFoundationSeeder extends Seeder
         ]],
     ];
 
+    /** @var list<int> */
+    private array $createdCollectionIds = [];
+
+    /** @var list<int> */
+    private array $createdOptionIds = [];
+
     public function __construct(private readonly CatalogueKeys $keys) {}
 
     public function run(): void
     {
         CatalogueKeys::flush();
 
-        DB::transaction(function (): void {
-            $language = $this->language();
-            $this->currency();
-            $this->channel();
-            $this->customerGroup();
+        // Bulk writers must not sync to search row by row (see CLAUDE.md).
+        Collection::withoutSyncingToSearch(function (): void {
+            ProductOption::withoutSyncingToSearch(function (): void {
+                DB::transaction(function (): void {
+                    $language = $this->language();
+                    $this->currency();
+                    $this->channel();
+                    $this->customerGroup();
 
-            $taxClasses = $this->taxClasses();
-            $this->taxZone($taxClasses);
+                    $taxClasses = $this->taxClasses();
+                    $this->taxZone($taxClasses);
 
-            $productTypes = $this->productTypes();
-            $this->attributes($productTypes);
-            $this->productOptions();
-            $this->collections($language);
+                    $productTypes = $this->productTypes();
+                    $this->attributes($productTypes);
+                    $this->productOptions();
+                    $this->collections($language);
+                });
+            });
         });
+
+        // One batch reindex of what was created in this run, if anything.
+        if ($this->createdCollectionIds !== []) {
+            Collection::query()->whereIn('id', $this->createdCollectionIds)->get()->searchable();
+        }
+
+        if ($this->createdOptionIds !== []) {
+            ProductOption::query()->whereIn('id', $this->createdOptionIds)->get()->searchable();
+        }
 
         CatalogueKeys::flush();
     }
@@ -340,7 +360,7 @@ final class CatalogueFoundationSeeder extends Seeder
     private function productOptions(): void
     {
         foreach (self::PRODUCT_OPTIONS as $handle => $name) {
-            ProductOption::query()->firstOrCreate(
+            $option = ProductOption::query()->firstOrCreate(
                 ['handle' => $handle],
                 [
                     'name' => ['en' => $name],
@@ -348,6 +368,10 @@ final class CatalogueFoundationSeeder extends Seeder
                     'shared' => true,
                 ],
             );
+
+            if ($option->wasRecentlyCreated) {
+                $this->createdOptionIds[] = $option->id;
+            }
         }
     }
 
@@ -387,6 +411,8 @@ final class CatalogueFoundationSeeder extends Seeder
                         'default' => true,
                         'language_id' => $language->id,
                     ]);
+
+                    $this->createdCollectionIds[] = $collection->id;
 
                     return $collection;
                 },
