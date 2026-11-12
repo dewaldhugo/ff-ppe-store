@@ -1,0 +1,2177 @@
+{
+  "_note": "Contract-shaped fixture derived from real vendor samples. Prices are GBP pence EX VAT: cost x 1.5 capped at RRP ex VAT. SJ UK sizes use a provisional EU-to-UK table. SX310 price is a placeholder (unauthenticated sample).",
+  "products": [
+    {
+      "vendor_code": "SJ",
+      "vendor_product_id": "284096",
+      "product_type": "safety-footwear",
+      "status": "published",
+      "brand": "Safety Jogger",
+      "collections": [
+        "safety-shoes"
+      ],
+      "ranges": [],
+      "attributes": {
+        "name": "Ligero",
+        "title": "Lightweight ESD Safety Shoes",
+        "short_description": "Ultra-light, flexible safety shoe with SJ-3FIT adjustable width, nano carbon toe cap, and hybrid insole for unmatched comfort at work.",
+        "description": "The Safety Jogger lightweight shoe with SJ-3FIT is the must-have for the hybrid workplace. With unique features such as a removable hybrid insole with a built-in air circulation system and shock absorption, you will have the lightest safety shoe on the market. Next to being ultra-comfortable, the light weight shoe has a topmost flexing & bending performance. Whereas toe cap is made of ultra-light nano carbon, the insole features our unique SJ-3FIT technology. The SJ-3FIT technology is a flexible, modular concept that allows the width of the shoe to be adjusted. All you need for happy feet at work!",
+        "key_points": [
+          "Electrostatic Discharge (ESD)",
+          "Metal free",
+          "Nano carbon toecap",
+          "Puncture resistant lightweight",
+          "3D mesh",
+          "SJ Foam"
+        ],
+        "safety_class": "S1P",
+        "features": [
+          "SRC",
+          "CI",
+          "ESD",
+          "METAL_FREE"
+        ],
+        "standards": [
+          "ASTM F2413:2024",
+          "EN ISO 20345:2011"
+        ],
+        "toecap": "Nano Carbon",
+        "midsole": "Anti-Puncture Nonwoven",
+        "outsole": "Phylon/Rubber (NBR)",
+        "upper": "Mesh",
+        "lining": "Recycled 3D-Mesh (100% recycled)",
+        "cut": "Low",
+        "fastening": null,
+        "industries": [
+          "Automotive",
+          "Logistics",
+          "Industry"
+        ],
+        "gender": "Unisex",
+        "country_of_origin": "CN",
+        "video_url": "https://www.youtube.com/embed/fux4KhcHMLw",
+        "certificates": []
+      },
+      "meta": {
+        "commodity_code": "6404199000",
+        "related_vendor_product_ids": [
+          "276147",
+          "342962"
+        ]
+      },
+      "colours": [
+        {
+          "name": "Navy",
+          "hex": "394656"
+        },
+        {
+          "name": "Black",
+          "hex": "000000"
+        },
+        {
+          "name": "Orange",
+          "hex": "E8AA4C"
+        }
+      ],
+      "variants": [
+        {
+          "sku": "SJ-1492522",
+          "ean": "5400812978972",
+          "colour": "Navy",
+          "shoe_size": "3.5",
+          "eu_size": "36",
+          "stock": 55,
+          "price": 6890,
+          "compare_price": 7650,
+          "tax_class": "standard",
+          "weight_kg": 0.439,
+          "length_mm": null,
+          "width_mm": null,
+          "height_mm": null,
+          "meta": {
+            "vendor_sku": "1492522",
+            "vendor_product_name": "LIGERO",
+            "vendor_colour": "navy",
+            "vendor_size": "36"
+          }
+        },
+        {
+          "sku": "SJ-1492537",
+          "ean": "5400812978996",
+          "colour": "Navy",
+          "shoe_size": "4",
+          "eu_size": "37",
+          "stock": 85,
+          "price": 6890,
+          "compare_price": 7650,
+          "tax_class": "standard",
+          "weight_kg": 0.439,
+          "length_mm": null,
+          "width_mm": null,
+          "height_mm": null,
+          "meta": {
+            "vendor_sku": "1492537",
+            "vendor_product_name": "LIGERO",
+            "vendor_colour": "navy",
+            "vendor_size": "37"
+          }
+        },
+        {
+          "sku": "SJ-1492552",
+          "ean": "5400812979016",
+          "colour": "Navy",
+          "shoe_size": "5",
+          "eu_size": "38",
+          "stock": 206,
+          "price": 6890,
+          "compare_price": 7650,
+          "tax_class": "standard",
+          "weight_kg": 0.439,
+          "length_mm": null,
+          "width_mm": null,
+          "height_mm": null,
+          "meta": {
+            "vendor_sku": "1492552",
+            "vendor_product_name": "LIGERO",
+            "vendor_colour": "navy",
+            "vendor_size": "38"
+          }
+        },
+        {
+          "sku": "SJ-1492567",
+          "ean": "5400812979030",
+          "colour": "Navy",
+          "shoe_size": "6",
+          "eu_size": "39",
+          "stock": 326,
+          "price": 6890,
+          "compare_price": 7650,
+          "tax_class": "standard",
+          "weight_kg": 0.439,
+          "length_mm": null,
+          "width_mm": null,
+          "height_mm": null,
+          "meta": {
+            "vendor_sku": "1492567",
+            "vendor_product_name": "LIGERO",
+            "vendor_colour": "navy",
+            "vendor_size": "39"
+          }
+        },
+        {
+          "sku": "SJ-1492582",
+          "ean": "5400812979054",
+          "colour": "Navy",
+          "shoe_size": "6.5",
+          "eu_size": "40",
+          "stock": 261,
+          "price": 6890,
+          "compare_price": 7650,
+          "tax_class": "standard",
+          "weight_kg": 0.439,
+          "length_mm": null,
+          "width_mm": null,
+          "height_mm": null,
+          "meta": {
+            "vendor_sku": "1492582",
+            "vendor_product_name": "LIGERO",
+            "vendor_colour": "navy",
+            "vendor_size": "40"
+          }
+        },
+        {
+          "sku": "SJ-1454454",
+          "ean": "5400812974585",
+          "colour": "Navy",
+          "shoe_size": "7",
+          "eu_size": "41",
+          "stock": 313,
+          "price": 6890,
+          "compare_price": 7650,
+          "tax_class": "standard",
+          "weight_kg": 0.439,
+          "length_mm": null,
+          "width_mm": null,
+          "height_mm": null,
+          "meta": {
+            "vendor_sku": "1454454",
+            "vendor_product_name": "LIGERO",
+            "vendor_colour": "navy",
+            "vendor_size": "41"
+          }
+        },
+        {
+          "sku": "SJ-1492607",
+          "ean": "5400812979078",
+          "colour": "Navy",
+          "shoe_size": "8",
+          "eu_size": "42",
+          "stock": 533,
+          "price": 6890,
+          "compare_price": 7650,
+          "tax_class": "standard",
+          "weight_kg": 0.439,
+          "length_mm": null,
+          "width_mm": null,
+          "height_mm": null,
+          "meta": {
+            "vendor_sku": "1492607",
+            "vendor_product_name": "LIGERO",
+            "vendor_colour": "navy",
+            "vendor_size": "42"
+          }
+        },
+        {
+          "sku": "SJ-1492622",
+          "ean": "5400812979092",
+          "colour": "Navy",
+          "shoe_size": "9",
+          "eu_size": "43",
+          "stock": 613,
+          "price": 6890,
+          "compare_price": 7650,
+          "tax_class": "standard",
+          "weight_kg": 0.439,
+          "length_mm": null,
+          "width_mm": null,
+          "height_mm": null,
+          "meta": {
+            "vendor_sku": "1492622",
+            "vendor_product_name": "LIGERO",
+            "vendor_colour": "navy",
+            "vendor_size": "43"
+          }
+        },
+        {
+          "sku": "SJ-1492637",
+          "ean": "5400812979115",
+          "colour": "Navy",
+          "shoe_size": "9.5",
+          "eu_size": "44",
+          "stock": 472,
+          "price": 6890,
+          "compare_price": 7650,
+          "tax_class": "standard",
+          "weight_kg": 0.439,
+          "length_mm": null,
+          "width_mm": null,
+          "height_mm": null,
+          "meta": {
+            "vendor_sku": "1492637",
+            "vendor_product_name": "LIGERO",
+            "vendor_colour": "navy",
+            "vendor_size": "44"
+          }
+        },
+        {
+          "sku": "SJ-1492652",
+          "ean": "5400812979139",
+          "colour": "Navy",
+          "shoe_size": "10.5",
+          "eu_size": "45",
+          "stock": 340,
+          "price": 6890,
+          "compare_price": 7650,
+          "tax_class": "standard",
+          "weight_kg": 0.439,
+          "length_mm": null,
+          "width_mm": null,
+          "height_mm": null,
+          "meta": {
+            "vendor_sku": "1492652",
+            "vendor_product_name": "LIGERO",
+            "vendor_colour": "navy",
+            "vendor_size": "45"
+          }
+        },
+        {
+          "sku": "SJ-1492667",
+          "ean": "5400812979153",
+          "colour": "Navy",
+          "shoe_size": "11",
+          "eu_size": "46",
+          "stock": 153,
+          "price": 6890,
+          "compare_price": 7650,
+          "tax_class": "standard",
+          "weight_kg": 0.439,
+          "length_mm": null,
+          "width_mm": null,
+          "height_mm": null,
+          "meta": {
+            "vendor_sku": "1492667",
+            "vendor_product_name": "LIGERO",
+            "vendor_colour": "navy",
+            "vendor_size": "46"
+          }
+        },
+        {
+          "sku": "SJ-1492682",
+          "ean": "5400812979177",
+          "colour": "Navy",
+          "shoe_size": "12",
+          "eu_size": "47",
+          "stock": 77,
+          "price": 6890,
+          "compare_price": 7650,
+          "tax_class": "standard",
+          "weight_kg": 0.439,
+          "length_mm": null,
+          "width_mm": null,
+          "height_mm": null,
+          "meta": {
+            "vendor_sku": "1492682",
+            "vendor_product_name": "LIGERO",
+            "vendor_colour": "navy",
+            "vendor_size": "47"
+          }
+        },
+        {
+          "sku": "SJ-1492520",
+          "ean": "5400812980302",
+          "colour": "Black",
+          "shoe_size": "3.5",
+          "eu_size": "36",
+          "stock": 106,
+          "price": 6890,
+          "compare_price": 7650,
+          "tax_class": "standard",
+          "weight_kg": 0.439,
+          "length_mm": null,
+          "width_mm": null,
+          "height_mm": null,
+          "meta": {
+            "vendor_sku": "1492520",
+            "vendor_product_name": "LIGERO",
+            "vendor_colour": "black",
+            "vendor_size": "36"
+          }
+        },
+        {
+          "sku": "SJ-1492535",
+          "ean": "5400812980326",
+          "colour": "Black",
+          "shoe_size": "4",
+          "eu_size": "37",
+          "stock": 202,
+          "price": 6890,
+          "compare_price": 7650,
+          "tax_class": "standard",
+          "weight_kg": 0.439,
+          "length_mm": null,
+          "width_mm": null,
+          "height_mm": null,
+          "meta": {
+            "vendor_sku": "1492535",
+            "vendor_product_name": "LIGERO",
+            "vendor_colour": "black",
+            "vendor_size": "37"
+          }
+        },
+        {
+          "sku": "SJ-1492550",
+          "ean": "5400812980340",
+          "colour": "Black",
+          "shoe_size": "5",
+          "eu_size": "38",
+          "stock": 198,
+          "price": 6890,
+          "compare_price": 7650,
+          "tax_class": "standard",
+          "weight_kg": 0.439,
+          "length_mm": null,
+          "width_mm": null,
+          "height_mm": null,
+          "meta": {
+            "vendor_sku": "1492550",
+            "vendor_product_name": "LIGERO",
+            "vendor_colour": "black",
+            "vendor_size": "38"
+          }
+        },
+        {
+          "sku": "SJ-1492565",
+          "ean": "5400812980364",
+          "colour": "Black",
+          "shoe_size": "6",
+          "eu_size": "39",
+          "stock": 309,
+          "price": 6890,
+          "compare_price": 7650,
+          "tax_class": "standard",
+          "weight_kg": 0.439,
+          "length_mm": null,
+          "width_mm": null,
+          "height_mm": null,
+          "meta": {
+            "vendor_sku": "1492565",
+            "vendor_product_name": "LIGERO",
+            "vendor_colour": "black",
+            "vendor_size": "39"
+          }
+        },
+        {
+          "sku": "SJ-1492580",
+          "ean": "5400812980388",
+          "colour": "Black",
+          "shoe_size": "6.5",
+          "eu_size": "40",
+          "stock": 188,
+          "price": 6890,
+          "compare_price": 7650,
+          "tax_class": "standard",
+          "weight_kg": 0.439,
+          "length_mm": null,
+          "width_mm": null,
+          "height_mm": null,
+          "meta": {
+            "vendor_sku": "1492580",
+            "vendor_product_name": "LIGERO",
+            "vendor_colour": "black",
+            "vendor_size": "40"
+          }
+        },
+        {
+          "sku": "SJ-1481428",
+          "ean": "5400812974745",
+          "colour": "Black",
+          "shoe_size": "7",
+          "eu_size": "41",
+          "stock": 172,
+          "price": 6890,
+          "compare_price": 7650,
+          "tax_class": "standard",
+          "weight_kg": 0.439,
+          "length_mm": null,
+          "width_mm": null,
+          "height_mm": null,
+          "meta": {
+            "vendor_sku": "1481428",
+            "vendor_product_name": "LIGERO",
+            "vendor_colour": "black",
+            "vendor_size": "41"
+          }
+        },
+        {
+          "sku": "SJ-1492605",
+          "ean": "5400812980401",
+          "colour": "Black",
+          "shoe_size": "8",
+          "eu_size": "42",
+          "stock": 304,
+          "price": 6890,
+          "compare_price": 7650,
+          "tax_class": "standard",
+          "weight_kg": 0.439,
+          "length_mm": null,
+          "width_mm": null,
+          "height_mm": null,
+          "meta": {
+            "vendor_sku": "1492605",
+            "vendor_product_name": "LIGERO",
+            "vendor_colour": "black",
+            "vendor_size": "42"
+          }
+        },
+        {
+          "sku": "SJ-1492620",
+          "ean": "5400812980425",
+          "colour": "Black",
+          "shoe_size": "9",
+          "eu_size": "43",
+          "stock": 245,
+          "price": 6890,
+          "compare_price": 7650,
+          "tax_class": "standard",
+          "weight_kg": 0.439,
+          "length_mm": null,
+          "width_mm": null,
+          "height_mm": null,
+          "meta": {
+            "vendor_sku": "1492620",
+            "vendor_product_name": "LIGERO",
+            "vendor_colour": "black",
+            "vendor_size": "43"
+          }
+        },
+        {
+          "sku": "SJ-1492635",
+          "ean": "5400812980449",
+          "colour": "Black",
+          "shoe_size": "9.5",
+          "eu_size": "44",
+          "stock": 0,
+          "price": 6890,
+          "compare_price": 7650,
+          "tax_class": "standard",
+          "weight_kg": 0.439,
+          "length_mm": null,
+          "width_mm": null,
+          "height_mm": null,
+          "meta": {
+            "vendor_sku": "1492635",
+            "vendor_product_name": "LIGERO",
+            "vendor_colour": "black",
+            "vendor_size": "44"
+          }
+        },
+        {
+          "sku": "SJ-1492650",
+          "ean": "5400812980463",
+          "colour": "Black",
+          "shoe_size": "10.5",
+          "eu_size": "45",
+          "stock": 78,
+          "price": 6890,
+          "compare_price": 7650,
+          "tax_class": "standard",
+          "weight_kg": 0.439,
+          "length_mm": null,
+          "width_mm": null,
+          "height_mm": null,
+          "meta": {
+            "vendor_sku": "1492650",
+            "vendor_product_name": "LIGERO",
+            "vendor_colour": "black",
+            "vendor_size": "45"
+          }
+        },
+        {
+          "sku": "SJ-1492665",
+          "ean": "5400812980487",
+          "colour": "Black",
+          "shoe_size": "11",
+          "eu_size": "46",
+          "stock": 83,
+          "price": 6890,
+          "compare_price": 7650,
+          "tax_class": "standard",
+          "weight_kg": 0.439,
+          "length_mm": null,
+          "width_mm": null,
+          "height_mm": null,
+          "meta": {
+            "vendor_sku": "1492665",
+            "vendor_product_name": "LIGERO",
+            "vendor_colour": "black",
+            "vendor_size": "46"
+          }
+        },
+        {
+          "sku": "SJ-1492680",
+          "ean": "5400812980500",
+          "colour": "Black",
+          "shoe_size": "12",
+          "eu_size": "47",
+          "stock": 43,
+          "price": 6890,
+          "compare_price": 7650,
+          "tax_class": "standard",
+          "weight_kg": 0.439,
+          "length_mm": null,
+          "width_mm": null,
+          "height_mm": null,
+          "meta": {
+            "vendor_sku": "1492680",
+            "vendor_product_name": "LIGERO",
+            "vendor_colour": "black",
+            "vendor_size": "47"
+          }
+        },
+        {
+          "sku": "SJ-1492523",
+          "ean": "5400812980524",
+          "colour": "Orange",
+          "shoe_size": "3.5",
+          "eu_size": "36",
+          "stock": 155,
+          "price": 6890,
+          "compare_price": 7650,
+          "tax_class": "standard",
+          "weight_kg": 0.439,
+          "length_mm": null,
+          "width_mm": null,
+          "height_mm": null,
+          "meta": {
+            "vendor_sku": "1492523",
+            "vendor_product_name": "LIGERO",
+            "vendor_colour": "orange",
+            "vendor_size": "36"
+          }
+        },
+        {
+          "sku": "SJ-1492538",
+          "ean": "5400812980548",
+          "colour": "Orange",
+          "shoe_size": "4",
+          "eu_size": "37",
+          "stock": 107,
+          "price": 6890,
+          "compare_price": 7650,
+          "tax_class": "standard",
+          "weight_kg": 0.439,
+          "length_mm": null,
+          "width_mm": null,
+          "height_mm": null,
+          "meta": {
+            "vendor_sku": "1492538",
+            "vendor_product_name": "LIGERO",
+            "vendor_colour": "orange",
+            "vendor_size": "37"
+          }
+        },
+        {
+          "sku": "SJ-1492553",
+          "ean": "5400812980562",
+          "colour": "Orange",
+          "shoe_size": "5",
+          "eu_size": "38",
+          "stock": 168,
+          "price": 6890,
+          "compare_price": 7650,
+          "tax_class": "standard",
+          "weight_kg": 0.439,
+          "length_mm": null,
+          "width_mm": null,
+          "height_mm": null,
+          "meta": {
+            "vendor_sku": "1492553",
+            "vendor_product_name": "LIGERO",
+            "vendor_colour": "orange",
+            "vendor_size": "38"
+          }
+        },
+        {
+          "sku": "SJ-1492568",
+          "ean": "5400812980586",
+          "colour": "Orange",
+          "shoe_size": "6",
+          "eu_size": "39",
+          "stock": 181,
+          "price": 6890,
+          "compare_price": 7650,
+          "tax_class": "standard",
+          "weight_kg": 0.439,
+          "length_mm": null,
+          "width_mm": null,
+          "height_mm": null,
+          "meta": {
+            "vendor_sku": "1492568",
+            "vendor_product_name": "LIGERO",
+            "vendor_colour": "orange",
+            "vendor_size": "39"
+          }
+        },
+        {
+          "sku": "SJ-1492583",
+          "ean": "5400812980609",
+          "colour": "Orange",
+          "shoe_size": "6.5",
+          "eu_size": "40",
+          "stock": 158,
+          "price": 6890,
+          "compare_price": 7650,
+          "tax_class": "standard",
+          "weight_kg": 0.439,
+          "length_mm": null,
+          "width_mm": null,
+          "height_mm": null,
+          "meta": {
+            "vendor_sku": "1492583",
+            "vendor_product_name": "LIGERO",
+            "vendor_colour": "orange",
+            "vendor_size": "40"
+          }
+        },
+        {
+          "sku": "SJ-1454453",
+          "ean": "5400812974943",
+          "colour": "Orange",
+          "shoe_size": "7",
+          "eu_size": "41",
+          "stock": 189,
+          "price": 6890,
+          "compare_price": 7650,
+          "tax_class": "standard",
+          "weight_kg": 0.439,
+          "length_mm": null,
+          "width_mm": null,
+          "height_mm": null,
+          "meta": {
+            "vendor_sku": "1454453",
+            "vendor_product_name": "LIGERO",
+            "vendor_colour": "orange",
+            "vendor_size": "41"
+          }
+        },
+        {
+          "sku": "SJ-1492608",
+          "ean": "5400812980623",
+          "colour": "Orange",
+          "shoe_size": "8",
+          "eu_size": "42",
+          "stock": 288,
+          "price": 6890,
+          "compare_price": 7650,
+          "tax_class": "standard",
+          "weight_kg": 0.439,
+          "length_mm": null,
+          "width_mm": null,
+          "height_mm": null,
+          "meta": {
+            "vendor_sku": "1492608",
+            "vendor_product_name": "LIGERO",
+            "vendor_colour": "orange",
+            "vendor_size": "42"
+          }
+        },
+        {
+          "sku": "SJ-1492623",
+          "ean": "5400812980647",
+          "colour": "Orange",
+          "shoe_size": "9",
+          "eu_size": "43",
+          "stock": 487,
+          "price": 6890,
+          "compare_price": 7650,
+          "tax_class": "standard",
+          "weight_kg": 0.439,
+          "length_mm": null,
+          "width_mm": null,
+          "height_mm": null,
+          "meta": {
+            "vendor_sku": "1492623",
+            "vendor_product_name": "LIGERO",
+            "vendor_colour": "orange",
+            "vendor_size": "43"
+          }
+        },
+        {
+          "sku": "SJ-1492638",
+          "ean": "5400812980661",
+          "colour": "Orange",
+          "shoe_size": "9.5",
+          "eu_size": "44",
+          "stock": 211,
+          "price": 6890,
+          "compare_price": 7650,
+          "tax_class": "standard",
+          "weight_kg": 0.439,
+          "length_mm": null,
+          "width_mm": null,
+          "height_mm": null,
+          "meta": {
+            "vendor_sku": "1492638",
+            "vendor_product_name": "LIGERO",
+            "vendor_colour": "orange",
+            "vendor_size": "44"
+          }
+        },
+        {
+          "sku": "SJ-1492653",
+          "ean": "5400812980685",
+          "colour": "Orange",
+          "shoe_size": "10.5",
+          "eu_size": "45",
+          "stock": 346,
+          "price": 6890,
+          "compare_price": 7650,
+          "tax_class": "standard",
+          "weight_kg": 0.439,
+          "length_mm": null,
+          "width_mm": null,
+          "height_mm": null,
+          "meta": {
+            "vendor_sku": "1492653",
+            "vendor_product_name": "LIGERO",
+            "vendor_colour": "orange",
+            "vendor_size": "45"
+          }
+        },
+        {
+          "sku": "SJ-1492668",
+          "ean": "5400812980708",
+          "colour": "Orange",
+          "shoe_size": "11",
+          "eu_size": "46",
+          "stock": 289,
+          "price": 6890,
+          "compare_price": 7650,
+          "tax_class": "standard",
+          "weight_kg": 0.439,
+          "length_mm": null,
+          "width_mm": null,
+          "height_mm": null,
+          "meta": {
+            "vendor_sku": "1492668",
+            "vendor_product_name": "LIGERO",
+            "vendor_colour": "orange",
+            "vendor_size": "46"
+          }
+        },
+        {
+          "sku": "SJ-1492683",
+          "ean": "5400812980722",
+          "colour": "Orange",
+          "shoe_size": "12",
+          "eu_size": "47",
+          "stock": 77,
+          "price": 6890,
+          "compare_price": 7650,
+          "tax_class": "standard",
+          "weight_kg": 0.439,
+          "length_mm": null,
+          "width_mm": null,
+          "height_mm": null,
+          "meta": {
+            "vendor_sku": "1492683",
+            "vendor_product_name": "LIGERO",
+            "vendor_colour": "orange",
+            "vendor_size": "47"
+          }
+        }
+      ]
+    },
+    {
+      "vendor_code": "SJ",
+      "vendor_product_id": "271323",
+      "product_type": "safety-footwear",
+      "status": "published",
+      "brand": "Maxguard",
+      "collections": [
+        "safety-shoes"
+      ],
+      "ranges": [],
+      "attributes": {
+        "name": "SX310",
+        "title": "SX310 Safety Shoes",
+        "short_description": null,
+        "description": null,
+        "key_points": [
+          "Waterproof (WR)",
+          "Sympatex® lining",
+          "Heat resistant outsole (HRO)",
+          "Heat insulated (HI)",
+          "Cold insulated (CI)"
+        ],
+        "safety_class": "S3",
+        "features": [
+          "SRC",
+          "HI",
+          "HRO",
+          "WR",
+          "CI",
+          "METAL_FREE"
+        ],
+        "standards": [
+          "EN ISO 20345:2011"
+        ],
+        "toecap": null,
+        "midsole": null,
+        "outsole": null,
+        "upper": null,
+        "lining": null,
+        "cut": "Low",
+        "fastening": null,
+        "industries": [
+          "Automotive",
+          "Chemical",
+          "Cleaning",
+          "Construction",
+          "Logistics",
+          "Mining",
+          "Oil & Gas",
+          "Industry"
+        ],
+        "gender": "Unisex",
+        "country_of_origin": "RO",
+        "video_url": null,
+        "certificates": []
+      },
+      "meta": {
+        "commodity_code": null,
+        "related_vendor_product_ids": []
+      },
+      "colours": [
+        {
+          "name": "Dark Red",
+          "hex": "940D0D"
+        }
+      ],
+      "variants": [
+        {
+          "sku": "SJ-1342249",
+          "ean": "4250401531900",
+          "colour": "Dark Red",
+          "shoe_size": "6",
+          "eu_size": "39",
+          "stock": 0,
+          "price": 5999,
+          "compare_price": null,
+          "tax_class": "standard",
+          "weight_kg": 0.578,
+          "length_mm": null,
+          "width_mm": null,
+          "height_mm": null,
+          "meta": {
+            "vendor_sku": "1342249",
+            "vendor_product_name": "SX310",
+            "vendor_colour": "dark red",
+            "vendor_size": "39"
+          }
+        },
+        {
+          "sku": "SJ-1342251",
+          "ean": "4250401531917",
+          "colour": "Dark Red",
+          "shoe_size": "6.5",
+          "eu_size": "40",
+          "stock": 0,
+          "price": 5999,
+          "compare_price": null,
+          "tax_class": "standard",
+          "weight_kg": 0.578,
+          "length_mm": null,
+          "width_mm": null,
+          "height_mm": null,
+          "meta": {
+            "vendor_sku": "1342251",
+            "vendor_product_name": "SX310",
+            "vendor_colour": "dark red",
+            "vendor_size": "40"
+          }
+        },
+        {
+          "sku": "SJ-1342253",
+          "ean": "4250401531924",
+          "colour": "Dark Red",
+          "shoe_size": "7",
+          "eu_size": "41",
+          "stock": 0,
+          "price": 5999,
+          "compare_price": null,
+          "tax_class": "standard",
+          "weight_kg": 0.578,
+          "length_mm": null,
+          "width_mm": null,
+          "height_mm": null,
+          "meta": {
+            "vendor_sku": "1342253",
+            "vendor_product_name": "SX310",
+            "vendor_colour": "dark red",
+            "vendor_size": "41"
+          }
+        },
+        {
+          "sku": "SJ-1342255",
+          "ean": "4250401531931",
+          "colour": "Dark Red",
+          "shoe_size": "8",
+          "eu_size": "42",
+          "stock": 0,
+          "price": 5999,
+          "compare_price": null,
+          "tax_class": "standard",
+          "weight_kg": 0.578,
+          "length_mm": null,
+          "width_mm": null,
+          "height_mm": null,
+          "meta": {
+            "vendor_sku": "1342255",
+            "vendor_product_name": "SX310",
+            "vendor_colour": "dark red",
+            "vendor_size": "42"
+          }
+        },
+        {
+          "sku": "SJ-1342257",
+          "ean": "4250401531948",
+          "colour": "Dark Red",
+          "shoe_size": "9",
+          "eu_size": "43",
+          "stock": 0,
+          "price": 5999,
+          "compare_price": null,
+          "tax_class": "standard",
+          "weight_kg": 0.578,
+          "length_mm": null,
+          "width_mm": null,
+          "height_mm": null,
+          "meta": {
+            "vendor_sku": "1342257",
+            "vendor_product_name": "SX310",
+            "vendor_colour": "dark red",
+            "vendor_size": "43"
+          }
+        },
+        {
+          "sku": "SJ-1342259",
+          "ean": "4250401531955",
+          "colour": "Dark Red",
+          "shoe_size": "9.5",
+          "eu_size": "44",
+          "stock": 0,
+          "price": 5999,
+          "compare_price": null,
+          "tax_class": "standard",
+          "weight_kg": 0.578,
+          "length_mm": null,
+          "width_mm": null,
+          "height_mm": null,
+          "meta": {
+            "vendor_sku": "1342259",
+            "vendor_product_name": "SX310",
+            "vendor_colour": "dark red",
+            "vendor_size": "44"
+          }
+        },
+        {
+          "sku": "SJ-1342261",
+          "ean": "4250401531962",
+          "colour": "Dark Red",
+          "shoe_size": "10.5",
+          "eu_size": "45",
+          "stock": 0,
+          "price": 5999,
+          "compare_price": null,
+          "tax_class": "standard",
+          "weight_kg": 0.578,
+          "length_mm": null,
+          "width_mm": null,
+          "height_mm": null,
+          "meta": {
+            "vendor_sku": "1342261",
+            "vendor_product_name": "SX310",
+            "vendor_colour": "dark red",
+            "vendor_size": "45"
+          }
+        },
+        {
+          "sku": "SJ-1342263",
+          "ean": "4250401531979",
+          "colour": "Dark Red",
+          "shoe_size": "11",
+          "eu_size": "46",
+          "stock": 0,
+          "price": 5999,
+          "compare_price": null,
+          "tax_class": "standard",
+          "weight_kg": 0.578,
+          "length_mm": null,
+          "width_mm": null,
+          "height_mm": null,
+          "meta": {
+            "vendor_sku": "1342263",
+            "vendor_product_name": "SX310",
+            "vendor_colour": "dark red",
+            "vendor_size": "46"
+          }
+        },
+        {
+          "sku": "SJ-1342265",
+          "ean": "4250401531986",
+          "colour": "Dark Red",
+          "shoe_size": "12",
+          "eu_size": "47",
+          "stock": 0,
+          "price": 5999,
+          "compare_price": null,
+          "tax_class": "standard",
+          "weight_kg": 0.578,
+          "length_mm": null,
+          "width_mm": null,
+          "height_mm": null,
+          "meta": {
+            "vendor_sku": "1342265",
+            "vendor_product_name": "SX310",
+            "vendor_colour": "dark red",
+            "vendor_size": "47"
+          }
+        },
+        {
+          "sku": "SJ-1342267",
+          "ean": "4250401531993",
+          "colour": "Dark Red",
+          "shoe_size": "13",
+          "eu_size": "48",
+          "stock": 0,
+          "price": 5999,
+          "compare_price": null,
+          "tax_class": "standard",
+          "weight_kg": 0.578,
+          "length_mm": null,
+          "width_mm": null,
+          "height_mm": null,
+          "meta": {
+            "vendor_sku": "1342267",
+            "vendor_product_name": "SX310",
+            "vendor_colour": "dark red",
+            "vendor_size": "48"
+          }
+        }
+      ]
+    },
+    {
+      "vendor_code": "FS",
+      "vendor_product_id": "252-02628",
+      "product_type": "safety-footwear",
+      "status": "published",
+      "brand": "Magnum",
+      "collections": [
+        "safety-boots"
+      ],
+      "ranges": [],
+      "attributes": {
+        "name": "Classic",
+        "title": "Classic Uniform Boot",
+        "short_description": null,
+        "description": "The Magnum Classic is exactly what it says - A Magnum Classic! A long time favourite among Magnum fans, this men's and women's uniform boot is comfortable, breathable and durable.",
+        "key_points": [
+          "Magnum Classic - Non safety Boot",
+          "SRA Slip rating",
+          "Leather/Nylon Upper",
+          "Rubber Heat/Cold Resistant Outsole",
+          "8 Metal Eyelet Lacing System",
+          "Complies with ISO20345 Safety Footwear Standard",
+          "Tested and certified to European standard EN ISO 20347:2012 OB E FO SRA"
+        ],
+        "safety_class": "OB",
+        "features": [
+          "E",
+          "FO",
+          "SRA"
+        ],
+        "standards": [
+          "EN ISO 20347:2012"
+        ],
+        "toecap": null,
+        "midsole": null,
+        "outsole": "Rubber",
+        "upper": "Leather/Nylon",
+        "lining": "Textile",
+        "cut": null,
+        "fastening": "Lace Up",
+        "industries": [],
+        "gender": "Men",
+        "country_of_origin": "CN",
+        "video_url": null,
+        "certificates": []
+      },
+      "meta": {
+        "commodity_code": "6403911390",
+        "related_vendor_product_ids": []
+      },
+      "colours": [
+        {
+          "name": "Black",
+          "hex": null
+        }
+      ],
+      "variants": [
+        {
+          "sku": "FS-00252-02628-03",
+          "ean": "5013342107981",
+          "colour": "Black",
+          "shoe_size": "3",
+          "eu_size": "35",
+          "stock": 14,
+          "price": 8774,
+          "compare_price": 9416,
+          "tax_class": "standard",
+          "weight_kg": 1.91,
+          "length_mm": 354.0,
+          "width_mm": 337.0,
+          "height_mm": 127.0,
+          "meta": {
+            "vendor_sku": "00252-02628-03",
+            "vendor_product_name": "Classic Uniform Boot",
+            "vendor_colour": "Black",
+            "vendor_size": "3"
+          }
+        },
+        {
+          "sku": "FS-00252-02628-04",
+          "ean": "5013342008448",
+          "colour": "Black",
+          "shoe_size": "4",
+          "eu_size": "37",
+          "stock": 21,
+          "price": 8774,
+          "compare_price": 9416,
+          "tax_class": "standard",
+          "weight_kg": 1.925,
+          "length_mm": 330.0,
+          "width_mm": 330.0,
+          "height_mm": 120.0,
+          "meta": {
+            "vendor_sku": "00252-02628-04",
+            "vendor_product_name": "Classic Uniform Boot",
+            "vendor_colour": "Black",
+            "vendor_size": "4"
+          }
+        },
+        {
+          "sku": "FS-00252-02628-05",
+          "ean": "5013342008455",
+          "colour": "Black",
+          "shoe_size": "5",
+          "eu_size": "38",
+          "stock": 19,
+          "price": 8774,
+          "compare_price": 9416,
+          "tax_class": "standard",
+          "weight_kg": 1.925,
+          "length_mm": 330.0,
+          "width_mm": 330.0,
+          "height_mm": 120.0,
+          "meta": {
+            "vendor_sku": "00252-02628-05",
+            "vendor_product_name": "Classic Uniform Boot",
+            "vendor_colour": "Black",
+            "vendor_size": "5"
+          }
+        },
+        {
+          "sku": "FS-00252-02628-07",
+          "ean": "5013342008479",
+          "colour": "Black",
+          "shoe_size": "7",
+          "eu_size": "41",
+          "stock": 75,
+          "price": 8774,
+          "compare_price": 9416,
+          "tax_class": "standard",
+          "weight_kg": 1.925,
+          "length_mm": 330.0,
+          "width_mm": 330.0,
+          "height_mm": 120.0,
+          "meta": {
+            "vendor_sku": "00252-02628-07",
+            "vendor_product_name": "Classic Uniform Boot",
+            "vendor_colour": "Black",
+            "vendor_size": "7"
+          }
+        },
+        {
+          "sku": "FS-00252-02628-13",
+          "ean": "5013342008530",
+          "colour": "Black",
+          "shoe_size": "13",
+          "eu_size": "47",
+          "stock": 11,
+          "price": 8774,
+          "compare_price": 9416,
+          "tax_class": "standard",
+          "weight_kg": 1.925,
+          "length_mm": 330.0,
+          "width_mm": 330.0,
+          "height_mm": 120.0,
+          "meta": {
+            "vendor_sku": "00252-02628-13",
+            "vendor_product_name": "Classic Uniform Boot",
+            "vendor_colour": "Black",
+            "vendor_size": "13"
+          }
+        },
+        {
+          "sku": "FS-00252-02628-14",
+          "ean": "5013342008547",
+          "colour": "Black",
+          "shoe_size": "14",
+          "eu_size": "48",
+          "stock": 2,
+          "price": 8774,
+          "compare_price": 9416,
+          "tax_class": "standard",
+          "weight_kg": 1.925,
+          "length_mm": 330.0,
+          "width_mm": 330.0,
+          "height_mm": 120.0,
+          "meta": {
+            "vendor_sku": "00252-02628-14",
+            "vendor_product_name": "Classic Uniform Boot",
+            "vendor_colour": "Black",
+            "vendor_size": "14"
+          }
+        }
+      ]
+    },
+    {
+      "vendor_code": "FS",
+      "vendor_product_id": "1049-00848",
+      "product_type": "safety-footwear",
+      "status": "published",
+      "brand": "Amblers Safety",
+      "collections": [
+        "safety-boots"
+      ],
+      "ranges": [
+        "clearance"
+      ],
+      "attributes": {
+        "name": "FS9",
+        "title": "FS9 Goodyear Welted Safety Boot",
+        "short_description": null,
+        "description": "A tough and hardwearing goodyear welted safety boot made with leather upper, steel toe & midsole, padded collar and nitrile rubber outsole",
+        "key_points": [
+          "3 eyelets, ankle high speed lacing + hem eyelet for extra support.",
+          "Padded collar and tongue for comfort.",
+          "Pull on loop.",
+          "Goodyear Welted rubber sole",
+          "Conforms to EN ISO 20345:2011 Safety Footwear Standards",
+          "Safety Footwear Category: SB-P.",
+          "Toe protection tested to 200 joules impact.",
+          "Penetration resistant steel midsole tested 1100 newtons.",
+          "Passes SRA Slip Resistance Standards."
+        ],
+        "safety_class": "SB",
+        "features": [
+          "P",
+          "SRA"
+        ],
+        "standards": [
+          "EN ISO 20345:2011"
+        ],
+        "toecap": null,
+        "midsole": null,
+        "outsole": "Rubber",
+        "upper": "Full Grain Leather",
+        "lining": "Polyester",
+        "cut": null,
+        "fastening": "Lace Up",
+        "industries": [],
+        "gender": "Men",
+        "country_of_origin": "CN",
+        "video_url": null,
+        "certificates": []
+      },
+      "meta": {
+        "commodity_code": "6403400000",
+        "related_vendor_product_ids": []
+      },
+      "colours": [
+        {
+          "name": "Black",
+          "hex": null
+        }
+      ],
+      "variants": [
+        {
+          "sku": "FS-01049-00848-02",
+          "ean": "5038601035591",
+          "colour": "Black",
+          "shoe_size": "4",
+          "eu_size": "37",
+          "stock": 0,
+          "price": 5248,
+          "compare_price": 5999,
+          "tax_class": "zero-protective",
+          "weight_kg": 1.75,
+          "length_mm": 335.0,
+          "width_mm": 245.0,
+          "height_mm": 135.0,
+          "meta": {
+            "vendor_sku": "01049-00848-02",
+            "vendor_product_name": "FS9 Goodyear Welted Safety Boot",
+            "vendor_colour": "Black",
+            "vendor_size": "4"
+          }
+        },
+        {
+          "sku": "FS-01049-00848-03",
+          "ean": "5038601035607",
+          "colour": "Black",
+          "shoe_size": "5",
+          "eu_size": "38",
+          "stock": 40,
+          "price": 5248,
+          "compare_price": 5999,
+          "tax_class": "zero-protective",
+          "weight_kg": 1.772,
+          "length_mm": 335.0,
+          "width_mm": 245.0,
+          "height_mm": 135.0,
+          "meta": {
+            "vendor_sku": "01049-00848-03",
+            "vendor_product_name": "FS9 Goodyear Welted Safety Boot",
+            "vendor_colour": "Black",
+            "vendor_size": "5"
+          }
+        },
+        {
+          "sku": "FS-01049-00848-04",
+          "ean": "5038601019119",
+          "colour": "Black",
+          "shoe_size": "6",
+          "eu_size": "39",
+          "stock": 6,
+          "price": 5248,
+          "compare_price": 5999,
+          "tax_class": "zero-protective",
+          "weight_kg": 1.892,
+          "length_mm": 335.0,
+          "width_mm": 245.0,
+          "height_mm": 135.0,
+          "meta": {
+            "vendor_sku": "01049-00848-04",
+            "vendor_product_name": "FS9 Goodyear Welted Safety Boot",
+            "vendor_colour": "Black",
+            "vendor_size": "6"
+          }
+        },
+        {
+          "sku": "FS-01049-00848-05",
+          "ean": "5038601019126",
+          "colour": "Black",
+          "shoe_size": "7",
+          "eu_size": "41",
+          "stock": 34,
+          "price": 5248,
+          "compare_price": 5999,
+          "tax_class": "zero-protective",
+          "weight_kg": 1.95,
+          "length_mm": 335.0,
+          "width_mm": 245.0,
+          "height_mm": 135.0,
+          "meta": {
+            "vendor_sku": "01049-00848-05",
+            "vendor_product_name": "FS9 Goodyear Welted Safety Boot",
+            "vendor_colour": "Black",
+            "vendor_size": "7"
+          }
+        },
+        {
+          "sku": "FS-01049-00848-08",
+          "ean": "5038601019157",
+          "colour": "Black",
+          "shoe_size": "10",
+          "eu_size": "44",
+          "stock": 0,
+          "price": 5248,
+          "compare_price": 5999,
+          "tax_class": "zero-protective",
+          "weight_kg": 2.213,
+          "length_mm": 335.0,
+          "width_mm": 245.0,
+          "height_mm": 135.0,
+          "meta": {
+            "vendor_sku": "01049-00848-08",
+            "vendor_product_name": "FS9 Goodyear Welted Safety Boot",
+            "vendor_colour": "Black",
+            "vendor_size": "10"
+          }
+        },
+        {
+          "sku": "FS-01049-00848-09",
+          "ean": "5038601019164",
+          "colour": "Black",
+          "shoe_size": "11",
+          "eu_size": "46",
+          "stock": 0,
+          "price": 5248,
+          "compare_price": 5999,
+          "tax_class": "zero-protective",
+          "weight_kg": 2.309,
+          "length_mm": 335.0,
+          "width_mm": 245.0,
+          "height_mm": 135.0,
+          "meta": {
+            "vendor_sku": "01049-00848-09",
+            "vendor_product_name": "FS9 Goodyear Welted Safety Boot",
+            "vendor_colour": "Black",
+            "vendor_size": "11"
+          }
+        },
+        {
+          "sku": "FS-01049-00848-10",
+          "ean": "5038601019171",
+          "colour": "Black",
+          "shoe_size": "12",
+          "eu_size": "47",
+          "stock": 0,
+          "price": 5248,
+          "compare_price": 5999,
+          "tax_class": "zero-protective",
+          "weight_kg": 2.338,
+          "length_mm": 335.0,
+          "width_mm": 245.0,
+          "height_mm": 135.0,
+          "meta": {
+            "vendor_sku": "01049-00848-10",
+            "vendor_product_name": "FS9 Goodyear Welted Safety Boot",
+            "vendor_colour": "Black",
+            "vendor_size": "12"
+          }
+        }
+      ]
+    },
+    {
+      "vendor_code": "FS",
+      "vendor_product_id": "1055-00821",
+      "product_type": "safety-footwear",
+      "status": "published",
+      "brand": "Amblers Safety",
+      "collections": [
+        "safety-boots"
+      ],
+      "ranges": [
+        "clearance"
+      ],
+      "attributes": {
+        "name": "FS65",
+        "title": "FS65 Gibson Lace Safety Shoes",
+        "short_description": null,
+        "description": "A leather apron fronted lace-up safety shoe, with antistatic function, SRC slip resistant sole and penetration protection.",
+        "key_points": [
+          "Black 3 Eyelet shoe ideal for industrial office use or formal wear",
+          "Smart and safe gibson crafted with a smooth leather upper",
+          "Steel toe cap protection tested to 200 joules impact",
+          "Non-metal midsole for underfoot penetration resistance",
+          "Single Density PU Sole unit with excellent slip resistant qualities",
+          "Energy absorbing heel",
+          "Antistatic",
+          "Conforms to EN ISO 20345:2011 Safety Footwear Standard",
+          "Passes SRC slip resistance standards"
+        ],
+        "safety_class": "S1",
+        "features": [
+          "P",
+          "SRC"
+        ],
+        "standards": [
+          "EN ISO 20345:2011"
+        ],
+        "toecap": null,
+        "midsole": null,
+        "outsole": "Single Density PU",
+        "upper": "Leather",
+        "lining": "Synthetic PU microfibre",
+        "cut": null,
+        "fastening": "Lace Up",
+        "industries": [],
+        "gender": "Men",
+        "country_of_origin": "CN",
+        "video_url": null,
+        "certificates": []
+      },
+      "meta": {
+        "commodity_code": "6403400000",
+        "related_vendor_product_ids": []
+      },
+      "colours": [
+        {
+          "name": "Black",
+          "hex": null
+        }
+      ],
+      "variants": [
+        {
+          "sku": "FS-01055-00821-03",
+          "ean": "5038600115508",
+          "colour": "Black",
+          "shoe_size": "5",
+          "eu_size": "39",
+          "stock": 1,
+          "price": 4048,
+          "compare_price": 4582,
+          "tax_class": "standard",
+          "weight_kg": 1.275,
+          "length_mm": 335.0,
+          "width_mm": 215.0,
+          "height_mm": 120.0,
+          "meta": {
+            "vendor_sku": "01055-00821-03",
+            "vendor_product_name": "FS65 Gibson Lace Safety Shoes",
+            "vendor_colour": "Black",
+            "vendor_size": "5"
+          }
+        },
+        {
+          "sku": "FS-01055-00821-04",
+          "ean": "5038601006546",
+          "colour": "Black",
+          "shoe_size": "6",
+          "eu_size": "40",
+          "stock": 3,
+          "price": 4048,
+          "compare_price": 4582,
+          "tax_class": "standard",
+          "weight_kg": 1.351,
+          "length_mm": 335.0,
+          "width_mm": 215.0,
+          "height_mm": 120.0,
+          "meta": {
+            "vendor_sku": "01055-00821-04",
+            "vendor_product_name": "FS65 Gibson Lace Safety Shoes",
+            "vendor_colour": "Black",
+            "vendor_size": "6"
+          }
+        },
+        {
+          "sku": "FS-01055-00821-10",
+          "ean": "5038601006607",
+          "colour": "Black",
+          "shoe_size": "12",
+          "eu_size": "46",
+          "stock": 0,
+          "price": 4048,
+          "compare_price": 4582,
+          "tax_class": "standard",
+          "weight_kg": 1.719,
+          "length_mm": 350.0,
+          "width_mm": 230.0,
+          "height_mm": 125.0,
+          "meta": {
+            "vendor_sku": "01055-00821-10",
+            "vendor_product_name": "FS65 Gibson Lace Safety Shoes",
+            "vendor_colour": "Black",
+            "vendor_size": "12"
+          }
+        }
+      ]
+    },
+    {
+      "vendor_code": "FS",
+      "vendor_product_id": "345-00772",
+      "product_type": "safety-footwear",
+      "status": "published",
+      "brand": "Centek",
+      "collections": [
+        "safety-boots"
+      ],
+      "ranges": [],
+      "attributes": {
+        "name": "FS30C",
+        "title": "FS30C Lace-up Safety Boot",
+        "short_description": null,
+        "description": "Basic metal-free safety boot from Centek with water-resistant leather upper, 200 Joules composite toe cap and penetration resistant midsole. Rated to EN ISO 20345:2011 S3 SRC.",
+        "key_points": [
+          "Lightweight and metal free composite safety boot",
+          "Composite toe cap and midsole protection",
+          "Features a bellows tongue, keeping foot free from debris",
+          "Water resistant upper for ease of cleaning",
+          "Dual density PU sole for comfort and hardwearing",
+          "Sole resistant to oil, acids and solvents",
+          "EN ISO 20345:2011 Safety Footwear Tested",
+          "Meets S3 Safety Standard"
+        ],
+        "safety_class": null,
+        "features": [
+          "SR"
+        ],
+        "standards": [
+          "EN ISO 20345:2022"
+        ],
+        "toecap": null,
+        "midsole": null,
+        "outsole": "Dual Density PU",
+        "upper": "Leather",
+        "lining": "Textile",
+        "cut": null,
+        "fastening": "Lace Up",
+        "industries": [],
+        "gender": "Men",
+        "country_of_origin": "CN",
+        "video_url": null,
+        "certificates": []
+      },
+      "meta": {
+        "commodity_code": "6403400000",
+        "related_vendor_product_ids": []
+      },
+      "colours": [
+        {
+          "name": "Black",
+          "hex": null
+        }
+      ],
+      "variants": [
+        {
+          "sku": "FS-00345-00772-03",
+          "ean": "5038601016828",
+          "colour": "Black",
+          "shoe_size": "5",
+          "eu_size": "38",
+          "stock": 21,
+          "price": 4048,
+          "compare_price": 4199,
+          "tax_class": "zero-protective",
+          "weight_kg": 1.65,
+          "length_mm": 340.0,
+          "width_mm": 240.0,
+          "height_mm": 130.0,
+          "meta": {
+            "vendor_sku": "00345-00772-03",
+            "vendor_product_name": "FS30C Lace-up Safety Boot",
+            "vendor_colour": "Black",
+            "vendor_size": "5"
+          }
+        },
+        {
+          "sku": "FS-00345-00772-04",
+          "ean": "5038601016835",
+          "colour": "Black",
+          "shoe_size": "6",
+          "eu_size": "39",
+          "stock": 81,
+          "price": 4048,
+          "compare_price": 4199,
+          "tax_class": "zero-protective",
+          "weight_kg": 1.65,
+          "length_mm": 340.0,
+          "width_mm": 240.0,
+          "height_mm": 130.0,
+          "meta": {
+            "vendor_sku": "00345-00772-04",
+            "vendor_product_name": "FS30C Lace-up Safety Boot",
+            "vendor_colour": "Black",
+            "vendor_size": "6"
+          }
+        },
+        {
+          "sku": "FS-00345-00772-05",
+          "ean": "5038601016842",
+          "colour": "Black",
+          "shoe_size": "7",
+          "eu_size": "41",
+          "stock": 98,
+          "price": 4048,
+          "compare_price": 4199,
+          "tax_class": "zero-protective",
+          "weight_kg": 1.65,
+          "length_mm": 340.0,
+          "width_mm": 240.0,
+          "height_mm": 130.0,
+          "meta": {
+            "vendor_sku": "00345-00772-05",
+            "vendor_product_name": "FS30C Lace-up Safety Boot",
+            "vendor_colour": "Black",
+            "vendor_size": "7"
+          }
+        }
+      ]
+    },
+    {
+      "vendor_code": "FS",
+      "vendor_product_id": "48-00480",
+      "product_type": "safety-footwear",
+      "status": "published",
+      "brand": "GBS",
+      "collections": [
+        "slippers"
+      ],
+      "ranges": [
+        "clearance"
+      ],
+      "attributes": {
+        "name": "Eva",
+        "title": "Eva",
+        "short_description": null,
+        "description": "Women's traditional corduroy slippers crafted with a soft textile upper and opening. Luxury faux microfibre fur lines this slipper and a foam layered foot bed cushions the feet. Lightweight and flexible vulcanised rubber outsole.",
+        "key_points": [
+          "Textile Ladies Slip-On Slipper",
+          "Footform Last follows the natural contours of the foot ensuring an excellent fit",
+          "Full Textile and Sock Lining for your added comfort",
+          "Vulcanised Sponge Rubber for cushioned comfort and insulation against transferable heat loss",
+          "Hard Wearing Outer Sole",
+          "Heel Block offer firm heel support and balanced weight distribution",
+          "Heel Stiffner for added support and shape retention",
+          "A great all round slipper to keep your feet warm and toasty on those cold winter days.",
+          "Outdoor Sole"
+        ],
+        "safety_class": null,
+        "features": [],
+        "standards": [],
+        "toecap": null,
+        "midsole": null,
+        "outsole": "Rubber",
+        "upper": "Textile",
+        "lining": "Textile",
+        "cut": null,
+        "fastening": "Slip On",
+        "industries": [],
+        "gender": "Women",
+        "country_of_origin": "ES",
+        "video_url": null,
+        "certificates": []
+      },
+      "meta": {
+        "commodity_code": "6404191000",
+        "related_vendor_product_ids": []
+      },
+      "colours": [
+        {
+          "name": "Blue",
+          "hex": null
+        }
+      ],
+      "variants": [
+        {
+          "sku": "FS-00048-00480-03",
+          "ean": "5038600136183",
+          "colour": "Blue",
+          "shoe_size": "3",
+          "eu_size": "36",
+          "stock": 35,
+          "price": 1498,
+          "compare_price": 1999,
+          "tax_class": "standard",
+          "weight_kg": 0.632,
+          "length_mm": 300.0,
+          "width_mm": 160.0,
+          "height_mm": 100.0,
+          "meta": {
+            "vendor_sku": "00048-00480-03",
+            "vendor_product_name": "Eva",
+            "vendor_colour": "Blue",
+            "vendor_size": "3"
+          }
+        },
+        {
+          "sku": "FS-00048-00480-04",
+          "ean": "5038600136190",
+          "colour": "Blue",
+          "shoe_size": "4",
+          "eu_size": "37",
+          "stock": 0,
+          "price": 1498,
+          "compare_price": 1999,
+          "tax_class": "standard",
+          "weight_kg": 0.632,
+          "length_mm": 300.0,
+          "width_mm": 160.0,
+          "height_mm": 100.0,
+          "meta": {
+            "vendor_sku": "00048-00480-04",
+            "vendor_product_name": "Eva",
+            "vendor_colour": "Blue",
+            "vendor_size": "4"
+          }
+        },
+        {
+          "sku": "FS-00048-00480-05",
+          "ean": "5038600136206",
+          "colour": "Blue",
+          "shoe_size": "5",
+          "eu_size": "38",
+          "stock": 0,
+          "price": 1498,
+          "compare_price": 1999,
+          "tax_class": "standard",
+          "weight_kg": 0.632,
+          "length_mm": 300.0,
+          "width_mm": 160.0,
+          "height_mm": 100.0,
+          "meta": {
+            "vendor_sku": "00048-00480-05",
+            "vendor_product_name": "Eva",
+            "vendor_colour": "Blue",
+            "vendor_size": "5"
+          }
+        },
+        {
+          "sku": "FS-00048-00480-06",
+          "ean": "5038600136213",
+          "colour": "Blue",
+          "shoe_size": "6",
+          "eu_size": "39",
+          "stock": 0,
+          "price": 1498,
+          "compare_price": 1999,
+          "tax_class": "standard",
+          "weight_kg": 0.632,
+          "length_mm": 300.0,
+          "width_mm": 160.0,
+          "height_mm": 100.0,
+          "meta": {
+            "vendor_sku": "00048-00480-06",
+            "vendor_product_name": "Eva",
+            "vendor_colour": "Blue",
+            "vendor_size": "6"
+          }
+        },
+        {
+          "sku": "FS-00048-00480-07",
+          "ean": "5038600136220",
+          "colour": "Blue",
+          "shoe_size": "7",
+          "eu_size": "40",
+          "stock": 0,
+          "price": 1498,
+          "compare_price": 1999,
+          "tax_class": "standard",
+          "weight_kg": 0.632,
+          "length_mm": 300.0,
+          "width_mm": 160.0,
+          "height_mm": 100.0,
+          "meta": {
+            "vendor_sku": "00048-00480-07",
+            "vendor_product_name": "Eva",
+            "vendor_colour": "Blue",
+            "vendor_size": "7"
+          }
+        },
+        {
+          "sku": "FS-00048-00480-08",
+          "ean": "5038600136237",
+          "colour": "Blue",
+          "shoe_size": "8",
+          "eu_size": "41",
+          "stock": 0,
+          "price": 1498,
+          "compare_price": 1999,
+          "tax_class": "standard",
+          "weight_kg": 0.632,
+          "length_mm": 300.0,
+          "width_mm": 160.0,
+          "height_mm": 100.0,
+          "meta": {
+            "vendor_sku": "00048-00480-08",
+            "vendor_product_name": "Eva",
+            "vendor_colour": "Blue",
+            "vendor_size": "8"
+          }
+        },
+        {
+          "sku": "FS-00048-00480-09",
+          "ean": "5038600136244",
+          "colour": "Blue",
+          "shoe_size": "9",
+          "eu_size": "42",
+          "stock": 0,
+          "price": 1498,
+          "compare_price": 1999,
+          "tax_class": "standard",
+          "weight_kg": 0.632,
+          "length_mm": 300.0,
+          "width_mm": 160.0,
+          "height_mm": 100.0,
+          "meta": {
+            "vendor_sku": "00048-00480-09",
+            "vendor_product_name": "Eva",
+            "vendor_colour": "Blue",
+            "vendor_size": "9"
+          }
+        }
+      ]
+    },
+    {
+      "vendor_code": "FS",
+      "vendor_product_id": "52-00095",
+      "product_type": "safety-footwear",
+      "status": "published",
+      "brand": "GBS",
+      "collections": [
+        "slippers"
+      ],
+      "ranges": [],
+      "attributes": {
+        "name": "Exeter Slipper",
+        "title": "Twin Gusset Slipper",
+        "short_description": null,
+        "description": "Comfortable traditional Mens slipper featuring a twin gusset for ease of wear and a sturdy outdoor sole",
+        "key_points": [
+          "Traditional Slipper",
+          "Hardwearing Corduroy Upper",
+          "Twin gusset for easy access and extra fit",
+          "Outdoor Sole"
+        ],
+        "safety_class": null,
+        "features": [],
+        "standards": [],
+        "toecap": null,
+        "midsole": null,
+        "outsole": "Rubber",
+        "upper": "Textile",
+        "lining": "Textile",
+        "cut": null,
+        "fastening": "Slip On",
+        "industries": [],
+        "gender": "Men",
+        "country_of_origin": "ES",
+        "video_url": null,
+        "certificates": []
+      },
+      "meta": {
+        "commodity_code": "6404191000",
+        "related_vendor_product_ids": []
+      },
+      "colours": [
+        {
+          "name": "Brown",
+          "hex": null
+        }
+      ],
+      "variants": [
+        {
+          "sku": "FS-00052-00095-01",
+          "ean": "5038600137746",
+          "colour": "Brown",
+          "shoe_size": "6",
+          "eu_size": "39",
+          "stock": 16,
+          "price": 2624,
+          "compare_price": 3332,
+          "tax_class": "standard",
+          "weight_kg": 0.75,
+          "length_mm": 300.0,
+          "width_mm": 165.0,
+          "height_mm": 110.0,
+          "meta": {
+            "vendor_sku": "00052-00095-01",
+            "vendor_product_name": "Twin Gusset Slipper",
+            "vendor_colour": "Brown",
+            "vendor_size": "6"
+          }
+        },
+        {
+          "sku": "FS-00052-00095-02",
+          "ean": "5038600137753",
+          "colour": "Brown",
+          "shoe_size": "7",
+          "eu_size": "41",
+          "stock": 25,
+          "price": 2624,
+          "compare_price": 3332,
+          "tax_class": "standard",
+          "weight_kg": 0.75,
+          "length_mm": 300.0,
+          "width_mm": 165.0,
+          "height_mm": 110.0,
+          "meta": {
+            "vendor_sku": "00052-00095-02",
+            "vendor_product_name": "Twin Gusset Slipper",
+            "vendor_colour": "Brown",
+            "vendor_size": "7"
+          }
+        },
+        {
+          "sku": "FS-00052-00095-03",
+          "ean": "5038600137760",
+          "colour": "Brown",
+          "shoe_size": "8",
+          "eu_size": "42",
+          "stock": 0,
+          "price": 2624,
+          "compare_price": 3332,
+          "tax_class": "standard",
+          "weight_kg": 0.75,
+          "length_mm": 300.0,
+          "width_mm": 165.0,
+          "height_mm": 110.0,
+          "meta": {
+            "vendor_sku": "00052-00095-03",
+            "vendor_product_name": "Twin Gusset Slipper",
+            "vendor_colour": "Brown",
+            "vendor_size": "8"
+          }
+        },
+        {
+          "sku": "FS-00052-00095-04",
+          "ean": "5038600137777",
+          "colour": "Brown",
+          "shoe_size": "9",
+          "eu_size": "43",
+          "stock": 3,
+          "price": 2624,
+          "compare_price": 3332,
+          "tax_class": "standard",
+          "weight_kg": 0.75,
+          "length_mm": 300.0,
+          "width_mm": 165.0,
+          "height_mm": 110.0,
+          "meta": {
+            "vendor_sku": "00052-00095-04",
+            "vendor_product_name": "Twin Gusset Slipper",
+            "vendor_colour": "Brown",
+            "vendor_size": "9"
+          }
+        },
+        {
+          "sku": "FS-00052-00095-05",
+          "ean": "5038600137784",
+          "colour": "Brown",
+          "shoe_size": "10",
+          "eu_size": "44",
+          "stock": 0,
+          "price": 2624,
+          "compare_price": 3332,
+          "tax_class": "standard",
+          "weight_kg": 0.75,
+          "length_mm": 300.0,
+          "width_mm": 165.0,
+          "height_mm": 110.0,
+          "meta": {
+            "vendor_sku": "00052-00095-05",
+            "vendor_product_name": "Twin Gusset Slipper",
+            "vendor_colour": "Brown",
+            "vendor_size": "10"
+          }
+        },
+        {
+          "sku": "FS-00052-00095-06",
+          "ean": "5038600137791",
+          "colour": "Brown",
+          "shoe_size": "11",
+          "eu_size": "45",
+          "stock": 9,
+          "price": 2624,
+          "compare_price": 3332,
+          "tax_class": "standard",
+          "weight_kg": 0.75,
+          "length_mm": 300.0,
+          "width_mm": 165.0,
+          "height_mm": 110.0,
+          "meta": {
+            "vendor_sku": "00052-00095-06",
+            "vendor_product_name": "Twin Gusset Slipper",
+            "vendor_colour": "Brown",
+            "vendor_size": "11"
+          }
+        },
+        {
+          "sku": "FS-00052-00095-07",
+          "ean": "5038600137807",
+          "colour": "Brown",
+          "shoe_size": "12",
+          "eu_size": "46",
+          "stock": 15,
+          "price": 2624,
+          "compare_price": 3332,
+          "tax_class": "standard",
+          "weight_kg": 0.75,
+          "length_mm": 300.0,
+          "width_mm": 165.0,
+          "height_mm": 110.0,
+          "meta": {
+            "vendor_sku": "00052-00095-07",
+            "vendor_product_name": "Twin Gusset Slipper",
+            "vendor_colour": "Brown",
+            "vendor_size": "12"
+          }
+        },
+        {
+          "sku": "FS-00052-00095-08",
+          "ean": "5038600137814",
+          "colour": "Brown",
+          "shoe_size": "13",
+          "eu_size": "47",
+          "stock": 2,
+          "price": 2624,
+          "compare_price": 3332,
+          "tax_class": "standard",
+          "weight_kg": 0.75,
+          "length_mm": 300.0,
+          "width_mm": 165.0,
+          "height_mm": 110.0,
+          "meta": {
+            "vendor_sku": "00052-00095-08",
+            "vendor_product_name": "Twin Gusset Slipper",
+            "vendor_colour": "Brown",
+            "vendor_size": "13"
+          }
+        }
+      ]
+    }
+  ]
+}
