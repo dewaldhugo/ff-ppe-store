@@ -1,0 +1,361 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Livewire\Catalogue;
+
+use App\Domain\Catalogue\Features\FeatureLabels;
+use App\Domain\Catalogue\Seo\ProductStructuredData;
+use App\Domain\Catalogue\Variants\VariantSelection;
+use App\Domain\Pricing\DisplayPrice;
+use App\Domain\Pricing\PriceDisplay;
+use Illuminate\Contracts\View\View;
+use Illuminate\Support\HtmlString;
+use Livewire\Attributes\Locked;
+use Livewire\Attributes\Url;
+use Livewire\Component;
+use Lunar\Models\Product;
+use Lunar\Models\ProductVariant;
+use Lunar\Models\Url as LunarUrl;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
+
+/**
+ * Product detail page (/p/{slug}). The selection rules themselves live in
+ * VariantSelection; this component only holds the customer's choices.
+ */
+final class ProductPage extends Component
+{
+    /** Show "Only N left" at or below this quantity. */
+    private const int LOW_STOCK = 5;
+
+    private const array SPECIFICATION = [
+        'safety_class' => 'Safety class',
+        'features' => 'Features',
+        'standards' => 'Standards',
+        'toecap' => 'Toecap',
+        'midsole' => 'Midsole',
+        'outsole' => 'Outsole',
+        'upper' => 'Upper',
+        'lining' => 'Lining',
+        'cut' => 'Cut',
+    ];
+
+    #[Locked]
+    public int $productId;
+
+    #[Locked]
+    public string $slug;
+
+    /** The chosen colour, kept in the query string (?colour=navy). */
+    #[Url(except: '')]
+    public string $colour = '';
+
+    /**
+     * Choices for the other options, by option handle.
+     *
+     * @var array<string, string>
+     */
+    public array $choices = [];
+
+    /** Handle of the option the customer still has to choose, once they try to add to cart. */
+    public ?string $missingOption = null;
+
+    public bool $added = false;
+
+    private ?Product $product = null;
+
+    public function mount(string $slug): void
+    {
+        $url = LunarUrl::query()
+            ->where('element_type', Product::morphName())
+            ->where('slug', $slug)
+            ->first();
+
+        $product = $url === null ? null : Product::query()->find($url->element_id);
+
+        abort_if($product === null || $product->status !== 'published', 404);
+
+        $this->productId = $product->id;
+        $this->slug = $slug;
+
+        $this->sync($this->selection());
+    }
+
+    public function choose(string $handle, string $key): void
+    {
+        $selection = $this->selection()->select($handle, $key);
+
+        $this->sync($selection);
+        $this->missingOption = null;
+        $this->added = false;
+    }
+
+    public function addToCart(): void
+    {
+        $selection = $this->selection();
+        $this->added = false;
+
+        if (! $selection->isComplete()) {
+            $this->missingOption = $selection->missing()[0];
+
+            return;
+        }
+
+        $this->missingOption = null;
+
+        if (! $selection->canAddToCart()) {
+            return;
+        }
+
+        // The basket arrives in the next phase. For now the page confirms
+        // that the selection is valid.
+        $this->added = true;
+    }
+
+    public function render(PriceDisplay $priceDisplay, ProductStructuredData $structuredData): View
+    {
+        $product = $this->product();
+        $selection = $this->selection();
+        $variant = $selection->variant();
+        $canonical = route('product', $this->slug);
+
+        return view('livewire.catalogue.product-page', [
+            'product' => $product,
+            'selection' => $selection,
+            'options' => $selection->options(),
+            'variant' => $variant,
+            'images' => $this->images($product, $selection),
+            'price' => $this->price($priceDisplay, $selection, $variant),
+            'pricesVary' => $variant === null && $this->pricesVary($selection),
+            'stockMessage' => $this->stockMessage($selection, $variant),
+            'canAdd' => $variant === null || $variant->stock > 0,
+            'euSizes' => $this->euSizes($product, $selection),
+            'specification' => $this->specification($product),
+            'paragraphs' => preg_split('/\R{2,}|\R/', trim((string) $product->translateAttribute('description')), flags: PREG_SPLIT_NO_EMPTY) ?: [],
+            'videoUrl' => $this->videoUrl($product),
+            'related' => $this->related($product),
+            'priceDisplay' => $priceDisplay,
+            'missingPrompt' => $this->missingOption === null ? null : $selection->promptFor($this->missingOption),
+        ])->layout('components.layouts.storefront', [
+            'title' => $this->pageTitle($product),
+            'description' => $product->translateAttribute('short_description') ?: null,
+            'canonical' => $canonical,
+            'head' => new HtmlString(
+                '<script type="application/ld+json">'.$structuredData->toJson($product, $canonical).'</script>'
+            ),
+        ]);
+    }
+
+    /**
+     * Brand, name and descriptive title, without repeating the name when
+     * the title already contains it.
+     */
+    private function pageTitle(Product $product): string
+    {
+        $name = (string) $product->translateAttribute('name');
+        $title = (string) $product->translateAttribute('title');
+
+        $parts = [
+            $product->brand?->name,
+            $title !== '' && str_contains(mb_strtolower($title), mb_strtolower($name)) ? $title : trim($name.' '.$title),
+        ];
+
+        return implode(' ', array_filter($parts));
+    }
+
+    private function product(): Product
+    {
+        return $this->product ??= Product::query()
+            ->with([
+                'brand',
+                'media',
+                'variants.values.option',
+                'variants.prices',
+            ])
+            ->findOrFail($this->productId);
+    }
+
+    private function selection(): VariantSelection
+    {
+        return VariantSelection::forProduct($this->product(), [
+            'colour' => $this->colour === '' ? null : $this->colour,
+            ...$this->choices,
+        ]);
+    }
+
+    /**
+     * Copy the selection's state back to the component, so choices that
+     * were dropped or made automatically are reflected in the page and URL.
+     */
+    private function sync(VariantSelection $selection): void
+    {
+        $selected = $selection->selected();
+
+        $this->colour = $selected['colour'] ?? '';
+        unset($selected['colour']);
+        $this->choices = $selected;
+    }
+
+    /**
+     * The selected colour's images, or every image when the product has no
+     * colour option or no image for that colour.
+     *
+     * @return list<Media>
+     */
+    private function images(Product $product, VariantSelection $selection): array
+    {
+        $all = $product->getMedia(config('lunar.media.collection'));
+        $colourName = $selection->selectedName('colour');
+
+        if ($colourName !== null) {
+            $matching = $all->filter(fn ($media): bool => $media->getCustomProperty('colour') === $colourName);
+
+            if ($matching->isNotEmpty()) {
+                return $matching->values()->all();
+            }
+        }
+
+        return $all->values()->all();
+    }
+
+    private function price(PriceDisplay $priceDisplay, VariantSelection $selection, ?ProductVariant $variant): ?DisplayPrice
+    {
+        if ($variant !== null) {
+            return $priceDisplay->forVariant($variant);
+        }
+
+        $lowest = null;
+
+        foreach ($selection->matchingVariants() as $candidate) {
+            if ($candidate->prices->isEmpty()) {
+                continue;
+            }
+
+            $price = $priceDisplay->forVariant($candidate);
+
+            if ($lowest === null || $price->price->value < $lowest->price->value) {
+                $lowest = $price;
+            }
+        }
+
+        return $lowest;
+    }
+
+    private function pricesVary(VariantSelection $selection): bool
+    {
+        $values = [];
+
+        foreach ($selection->matchingVariants() as $candidate) {
+            foreach ($candidate->prices as $price) {
+                $values[$price->price->value] = true;
+            }
+        }
+
+        return count($values) > 1;
+    }
+
+    private function stockMessage(VariantSelection $selection, ?ProductVariant $variant): string
+    {
+        if ($variant !== null) {
+            return match (true) {
+                $variant->stock <= 0 => 'Out of stock',
+                $variant->stock <= self::LOW_STOCK => "Only {$variant->stock} left",
+                default => 'In stock',
+            };
+        }
+
+        foreach ($selection->matchingVariants() as $candidate) {
+            if ($candidate->stock > 0) {
+                return 'In stock';
+            }
+        }
+
+        return 'Out of stock';
+    }
+
+    /**
+     * EU size by UK size, taken from the selected colour's variants first.
+     *
+     * @return array<string, string>
+     */
+    private function euSizes(Product $product, VariantSelection $selection): array
+    {
+        $colour = $selection->selectedName('colour');
+        $sizes = [];
+
+        foreach ($product->variants as $variant) {
+            $size = $variant->values->firstWhere('option.handle', 'shoe_size')?->translate('name');
+            $eu = $variant->attr('eu_size');
+
+            if ($size === null || blank($eu)) {
+                continue;
+            }
+
+            $isSelectedColour = $colour !== null
+                && $variant->values->firstWhere('option.handle', 'colour')?->translate('name') === $colour;
+
+            if ($isSelectedColour || ! isset($sizes[(string) $size])) {
+                $sizes[(string) $size] = (string) $eu;
+            }
+        }
+
+        return $sizes;
+    }
+
+    /**
+     * @return list<array{label: string, values: list<array{text: string, tooltip: ?string}>}>
+     */
+    private function specification(Product $product): array
+    {
+        $rows = [];
+
+        foreach (self::SPECIFICATION as $handle => $label) {
+            $raw = $product->attr($handle);
+            $items = array_values(array_filter(is_array($raw) ? $raw : [$raw], filled(...)));
+
+            if ($items === []) {
+                continue;
+            }
+
+            $rows[] = [
+                'label' => $label,
+                'values' => array_map(fn (mixed $item): array => $handle === 'features'
+                    ? ['text' => FeatureLabels::label((string) $item), 'tooltip' => FeatureLabels::tooltip((string) $item)]
+                    : ['text' => (string) $item, 'tooltip' => null], $items),
+            ];
+        }
+
+        return $rows;
+    }
+
+    /**
+     * Only YouTube embed URLs are put in an iframe.
+     */
+    private function videoUrl(Product $product): ?string
+    {
+        $url = (string) $product->attr('video_url');
+
+        return preg_match('#^https://www\.youtube(-nocookie)?\.com/embed/[\w-]+$#', $url) === 1 ? $url : null;
+    }
+
+    /**
+     * Published cross-sell products.
+     *
+     * @return list<Product>
+     */
+    private function related(Product $product): array
+    {
+        $ids = $product->associations()->crossSell()->pluck('product_target_id');
+
+        if ($ids->isEmpty()) {
+            return [];
+        }
+
+        return Product::query()
+            ->whereIn('id', $ids)
+            ->where('status', 'published')
+            ->with(['brand', 'defaultUrl', 'thumbnail', 'variants.prices'])
+            ->get()
+            ->all();
+    }
+}

@@ -14,4 +14,12 @@ abstract class TestCase extends BaseTestCase
      * transaction on top of that data.
      */
     protected bool $seed = true;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Pages must render without built assets or a running dev server.
+        $this->withoutVite();
+    }
 }
