@@ -1,0 +1,473 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Domain\VendorSync\SafetyJogger;
+
+use App\Domain\VendorSync\Contracts\VendorMapper;
+use App\Domain\VendorSync\Data\MappingResult;
+use App\Domain\VendorSync\Data\NormalisedImage;
+use App\Domain\VendorSync\Data\NormalisedProduct;
+use App\Domain\VendorSync\Data\NormalisedVariant;
+use App\Domain\VendorSync\Data\RawRecord;
+use App\Domain\VendorSync\Import\DraftReason;
+use App\Domain\VendorSync\Normalisers\Features;
+use App\Domain\VendorSync\Normalisers\Money;
+use App\Domain\VendorSync\Normalisers\PriceCalculator;
+use App\Domain\VendorSync\Normalisers\SafetyClass;
+use App\Domain\VendorSync\Normalisers\Sizes;
+use Illuminate\Support\Str;
+
+/**
+ * Maps a Safety Jogger `GET /product/{id}` response to a normalised
+ * product.
+ */
+final readonly class SafetyJoggerMapper implements VendorMapper
+{
+    public const string VENDOR_CODE = 'SJ';
+
+    private const string SAFETY_NORM = 'EN ISO 20345';
+
+    private const string OCCUPATIONAL_NORM = 'EN ISO 20347';
+
+    /**
+     * @param  array<string, mixed>  $config  The `vendorsync.safety_jogger` config.
+     * @param  array<array-key, string>  $sizeChart  EU size => UK size.
+     */
+    public function __construct(
+        private array $config,
+        private array $sizeChart,
+        private Features $features,
+        private PriceCalculator $prices,
+    ) {}
+
+    public function map(RawRecord $record): MappingResult
+    {
+        $data = $record->payload;
+        $vendorName = (string) ($data['name'] ?? '');
+        $label = "Safety Jogger product {$record->externalId} ({$vendorName})";
+
+        // Scope: an article type on the list AND an EN ISO 20345 or 20347 norm.
+        $articleTypes = $this->names($data['articletype'] ?? []);
+        $articleType = collect($articleTypes)->first(fn (string $type): bool => in_array($type, $this->config['article_types'] ?? [], true));
+
+        if ($articleType === null) {
+            return MappingResult::outOfScope('article_type');
+        }
+
+        $norms = $this->values($data['norms'] ?? []);
+        $family = $this->normFamily($norms);
+
+        if ($family === null) {
+            return MappingResult::outOfScope('no_en_iso_norm');
+        }
+
+        $brand = (string) ($data['brandDescription'] ?? '');
+
+        if (collect($this->config['excluded_brands'] ?? [])->contains(fn (string $excluded): bool => Str::lower($excluded) === Str::lower($brand))) {
+            return MappingResult::outOfScope('excluded_brand');
+        }
+
+        $messages = [];
+        $draftReasons = [];
+
+        $model = $this->names($data['model'] ?? [])[0] ?? null;
+        $categories = $this->config['categories'][$family][$articleType] ?? [];
+        $collection = $categories[$model ?? ''] ?? $categories['*'] ?? null;
+
+        if ($collection === null) {
+            $draftReasons[] = DraftReason::UNMAPPED_CATEGORY;
+            $messages[] = "{$label}: article type '{$articleType}' with model '".($model ?? 'none')."' ({$family}) is not mapped to a collection; product drafted.";
+        }
+
+        $cut = $model === null ? null : ($this->config['cut_map'][$model] ?? null);
+
+        if ($model !== null && $cut === null) {
+            $messages[] = "{$label}: model '{$model}' has no cut mapping.";
+        }
+
+        // Boots are zero rated only when they are safety footwear.
+        $taxClass = $family === 'safety' && in_array($model, $this->config['boot_models'] ?? [], true)
+            ? 'zero-protective'
+            : 'standard';
+
+        $codes = $this->values($data['features'] ?? []);
+
+        foreach ($this->names($data['benefits'] ?? [], lower: false) as $benefit) {
+            if (isset($this->config['benefit_map'][$benefit])) {
+                $codes[] = $this->config['benefit_map'][$benefit];
+            }
+        }
+
+        [$features, $unknownFeatures] = $this->features->normalise($codes);
+
+        if ($unknownFeatures !== []) {
+            $messages[] = "{$label}: unknown feature codes dropped: ".implode(', ', $unknownFeatures).'.';
+        }
+
+        $weight = $this->weight($data['sample-weight'] ?? []);
+        $variants = [];
+        $images = [];
+        $related = [];
+
+        foreach ($data['colors'] ?? [] as $colourData) {
+            $vendorColour = trim((string) ($colourData['description'] ?? ''));
+            $colour = $vendorColour === '' ? null : Str::title(Str::lower($vendorColour));
+
+            if ($colour === null) {
+                $messages[] = "{$label}: a colour has no description; its SKUs were skipped.";
+
+                continue;
+            }
+
+            foreach ($colourData['alternatives'] ?? [] as $alternative) {
+                if (filled($alternative['productId'] ?? null)) {
+                    $related[(string) $alternative['productId']] = true;
+                }
+            }
+
+            $hex = $this->hex($colourData['hexValue'] ?? null);
+            $created = 0;
+
+            foreach ($colourData['skus'] ?? [] as $sku) {
+                $variant = $this->variant($sku, $vendorName, $vendorColour, $colour, $hex, $taxClass, $weight, $label, $messages, $draftReasons);
+
+                if ($variant !== null) {
+                    $variants[] = $variant;
+                    $created++;
+                }
+            }
+
+            if ($created > 0) {
+                array_push($images, ...$this->images($colourData['images'] ?? [], $colour));
+            }
+        }
+
+        if ($variants === []) {
+            return MappingResult::error("{$label}: no variant can be imported (no prices or no usable sizes).", $messages);
+        }
+
+        return MappingResult::product(new NormalisedProduct(
+            vendorCode: self::VENDOR_CODE,
+            vendorProductId: $record->externalId,
+            productType: 'safety-footwear',
+            brand: $brand === '' ? null : $brand,
+            name: $this->productName((string) ($data['commercialName'] ?? $vendorName) ?: $vendorName),
+            title: $this->first($data['productTitles'] ?? []),
+            shortDescription: $this->first($data['shortDescriptions'] ?? []),
+            description: $this->first($data['product-long-description'] ?? []),
+            keyPoints: $this->keyPoints($data['keyFeatures'] ?? []),
+            safetyClass: SafetyClass::normalise($this->first($data['standards'] ?? [])),
+            features: $features,
+            // Stored verbatim, including amendments such as "+A1:2024".
+            standards: $norms,
+            toecap: $this->joined($data['toecap'] ?? []),
+            midsole: $this->joined($data['midsole'] ?? []),
+            outsole: $this->joined($data['outsole'] ?? []),
+            upper: $this->joined($data['upper'] ?? []),
+            lining: $this->joined($data['lining'] ?? []),
+            cut: $cut,
+            fastening: null,
+            industries: $this->values($data['industries'] ?? []),
+            // The vendor does not supply a gender.
+            gender: 'Unisex',
+            countryOfOrigin: $this->country($data['countryOfOrigin'] ?? null),
+            videoUrl: $this->video($data['productVideos'] ?? []),
+            // Certificate PDFs are not mirrored yet.
+            certificates: [],
+            collections: $collection === null ? [] : [$collection],
+            clearance: false,
+            draftReasons: array_values(array_unique($draftReasons)),
+            commodityCode: $this->commodityCode($data['taricCodes'] ?? []),
+            relatedVendorProductIds: array_map(strval(...), array_keys($related)),
+            variants: $variants,
+            images: $images,
+        ), $messages);
+    }
+
+    /**
+     * @param  array<string, mixed>  $sku
+     * @param  list<string>  $messages
+     * @param  list<string>  $draftReasons
+     */
+    private function variant(
+        array $sku,
+        string $vendorName,
+        string $vendorColour,
+        string $colour,
+        ?string $hex,
+        string $taxClass,
+        ?float $weight,
+        string $label,
+        array &$messages,
+        array &$draftReasons,
+    ): ?NormalisedVariant {
+        // Identity is the SKU id, never the EAN: the real feed has
+        // duplicate EANs and SKUs without one.
+        $skuId = (string) ($sku['id'] ?? '');
+
+        if ($skuId === '') {
+            return null;
+        }
+
+        if ((int) ($sku['pieces'] ?? 1) !== 1 || (int) ($sku['buyPer'] ?? 1) !== 1) {
+            $messages[] = "{$label}: SKU {$skuId} is not sold per single pair; variant not imported.";
+
+            return null;
+        }
+
+        $eu = trim((string) ($sku['sizeRange'] ?? ''));
+        $uk = Sizes::fromChart($this->sizeChart, $eu);
+
+        if ($uk === null) {
+            $draftReasons[] = DraftReason::UNKNOWN_SIZE;
+            $messages[] = "{$label}: SKU {$skuId} has EU size '{$eu}', which is not in the size chart; product drafted.";
+
+            return null;
+        }
+
+        $cost = Money::toPence($sku['customerPrice']['value'] ?? null);
+        $rrp = Money::toPence($sku['rrpPrice']['value'] ?? null);
+        // RRP is VAT-inclusive at 20% whatever the tax class.
+        $price = $this->prices->calculate(
+            $cost,
+            $rrp === null ? null : Money::exVat($rrp, (int) ($this->config['rrp_vat_basis_points'] ?? 2000)),
+        );
+
+        if ($price['price'] === null) {
+            $messages[] = "{$label}: SKU {$skuId} has no cost; variant not imported.";
+
+            return null;
+        }
+
+        if ($price['reason'] === PriceCalculator::COST_AT_OR_ABOVE_RRP) {
+            $messages[] = "{$label}: SKU {$skuId} has a cost at or above its RRP; stock set to 0.";
+        }
+
+        $ean = trim((string) ($sku['eanCode'] ?? ''));
+
+        return new NormalisedVariant(
+            vendorSku: $skuId,
+            sku: self::VENDOR_CODE.'-'.$skuId,
+            ean: $ean === '' ? null : $ean,
+            colour: $colour,
+            colourHex: $hex,
+            shoeSize: $uk,
+            sizeSort: Sizes::sort($uk),
+            euSize: $eu,
+            vendorStock: max(0, (int) ($sku['stock'] ?? 0)),
+            sellable: $price['sellable'],
+            price: $price['price'],
+            comparePrice: $price['compare'],
+            costPrice: $cost,
+            taxClass: $taxClass,
+            weightKg: $weight,
+            lengthMm: null,
+            widthMm: null,
+            heightMm: null,
+            vendorProductName: $vendorName,
+            vendorColour: $vendorColour,
+            vendorSize: $eu,
+        );
+    }
+
+    /**
+     * Per colour: the first `hires` entry is the main image and the rest
+     * are details; `outsole` is the outsole. Without `hires`, fall back to
+     * `web`, then to `main`. The 360-degree frames are skipped.
+     *
+     * @return list<NormalisedImage>
+     */
+    private function images(mixed $images, string $colour): array
+    {
+        if (! is_array($images)) {
+            return [];
+        }
+
+        $gallery = $this->urls($images['hires'] ?? []);
+
+        if ($gallery === []) {
+            $gallery = $this->urls($images['web'] ?? []);
+        }
+
+        if ($gallery === []) {
+            $gallery = $this->urls([$images['main'] ?? null]);
+        }
+
+        $result = [];
+
+        foreach ($gallery as $index => $url) {
+            $result[] = new NormalisedImage($url, $colour, $index === 0 ? 'main' : 'detail');
+        }
+
+        foreach ($this->urls([$images['outsole'] ?? null]) as $url) {
+            $result[] = new NormalisedImage($url, $colour, 'outsole');
+        }
+
+        return $result;
+    }
+
+    /**
+     * Only real URLs. An unauthenticated response carries timestamps here.
+     *
+     * @return list<string>
+     */
+    private function urls(mixed $candidates): array
+    {
+        if (! is_array($candidates)) {
+            return [];
+        }
+
+        return array_values(array_filter(
+            $candidates,
+            fn (mixed $url): bool => is_string($url) && preg_match('#^https?://#i', $url) === 1,
+        ));
+    }
+
+    /**
+     * @param  list<string>  $norms
+     */
+    private function normFamily(array $norms): ?string
+    {
+        $contains = fn (string $norm): bool => collect($norms)->contains(fn (string $value): bool => str_contains($value, $norm));
+
+        return match (true) {
+            $contains(self::SAFETY_NORM) => 'safety',
+            $contains(self::OCCUPATIONAL_NORM) => 'occupational',
+            default => null,
+        };
+    }
+
+    /**
+     * The vendor writes names in capitals (`LIGERO`). Words made of letters
+     * are title cased; model codes with digits (`SX310`) are kept.
+     */
+    private function productName(string $name): string
+    {
+        $words = preg_split('/\s+/', trim($name), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+        return implode(' ', array_map(
+            fn (string $word): string => preg_match('/\d/', $word) === 1 ? $word : Str::title(Str::lower($word)),
+            $words,
+        ));
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function keyPoints(mixed $keyFeatures): array
+    {
+        $points = [];
+
+        foreach (is_array($keyFeatures) ? $keyFeatures : [] as $feature) {
+            $point = trim((string) (($feature['title'] ?? '') ?: ($feature['value'] ?? '')));
+
+            if ($point !== '') {
+                $points[] = $point;
+            }
+        }
+
+        return $points;
+    }
+
+    /**
+     * The `value` of each property, blanks removed.
+     *
+     * @return list<string>
+     */
+    private function values(mixed $properties): array
+    {
+        $values = [];
+
+        foreach (is_array($properties) ? $properties : [] as $property) {
+            $value = trim((string) ($property['value'] ?? ''));
+
+            if ($value !== '') {
+                $values[] = $value;
+            }
+        }
+
+        return $values;
+    }
+
+    /**
+     * The `name` (code) of each property.
+     *
+     * @return list<string>
+     */
+    private function names(mixed $properties, bool $lower = true): array
+    {
+        $names = [];
+
+        foreach (is_array($properties) ? $properties : [] as $property) {
+            $name = trim((string) ($property['name'] ?? ''));
+
+            if ($name !== '') {
+                $names[] = $lower ? Str::lower($name) : $name;
+            }
+        }
+
+        return $names;
+    }
+
+    private function first(mixed $properties): ?string
+    {
+        return $this->values($properties)[0] ?? null;
+    }
+
+    private function joined(mixed $properties): ?string
+    {
+        $values = $this->values($properties);
+
+        return $values === [] ? null : implode('/', $values);
+    }
+
+    /**
+     * `sample-weight` is kilograms with a decimal comma, e.g. "0,439".
+     */
+    private function weight(mixed $properties): ?float
+    {
+        $value = str_replace(',', '.', (string) $this->first($properties));
+
+        return is_numeric($value) && (float) $value > 0 ? (float) $value : null;
+    }
+
+    private function hex(mixed $hex): ?string
+    {
+        $hex = strtoupper(ltrim(trim((string) $hex), '#'));
+
+        return preg_match('/^[0-9A-F]{6}$/', $hex) === 1 ? $hex : null;
+    }
+
+    private function country(mixed $country): ?string
+    {
+        $iso2 = strtoupper(trim((string) (is_array($country) ? ($country['iso2'] ?? '') : '')));
+
+        return preg_match('/^[A-Z]{2}$/', $iso2) === 1 ? $iso2 : null;
+    }
+
+    private function video(mixed $videos): ?string
+    {
+        foreach (is_array($videos) ? $videos : [] as $video) {
+            if (($video['language'] ?? null) === 'en' && filled($video['path'] ?? null)) {
+                return (string) $video['path'];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * The UK tariff code.
+     */
+    private function commodityCode(mixed $taricCodes): ?string
+    {
+        foreach (is_array($taricCodes) ? $taricCodes : [] as $entry) {
+            if (($entry['country']['iso2'] ?? null) === 'GB' && filled($entry['taricCode'] ?? null)) {
+                return (string) $entry['taricCode'];
+            }
+        }
+
+        return null;
+    }
+}
