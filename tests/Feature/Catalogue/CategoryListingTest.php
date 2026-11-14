@@ -42,7 +42,7 @@ function facetCounts(string $html, string $facet): array
 it('lists the collection and its descendants', function (): void {
     $html = $this->get('/c/safety-footwear')->assertOk()->getContent();
 
-    expect(gridNames($html))->toEqualCanonicalizing(['Ligero', 'SX310', 'FS9', 'FS65', 'FS30C'])
+    expect(gridNames($html))->toEqualCanonicalizing(['LIGERO', 'SX310', 'FS9', 'FS65', 'FS30C'])
         ->and($html)->toContain('5 products');
 });
 
@@ -53,7 +53,7 @@ it('returns 404 for an unknown category', function (): void {
 it('filters Safety Footwear by S1P and SRC down to Ligero and FS65', function (): void {
     $html = $this->get('/c/safety-footwear?safety_class[0]=S1P&features[0]=SRC')->assertOk()->getContent();
 
-    expect(gridNames($html))->toEqualCanonicalizing(['Ligero', 'FS65'])
+    expect(gridNames($html))->toEqualCanonicalizing(['LIGERO', 'FS65'])
         ->and($html)->toContain('2 products');
 });
 
@@ -101,7 +101,7 @@ it('shows an out of stock badge and hides the product when in stock only is tick
         ->set('in_stock', true)
         ->html();
 
-    expect(gridNames($inStock))->toEqualCanonicalizing(['Ligero', 'FS9', 'FS65', 'FS30C']);
+    expect(gridNames($inStock))->toEqualCanonicalizing(['LIGERO', 'FS9', 'FS65', 'FS30C']);
 });
 
 it('filters by colour and size together as a combination', function (): void {
@@ -109,11 +109,11 @@ it('filters by colour and size together as a combination', function (): void {
         ->set('colour', ['black'])
         ->set('size', ['10']);
 
-    expect(gridNames($component->html()))->not->toContain('Ligero');
+    expect(gridNames($component->html()))->not->toContain('LIGERO');
 
     $component->set('colour', ['navy']);
 
-    expect(gridNames($component->html()))->toBe(['Ligero']);
+    expect(gridNames($component->html()))->toBe(['LIGERO']);
 });
 
 it('filters by price in the visitor\'s VAT mode', function (): void {
@@ -123,14 +123,14 @@ it('filters by price in the visitor\'s VAT mode', function (): void {
 
     app(PriceDisplay::class)->setMode(VatDisplayMode::ExVat);
 
-    expect(gridNames($this->get($range)->getContent()))->toBe(['Ligero']);
+    expect(gridNames($this->get($range)->getContent()))->toBe(['LIGERO']);
 });
 
 it('sorts by price and by newest', function (): void {
     $sorted = fn (string $sort): array => gridNames($this->get('/c/safety-footwear?sort='.$sort)->getContent());
 
     expect($sorted('price-asc')[0])->toBe('FS30C')
-        ->and($sorted('price-desc'))->toBe(['Ligero', 'SX310', 'FS9', 'FS65', 'FS30C'])
+        ->and($sorted('price-desc'))->toBe(['LIGERO', 'SX310', 'FS9', 'FS65', 'FS30C'])
         ->and($sorted('newest'))->toHaveCount(5);
 });
 

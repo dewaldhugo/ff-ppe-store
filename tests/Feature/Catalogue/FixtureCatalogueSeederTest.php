@@ -48,7 +48,7 @@ describe('catalogue.json', function (): void {
     it('stores product attributes in their contract types', function (): void {
         $ligero = productBySlug('safety-jogger-ligero');
 
-        expect($ligero->translateAttribute('name'))->toBe('Ligero')
+        expect($ligero->translateAttribute('name'))->toBe('LIGERO')
             ->and($ligero->translateAttribute('title'))->toBe('Lightweight ESD Safety Shoes')
             ->and($ligero->attr('safety_class'))->toBe('S1P')
             ->and($ligero->attr('features'))->toBe(['SRC', 'CI', 'ESD', 'METAL_FREE'])

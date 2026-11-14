@@ -52,7 +52,7 @@ function enabledSizes(string $html): array
 it('shows the product with its price, description and specification', function (): void {
     $this->get('/p/safety-jogger-ligero')
         ->assertOk()
-        ->assertSee('Ligero')
+        ->assertSee('LIGERO')
         ->assertSee('Lightweight ESD Safety Shoes')
         ->assertSee('Ultra-light, flexible safety shoe')
         ->assertSee('£82.68')
@@ -223,7 +223,7 @@ it('outputs Product structured data with an offer per variant', function (): voi
 
     expect($data['@context'])->toBe('https://schema.org')
         ->and($data['@type'])->toBe('Product')
-        ->and($data['name'])->toBe('Safety Jogger Ligero')
+        ->and($data['name'])->toBe('Safety Jogger LIGERO')
         ->and($data['brand'])->toBe(['@type' => 'Brand', 'name' => 'Safety Jogger'])
         ->and($data['url'])->toBe(route('product', 'safety-jogger-ligero'))
         ->and($data['image'])->toHaveCount(3)

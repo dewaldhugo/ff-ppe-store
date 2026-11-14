@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\VendorSync\SafetyJogger;
 
 use App\Domain\VendorSync\Exceptions\SafetyJoggerApiException;
+use App\Domain\VendorSync\Support\RequestTimer;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Cache\Repository as Cache;
 use Illuminate\Http\Client\ConnectionException;
@@ -37,6 +38,7 @@ final class ApiClient
         private readonly Http $http,
         private readonly Cache $cache,
         private readonly array $config,
+        private readonly RequestTimer $timer = new RequestTimer,
     ) {}
 
     /**
@@ -229,6 +231,8 @@ final class ApiClient
         for ($attempt = 0; ; $attempt++) {
             $this->throttle();
 
+            $sentAt = microtime(true);
+
             try {
                 $request = $this->http
                     ->timeout((int) ($this->config['timeout'] ?? 30))
@@ -237,14 +241,18 @@ final class ApiClient
 
                 $response = $method === 'POST' ? $request->post($url, $body) : $request->get($url);
             } catch (ConnectionException) {
+                $this->timer->request(microtime(true) - $sentAt);
+
                 if ($attempt >= $retries) {
                     throw SafetyJoggerApiException::unreachable($method, $path);
                 }
 
-                Sleep::for(2 ** $attempt)->seconds();
+                $this->wait(2 ** $attempt);
 
                 continue;
             }
+
+            $this->timer->request(microtime(true) - $sentAt);
 
             $retryable = $response->status() === 429 || $response->serverError();
 
@@ -254,8 +262,14 @@ final class ApiClient
 
             $retryAfter = (int) $response->header('Retry-After');
 
-            Sleep::for($retryAfter > 0 ? min($retryAfter, 60) : 2 ** $attempt)->seconds();
+            $this->wait($retryAfter > 0 ? min($retryAfter, 60) : 2 ** $attempt);
         }
+    }
+
+    private function wait(int $seconds): void
+    {
+        $this->timer->waited($seconds);
+        Sleep::for($seconds)->seconds();
     }
 
     /**
@@ -268,6 +282,7 @@ final class ApiClient
         $elapsed = microtime(true) - $this->lastRequestAt;
 
         if ($this->lastRequestAt > 0 && $elapsed < $interval) {
+            $this->timer->waited($interval - $elapsed);
             Sleep::for((int) round(($interval - $elapsed) * 1_000_000))->microseconds();
         }
 

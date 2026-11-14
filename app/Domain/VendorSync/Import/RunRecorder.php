@@ -48,6 +48,7 @@ final class RunRecorder
             'status' => $report->status,
             'finished_at' => now(),
             'messages' => $messages,
+            'stats' => $report->stats === [] ? null : $report->stats,
             ...$report->counts(),
         ]);
 

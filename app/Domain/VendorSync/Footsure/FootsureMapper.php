@@ -123,7 +123,7 @@ final readonly class FootsureMapper implements VendorMapper
                 $clearance = true;
             }
 
-            $variant = $this->variant($row, $colour, $isSafety, $label, $messages);
+            $variant = $this->variant($row, $colour, $isSafety, $label, $messages, $facts);
 
             if ($variant === null) {
                 continue;
@@ -136,7 +136,14 @@ final readonly class FootsureMapper implements VendorMapper
             }
         }
 
-        if ($variants === []) {
+        // Drafted for its sizes only when no valid variant remains.
+        $noUsableSize = $variants === [] && collect($facts)->contains(fn (array $fact): bool => $fact[0] === 'unknown_size');
+
+        if ($noUsableSize) {
+            $draftReasons[] = DraftReason::UNKNOWN_SIZE;
+        }
+
+        if ($variants === [] && ! $noUsableSize) {
             return MappingResult::error("{$label}: no variant can be imported.", $messages, $facts);
         }
 
@@ -182,14 +189,16 @@ final readonly class FootsureMapper implements VendorMapper
     /**
      * @param  array<string, string>  $row
      * @param  list<string>  $messages
+     * @param  list<array{0: string, 1: string}>  $facts
      */
-    private function variant(array $row, string $colour, bool $isSafety, string $label, array &$messages): ?NormalisedVariant
+    private function variant(array $row, string $colour, bool $isSafety, string $label, array &$messages, array &$facts): ?NormalisedVariant
     {
         $reference = $row['Product Reference'];
         $uk = Sizes::uk($row['UK Size']);
 
         if ($uk === null) {
             $messages[] = "{$label}: row {$reference} has an unreadable UK size '{$row['UK Size']}'; row skipped.";
+            $facts[] = ['unknown_size', $row['UK Size'] === '' ? '(blank)' : $row['UK Size']];
 
             return null;
         }

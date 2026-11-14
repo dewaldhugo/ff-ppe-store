@@ -155,7 +155,15 @@ final readonly class SafetyJoggerMapper implements VendorMapper
             }
         }
 
-        if ($variants === []) {
+        // A product is drafted for its sizes only when no valid variant
+        // remains. Otherwise the unusable SKUs are simply left out.
+        $noUsableSize = $variants === [] && collect($facts)->contains(fn (array $fact): bool => $fact[0] === 'unknown_size');
+
+        if ($noUsableSize) {
+            $draftReasons[] = DraftReason::UNKNOWN_SIZE;
+        }
+
+        if ($variants === [] && ! $noUsableSize) {
             return MappingResult::error("{$label}: no variant can be imported (no prices or no usable sizes).", $messages, $facts);
         }
 
@@ -234,9 +242,8 @@ final readonly class SafetyJoggerMapper implements VendorMapper
         $uk = Sizes::fromChart($this->sizeChart, $eu);
 
         if ($uk === null) {
-            $draftReasons[] = DraftReason::UNKNOWN_SIZE;
             $facts[] = ['unknown_size', $eu === '' ? '(blank)' : $eu];
-            $messages[] = "{$label}: SKU {$skuId} has EU size '{$eu}', which is not in the size chart; product drafted.";
+            $messages[] = "{$label}: SKU {$skuId} has EU size '{$eu}', which is not in the size chart; variant not imported.";
 
             return null;
         }
@@ -354,17 +361,14 @@ final readonly class SafetyJoggerMapper implements VendorMapper
     }
 
     /**
-     * The vendor writes names in capitals (`LIGERO`). Words made of letters
-     * are title cased; model codes with digits (`SX310`) are kept.
+     * The vendor's commercial name exactly as supplied (`LIGERO`,
+     * `BESTBOOT2`, `SX310`): trimmed, repeated whitespace collapsed, and no
+     * change of case. Names are model codes, so any casing rule gets some
+     * of them wrong.
      */
     private function productName(string $name): string
     {
-        $words = preg_split('/\s+/', trim($name), -1, PREG_SPLIT_NO_EMPTY) ?: [];
-
-        return implode(' ', array_map(
-            fn (string $word): string => preg_match('/\d/', $word) === 1 ? $word : Str::title(Str::lower($word)),
-            $words,
-        ));
+        return trim((string) preg_replace('/\s+/', ' ', $name));
     }
 
     /**

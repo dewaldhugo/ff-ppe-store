@@ -53,7 +53,7 @@ return [
     // The feature codes of the data contract. Anything else is dropped and
     // reported, never invented.
     'features' => [
-        'SRA', 'SRB', 'SRC', 'SR', 'ESD', 'CI', 'HI', 'HRO', 'WR', 'FO', 'M', 'AN', 'E', 'A', 'P', 'METAL_FREE',
+        'SRA', 'SRB', 'SRC', 'SR', 'ESD', 'CI', 'HI', 'HRO', 'WR', 'FO', 'M', 'AN', 'E', 'A', 'P', 'LG', 'SC', 'METAL_FREE',
     ],
 
     // EU to UK size charts by vendor code. Safety Jogger's published chart,
@@ -62,9 +62,9 @@ return [
         'SJ' => [
             '35' => '3', '36' => '3.5', '37' => '4', '38' => '5', '39' => '6', '40' => '6.5', '41' => '7',
             '42' => '8', '43' => '9', '44' => '10', '45' => '10.5', '46' => '11', '47' => '12', '48' => '13',
-            '49' => '13.5',
+            '49' => '13.5', '50' => '14',
             '35/36' => '3/3.5', '37/38' => '4/5', '39/40' => '6/6.5', '41/42' => '7/8', '43/44' => '9/10',
-            '45/46' => '10.5/11', '47/48' => '12/13',
+            '45/46' => '10.5/11', '47/48' => '12/13', '49/50' => '13.5/14',
         ],
     ],
 
@@ -89,11 +89,16 @@ return [
         'rrp_vat_basis_points' => 2000,
 
         // zero-protective only for these models with an EN ISO 20345 norm.
+        // `low_boot` stays standard-rated until the accountant confirms.
         'boot_models' => ['high_boot', 'high'],
 
         // model name => contract `cut`.
         'cut_map' => [
             'low' => 'Low',
+            'clog' => 'Low',
+            'sandal' => 'Low',
+            'pump' => 'Low',
+            'low_boot' => 'Mid',
             'high' => 'High',
             'high_boot' => 'High',
         ],
@@ -110,6 +115,9 @@ return [
             'safety' => [
                 'shoes' => [
                     'low' => 'safety-shoes',
+                    'sandal' => 'safety-shoes',
+                    'clog' => 'safety-shoes',
+                    'low_boot' => 'safety-boots',
                     'high' => 'safety-boots',
                     'high_boot' => 'safety-boots',
                 ],

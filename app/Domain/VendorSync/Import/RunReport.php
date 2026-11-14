@@ -61,6 +61,9 @@ final class RunReport
     /** @var list<int> Lunar product IDs reindexed by the run. */
     public array $reindexedProductIds = [];
 
+    /** @var array<string, int|float> API request counts and timings for the run. */
+    public array $stats = [];
+
     /** Where a dry run saved its full report. */
     public ?string $reportPath = null;
 
@@ -154,6 +157,7 @@ final class RunReport
             'dry_run' => $this->dryRun,
             'status' => $this->status,
             'counts' => $this->counts(),
+            'stats' => $this->stats,
             'tallies' => $tallies,
             'samples' => $this->samples,
             'messages' => $this->messages,

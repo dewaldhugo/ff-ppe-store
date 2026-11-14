@@ -17,6 +17,7 @@ use App\Domain\VendorSync\SafetyJogger\ApiClient;
 use App\Domain\VendorSync\SafetyJogger\SafetyJoggerMapper;
 use App\Domain\VendorSync\SafetyJogger\SafetyJoggerSource;
 use App\Domain\VendorSync\SafetyJogger\SafetyJoggerStockFeed;
+use App\Domain\VendorSync\Support\RequestTimer;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Http\Client\Factory as Http;
@@ -35,6 +36,9 @@ final class VendorSyncServiceProvider extends ServiceProvider
 
     public function register(): void
     {
+        // One timer per process: the client records, the run reads.
+        $this->app->singleton(RequestTimer::class);
+
         $this->app->bind(Features::class, fn (): Features => new Features(config('vendorsync.features')));
         $this->app->bind(PriceCalculator::class, fn (): PriceCalculator => new PriceCalculator((string) config('vendorsync.markup')));
 
@@ -42,6 +46,7 @@ final class VendorSyncServiceProvider extends ServiceProvider
             $app->make(Http::class),
             $app->make('cache.store'),
             config('vendorsync.safety_jogger'),
+            $app->make(RequestTimer::class),
         ));
 
         $this->app->bind(ImageDownloader::class, fn (Application $app): ImageDownloader => new ImageDownloader(

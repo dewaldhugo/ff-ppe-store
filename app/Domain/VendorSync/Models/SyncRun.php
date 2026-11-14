@@ -25,6 +25,7 @@ final class SyncRun extends Model
             'started_at' => 'datetime',
             'finished_at' => 'datetime',
             'messages' => 'array',
+            'stats' => 'array',
         ];
     }
 

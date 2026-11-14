@@ -185,9 +185,8 @@ it('imports the product list in scope and skips the rest as out of scope', funct
         ->and($bestboot->attr('cut'))->toBe('High')
         ->and($bestboot->attr('toecap'))->toBe('Steel')
         ->and($bestboot->attr('standards'))->toBe(['ASTM F2413:2024', 'EN ISO 20345:2022+A1:2024'])
-        // SC and LG are not contract codes: dropped and reported.
-        ->and($bestboot->attr('features'))->toBe(['SR', 'FO', 'CI'])
-        ->and($bestboot->translateAttribute('name'))->toBe('Bestboot')
+        ->and($bestboot->attr('features'))->toBe(['SR', 'SC', 'LG', 'FO', 'CI'])
+        ->and($bestboot->translateAttribute('name'))->toBe('BESTBOOT')
         ->and($bestboot->collections->pluck('id')->all())->toBe([CatalogueKeys::collection('safety-boots')->id]);
 
     // RRP 74.30 always includes 20% VAT: 61.92 ex VAT. Cost 29.30 x 1.5 = 43.95.
@@ -210,7 +209,7 @@ it('imports the product list in scope and skips the rest as out of scope', funct
     expect($uncapped->getRawOriginal('price'))->toBe(43590)
         ->and($uncapped->getRawOriginal('compare_price'))->toBeNull()
         ->and(VendorSync::product('SJ', '296233')->collections->pluck('id')->all())->toBe([CatalogueKeys::collection('occupational-footwear')->id])
-        ->and(collect($report->messages)->contains(fn (string $message): bool => str_contains($message, 'unknown feature codes dropped: SC, LG')))->toBeTrue();
+        ->and($report->tallies)->not->toHaveKey('unknown_feature');
 
     // Ligero's related products are not imported, so there is no cross-sell yet.
     expect(VendorProduct::query()->where('vendor_product_id', '284096')->sole()->related_ids)->toBe(['276147', '342962']);
@@ -237,8 +236,8 @@ it('reports missing data instead of guessing', function (): void {
     $list = [['id' => 1], ['id' => 2], ['id' => 3], ['id' => 4], ['id' => 271323], ['id' => 5]];
     $details = [
         // Unmapped category: draft.
-        1 => VendorSync::detail(1, 'CLOGGY', 'Safety Jogger', 'Shoes', ['EN ISO 20345:2011'], model: 'clog'),
-        // Unknown EU size: draft, and that SKU is not created.
+        1 => VendorSync::detail(1, 'CLOGGY', 'Safety Jogger', 'Shoes', ['EN ISO 20345:2011'], model: 'wader'),
+        // Unknown EU size: that SKU is not created; the product is not drafted for it.
         2 => VendorSync::detail(2, 'BIGFOOT', 'Safety Jogger', 'Shoes', ['EN ISO 20345:2011'], size: '52'),
         // Cost above RRP: stock 0.
         3 => VendorSync::detail(3, 'PRICEY', 'Safety Jogger', 'Shoes', ['EN ISO 20345:2011'], cost: 80.0, rrp: 60.0),
@@ -266,13 +265,14 @@ it('reports missing data instead of guessing', function (): void {
         ->and($clog->draft_reasons)->toContain(DraftReason::UNMAPPED_CATEGORY)
         ->and(Product::query()->find($clog->product_id)->status)->toBe('draft')
         ->and(Product::query()->find($clog->product_id)->collections)->toHaveCount(0)
-        ->and($big->draft_reasons)->toContain(DraftReason::UNKNOWN_SIZE)
+        ->and($big->draft_reasons)->toBe([DraftReason::NO_IMAGE])
+        ->and($report->tallies['unknown_size'])->toBe(['52' => 1])
         ->and(ProductVariant::query()->where('sku', 'SJ-200')->exists())->toBeFalse()
         ->and(sjVariant('SJ-201')->stock)->toBe(10)
         ->and(sjVariant('SJ-300')->stock)->toBe(0)
         ->and(VendorOffer::query()->where('vendor_sku', '300')->sole()->sellable)->toBeFalse()
         ->and(VendorProduct::query()->whereIn('vendor_product_id', ['4', '271323', '5'])->count())->toBe(0)
-        ->and($messages)->toContain("model 'clog'")
+        ->and($messages)->toContain("model 'wader'")
         ->and($messages)->toContain("EU size '52'")
         ->and($messages)->toContain('cost at or above its RRP')
         ->and($messages)->toContain('SKU 400 has no cost')

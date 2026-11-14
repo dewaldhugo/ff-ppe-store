@@ -78,8 +78,8 @@ Lunar has no handle column on tax classes, product types, tax zones or collectio
 | `title` | TranslatedText | all | Descriptive title, e.g. "Lightweight ESD Safety Shoes" |
 | `short_description` | TranslatedText | all | One or two sentences |
 | `description` | TranslatedText | all | Long description, plain text with paragraphs |
-| `safety_class` | Text | safety-footwear | Normalised, no spaces: `SB`, `S1`, `S1P`, `S2`, `S3`, `S3S`, `S7`, `OB`, `O1`, `O2`... |
-| `features` | ListField | safety-footwear | Normalised codes: `SRA`, `SRB`, `SRC`, `SR`, `ESD`, `CI`, `HI`, `HRO`, `WR`, `FO`, `M`, `AN`, `E`, `A`, `P`, `METAL_FREE` |
+| `safety_class` | Text | safety-footwear | Normalised, no spaces: `SB`, `SBP`, `S1`, `S1P`, `S2`, `S3`, `S7`, `OB`, `O1`, `O2`... The EN ISO 20345:2022 classes `S1PS`, `S3S` and `S7S`, and the occupational class `O6`, are valid values. |
+| `features` | ListField | safety-footwear | Normalised codes: `SRA`, `SRB`, `SRC`, `SR`, `ESD`, `CI`, `HI`, `HRO`, `WR`, `FO`, `M`, `AN`, `E`, `A`, `P`, `LG` (ladder grip), `SC` (scuff cap), `METAL_FREE` |
 | `standards` | ListField | all | e.g. `EN ISO 20345:2011`, `EN ISO 20345:2022`, `ASTM F2413:2024` |
 | `toecap` | Text | safety-footwear | e.g. `Nano Carbon`, `Steel`, `Composite`, `None` |
 | `midsole` | Text | safety-footwear | |

@@ -14,6 +14,7 @@ use App\Domain\VendorSync\Exceptions\SourceAborted;
 use App\Domain\VendorSync\Models\SyncRun;
 use App\Domain\VendorSync\Models\Vendor;
 use App\Domain\VendorSync\Models\VendorProduct;
+use App\Domain\VendorSync\Support\RequestTimer;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\File;
@@ -42,10 +43,13 @@ final class CatalogueImporter
 
     private const int REINDEX_CHUNK = 100;
 
+    private float $startedAt = 0.0;
+
     public function __construct(
         private readonly Container $container,
         private readonly RunRecorder $runs,
         private readonly RawStore $rawStore,
+        private readonly RequestTimer $timer,
     ) {}
 
     /**
@@ -58,6 +62,9 @@ final class CatalogueImporter
         $source ??= $this->container->make("vendorsync.source.{$code}");
         /** @var VendorMapper $mapper */
         $mapper = $this->container->make("vendorsync.mapper.{$code}");
+
+        $this->timer->reset();
+        $this->startedAt = microtime(true);
 
         return $dryRun
             ? $this->dryRun($code, $source, $mapper, $force)
@@ -95,6 +102,7 @@ final class CatalogueImporter
             $report->finish(RunReport::FAILED, class_basename($exception).': '.$exception->getMessage());
         }
 
+        $this->stats($report);
         $this->runs->finish($run, $report);
 
         // One batch reindex for everything the run wrote.
@@ -130,7 +138,29 @@ final class CatalogueImporter
             $report->finish(RunReport::FAILED, class_basename($exception).': '.$exception->getMessage());
         }
 
+        $this->stats($report);
+
         return $this->saveReport($report);
+    }
+
+    /**
+     * Where the run's time went: waiting for the vendor's API, waiting on
+     * our own throttle, and our own processing (mapping and database).
+     */
+    private function stats(RunReport $report): void
+    {
+        $api = $this->timer->stats();
+        $elapsed = microtime(true) - $this->startedAt;
+
+        $report->stats = [
+            'api_requests' => $api['requests'],
+            'api_response_seconds' => $api['response_seconds'],
+            'api_average_response_ms' => $api['average_response_ms'],
+            'throttle_wait_seconds' => $api['wait_seconds'],
+            'processing_seconds' => round(max(0.0, $elapsed - $api['response_seconds'] - $api['wait_seconds']), 3),
+            'elapsed_seconds' => round($elapsed, 3),
+            'peak_memory_mb' => round(memory_get_peak_usage(true) / 1048576, 1),
+        ];
     }
 
     /**
@@ -253,6 +283,15 @@ final class CatalogueImporter
             ->where('vendor_product_id', $record->externalId)
             ->first(['id', 'product_id', 'payload_hash', 'missed_runs', 'draft_reasons']);
 
+        // No valid variant remains (every SKU has an unusable size). A
+        // product that already exists is drafted by the writer; one that
+        // does not exist cannot be created without variants.
+        if ($result->product->variants === [] && $link === null) {
+            $report->error("{$code} product {$record->externalId} ({$result->product->name}): no variant has a usable size; product not created.");
+
+            return true;
+        }
+
         $wasMissing = in_array(DraftReason::MISSING_FROM_FEED, $link?->draft_reasons ?? [], true);
 
         if ($link !== null && ! $force && ! $wasMissing && $link->payload_hash === $hash) {
@@ -370,7 +409,7 @@ final class CatalogueImporter
 
         $report->tally('brand', $product->brand ?? '(no brand)');
 
-        if (count($report->samples) >= RunReport::SAMPLE_LIMIT) {
+        if (count($report->samples) >= RunReport::SAMPLE_LIMIT || $product->variants === []) {
             return;
         }
 

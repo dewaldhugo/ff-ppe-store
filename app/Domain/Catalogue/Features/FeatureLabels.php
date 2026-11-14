@@ -30,6 +30,8 @@ final class FeatureLabels
         'E' => ['Energy absorbing heel (E)', 'The heel absorbs shock to reduce fatigue.'],
         'A' => ['Antistatic (A)', 'Reduces the build-up of static electricity.'],
         'P' => ['Puncture resistant midsole (P)', 'A midsole that resists sharp objects such as nails coming through the sole.'],
+        'LG' => ['Ladder grip (LG)', 'The sole is shaped to grip ladder rungs, under the 2022 edition of the standard.'],
+        'SC' => ['Scuff cap (SC)', 'A cap over the toe that resists abrasion, under the 2022 edition of the standard.'],
         'METAL_FREE' => ['Metal free', 'Contains no metal parts, so it is lighter and suitable for sites with metal detectors.'],
     ];
 

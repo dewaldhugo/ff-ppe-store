@@ -50,7 +50,7 @@ it('lists a collection together with its descendants', function (): void {
     $result = listing();
 
     expect($result->total)->toBe(5)
-        ->and(names($result))->toEqualCanonicalizing(['Ligero', 'SX310', 'FS9', 'FS65', 'FS30C']);
+        ->and(names($result))->toEqualCanonicalizing(['LIGERO', 'SX310', 'FS9', 'FS65', 'FS30C']);
 });
 
 it('lists a leaf collection and a range', function (string $collection, array $expected): void {
@@ -64,11 +64,11 @@ it('lists a leaf collection and a range', function (string $collection, array $e
 it('returns Ligero and FS65 for S1P and SRC', function (): void {
     $result = listing(['safety_class' => ['S1P'], 'features' => ['SRC']]);
 
-    expect(names($result))->toEqualCanonicalizing(['Ligero', 'FS65']);
+    expect(names($result))->toEqualCanonicalizing(['LIGERO', 'FS65']);
 });
 
 it('ORs values within a facet and ANDs across facets', function (): void {
-    expect(names(listing(['safety_class' => ['S1P', 'SBP']])))->toEqualCanonicalizing(['Ligero', 'FS65', 'FS9'])
+    expect(names(listing(['safety_class' => ['S1P', 'SBP']])))->toEqualCanonicalizing(['LIGERO', 'FS65', 'FS9'])
         ->and(names(listing(['safety_class' => ['S3', 'SBP'], 'brand' => ['Amblers Safety']])))->toBe(['FS9']);
 });
 
@@ -100,12 +100,12 @@ it('marks selected facet values', function (): void {
 });
 
 it('filters by price range in the inc VAT mode', function (): void {
-    expect(names(listing(['price_min' => 80, 'price_max' => 85], vatMode: VatDisplayMode::IncVat)))->toBe(['Ligero'])
+    expect(names(listing(['price_min' => 80, 'price_max' => 85], vatMode: VatDisplayMode::IncVat)))->toBe(['LIGERO'])
         ->and(listing(['price_min' => 65, 'price_max' => 70], vatMode: VatDisplayMode::IncVat)->total)->toBe(0);
 });
 
 it('filters by price range in the ex VAT mode', function (): void {
-    expect(names(listing(['price_min' => 65, 'price_max' => 70], vatMode: VatDisplayMode::ExVat)))->toBe(['Ligero'])
+    expect(names(listing(['price_min' => 65, 'price_max' => 70], vatMode: VatDisplayMode::ExVat)))->toBe(['LIGERO'])
         ->and(listing(['price_min' => 80, 'price_max' => 85], vatMode: VatDisplayMode::ExVat)->total)->toBe(0);
 });
 
@@ -126,17 +126,17 @@ it('reports the price bounds ignoring the price filter', function (): void {
 
 it('requires the colour and size combination to be in stock', function (): void {
     // Ligero has Black in stock, and UK 10 in stock, but Black 10 is not.
-    expect(names(listing(['colour' => ['black']], collection: null)))->toContain('Ligero')
-        ->and(names(listing(['size' => ['10']], collection: null)))->toContain('Ligero')
-        ->and(names(listing(['colour' => ['black'], 'size' => ['10']], collection: null)))->not->toContain('Ligero')
+    expect(names(listing(['colour' => ['black']], collection: null)))->toContain('LIGERO')
+        ->and(names(listing(['size' => ['10']], collection: null)))->toContain('LIGERO')
+        ->and(names(listing(['colour' => ['black'], 'size' => ['10']], collection: null)))->not->toContain('LIGERO')
         // Navy 10 and Black 9 are both in stock.
-        ->and(names(listing(['colour' => ['navy'], 'size' => ['10']], collection: null)))->toBe(['Ligero'])
-        ->and(names(listing(['colour' => ['black'], 'size' => ['9']], collection: null)))->toBe(['Ligero']);
+        ->and(names(listing(['colour' => ['navy'], 'size' => ['10']], collection: null)))->toBe(['LIGERO'])
+        ->and(names(listing(['colour' => ['black'], 'size' => ['9']], collection: null)))->toBe(['LIGERO']);
 });
 
 it('excludes out of stock products when in stock only is selected', function (): void {
     expect(names(listing()))->toContain('SX310')
-        ->and(names(listing(['in_stock' => '1'])))->toEqualCanonicalizing(['Ligero', 'FS9', 'FS65', 'FS30C']);
+        ->and(names(listing(['in_stock' => '1'])))->toEqualCanonicalizing(['LIGERO', 'FS9', 'FS65', 'FS30C']);
 });
 
 it('only offers sizes and colours that are in stock, sizes in numeric order', function (): void {
@@ -149,17 +149,17 @@ it('only offers sizes and colours that are in stock, sizes in numeric order', fu
 
 it('sorts by price in the current VAT mode', function (): void {
     expect(names(listing(['sort' => 'price-asc']))[0])->toBe('FS30C')
-        ->and(names(listing(['sort' => 'price-desc'])))->toBe(['Ligero', 'SX310', 'FS9', 'FS65', 'FS30C'])
-        ->and(names(listing(['sort' => 'price-desc'], vatMode: VatDisplayMode::ExVat))[0])->toBe('Ligero');
+        ->and(names(listing(['sort' => 'price-desc'])))->toBe(['LIGERO', 'SX310', 'FS9', 'FS65', 'FS30C'])
+        ->and(names(listing(['sort' => 'price-desc'], vatMode: VatDisplayMode::ExVat))[0])->toBe('LIGERO');
 });
 
 it('searches by term', function (string $term, string $expected): void {
     expect(names(listing(['q' => $term], collection: null)))->toContain($expected);
 })->with([
-    ['ligero', 'Ligero'],
+    ['ligero', 'LIGERO'],
     ['goodyear welted', 'FS9'],
     ['maxguard', 'SX310'],
-    ['S1P', 'Ligero'],
+    ['S1P', 'LIGERO'],
 ]);
 
 it('paginates', function (): void {

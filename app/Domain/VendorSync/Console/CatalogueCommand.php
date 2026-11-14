@@ -39,7 +39,7 @@ final class CatalogueCommand extends Command
             $this->line("Queued {$queued} image jobs.");
         }
 
-        $this->footer($started);
+        $this->footer($started, $report);
 
         return $report->ok() ? self::SUCCESS : self::FAILURE;
     }
@@ -47,8 +47,23 @@ final class CatalogueCommand extends Command
     /**
      * Printed at the end of every run, dry runs and failed runs included.
      */
-    private function footer(float $started): void
+    private function footer(float $started, RunReport $report): void
     {
+        $stats = $report->stats;
+
+        if (($stats['api_requests'] ?? 0) > 0) {
+            $this->line(sprintf(
+                'API: %d requests, %.1fs waiting for responses (average %.0f ms), %.1fs throttle wait. Own processing %.1fs.',
+                $stats['api_requests'],
+                $stats['api_response_seconds'],
+                $stats['api_average_response_ms'],
+                $stats['throttle_wait_seconds'],
+                $stats['processing_seconds'],
+            ));
+        } elseif (isset($stats['processing_seconds'])) {
+            $this->line(sprintf('No API requests. Own processing %.1fs.', $stats['processing_seconds']));
+        }
+
         $seconds = (int) round(microtime(true) - $started);
 
         $this->line(sprintf(

@@ -66,7 +66,7 @@ it('finds the lowest variant price of a product', function (): void {
 it('labels every feature code in the contract', function (string $code): void {
     expect(FeatureLabels::label($code))->not->toBe($code)
         ->and(FeatureLabels::tooltip($code))->not->toBeEmpty();
-})->with(['SRA', 'SRB', 'SRC', 'SR', 'ESD', 'CI', 'HI', 'HRO', 'WR', 'FO', 'M', 'AN', 'E', 'A', 'P', 'METAL_FREE']);
+})->with(['SRA', 'SRB', 'SRC', 'SR', 'ESD', 'CI', 'HI', 'HRO', 'WR', 'FO', 'M', 'AN', 'E', 'A', 'P', 'LG', 'SC', 'METAL_FREE']);
 
 it('uses the labels given in the brief', function (): void {
     expect(FeatureLabels::label('SRC'))->toBe('Slip resistant (SRC)')
