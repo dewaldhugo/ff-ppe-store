@@ -28,6 +28,7 @@ final class CatalogueCommand extends Command
             return self::FAILURE;
         }
 
+        $started = microtime(true);
         $dryRun = (bool) $this->option('dry-run');
         $report = $importer->run($vendor, $dryRun, (bool) $this->option('force'));
 
@@ -38,7 +39,24 @@ final class CatalogueCommand extends Command
             $this->line("Queued {$queued} image jobs.");
         }
 
+        $this->footer($started);
+
         return $report->ok() ? self::SUCCESS : self::FAILURE;
+    }
+
+    /**
+     * Printed at the end of every run, dry runs and failed runs included.
+     */
+    private function footer(float $started): void
+    {
+        $seconds = (int) round(microtime(true) - $started);
+
+        $this->line(sprintf(
+            'Peak memory %.1f MB, elapsed %dm %02ds.',
+            memory_get_peak_usage(true) / 1048576,
+            intdiv($seconds, 60),
+            $seconds % 60,
+        ));
     }
 
     private function render(RunReport $report): void
@@ -48,7 +66,11 @@ final class CatalogueCommand extends Command
 
         foreach ($report->tallies as $group => $tally) {
             ksort($tally);
-            $this->line($group.': '.implode(', ', array_map(fn (string $key, int $count): string => "{$key} {$count}", array_keys($tally), $tally)));
+            $this->line($group.': '.implode(', ', array_map(fn (int|string $key, int $count): string => "{$key} {$count}", array_keys($tally), $tally)));
+        }
+
+        if ($report->reportPath !== null) {
+            $this->line('Full report: '.$report->reportPath);
         }
 
         if ($report->samples !== []) {
@@ -68,8 +90,8 @@ final class CatalogueCommand extends Command
                 $this->line('  '.$message);
             }
 
-            if ($report->dryRun) {
-                $this->line('  '.end($report->messages));
+            if ($report->messagesDropped > 0) {
+                $this->line("  ... {$report->messagesDropped} further entries were counted but not kept.");
             }
         }
     }

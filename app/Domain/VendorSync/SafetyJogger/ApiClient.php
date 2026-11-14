@@ -56,7 +56,7 @@ final class ApiClient
      */
     public function product(int $id): array
     {
-        $data = $this->authenticated(Endpoint::ProductDetail, $id)->json();
+        $data = $this->decode($this->authenticated(Endpoint::ProductDetail, $id));
 
         if (! is_array($data) || array_is_list($data)) {
             throw SafetyJoggerApiException::malformed('GET', Endpoint::ProductDetail->path($id));
@@ -80,13 +80,25 @@ final class ApiClient
      */
     private function list(Response $response, Endpoint $endpoint): array
     {
-        $data = $response->json();
+        $data = $this->decode($response);
 
         if (! is_array($data) || ! array_is_list($data)) {
             throw SafetyJoggerApiException::malformed($endpoint->method(), $endpoint->path());
         }
 
         return $data;
+    }
+
+    /**
+     * Decode the body once and let go of the response. Response::json()
+     * would keep a second, decoded copy alive on the response object.
+     */
+    private function decode(Response $response): mixed
+    {
+        $body = $response->body();
+        unset($response);
+
+        return json_decode($body, true);
     }
 
     /**

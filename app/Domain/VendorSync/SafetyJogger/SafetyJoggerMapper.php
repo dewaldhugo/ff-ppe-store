@@ -49,17 +49,22 @@ final readonly class SafetyJoggerMapper implements VendorMapper
 
         // Scope: an article type on the list AND an EN ISO 20345 or 20347 norm.
         $articleTypes = $this->names($data['articletype'] ?? []);
+        $facts = [];
+
+        foreach ($articleTypes === [] ? ['(none)'] : $articleTypes as $type) {
+            $facts[] = ['article_type', $type];
+        }
         $articleType = collect($articleTypes)->first(fn (string $type): bool => in_array($type, $this->config['article_types'] ?? [], true));
 
         if ($articleType === null) {
-            return MappingResult::outOfScope('article_type');
+            return MappingResult::outOfScope('article_type', $facts);
         }
 
         $norms = $this->values($data['norms'] ?? []);
         $family = $this->normFamily($norms);
 
         if ($family === null) {
-            return MappingResult::outOfScope('no_en_iso_norm');
+            return MappingResult::outOfScope('no_en_iso_norm', $facts);
         }
 
         $brand = (string) ($data['brandDescription'] ?? '');
@@ -74,6 +79,9 @@ final readonly class SafetyJoggerMapper implements VendorMapper
         $model = $this->names($data['model'] ?? [])[0] ?? null;
         $categories = $this->config['categories'][$family][$articleType] ?? [];
         $collection = $categories[$model ?? ''] ?? $categories['*'] ?? null;
+
+        // Every distinct article type, model and norm family, with its collection.
+        $facts[] = ['category', $articleType.' / '.($model ?? '(none)').' / '.$family.' => '.($collection ?? 'UNMAPPED')];
 
         if ($collection === null) {
             $draftReasons[] = DraftReason::UNMAPPED_CATEGORY;
@@ -100,6 +108,10 @@ final readonly class SafetyJoggerMapper implements VendorMapper
         }
 
         [$features, $unknownFeatures] = $this->features->normalise($codes);
+
+        foreach ($unknownFeatures as $code) {
+            $facts[] = ['unknown_feature', $code];
+        }
 
         if ($unknownFeatures !== []) {
             $messages[] = "{$label}: unknown feature codes dropped: ".implode(', ', $unknownFeatures).'.';
@@ -130,7 +142,7 @@ final readonly class SafetyJoggerMapper implements VendorMapper
             $created = 0;
 
             foreach ($colourData['skus'] ?? [] as $sku) {
-                $variant = $this->variant($sku, $vendorName, $vendorColour, $colour, $hex, $taxClass, $weight, $label, $messages, $draftReasons);
+                $variant = $this->variant($sku, $vendorName, $vendorColour, $colour, $hex, $taxClass, $weight, $label, $messages, $draftReasons, $facts);
 
                 if ($variant !== null) {
                     $variants[] = $variant;
@@ -144,7 +156,7 @@ final readonly class SafetyJoggerMapper implements VendorMapper
         }
 
         if ($variants === []) {
-            return MappingResult::error("{$label}: no variant can be imported (no prices or no usable sizes).", $messages);
+            return MappingResult::error("{$label}: no variant can be imported (no prices or no usable sizes).", $messages, $facts);
         }
 
         return MappingResult::product(new NormalisedProduct(
@@ -182,13 +194,14 @@ final readonly class SafetyJoggerMapper implements VendorMapper
             relatedVendorProductIds: array_map(strval(...), array_keys($related)),
             variants: $variants,
             images: $images,
-        ), $messages);
+        ), $messages, $facts);
     }
 
     /**
      * @param  array<string, mixed>  $sku
      * @param  list<string>  $messages
      * @param  list<string>  $draftReasons
+     * @param  list<array{0: string, 1: string}>  $facts
      */
     private function variant(
         array $sku,
@@ -201,6 +214,7 @@ final readonly class SafetyJoggerMapper implements VendorMapper
         string $label,
         array &$messages,
         array &$draftReasons,
+        array &$facts,
     ): ?NormalisedVariant {
         // Identity is the SKU id, never the EAN: the real feed has
         // duplicate EANs and SKUs without one.
@@ -221,6 +235,7 @@ final readonly class SafetyJoggerMapper implements VendorMapper
 
         if ($uk === null) {
             $draftReasons[] = DraftReason::UNKNOWN_SIZE;
+            $facts[] = ['unknown_size', $eu === '' ? '(blank)' : $eu];
             $messages[] = "{$label}: SKU {$skuId} has EU size '{$eu}', which is not in the size chart; product drafted.";
 
             return null;

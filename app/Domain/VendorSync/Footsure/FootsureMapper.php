@@ -58,10 +58,13 @@ final readonly class FootsureMapper implements VendorMapper
         }
 
         $messages = [];
+        $facts = [];
         $draftReasons = [];
         $label = "Footsure product {$record->externalId} ({$first['Brand']} {$first['Short Product Name']})";
 
         $collection = $this->config['categories'][$first['Group Class']] ?? null;
+
+        $facts[] = ['category', $first['Group Class'].' => '.($collection ?? 'UNMAPPED')];
 
         if ($collection === null) {
             $draftReasons[] = DraftReason::UNMAPPED_CATEGORY;
@@ -81,6 +84,10 @@ final readonly class FootsureMapper implements VendorMapper
 
         [$features, $unknownFeatures] = $this->features->normalise($separateCodes);
 
+        foreach ($unknownFeatures as $code) {
+            $facts[] = ['unknown_feature', $code];
+        }
+
         if ($unknownFeatures !== []) {
             $messages[] = "{$label}: unknown feature codes dropped: ".implode(', ', $unknownFeatures).'.';
         }
@@ -91,6 +98,7 @@ final readonly class FootsureMapper implements VendorMapper
             $country = $this->config['countries'][$first['Country Of Origin']] ?? null;
 
             if ($country === null) {
+                $facts[] = ['unknown_country', $first['Country Of Origin']];
                 $messages[] = "{$label}: unknown country of origin '{$first['Country Of Origin']}'.";
             }
         }
@@ -129,7 +137,7 @@ final readonly class FootsureMapper implements VendorMapper
         }
 
         if ($variants === []) {
-            return MappingResult::error("{$label}: no variant can be imported.", $messages);
+            return MappingResult::error("{$label}: no variant can be imported.", $messages, $facts);
         }
 
         $brand = array_key_exists($first['Brand'], $this->config['brand_map'] ?? [])
@@ -168,7 +176,7 @@ final readonly class FootsureMapper implements VendorMapper
             relatedVendorProductIds: [],
             variants: $variants,
             images: array_values($images),
-        ), $messages);
+        ), $messages, $facts);
     }
 
     /**

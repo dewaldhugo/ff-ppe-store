@@ -7,16 +7,15 @@ namespace App\Domain\VendorSync\Import;
 use App\Domain\VendorSync\Contracts\VendorMapper;
 use App\Domain\VendorSync\Contracts\VendorSource;
 use App\Domain\VendorSync\Data\NormalisedProduct;
+use App\Domain\VendorSync\Data\NormalisedVariant;
 use App\Domain\VendorSync\Data\RawRecord;
 use App\Domain\VendorSync\Data\SourceBatch;
 use App\Domain\VendorSync\Exceptions\SourceAborted;
 use App\Domain\VendorSync\Models\SyncRun;
 use App\Domain\VendorSync\Models\Vendor;
 use App\Domain\VendorSync\Models\VendorProduct;
-use App\Domain\VendorSync\Models\VendorRawRecord;
 use Illuminate\Contracts\Container\Container;
-use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\File;
 use Lunar\Models\Brand;
 use Lunar\Models\Product;
@@ -26,6 +25,14 @@ use Throwable;
  * Runs one vendor's catalogue import:
  * source -> raw store -> mapper -> writer -> batch reindex.
  *
+ * Streaming: the source yields one product at a time and each product goes
+ * fetch -> trim -> hash -> map -> write (or, in a dry run, record) before
+ * the next one is fetched. Nothing accumulates payloads, DTOs or responses
+ * across products, so memory stays flat whatever the catalogue size. What
+ * does accumulate is small and bounded per product: the vendor's product
+ * IDs (for discontinuation), the Lunar product IDs to reindex, and the
+ * report's counters.
+ *
  * The same code serves every vendor. Sources and mappers are resolved from
  * the container as `vendorsync.source.{CODE}` and `vendorsync.mapper.{CODE}`.
  */
@@ -33,13 +40,16 @@ final class CatalogueImporter
 {
     public const string TYPE = 'catalogue';
 
+    private const int REINDEX_CHUNK = 100;
+
     public function __construct(
         private readonly Container $container,
         private readonly RunRecorder $runs,
+        private readonly RawStore $rawStore,
     ) {}
 
     /**
-     * @param  bool  $dryRun  Run everything except the writes: nothing is left in the database, no file is archived.
+     * @param  bool  $dryRun  Run everything except the writes: the database is not touched and no file is archived.
      * @param  bool  $force  Reprocess products whose payload is unchanged.
      */
     public function run(string $vendorCode, bool $dryRun = false, bool $force = false, ?VendorSource $source = null): RunReport
@@ -62,9 +72,19 @@ final class CatalogueImporter
 
         try {
             $batch = $source->fetch();
+            // Decided from the product count, before any detail is fetched.
             $this->assertEnoughProducts($vendor, $batch);
 
-            $this->process($vendor, $batch, $mapper, $report, $force, $run);
+            // A fresh writer per run: it memoises option values and settings.
+            /** @var CatalogueWriter $writer */
+            $writer = $this->container->make(CatalogueWriter::class);
+
+            // Bulk writers must not sync to search row by row (see CLAUDE.md).
+            Product::withoutSyncingToSearch(function () use ($vendor, $batch, $mapper, $writer, $report, $force, $run): void {
+                Brand::withoutSyncingToSearch(function () use ($vendor, $batch, $mapper, $writer, $report, $force, $run): void {
+                    $this->process($vendor, $batch, $mapper, $writer, $report, $force, $run);
+                });
+            });
 
             $source->completed();
             $report->finish(RunReport::SUCCEEDED);
@@ -84,35 +104,30 @@ final class CatalogueImporter
     }
 
     /**
-     * Fetch first, then do the writes inside a transaction that is rolled
-     * back, so the counts and the sample are exactly what a real run would
-     * produce.
+     * Everything except the writes. Each product is fetched, mapped and
+     * compared with what is in the database, then only counted. The
+     * database is read, never written. Rules that only the writer applies
+     * (a cross-vendor EAN duplicate) are not evaluated.
      */
     private function dryRun(string $code, VendorSource $source, VendorMapper $mapper, bool $force): RunReport
     {
         $report = new RunReport($code, self::TYPE, dryRun: true);
 
         try {
+            $vendor = Vendor::query()->where('code', $code)->first();
             $batch = $source->fetch();
-            $batch = new SourceBatch($batch->total, [...$batch->records]);
-        } catch (SourceAborted $exception) {
-            return $this->saveReport($report->finish(RunReport::ABORTED, $exception->getMessage()));
-        }
 
-        DB::beginTransaction();
+            if ($vendor !== null) {
+                $this->assertEnoughProducts($vendor, $batch);
+            }
 
-        try {
-            $vendor = $this->runs->vendor($code);
-            $this->assertEnoughProducts($vendor, $batch);
-            $this->process($vendor, $batch, $mapper, $report, $force, null);
+            $this->process($vendor, $batch, $mapper, null, $report, $force, null);
             $report->finish(RunReport::SUCCEEDED);
         } catch (SourceAborted $exception) {
             $report->finish(RunReport::ABORTED, $exception->getMessage());
         } catch (Throwable $exception) {
             report($exception);
             $report->finish(RunReport::FAILED, class_basename($exception).': '.$exception->getMessage());
-        } finally {
-            DB::rollBack();
         }
 
         return $this->saveReport($report);
@@ -139,35 +154,35 @@ final class CatalogueImporter
         }
     }
 
-    private function process(Vendor $vendor, SourceBatch $batch, VendorMapper $mapper, RunReport $report, bool $force, ?SyncRun $run): void
+    /**
+     * @param  CatalogueWriter|null  $writer  Null in a dry run.
+     */
+    private function process(?Vendor $vendor, SourceBatch $batch, VendorMapper $mapper, ?CatalogueWriter $writer, RunReport $report, bool $force, ?SyncRun $run): void
     {
-        // A fresh writer per run: it memoises option values and settings.
-        /** @var CatalogueWriter $writer */
-        $writer = $this->container->make(CatalogueWriter::class);
+        // Vendor product IDs still in the feed and in scope. Strings only.
+        $present = [];
 
-        // Bulk writers must not sync to search row by row (see CLAUDE.md).
-        Product::withoutSyncingToSearch(function () use ($vendor, $batch, $mapper, $report, $force, $run, $writer): void {
-            Brand::withoutSyncingToSearch(function () use ($vendor, $batch, $mapper, $report, $force, $run, $writer): void {
-                $links = VendorProduct::query()->where('vendor_id', $vendor->id)->get()->keyBy('vendor_product_id');
-                $present = [];
+        foreach ($batch->records as $record) {
+            $report->seen++;
 
-                foreach ($batch->records as $record) {
-                    $report->seen++;
+            if ($this->record($vendor, $record, $mapper, $writer, $report, $force, $run)) {
+                $present[$record->externalId] = true;
+            }
 
-                    $inScope = $this->record($vendor, $record, $mapper, $writer, $links->get($record->externalId), $report, $force, $run);
+            // The payload and everything mapped from it is released here,
+            // before the source fetches the next product.
+            unset($record);
+        }
 
-                    if ($inScope) {
-                        $present[$record->externalId] = true;
-                    }
-                }
+        if ($vendor === null) {
+            return;
+        }
 
-                $this->discontinueMissing($links, $present, $writer, $report);
+        $this->discontinueMissing($vendor, $present, $writer, $report);
 
-                if ($report->created + $report->updated > 0) {
-                    $writer->associate($vendor);
-                }
-            });
-        });
+        if ($writer !== null && $report->created + $report->updated > 0) {
+            $writer->associate($vendor);
+        }
     }
 
     /**
@@ -175,18 +190,19 @@ final class CatalogueImporter
      * it must not be treated as discontinued.
      */
     private function record(
-        Vendor $vendor,
+        ?Vendor $vendor,
         RawRecord $record,
         VendorMapper $mapper,
-        CatalogueWriter $writer,
-        ?VendorProduct $link,
+        ?CatalogueWriter $writer,
         RunReport $report,
         bool $force,
         ?SyncRun $run,
     ): bool {
+        $code = $report->vendorCode;
+
         if ($record->error !== null) {
             // Could not be fetched: not proof that the product is gone.
-            $report->error("{$vendor->code} product {$record->externalId}: {$record->error}");
+            $report->error("{$code} product {$record->externalId}: {$record->error}");
 
             return true;
         }
@@ -198,17 +214,23 @@ final class CatalogueImporter
         }
 
         try {
-            $this->storeRaw($vendor, $record, $run);
+            if ($writer !== null && $vendor !== null) {
+                $this->rawStore->put($vendor, $record, $run?->id);
+            }
 
             $result = $mapper->map($record);
         } catch (Throwable $exception) {
-            $report->error("{$vendor->code} product {$record->externalId}: ".class_basename($exception).': '.$exception->getMessage());
+            $report->error("{$code} product {$record->externalId}: ".class_basename($exception).': '.$exception->getMessage());
 
             return true;
         }
 
         foreach ($result->messages as $message) {
             $report->message($message);
+        }
+
+        foreach ($result->facts as [$group, $value]) {
+            $report->tally($group, $value);
         }
 
         if ($result->outOfScope !== null) {
@@ -218,20 +240,35 @@ final class CatalogueImporter
         }
 
         if ($result->product === null) {
-            $report->error($result->error ?? "{$vendor->code} product {$record->externalId} could not be mapped.");
+            $report->error($result->error ?? "{$code} product {$record->externalId} could not be mapped.");
 
             return true;
         }
 
         $hash = $record->hash();
+
+        // One small row per product, looked up by ID. No list of links is held.
+        $link = $vendor === null ? null : VendorProduct::query()
+            ->where('vendor_id', $vendor->id)
+            ->where('vendor_product_id', $record->externalId)
+            ->first(['id', 'product_id', 'payload_hash', 'missed_runs', 'draft_reasons']);
+
         $wasMissing = in_array(DraftReason::MISSING_FROM_FEED, $link?->draft_reasons ?? [], true);
 
         if ($link !== null && ! $force && ! $wasMissing && $link->payload_hash === $hash) {
             $report->unchanged++;
 
-            if ($link->missed_runs > 0) {
+            if ($writer !== null && $link->missed_runs > 0) {
                 $link->update(['missed_runs' => 0]);
             }
+
+            return true;
+        }
+
+        if ($writer === null || $vendor === null) {
+            // Dry run: record what a real run would do.
+            $reasons = [...$result->product->draftReasons, ...($link === null ? [DraftReason::NO_IMAGE] : [])];
+            $this->count($report, $result->product, $link === null, $reasons === [] ? 'published' : 'draft', $reasons);
 
             return true;
         }
@@ -239,23 +276,18 @@ final class CatalogueImporter
         try {
             $written = $writer->write($vendor, $result->product, $hash);
         } catch (Throwable $exception) {
-            $report->error("{$vendor->code} product {$record->externalId}: ".$exception->getMessage());
+            $report->error("{$code} product {$record->externalId}: ".$exception->getMessage());
 
             return true;
         }
 
-        $written->created ? $report->created++ : $report->updated++;
         $report->productIds[] = $written->productId;
-
-        if ($written->draftedByRule()) {
-            $report->drafted++;
-        }
 
         foreach ($written->messages as $message) {
             $report->message($message);
         }
 
-        $this->describe($report, $result->product, $written);
+        $this->count($report, $result->product, $written->created, $written->status, $written->draftReasons);
 
         return true;
     }
@@ -264,40 +296,44 @@ final class CatalogueImporter
      * A product absent from two consecutive successful full runs is set to
      * draft and its variants to stock 0. Nothing is ever deleted.
      *
-     * @param  Collection<string, VendorProduct>  $links
+     * Compared by ID against `vendor_products`, read in chunks.
+     *
      * @param  array<string, true>  $present
      */
-    private function discontinueMissing($links, array $present, CatalogueWriter $writer, RunReport $report): void
+    private function discontinueMissing(Vendor $vendor, array $present, ?CatalogueWriter $writer, RunReport $report): void
     {
         $limit = (int) config('vendorsync.discontinue_after_missed_runs', 2);
 
-        foreach ($links as $externalId => $link) {
-            if (isset($present[(string) $externalId]) || in_array(DraftReason::MISSING_FROM_FEED, $link->draft_reasons ?? [], true)) {
-                continue;
-            }
+        VendorProduct::query()
+            ->where('vendor_id', $vendor->id)
+            ->select(['id', 'vendor_id', 'product_id', 'vendor_product_id', 'missed_runs', 'draft_reasons'])
+            ->chunkById(500, function (Collection $links) use ($present, $writer, $report, $limit): void {
+                foreach ($links as $link) {
+                    if (isset($present[(string) $link->vendor_product_id])
+                        || in_array(DraftReason::MISSING_FROM_FEED, $link->draft_reasons ?? [], true)) {
+                        continue;
+                    }
 
-            $missed = min(255, $link->missed_runs + 1);
-            $link->update(['missed_runs' => $missed]);
+                    $missed = min(255, $link->missed_runs + 1);
 
-            if ($missed >= $limit && $writer->discontinue($link)) {
-                $report->drafted++;
-                $report->productIds[] = $link->product_id;
-                $report->message("{$report->vendorCode} product {$externalId} was absent from {$missed} consecutive runs: drafted, stock set to 0.");
-            }
-        }
-    }
+                    if ($writer === null) {
+                        if ($missed >= $limit) {
+                            $report->drafted++;
+                            $report->message("{$report->vendorCode} product {$link->vendor_product_id} would be drafted: absent from {$missed} consecutive runs.");
+                        }
 
-    private function storeRaw(Vendor $vendor, RawRecord $record, ?SyncRun $run): void
-    {
-        VendorRawRecord::query()->updateOrCreate(
-            ['vendor_id' => $vendor->id, 'external_id' => $record->externalId],
-            [
-                'payload' => $record->payload,
-                'payload_hash' => hash('sha256', RawRecord::canonical($record->payload)),
-                'fetched_at' => now(),
-                'last_seen_run_id' => $run?->id,
-            ],
-        );
+                        continue;
+                    }
+
+                    $link->update(['missed_runs' => $missed]);
+
+                    if ($missed >= $limit && $writer->discontinue($link)) {
+                        $report->drafted++;
+                        $report->productIds[] = $link->product_id;
+                        $report->message("{$report->vendorCode} product {$link->vendor_product_id} was absent from {$missed} consecutive runs: drafted, stock set to 0.");
+                    }
+                }
+            });
     }
 
     private function outOfScope(RunReport $report, string $reason): void
@@ -306,29 +342,47 @@ final class CatalogueImporter
         $report->tally('out_of_scope', $reason);
     }
 
-    private function describe(RunReport $report, NormalisedProduct $product, WriteResult $written): void
+    /**
+     * Counts, distinct values and (for the first twenty) one sample line.
+     * Nothing of the product itself is kept.
+     *
+     * @param  list<string>  $draftReasons
+     */
+    private function count(RunReport $report, NormalisedProduct $product, bool $created, string $status, array $draftReasons): void
     {
+        $created ? $report->created++ : $report->updated++;
+
+        if (array_diff($draftReasons, [DraftReason::NO_IMAGE]) !== []) {
+            $report->drafted++;
+        }
+
         foreach ($product->collections as $collection) {
             $report->tally('collection', $collection);
         }
 
-        foreach ($written->draftReasons as $reason) {
+        foreach ($draftReasons as $reason) {
             $report->tally('draft_reason', $reason);
         }
 
-        foreach (array_unique(array_map(fn ($variant): string => $variant->taxClass, $product->variants)) as $taxClass) {
+        foreach (array_unique(array_map(fn (NormalisedVariant $variant): string => $variant->taxClass, $product->variants)) as $taxClass) {
             $report->tally('tax_class', $taxClass);
         }
 
-        $prices = array_map(fn ($variant): int => $variant->price, $product->variants);
+        $report->tally('brand', $product->brand ?? '(no brand)');
+
+        if (count($report->samples) >= RunReport::SAMPLE_LIMIT) {
+            return;
+        }
+
+        $prices = array_map(fn (NormalisedVariant $variant): int => $variant->price, $product->variants);
 
         $report->sample(sprintf(
             '%s %s %s [%s]: %s, %s, %d variants, %s to %s ex VAT, %s%s',
-            $written->created ? 'create' : 'update',
+            $created ? 'create' : 'update',
             $product->brand ?? '(no brand)',
             $product->name,
             $product->vendorProductId,
-            $written->status.($written->draftReasons === [] ? '' : ' ('.implode(', ', $written->draftReasons).')'),
+            $status.($draftReasons === [] ? '' : ' ('.implode(', ', $draftReasons).')'),
             $product->collections === [] ? 'no collection' : implode(', ', $product->collections),
             count($product->variants),
             number_format(min($prices) / 100, 2),
@@ -338,18 +392,20 @@ final class CatalogueImporter
         ));
     }
 
+    /**
+     * The run collected product IDs only. They are loaded and reindexed in
+     * small chunks.
+     */
     private function reindex(RunReport $report): void
     {
         $ids = array_values(array_unique($report->productIds));
 
-        if ($ids === []) {
-            return;
+        foreach (array_chunk($ids, self::REINDEX_CHUNK) as $chunk) {
+            $products = Product::query()->whereIn('id', $chunk)->get();
+
+            Brand::query()->whereIn('id', $products->pluck('brand_id')->filter()->unique())->get()->searchable();
+            $products->searchable();
         }
-
-        $products = Product::query()->whereIn('id', $ids)->get();
-
-        Brand::query()->whereIn('id', $products->pluck('brand_id')->filter()->unique())->get()->searchable();
-        $products->searchable();
 
         $report->reindexedProductIds = $ids;
     }
@@ -367,7 +423,7 @@ final class CatalogueImporter
 
         File::put($path, json_encode($report->toArray(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
 
-        $report->message("Dry run report saved to {$path}");
+        $report->reportPath = $path;
 
         return $report;
     }
