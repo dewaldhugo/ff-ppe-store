@@ -1,0 +1,464 @@
+[
+  {
+    "skuId": 839359,
+    "ean": "5412252789391",
+    "stock": 96,
+    "firstArrival": null,
+    "stockType": "N"
+  },
+  {
+    "skuId": 839360,
+    "ean": "5412252789407",
+    "stock": 160,
+    "firstArrival": null,
+    "stockType": "N"
+  },
+  {
+    "skuId": 839361,
+    "ean": "5412252592328",
+    "stock": 120,
+    "firstArrival": null,
+    "stockType": "N"
+  },
+  {
+    "skuId": 839362,
+    "ean": "5412252592335",
+    "stock": 108,
+    "firstArrival": null,
+    "stockType": "N"
+  },
+  {
+    "skuId": 839363,
+    "ean": "5412252592342",
+    "stock": 0,
+    "firstArrival": null,
+    "stockType": "N"
+  },
+  {
+    "skuId": 839364,
+    "ean": "5412252592359",
+    "stock": 60,
+    "firstArrival": null,
+    "stockType": "N"
+  },
+  {
+    "skuId": 839366,
+    "ean": "5412252592366",
+    "stock": 1813,
+    "firstArrival": null,
+    "stockType": "N"
+  },
+  {
+    "skuId": 839368,
+    "ean": "5412252592373",
+    "stock": 783,
+    "firstArrival": null,
+    "stockType": "N"
+  },
+  {
+    "skuId": 839370,
+    "ean": "5412252592380",
+    "stock": 2452,
+    "firstArrival": null,
+    "stockType": "N"
+  },
+  {
+    "skuId": 839372,
+    "ean": "5412252592397",
+    "stock": 2211,
+    "firstArrival": null,
+    "stockType": "N"
+  },
+  {
+    "skuId": 839374,
+    "ean": "5412252592403",
+    "stock": 1569,
+    "firstArrival": null,
+    "stockType": "N"
+  },
+  {
+    "skuId": 839375,
+    "ean": "5412252592410",
+    "stock": 111,
+    "firstArrival": null,
+    "stockType": "N"
+  },
+  {
+    "skuId": 1414984,
+    "ean": "5400812964876",
+    "stock": 857,
+    "firstArrival": 1795302000000,
+    "stockType": "N"
+  },
+  {
+    "skuId": 1454453,
+    "ean": "5400812974943",
+    "stock": 189,
+    "firstArrival": null,
+    "stockType": "N"
+  },
+  {
+    "skuId": 1454454,
+    "ean": "5400812974585",
+    "stock": 313,
+    "firstArrival": null,
+    "stockType": "N"
+  },
+  {
+    "skuId": 1481428,
+    "ean": "5400812974745",
+    "stock": 172,
+    "firstArrival": null,
+    "stockType": "N"
+  },
+  {
+    "skuId": 1487216,
+    "ean": "5400812964814",
+    "stock": 0,
+    "firstArrival": 1796079600000,
+    "stockType": "N"
+  },
+  {
+    "skuId": 1487217,
+    "ean": "5400812964838",
+    "stock": 0,
+    "firstArrival": 1796079600000,
+    "stockType": "N"
+  },
+  {
+    "skuId": 1487218,
+    "ean": "5400812964852",
+    "stock": 564,
+    "firstArrival": 1795302000000,
+    "stockType": "N"
+  },
+  {
+    "skuId": 1487219,
+    "ean": "5400812964890",
+    "stock": 3851,
+    "firstArrival": 1802905200000,
+    "stockType": "N"
+  },
+  {
+    "skuId": 1487220,
+    "ean": "5400812964913",
+    "stock": 2418,
+    "firstArrival": 1795302000000,
+    "stockType": "N"
+  },
+  {
+    "skuId": 1487221,
+    "ean": "5400812964937",
+    "stock": 2332,
+    "firstArrival": 1795302000000,
+    "stockType": "N"
+  },
+  {
+    "skuId": 1487222,
+    "ean": "5400812964951",
+    "stock": 1605,
+    "firstArrival": 1795302000000,
+    "stockType": "N"
+  },
+  {
+    "skuId": 1487223,
+    "ean": "5400812964975",
+    "stock": 580,
+    "firstArrival": 1795302000000,
+    "stockType": "N"
+  },
+  {
+    "skuId": 1487224,
+    "ean": "5400812964999",
+    "stock": 321,
+    "firstArrival": 1796079600000,
+    "stockType": "N"
+  },
+  {
+    "skuId": 1492520,
+    "ean": "5400812980302",
+    "stock": 106,
+    "firstArrival": null,
+    "stockType": "N"
+  },
+  {
+    "skuId": 1492522,
+    "ean": "5400812978972",
+    "stock": 55,
+    "firstArrival": null,
+    "stockType": "N"
+  },
+  {
+    "skuId": 1492523,
+    "ean": "5400812980524",
+    "stock": 155,
+    "firstArrival": null,
+    "stockType": "N"
+  },
+  {
+    "skuId": 1492535,
+    "ean": "5400812980326",
+    "stock": 202,
+    "firstArrival": null,
+    "stockType": "N"
+  },
+  {
+    "skuId": 1492537,
+    "ean": "5400812978996",
+    "stock": 85,
+    "firstArrival": null,
+    "stockType": "N"
+  },
+  {
+    "skuId": 1492538,
+    "ean": "5400812980548",
+    "stock": 107,
+    "firstArrival": null,
+    "stockType": "N"
+  },
+  {
+    "skuId": 1492550,
+    "ean": "5400812980340",
+    "stock": 198,
+    "firstArrival": null,
+    "stockType": "N"
+  },
+  {
+    "skuId": 1492552,
+    "ean": "5400812979016",
+    "stock": 206,
+    "firstArrival": null,
+    "stockType": "N"
+  },
+  {
+    "skuId": 1492553,
+    "ean": "5400812980562",
+    "stock": 168,
+    "firstArrival": null,
+    "stockType": "N"
+  },
+  {
+    "skuId": 1492565,
+    "ean": "5400812980364",
+    "stock": 309,
+    "firstArrival": null,
+    "stockType": "N"
+  },
+  {
+    "skuId": 1492567,
+    "ean": "5400812979030",
+    "stock": 326,
+    "firstArrival": null,
+    "stockType": "N"
+  },
+  {
+    "skuId": 1492568,
+    "ean": "5400812980586",
+    "stock": 181,
+    "firstArrival": null,
+    "stockType": "N"
+  },
+  {
+    "skuId": 1492580,
+    "ean": "5400812980388",
+    "stock": 188,
+    "firstArrival": null,
+    "stockType": "N"
+  },
+  {
+    "skuId": 1492582,
+    "ean": "5400812979054",
+    "stock": 261,
+    "firstArrival": null,
+    "stockType": "N"
+  },
+  {
+    "skuId": 1492583,
+    "ean": "5400812980609",
+    "stock": 158,
+    "firstArrival": null,
+    "stockType": "N"
+  },
+  {
+    "skuId": 1492605,
+    "ean": "5400812980401",
+    "stock": 303,
+    "firstArrival": null,
+    "stockType": "N"
+  },
+  {
+    "skuId": 1492607,
+    "ean": "5400812979078",
+    "stock": 532,
+    "firstArrival": null,
+    "stockType": "N"
+  },
+  {
+    "skuId": 1492608,
+    "ean": "5400812980623",
+    "stock": 287,
+    "firstArrival": null,
+    "stockType": "N"
+  },
+  {
+    "skuId": 1492620,
+    "ean": "5400812980425",
+    "stock": 245,
+    "firstArrival": null,
+    "stockType": "N"
+  },
+  {
+    "skuId": 1492622,
+    "ean": "5400812979092",
+    "stock": 611,
+    "firstArrival": null,
+    "stockType": "N"
+  },
+  {
+    "skuId": 1492623,
+    "ean": "5400812980647",
+    "stock": 487,
+    "firstArrival": null,
+    "stockType": "N"
+  },
+  {
+    "skuId": 1492635,
+    "ean": "5400812980449",
+    "stock": 0,
+    "firstArrival": 1797202800000,
+    "stockType": "N"
+  },
+  {
+    "skuId": 1492637,
+    "ean": "5400812979115",
+    "stock": 470,
+    "firstArrival": null,
+    "stockType": "N"
+  },
+  {
+    "skuId": 1492638,
+    "ean": "5400812980661",
+    "stock": 211,
+    "firstArrival": null,
+    "stockType": "N"
+  },
+  {
+    "skuId": 1492650,
+    "ean": "5400812980463",
+    "stock": 78,
+    "firstArrival": 1797202800000,
+    "stockType": "N"
+  },
+  {
+    "skuId": 1492652,
+    "ean": "5400812979139",
+    "stock": 339,
+    "firstArrival": null,
+    "stockType": "N"
+  },
+  {
+    "skuId": 1492653,
+    "ean": "5400812980685",
+    "stock": 346,
+    "firstArrival": null,
+    "stockType": "N"
+  },
+  {
+    "skuId": 1492665,
+    "ean": "5400812980487",
+    "stock": 83,
+    "firstArrival": null,
+    "stockType": "N"
+  },
+  {
+    "skuId": 1492667,
+    "ean": "5400812979153",
+    "stock": 153,
+    "firstArrival": null,
+    "stockType": "N"
+  },
+  {
+    "skuId": 1492668,
+    "ean": "5400812980708",
+    "stock": 289,
+    "firstArrival": null,
+    "stockType": "N"
+  },
+  {
+    "skuId": 1492680,
+    "ean": "5400812980500",
+    "stock": 43,
+    "firstArrival": null,
+    "stockType": "N"
+  },
+  {
+    "skuId": 1492682,
+    "ean": "5400812979177",
+    "stock": 77,
+    "firstArrival": null,
+    "stockType": "N"
+  },
+  {
+    "skuId": 1492683,
+    "ean": "5400812980722",
+    "stock": 77,
+    "firstArrival": null,
+    "stockType": "N"
+  },
+  {
+    "skuId": 1692900,
+    "ean": "5400950185744",
+    "stock": 69,
+    "firstArrival": 1796079600000,
+    "stockType": "N"
+  },
+  {
+    "skuId": 1716535,
+    "ean": "5400950185768",
+    "stock": 0,
+    "firstArrival": 1796079600000,
+    "stockType": "N"
+  },
+  {
+    "skuId": 1956591,
+    "ean": "5401033965109",
+    "stock": 111,
+    "firstArrival": 1796079600000,
+    "stockType": "N"
+  },
+  {
+    "skuId": 1956593,
+    "ean": "5401033965123",
+    "stock": 58,
+    "firstArrival": 1796079600000,
+    "stockType": "N"
+  },
+  {
+    "skuId": 937259,
+    "ean": "5412252784822",
+    "stock": 46,
+    "firstArrival": null,
+    "stockType": "N"
+  },
+  {
+    "skuId": 1294173,
+    "ean": "5412252784822",
+    "stock": 76,
+    "firstArrival": 1805583600000,
+    "stockType": "N"
+  },
+  {
+    "skuId": 2007956,
+    "ean": "",
+    "stock": 1,
+    "firstArrival": null,
+    "stockType": "E"
+  },
+  {
+    "skuId": 830282,
+    "ean": "5415122781440",
+    "stock": 0,
+    "firstArrival": null,
+    "stockType": ""
+  }
+]
