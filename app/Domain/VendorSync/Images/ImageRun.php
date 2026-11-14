@@ -6,8 +6,10 @@ namespace App\Domain\VendorSync\Images;
 
 use App\Domain\VendorSync\Import\RunRecorder;
 use App\Domain\VendorSync\Models\SyncRun;
+use App\Domain\VendorSync\Models\Vendor;
 use App\Domain\VendorSync\Models\VendorProduct;
 use Illuminate\Support\Facades\Bus;
+use Throwable;
 
 /**
  * Queues one image job per product of a vendor and records the run.
@@ -19,16 +21,31 @@ final readonly class ImageRun
     public function __construct(private RunRecorder $runs) {}
 
     /**
-     * @param  string|null  $product  Limit to one vendor product ID.
+     * The `vendor_products` row for a vendor product ID (the ID shown in
+     * reports, for example 215754), or null when the vendor has no such
+     * product.
+     */
+    public function find(string $vendorCode, string $vendorProductId): ?VendorProduct
+    {
+        $vendor = Vendor::query()->where('code', strtoupper($vendorCode))->first();
+
+        return $vendor === null ? null : VendorProduct::query()
+            ->where('vendor_id', $vendor->id)
+            ->where('vendor_product_id', $vendorProductId)
+            ->first();
+    }
+
+    /**
+     * @param  string|null  $vendorProductId  Limit to one vendor product ID.
      * @return int The number of jobs queued.
      */
-    public function dispatch(string $vendorCode, ?string $product = null, bool $refresh = false): int
+    public function dispatch(string $vendorCode, ?string $vendorProductId = null, bool $refresh = false): int
     {
         $vendor = $this->runs->vendor(strtoupper($vendorCode));
 
         $ids = VendorProduct::query()
             ->where('vendor_id', $vendor->id)
-            ->when($product !== null, fn ($query) => $query->where('vendor_product_id', $product))
+            ->when($vendorProductId !== null, fn ($query) => $query->where('vendor_product_id', $vendorProductId))
             ->orderBy('id')
             ->pluck('id');
 
@@ -39,6 +56,23 @@ final readonly class ImageRun
             self::finish($runId);
 
             return 0;
+        }
+
+        // On the sync driver a failing job would throw out of the batch and
+        // stop the jobs after it. Run them one by one instead: each failure
+        // is already logged and recorded in the run by the job itself.
+        if (config('queue.default') === 'sync') {
+            foreach ($ids as $id) {
+                try {
+                    SyncProductImages::dispatchSync($id, $refresh, $runId);
+                } catch (Throwable) {
+                    continue;
+                }
+            }
+
+            self::finish($runId);
+
+            return $ids->count();
         }
 
         Bus::batch($ids->map(fn (int $id): SyncProductImages => new SyncProductImages($id, $refresh, $runId))->all())
@@ -52,6 +86,11 @@ final readonly class ImageRun
         return $ids->count();
     }
 
+    /**
+     * Close the run when its last job has finished. A run in which every
+     * job failed has failed, and raises the alert. A run with some failed
+     * jobs succeeds, with the failures in its report.
+     */
     public static function finish(int $runId): void
     {
         $run = SyncRun::query()->find($runId);
@@ -60,7 +99,13 @@ final readonly class ImageRun
             return;
         }
 
-        // Failed downloads are reported; the products keep their other images.
-        $run->update(['status' => 'succeeded', 'finished_at' => now()]);
+        $failedJobs = (int) (($run->stats ?? [])['failed_jobs'] ?? 0);
+        $allFailed = $run->seen > 0 && $failedJobs >= $run->seen;
+
+        $run->update(['status' => $allFailed ? 'failed' : 'succeeded', 'finished_at' => now()]);
+
+        if ($allFailed) {
+            app(RunRecorder::class)->alert($run);
+        }
     }
 }

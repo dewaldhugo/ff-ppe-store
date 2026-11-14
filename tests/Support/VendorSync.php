@@ -31,8 +31,8 @@ final class VendorSync
 
     private static bool $faked = false;
 
-    /** @var array{0: array<mixed>, 1: array<mixed>, 2: array<mixed>, 3: array<mixed>} */
-    private static array $responses = [[], [], [], []];
+    /** @var list<array<mixed>> */
+    private static array $responses = [[], [], [], [], []];
 
     /**
      * Fake credentials, no real sleeping, no stray requests, and an empty
@@ -53,7 +53,7 @@ final class VendorSync
         File::ensureDirectoryExists(self::path('incoming'));
 
         self::$faked = false;
-        self::$responses = [[], [], [], []];
+        self::$responses = [[], [], [], [], []];
 
         Sleep::fake();
         Http::preventStrayRequests();
@@ -119,12 +119,13 @@ final class VendorSync
      * @param  array<int, array<string, mixed>>  $details  `GET /product/{id}` responses by id.
      * @param  list<array<string, mixed>>  $stock  The `GET /stock` response.
      * @param  list<string>  $brokenImages  Image URL fragments that return 404.
+     * @param  list<string>  $hugeImages  Image URL fragments that return a 3692 x 3291 PNG, like a vendor original.
      */
-    public static function fakeHttp(array $list = [], array $details = [], array $stock = [], array $brokenImages = []): void
+    public static function fakeHttp(array $list = [], array $details = [], array $stock = [], array $brokenImages = [], array $hugeImages = []): void
     {
         // Laravel stacks fakes and the first one wins, so the fake is
         // registered once per test and reads the latest responses.
-        self::$responses = [$list, $details, $stock, $brokenImages];
+        self::$responses = [$list, $details, $stock, $brokenImages, $hugeImages];
 
         if (self::$faked) {
             return;
@@ -133,7 +134,7 @@ final class VendorSync
         self::$faked = true;
 
         Http::fake(function (Request $request) {
-            [$list, $details, $stock, $brokenImages] = self::$responses;
+            [$list, $details, $stock, $brokenImages, $hugeImages] = self::$responses;
 
             $url = $request->url();
 
@@ -162,12 +163,27 @@ final class VendorSync
                     }
                 }
 
+                foreach ($hugeImages as $fragment) {
+                    if (str_contains($url, $fragment)) {
+                        return Http::response(self::pngHeader(3692, 3291).basename($url), 200, ['Content-Type' => 'image/png']);
+                    }
+                }
+
                 // A valid PNG, unique per file so nothing is deduplicated.
                 return Http::response(base64_decode(self::PNG).basename($url), 200, ['Content-Type' => 'image/png']);
             }
 
             return Http::response('unexpected request', 500);
         });
+    }
+
+    /**
+     * The first bytes of a PNG that declares the given dimensions. Enough
+     * to read its size from; it is never decoded.
+     */
+    public static function pngHeader(int $width, int $height): string
+    {
+        return hex2bin('89504e470d0a1a0a0000000d49484452').pack('NN', $width, $height).hex2bin('0806000000').pack('N', 0);
     }
 
     /**

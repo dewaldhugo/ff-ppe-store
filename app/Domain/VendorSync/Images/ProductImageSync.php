@@ -14,6 +14,7 @@ use Illuminate\Contracts\Container\Container;
 use Illuminate\Support\Str;
 use Lunar\Models\Product;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use Throwable;
 
 /**
  * Brings one product's images in line with the vendor's image list, in the
@@ -23,6 +24,9 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  *
  * The image list comes from the raw record, so no vendor call is needed to
  * know what to download.
+ *
+ * Every image that cannot be saved is returned with its reason. Nothing is
+ * swallowed: the caller decides whether the result is a failure.
  */
 final readonly class ProductImageSync
 {
@@ -34,29 +38,39 @@ final readonly class ProductImageSync
 
     /**
      * @param  bool  $refresh  Download every image again and replace the ones whose content changed.
-     * @return array{changed: bool, downloaded: int, failed: list<string>}
      */
-    public function sync(VendorProduct $link, bool $refresh = false): array
+    public function sync(VendorProduct $link, bool $refresh = false): ImageSyncResult
     {
-        $result = ['changed' => false, 'downloaded' => 0, 'failed' => []];
-
-        $plan = $this->plan($link);
+        $result = new ImageSyncResult;
+        $plan = $this->plan($link, $result);
 
         if ($plan === null) {
             return $result;
         }
 
+        $result->planned = count($plan);
+
         /** @var Product $product */
         $product = Product::query()->findOrFail($link->product_id);
         $collection = (string) config('lunar.media.collection');
         $planHash = hash('sha256', json_encode(array_map(fn (NormalisedImage $image): array => [$image->url, $image->colour, $image->role], $plan), JSON_THROW_ON_ERROR));
+        $existingMedia = $product->getMedia($collection);
 
         // Re-download only when the URL set changed, or on a full refresh.
-        if (! $refresh && $link->image_urls_hash === $planHash && $product->getMedia($collection)->isNotEmpty()) {
+        if (! $refresh && $link->image_urls_hash === $planHash && $existingMedia->isNotEmpty()) {
+            $result->upToDate = true;
+            $result->stored = $existingMedia->count();
+
             return $result;
         }
 
-        $managed = $product->getMedia($collection)
+        // Vendor originals can exceed Media Library's default of 10 MB.
+        config(['media-library.max_file_size' => max(
+            (int) config('media-library.max_file_size'),
+            (int) config('vendorsync.images.max_file_bytes', 20 * 1024 * 1024),
+        )]);
+
+        $managed = $existingMedia
             ->filter(fn (Media $media): bool => filled($media->getCustomProperty('source_url')))
             ->keyBy(fn (Media $media): string => $this->key($media->getCustomProperty('source_url'), $media->getCustomProperty('colour')));
 
@@ -72,10 +86,10 @@ final readonly class ProductImageSync
                 continue;
             }
 
-            $content = $this->downloader->download($image->url);
+            [$content, $downloadedFrom, $failure] = $this->fetch($image, $result);
 
             if ($content === null) {
-                $result['failed'][] = $image->url;
+                $result->failed[] = "{$image->url}: {$failure}";
 
                 // The product keeps its other images, and this one if it had it.
                 if ($existing !== null) {
@@ -103,54 +117,84 @@ final readonly class ProductImageSync
 
             $caption = trim(($product->brand?->name ?? '').' '.$product->translateAttribute('name').' '.$image->colour);
 
-            $media = $product
-                ->addMediaFromString($content)
-                ->usingName($caption)
-                ->usingFileName(Str::slug($caption.' '.$image->role.' '.($index + 1)).'.'.$this->extension($image->url))
-                ->withCustomProperties([
-                    'colour' => $image->colour,
-                    'role' => $image->role,
-                    'primary' => false,
-                    'source_url' => $image->url,
-                    'sha256' => $sha,
-                ])
-                ->toMediaCollection($collection);
+            try {
+                $media = $product
+                    ->addMediaFromString($content)
+                    ->usingName($caption)
+                    ->usingFileName(Str::slug($caption.' '.$image->role.' '.($index + 1)).'.'.$this->extension($downloadedFrom))
+                    ->withCustomProperties([
+                        'colour' => $image->colour,
+                        'role' => $image->role,
+                        'primary' => false,
+                        // The identity of the image in the vendor's list.
+                        'source_url' => $image->url,
+                        // Where the stored bytes came from (the fallback, when used).
+                        'downloaded_url' => $downloadedFrom,
+                        'sha256' => $sha,
+                    ])
+                    ->toMediaCollection($collection);
+            } catch (Throwable $exception) {
+                // For example a file over the size limit, or an image the
+                // driver cannot convert. Reported, never swallowed.
+                $result->failed[] = "{$image->url}: ".class_basename($exception).': '.$exception->getMessage();
+
+                if ($existing !== null) {
+                    $ordered[$key] = $existing;
+                }
+
+                continue;
+            } finally {
+                unset($content);
+            }
 
             $existing?->delete();
 
             $ordered[$key] = $media;
-            $result['downloaded']++;
-            $result['changed'] = true;
+            $result->downloaded++;
+            $result->changed = true;
         }
 
         // Images the vendor no longer lists. Images added in the admin
         // panel have no source URL and are left alone.
         foreach ($managed as $key => $media) {
-            if (! isset($ordered[$key]) && $result['failed'] === []) {
+            if (! isset($ordered[$key]) && $result->failed === []) {
                 $media->delete();
-                $result['changed'] = true;
+                $result->changed = true;
             }
         }
 
         $ordered = array_values($ordered);
+        $product->refresh();
+        $result->stored = $product->getMedia($collection)->count();
 
         if ($ordered !== []) {
             Media::setNewOrder(array_map(fn (Media $media): int => $media->id, $ordered));
             $this->markPrimary($ordered);
-            $this->linkVariants($product->refresh(), $ordered);
+            $this->linkVariants($product, $ordered);
+        }
+
+        if ($result->stored === 0) {
+            // Nothing was saved: leave the product as it was, so the next
+            // run starts from scratch.
+            return $result;
         }
 
         $link->update([
-            'image_urls_hash' => $result['failed'] === [] ? $planHash : null,
+            // A partial result gets a different hash, so the next run
+            // tries the missing images again without re-downloading the rest.
+            'image_urls_hash' => $result->failed === []
+                ? $planHash
+                : hash('sha256', $planHash.'|incomplete|'.implode('|', $result->failed)),
             'images_synced_at' => now(),
         ]);
 
-        // A product stays draft until it has at least one image.
+        // With at least one image, `no_image` is removed and the product
+        // is published when no other draft reason remains.
         if ($this->writer->refreshStatus($link->refresh())) {
-            $result['changed'] = true;
+            $result->changed = true;
         }
 
-        if ($result['changed']) {
+        if ($result->changed) {
             $product->refresh()->searchable();
         }
 
@@ -158,33 +202,117 @@ final readonly class ProductImageSync
     }
 
     /**
+     * Download an image, falling back to its smaller rendition when the
+     * original is too large to process.
+     *
+     * @return array{0: ?string, 1: string, 2: ?string} Bytes, the URL they came from, and the reason when there are none.
+     */
+    private function fetch(NormalisedImage $image, ImageSyncResult $result): array
+    {
+        $content = $this->downloader->download($image->url);
+
+        if ($content === null) {
+            return [null, $image->url, 'download failed'];
+        }
+
+        $tooLarge = $this->tooLarge($content);
+
+        if ($tooLarge === null) {
+            return [$content, $image->url, null];
+        }
+
+        unset($content);
+
+        if ($image->fallbackUrl === null) {
+            return [null, $image->url, "{$tooLarge}, and the vendor lists no smaller rendition"];
+        }
+
+        $content = $this->downloader->download($image->fallbackUrl);
+
+        if ($content === null) {
+            return [null, $image->url, "{$tooLarge}, and the smaller rendition {$image->fallbackUrl} could not be downloaded"];
+        }
+
+        if ($this->tooLarge($content) !== null) {
+            return [null, $image->url, "{$tooLarge}, and so is the smaller rendition {$image->fallbackUrl}"];
+        }
+
+        $result->notes[] = basename($image->url).": {$tooLarge}; used ".basename($image->fallbackUrl).' instead';
+
+        return [$content, $image->fallbackUrl, null];
+    }
+
+    /**
+     * Why the image cannot be processed within the worker's memory, or
+     * null when it can. Reads the dimensions from the header only.
+     */
+    private function tooLarge(string $content): ?string
+    {
+        $bytes = strlen($content);
+        $maxBytes = (int) config('vendorsync.images.max_file_bytes', 20 * 1024 * 1024);
+
+        if ($bytes > $maxBytes) {
+            return sprintf('the file is %.1f MB (limit %.0f MB)', $bytes / 1048576, $maxBytes / 1048576);
+        }
+
+        $size = @getimagesizefromstring($content);
+        $megapixels = $size === false ? 0.0 : $size[0] * $size[1] / 1_000_000;
+        $maxMegapixels = (float) config('vendorsync.images.max_megapixels', 5.0);
+
+        if ($megapixels > $maxMegapixels) {
+            return sprintf('the image is %d x %d (%.1f megapixels, limit %.1f)', $size[0], $size[1], $megapixels, $maxMegapixels);
+        }
+
+        return null;
+    }
+
+    /**
+     * The image list, or null with the reason in `$result->blocked`.
+     *
      * @return list<NormalisedImage>|null
      */
-    private function plan(VendorProduct $link): ?array
+    private function plan(VendorProduct $link, ImageSyncResult $result): ?array
     {
         $link->loadMissing('vendor');
+        $code = (string) $link->vendor?->code;
+
+        if (! $this->container->bound("vendorsync.mapper.{$code}")) {
+            $result->blocked = "no mapper is registered for vendor '{$code}'";
+
+            return null;
+        }
 
         $raw = VendorRawRecord::query()
             ->where('vendor_id', $link->vendor_id)
             ->where('external_id', $link->vendor_product_id)
             ->first();
 
-        if ($raw === null || ! $this->container->bound("vendorsync.mapper.{$link->vendor->code}")) {
+        if ($raw === null) {
+            $result->blocked = 'no stored vendor payload; run the catalogue import first';
+
             return null;
         }
 
         /** @var VendorMapper $mapper */
-        $mapper = $this->container->make("vendorsync.mapper.{$link->vendor->code}");
-        $product = $mapper->map(new RawRecord($link->vendor_product_id, $raw->payload))->product;
+        $mapper = $this->container->make("vendorsync.mapper.{$code}");
+        $mapped = $mapper->map(new RawRecord($link->vendor_product_id, $raw->payload));
 
-        if ($product === null) {
+        if ($mapped->product === null) {
+            $result->blocked = 'the stored vendor payload no longer maps to a product ('.($mapped->outOfScope ?? $mapped->error ?? 'unknown reason').')';
+
             return null;
         }
 
         $plan = [];
 
-        foreach ($product->images as $image) {
+        foreach ($mapped->product->images as $image) {
             $plan[$this->key($image->url, $image->colour)] ??= $image;
+        }
+
+        if ($plan === []) {
+            $result->blocked = 'the vendor payload lists no images for this product';
+
+            return null;
         }
 
         return array_values($plan);

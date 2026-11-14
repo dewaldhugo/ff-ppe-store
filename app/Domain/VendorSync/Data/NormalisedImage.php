@@ -12,5 +12,8 @@ final readonly class NormalisedImage
         public string $colour,
         // main, side, outsole or detail.
         public string $role,
+        // A smaller rendition of the same picture, used when the image at
+        // `url` is too large to process within the worker's memory.
+        public ?string $fallbackUrl = null,
     ) {}
 }

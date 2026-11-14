@@ -211,6 +211,19 @@ return [
         // Minimum milliseconds between downloads from one host.
         'throttle_ms' => 250,
         'refresh_days' => 7,
+
+        // Largest image, in megapixels, that is stored and converted. With
+        // the GD driver a conversion needs about 8 MB of memory per
+        // megapixel on top of the worker's own 64 MB, so a 12 megapixel
+        // vendor original does not fit in a 128 MB PHP process. A larger
+        // image is replaced by its smaller rendition when the vendor has
+        // one, and reported otherwise. Raise this only together with the
+        // worker's memory limit, or after switching to Imagick.
+        'max_megapixels' => (float) env('VENDORSYNC_IMAGE_MAX_MEGAPIXELS', 5.0),
+
+        // Largest file accepted, in bytes. Media Library's own default of
+        // 10 MB is raised to this for imports only.
+        'max_file_bytes' => 20 * 1024 * 1024,
     ],
 
 ];

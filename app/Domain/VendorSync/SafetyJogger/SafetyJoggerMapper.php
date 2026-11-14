@@ -320,9 +320,14 @@ final readonly class SafetyJoggerMapper implements VendorMapper
         }
 
         $gallery = $this->urls($images['hires'] ?? []);
+        $web = $this->urls($images['web'] ?? []);
+        // The `web` list is the same gallery at 1280 pixels: WEB01 pairs
+        // with HIRES, WEB02 with HR01, and so on. It is the fallback when a
+        // high resolution file is too large to process.
+        $fallbacks = $gallery === [] ? [] : $web;
 
         if ($gallery === []) {
-            $gallery = $this->urls($images['web'] ?? []);
+            $gallery = $web;
         }
 
         if ($gallery === []) {
@@ -332,7 +337,7 @@ final readonly class SafetyJoggerMapper implements VendorMapper
         $result = [];
 
         foreach ($gallery as $index => $url) {
-            $result[] = new NormalisedImage($url, $colour, $index === 0 ? 'main' : 'detail');
+            $result[] = new NormalisedImage($url, $colour, $index === 0 ? 'main' : 'detail', $fallbacks[$index] ?? null);
         }
 
         foreach ($this->urls([$images['outsole'] ?? null]) as $url) {

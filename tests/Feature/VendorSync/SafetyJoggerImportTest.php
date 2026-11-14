@@ -294,20 +294,24 @@ it('keeps a product\'s other images when one download fails', function (): void 
 
     $result = app(ProductImageSync::class)->sync($link);
 
-    expect($result['failed'])->toHaveCount(1)
-        ->and($result['failed'][0])->toContain('LIGERO-NAV-HR02')
+    expect($result->failed)->toHaveCount(1)
+        ->and($result->failed[0])->toContain('LIGERO-NAV-HR02')
+        ->and($result->failed[0])->toContain('download failed')
         ->and(VendorSync::product('SJ', '284096')->getMedia('images'))->toHaveCount(14)
         ->and(VendorSync::product('SJ', '284096')->status)->toBe('published')
-        // Not marked as complete, so the next run tries again.
-        ->and($link->refresh()->image_urls_hash)->toBeNull();
+        ->and($link->refresh()->images_synced_at)->not->toBeNull();
+
+    // Marked as incomplete, so the next run tries the missing image again.
+    $incomplete = $link->refresh()->image_urls_hash;
+    expect($incomplete)->not->toBeNull();
 
     // Nothing is downloaded twice: only the missing image is fetched again.
     VendorSync::fakeHttp([['id' => 284096]], [284096 => $ligero]);
     $again = app(ProductImageSync::class)->sync($link->refresh());
 
-    expect($again['downloaded'])->toBe(1)
+    expect($again->downloaded)->toBe(1)
         ->and(VendorSync::product('SJ', '284096')->getMedia('images'))->toHaveCount(15)
-        ->and($link->refresh()->image_urls_hash)->not->toBeNull();
+        ->and($link->refresh()->image_urls_hash)->not->toBe($incomplete);
 });
 
 it('updates every offer from the stock feed by skuId', function (): void {
