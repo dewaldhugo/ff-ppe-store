@@ -90,7 +90,7 @@ it('skips a SKU with an unknown EU size without drafting the product', function 
         ->and($product->status)->toBe('published')
         ->and($product->variants->pluck('sku')->sort()->values()->all())->toBe(['SJ-100', 'SJ-102'])
         ->and($report->tallies['unknown_size'])->toBe(['51' => 1])
-        ->and(implode("\n", $report->messages))->toContain("SKU 101 has EU size '51', which is not in the size chart; variant not imported.");
+        ->and(implode("\n", $report->messages))->toContain('MOSTLYFINE [1]: 1 SKU with a size that is not in the size chart (EU 51); not imported (SKUs: 101)');
 });
 
 it('does not create a new product whose sizes are all unknown, and drafts an existing one', function (): void {
@@ -101,7 +101,7 @@ it('does not create a new product whose sizes are all unknown, and drafts an exi
     expect($report->created)->toBe(0)
         ->and($report->errors)->toBe(1)
         ->and(Product::query()->count())->toBe(0)
-        ->and(implode("\n", $report->messages))->toContain('no variant has a usable size; product not created');
+        ->and(implode("\n", $report->messages))->toContain('NOSIZES [1]: no importable variant (unknown_size); product not created.');
 
     // The same product, first with good sizes, then with none left.
     VendorSync::fakeHttp([['id' => 1]], [1 => sjWithSizes(1, 'NOSIZES', ['42', '43'])]);
@@ -227,4 +227,134 @@ it('skips a Footsure row with no usable UK size without drafting the product', f
         ->and(VendorProduct::query()->sole()->draft_reasons)->toBe([DraftReason::NO_IMAGE])
         ->and(ProductVariant::query()->pluck('sku')->sort()->values()->all())->toBe(['FS-00345-00772-04', 'FS-00345-00772-05'])
         ->and($report->tallies['unknown_size'])->toBe(['One Size' => 1]);
+});
+
+/**
+ * OLIVE [273934] in the live catalogue: twenty SKUs, every one with a cost
+ * at or above its RRP.
+ *
+ * @param  array<int, array{0: float, 1: float}>  $prices  Cost and RRP by SKU index.
+ * @return array<string, mixed>
+ */
+function sjWithPrices(int $id, string $name, array $prices, int $firstSku = 1349550, int $buyPer = 1): array
+{
+    $detail = VendorSync::detail($id, $name, 'Oxypas', 'Shoes', ['EN ISO 20347:2022']);
+    $sku = $detail['colors'][0]['skus'][0];
+    $sizes = ['35', '36', '37', '38', '39', '40', '41', '42', '43', '44'];
+    $detail['colors'][0]['skus'] = [];
+    $detail['colors'][1] = [...$detail['colors'][0], 'id' => $id * 10 + 1, 'description' => 'white', 'hexValue' => 'FFFFFF'];
+
+    foreach ($prices as $index => [$cost, $rrp]) {
+        $detail['colors'][intdiv($index, 10)]['skus'][] = [
+            ...$sku,
+            'id' => $firstSku + $index,
+            'sizeRange' => $sizes[$index % 10],
+            'eanCode' => (string) (7000000000000 + $firstSku + $index),
+            'buyPer' => $buyPer,
+            'customerPrice' => ['currency' => 'GBP', 'value' => $cost],
+            'rrpPrice' => ['currency' => 'GBP', 'value' => $rrp],
+        ];
+    }
+
+    return $detail;
+}
+
+it('drafts a product whose every variant has a cost at or above its RRP', function (): void {
+    VendorSync::fakeHttp([['id' => 273934]], [273934 => sjWithPrices(273934, 'OLIVE', array_fill(0, 20, [21.9, 21.5]))]);
+
+    $report = VendorSync::import('SJ');
+    VendorSync::syncImages(['273934']);
+
+    $product = VendorSync::product('SJ', '273934');
+    $link = VendorProduct::query()->sole();
+
+    // Created, so it can be put on sale when the vendor's prices change,
+    // but draft: never published as permanently out of stock.
+    expect($report->created)->toBe(1)
+        ->and($report->drafted)->toBe(1)
+        ->and($report->errors)->toBe(0)
+        ->and($report->tallies['draft_reason'])->toHaveKey(DraftReason::NO_SELLABLE_PRICE)
+        ->and($product->status)->toBe('draft')
+        ->and($product->getMedia('images'))->not->toBeEmpty()
+        ->and($link->draft_reasons)->toBe([DraftReason::NO_SELLABLE_PRICE])
+        ->and($product->variants)->toHaveCount(20)
+        ->and($product->variants->sum('stock'))->toBe(0);
+
+    // One line for the product and reason, not twenty.
+    $lines = array_values(array_filter($report->messages, fn (string $message): bool => str_contains($message, 'cost at or above RRP')));
+
+    expect($lines)->toHaveCount(1)
+        ->and($lines[0])->toStartWith('OLIVE [273934]: 20 SKUs with cost at or above RRP; stock set to 0 (SKUs: 1349550, 1349551, ')
+        ->and($lines[0])->toEndWith('1349569)')
+        ->and($report->messages)->toContain('OLIVE [273934]: nothing can be sold at a price; product drafted.');
+});
+
+it('publishes a product when at least one variant has a sellable price', function (): void {
+    $prices = array_fill(0, 20, [21.9, 21.5]);
+    $prices[7] = [9.9, 55.1];
+    VendorSync::fakeHttp([['id' => 273934]], [273934 => sjWithPrices(273934, 'OLIVE', $prices)]);
+
+    $report = VendorSync::import('SJ');
+    VendorSync::syncImages(['273934']);
+
+    $product = VendorSync::product('SJ', '273934');
+
+    expect($report->drafted)->toBe(0)
+        ->and($product->status)->toBe('published')
+        ->and($product->variants->where('stock', '>', 0))->toHaveCount(1)
+        ->and(implode("\n", $report->messages))->toContain('OLIVE [273934]: 19 SKUs with cost at or above RRP; stock set to 0 (SKUs: ');
+});
+
+it('drafts a published product when its prices become unsellable, and republishes it when they recover', function (): void {
+    $good = array_fill(0, 20, [9.9, 55.1]);
+    VendorSync::fakeHttp([['id' => 273934]], [273934 => sjWithPrices(273934, 'OLIVE', $good)]);
+    VendorSync::import('SJ');
+    VendorSync::syncImages(['273934']);
+
+    expect(VendorSync::product('SJ', '273934')->status)->toBe('published');
+
+    VendorSync::fakeHttp([['id' => 273934]], [273934 => sjWithPrices(273934, 'OLIVE', array_fill(0, 20, [60.0, 55.1]))]);
+    $report = VendorSync::import('SJ');
+
+    expect($report->updated)->toBe(1)
+        ->and($report->drafted)->toBe(1)
+        ->and(VendorSync::product('SJ', '273934')->status)->toBe('draft')
+        ->and(VendorSync::product('SJ', '273934')->variants->sum('stock'))->toBe(0);
+
+    VendorSync::fakeHttp([['id' => 273934]], [273934 => sjWithPrices(273934, 'OLIVE', $good)]);
+    VendorSync::import('SJ');
+
+    expect(VendorSync::product('SJ', '273934')->status)->toBe('published')
+        ->and(VendorSync::product('SJ', '273934')->variants->sum('stock'))->toBeGreaterThan(0);
+});
+
+it('reports a product with no importable variant on one line and does not publish it', function (): void {
+    // SAFETYBOY [215965] in the live catalogue: fourteen SKUs, none sold per single pair.
+    $detail = sjWithPrices(215965, 'SAFETYBOY', array_fill(0, 14, [9.9, 55.1]), firstSku: 840165, buyPer: 10);
+    VendorSync::fakeHttp([['id' => 215965]], [215965 => $detail]);
+
+    $report = VendorSync::import('SJ');
+
+    expect($report->created)->toBe(0)
+        ->and($report->errors)->toBe(1)
+        ->and(Product::query()->count())->toBe(0)
+        ->and($report->messages)->toHaveCount(3)
+        ->and($report->messages[0])->toStartWith('SAFETYBOY [215965]: 14 SKUs not sold per single pair; not imported (SKUs: 840165, 840166, ')
+        ->and($report->messages[1])->toBe('SAFETYBOY [215965]: nothing can be sold at a price; product drafted.')
+        ->and($report->messages[2])->toBe('SAFETYBOY [215965]: no importable variant (no_sellable_price); product not created.');
+
+    // The same product once it exists: drafted with the reason, kept, off sale.
+    VendorSync::fakeHttp([['id' => 215965]], [215965 => sjWithPrices(215965, 'SAFETYBOY', array_fill(0, 14, [9.9, 55.1]), firstSku: 840165)]);
+    VendorSync::import('SJ');
+    VendorSync::syncImages(['215965']);
+
+    expect(VendorSync::product('SJ', '215965')->status)->toBe('published');
+
+    VendorSync::fakeHttp([['id' => 215965]], [215965 => $detail]);
+    $report = VendorSync::import('SJ');
+
+    expect(VendorSync::product('SJ', '215965')->status)->toBe('draft')
+        ->and(VendorProduct::query()->sole()->draft_reasons)->toBe([DraftReason::NO_SELLABLE_PRICE])
+        ->and(VendorSync::product('SJ', '215965')->variants)->toHaveCount(14)
+        ->and(VendorSync::product('SJ', '215965')->variants->sum('stock'))->toBe(0);
 });

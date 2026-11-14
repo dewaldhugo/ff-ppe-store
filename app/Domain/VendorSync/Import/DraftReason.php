@@ -15,6 +15,9 @@ final class DraftReason
 
     public const string NO_COLOUR = 'no_colour';
 
+    /** No variant can be imported, or every variant has a cost at or above its RRP. */
+    public const string NO_SELLABLE_PRICE = 'no_sellable_price';
+
     public const string VENDOR_DISCONTINUED = 'vendor_discontinued';
 
     public const string MISSING_FROM_FEED = 'missing_from_feed';

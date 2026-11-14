@@ -138,7 +138,7 @@ it('maps every Group Class in the fixture, so only rule drafts remain', function
 
     // Dasco insoles: cost above RRP, so stock 0, and reported.
     expect(VendorSync::product('FS', '1615')->variants->sum('stock'))->toBe(0)
-        ->and(collect($report->messages)->contains(fn (string $message): bool => str_contains($message, 'cost at or above its RRP')))->toBeTrue();
+        ->and(collect($report->messages)->contains(fn (string $message): bool => str_contains($message, 'Dasco Bama Warm Felta 5 Pack [1615]: 1 SKU with cost at or above RRP; stock set to 0 (SKUs: 01615-05821-04)')))->toBeTrue();
 });
 
 it('skips a duplicate colour and size, keeping the row with a barcode', function (): void {

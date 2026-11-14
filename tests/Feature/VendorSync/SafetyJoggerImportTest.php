@@ -273,9 +273,9 @@ it('reports missing data instead of guessing', function (): void {
         ->and(VendorOffer::query()->where('vendor_sku', '300')->sole()->sellable)->toBeFalse()
         ->and(VendorProduct::query()->whereIn('vendor_product_id', ['4', '271323', '5'])->count())->toBe(0)
         ->and($messages)->toContain("model 'wader'")
-        ->and($messages)->toContain("EU size '52'")
-        ->and($messages)->toContain('cost at or above its RRP')
-        ->and($messages)->toContain('SKU 400 has no cost')
+        ->and($messages)->toContain('BIGFOOT [2]: 1 SKU with a size that is not in the size chart (EU 52); not imported (SKUs: 200)')
+        ->and($messages)->toContain('PRICEY [3]: 1 SKU with cost at or above RRP; stock set to 0 (SKUs: 300)')
+        ->and($messages)->toContain('NOCOST [4]: 1 SKU with no cost; not imported (SKUs: 400)')
         ->and($messages)->toContain('failed with status 404');
 
     // Images of a product drafted by a rule do not publish it.

@@ -16,6 +16,7 @@ use App\Domain\VendorSync\Normalisers\Money;
 use App\Domain\VendorSync\Normalisers\PriceCalculator;
 use App\Domain\VendorSync\Normalisers\SafetyClass;
 use App\Domain\VendorSync\Normalisers\Sizes;
+use App\Domain\VendorSync\Support\SkuIssues;
 use Illuminate\Support\Str;
 
 /**
@@ -60,7 +61,7 @@ final readonly class FootsureMapper implements VendorMapper
         $messages = [];
         $facts = [];
         $draftReasons = [];
-        $label = "Footsure product {$record->externalId} ({$first['Brand']} {$first['Short Product Name']})";
+        $label = trim("{$first['Brand']} {$first['Short Product Name']}")." [{$record->externalId}]";
 
         $collection = $this->config['categories'][$first['Group Class']] ?? null;
 
@@ -143,8 +144,20 @@ final readonly class FootsureMapper implements VendorMapper
             $draftReasons[] = DraftReason::UNKNOWN_SIZE;
         }
 
-        if ($variants === [] && ! $noUsableSize) {
-            return MappingResult::error("{$label}: no variant can be imported.", $messages, $facts);
+        // One report line per product and reason, not one per SKU.
+        $costAboveRrp = SkuIssues::count($messages, SkuIssues::COST_ABOVE_RRP);
+        $messages = SkuIssues::collapse($label, $messages);
+
+        // Nothing to sell at a price: either no variant can be imported at
+        // all, or every one is held at stock 0 because its cost is at or
+        // above its RRP. Draft it rather than publish it as permanently out
+        // of stock.
+        $noSellablePrice = ($variants === [] && ! $noUsableSize)
+            || ($variants !== [] && $costAboveRrp === count($variants));
+
+        if ($noSellablePrice) {
+            $draftReasons[] = DraftReason::NO_SELLABLE_PRICE;
+            $messages[] = "{$label}: nothing can be sold at a price; product drafted.";
         }
 
         $brand = array_key_exists($first['Brand'], $this->config['brand_map'] ?? [])
@@ -197,7 +210,7 @@ final readonly class FootsureMapper implements VendorMapper
         $uk = Sizes::uk($row['UK Size']);
 
         if ($uk === null) {
-            $messages[] = "{$label}: row {$reference} has an unreadable UK size '{$row['UK Size']}'; row skipped.";
+            $messages[] = [SkuIssues::UNKNOWN_SIZE, $reference, 'UK '.($row['UK Size'] === '' ? '(blank)' : $row['UK Size'])];
             $facts[] = ['unknown_size', $row['UK Size'] === '' ? '(blank)' : $row['UK Size']];
 
             return null;
@@ -224,13 +237,13 @@ final readonly class FootsureMapper implements VendorMapper
         $price = $this->prices->calculate($cost, $srp === null ? null : Money::exVat($srp, $vatBasisPoints));
 
         if ($price['price'] === null) {
-            $messages[] = "{$label}: row {$reference} has no cost; variant not imported.";
+            $messages[] = [SkuIssues::NO_COST, $reference];
 
             return null;
         }
 
         if ($price['reason'] === PriceCalculator::COST_AT_OR_ABOVE_RRP) {
-            $messages[] = "{$label}: row {$reference} has a cost at or above its RRP; stock set to 0.";
+            $messages[] = [SkuIssues::COST_ABOVE_RRP, $reference];
         }
 
         $discontinued = $row['Colour Status'] === 'No More' || $row['Product Status'] === 'No More';

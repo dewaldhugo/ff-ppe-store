@@ -283,11 +283,11 @@ final class CatalogueImporter
             ->where('vendor_product_id', $record->externalId)
             ->first(['id', 'product_id', 'payload_hash', 'missed_runs', 'draft_reasons']);
 
-        // No valid variant remains (every SKU has an unusable size). A
-        // product that already exists is drafted by the writer; one that
-        // does not exist cannot be created without variants.
+        // No importable variant remains. A product that already exists is
+        // drafted by the writer; one that does not exist cannot be created
+        // in contract shape without a variant, so it is reported instead.
         if ($result->product->variants === [] && $link === null) {
-            $report->error("{$code} product {$record->externalId} ({$result->product->name}): no variant has a usable size; product not created.");
+            $report->error("{$result->product->name} [{$record->externalId}]: no importable variant (".implode(', ', $result->product->draftReasons).'); product not created.');
 
             return true;
         }

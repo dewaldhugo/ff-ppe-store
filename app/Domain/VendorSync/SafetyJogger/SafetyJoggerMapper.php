@@ -16,6 +16,7 @@ use App\Domain\VendorSync\Normalisers\Money;
 use App\Domain\VendorSync\Normalisers\PriceCalculator;
 use App\Domain\VendorSync\Normalisers\SafetyClass;
 use App\Domain\VendorSync\Normalisers\Sizes;
+use App\Domain\VendorSync\Support\SkuIssues;
 use Illuminate\Support\Str;
 
 /**
@@ -45,7 +46,7 @@ final readonly class SafetyJoggerMapper implements VendorMapper
     {
         $data = $record->payload;
         $vendorName = (string) ($data['name'] ?? '');
-        $label = "Safety Jogger product {$record->externalId} ({$vendorName})";
+        $label = "{$vendorName} [{$record->externalId}]";
 
         // Scope: an article type on the list AND an EN ISO 20345 or 20347 norm.
         $articleTypes = $this->names($data['articletype'] ?? []);
@@ -163,8 +164,20 @@ final readonly class SafetyJoggerMapper implements VendorMapper
             $draftReasons[] = DraftReason::UNKNOWN_SIZE;
         }
 
-        if ($variants === [] && ! $noUsableSize) {
-            return MappingResult::error("{$label}: no variant can be imported (no prices or no usable sizes).", $messages, $facts);
+        // One report line per product and reason, not one per SKU.
+        $costAboveRrp = SkuIssues::count($messages, SkuIssues::COST_ABOVE_RRP);
+        $messages = SkuIssues::collapse($label, $messages);
+
+        // Nothing to sell at a price: either no variant can be imported at
+        // all, or every one is held at stock 0 because its cost is at or
+        // above its RRP. Draft it rather than publish it as permanently out
+        // of stock.
+        $noSellablePrice = ($variants === [] && ! $noUsableSize)
+            || ($variants !== [] && $costAboveRrp === count($variants));
+
+        if ($noSellablePrice) {
+            $draftReasons[] = DraftReason::NO_SELLABLE_PRICE;
+            $messages[] = "{$label}: nothing can be sold at a price; product drafted.";
         }
 
         return MappingResult::product(new NormalisedProduct(
@@ -233,7 +246,7 @@ final readonly class SafetyJoggerMapper implements VendorMapper
         }
 
         if ((int) ($sku['pieces'] ?? 1) !== 1 || (int) ($sku['buyPer'] ?? 1) !== 1) {
-            $messages[] = "{$label}: SKU {$skuId} is not sold per single pair; variant not imported.";
+            $messages[] = [SkuIssues::NOT_PER_PAIR, $skuId];
 
             return null;
         }
@@ -243,7 +256,7 @@ final readonly class SafetyJoggerMapper implements VendorMapper
 
         if ($uk === null) {
             $facts[] = ['unknown_size', $eu === '' ? '(blank)' : $eu];
-            $messages[] = "{$label}: SKU {$skuId} has EU size '{$eu}', which is not in the size chart; variant not imported.";
+            $messages[] = [SkuIssues::UNKNOWN_SIZE, $skuId, 'EU '.($eu === '' ? '(blank)' : $eu)];
 
             return null;
         }
@@ -257,13 +270,13 @@ final readonly class SafetyJoggerMapper implements VendorMapper
         );
 
         if ($price['price'] === null) {
-            $messages[] = "{$label}: SKU {$skuId} has no cost; variant not imported.";
+            $messages[] = [SkuIssues::NO_COST, $skuId];
 
             return null;
         }
 
         if ($price['reason'] === PriceCalculator::COST_AT_OR_ABOVE_RRP) {
-            $messages[] = "{$label}: SKU {$skuId} has a cost at or above its RRP; stock set to 0.";
+            $messages[] = [SkuIssues::COST_ABOVE_RRP, $skuId];
         }
 
         $ean = trim((string) ($sku['eanCode'] ?? ''));
