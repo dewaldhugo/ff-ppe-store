@@ -30,6 +30,10 @@ Rules:
 - The three `*_vendorsync_*` migrations that create `vendors`, `vendor_products` and `vendor_offers` were created once during Phase 1 so the storefront and fixtures can use the tables. They belong to the ingestion module: never modify them.
 - The fixture seeder (local and testing only) is the only storefront code that writes to the vendor tables.
 
+## Ingestion phases
+
+When the current phase prompt is an ingestion phase (prompts/phase-2-vendorsync.md or a later vendorsync prompt), the scope is inverted: the ingestion area (app/Domain/VendorSync, config/vendorsync.php, *_vendorsync_* migrations, tests/*/VendorSync, tests/Fixtures/VendorSync) is in scope and may be created and changed, and the storefront is out of scope except for the touchpoints the phase prompt lists. The three Phase 1 vendorsync migrations remain unchanged; new tables and columns go in new migrations. The data contract still applies in full, and the importer must write exactly the shape the fixture seeder writes.
+
 ## Data contract
 
 The ingestion module writes data in exactly this shape. The storefront depends on it. Changing it requires updating both sides, so treat it as fixed.
