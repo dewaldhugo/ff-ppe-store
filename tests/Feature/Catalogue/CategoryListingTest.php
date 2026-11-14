@@ -50,11 +50,11 @@ it('returns 404 for an unknown category', function (): void {
     $this->get('/c/not-a-category')->assertNotFound();
 });
 
-it('filters Safety Footwear by S1P and SRC down to Ligero', function (): void {
+it('filters Safety Footwear by S1P and SRC down to Ligero and FS65', function (): void {
     $html = $this->get('/c/safety-footwear?safety_class[0]=S1P&features[0]=SRC')->assertOk()->getContent();
 
-    expect(gridNames($html))->toBe(['Ligero'])
-        ->and($html)->toContain('1 product');
+    expect(gridNames($html))->toEqualCanonicalizing(['Ligero', 'FS65'])
+        ->and($html)->toContain('2 products');
 });
 
 it('reads every filter from the query string so filtered URLs can be shared', function (): void {
@@ -72,7 +72,7 @@ it('shows facet counts from the search index', function (): void {
     $html = $this->get('/c/safety-footwear')->getContent();
 
     expect(facetCounts($html, 'brand'))->toBe(['Amblers Safety' => 2, 'Centek' => 1, 'Maxguard' => 1, 'Safety Jogger' => 1])
-        ->and(facetCounts($html, 'safety_class'))->toBe(['S1' => 1, 'S1P' => 1, 'S3' => 1, 'SB' => 1])
+        ->and(facetCounts($html, 'safety_class'))->toBe(['S1P' => 2, 'S3' => 1, 'SBP' => 1])
         ->and(facetCounts($html, 'gender'))->toBe(['Men' => 3, 'Unisex' => 2]);
 });
 
@@ -107,7 +107,7 @@ it('shows an out of stock badge and hides the product when in stock only is tick
 it('filters by colour and size together as a combination', function (): void {
     $component = Livewire::test(CategoryListing::class, ['slug' => 'safety-footwear'])
         ->set('colour', ['black'])
-        ->set('size', ['9.5']);
+        ->set('size', ['10']);
 
     expect(gridNames($component->html()))->not->toContain('Ligero');
 

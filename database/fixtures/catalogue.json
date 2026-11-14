@@ -254,7 +254,7 @@
           "sku": "SJ-1492637",
           "ean": "5400812979115",
           "colour": "Navy",
-          "shoe_size": "9.5",
+          "shoe_size": "10",
           "eu_size": "44",
           "stock": 472,
           "price": 6890,
@@ -518,7 +518,7 @@
           "sku": "SJ-1492635",
           "ean": "5400812980449",
           "colour": "Black",
-          "shoe_size": "9.5",
+          "shoe_size": "10",
           "eu_size": "44",
           "stock": 0,
           "price": 6890,
@@ -782,7 +782,7 @@
           "sku": "SJ-1492638",
           "ean": "5400812980661",
           "colour": "Orange",
-          "shoe_size": "9.5",
+          "shoe_size": "10",
           "eu_size": "44",
           "stock": 211,
           "price": 6890,
@@ -1049,7 +1049,7 @@
           "sku": "SJ-1342259",
           "ean": "4250401531955",
           "colour": "Dark Red",
-          "shoe_size": "9.5",
+          "shoe_size": "10",
           "eu_size": "44",
           "stock": 0,
           "price": 5999,
@@ -1159,7 +1159,7 @@
     },
     {
       "vendor_code": "FS",
-      "vendor_product_id": "252-02628",
+      "vendor_product_id": "252",
       "product_type": "safety-footwear",
       "status": "published",
       "brand": "Magnum",
@@ -1350,7 +1350,7 @@
     },
     {
       "vendor_code": "FS",
-      "vendor_product_id": "1049-00848",
+      "vendor_product_id": "1049",
       "product_type": "safety-footwear",
       "status": "published",
       "brand": "Amblers Safety",
@@ -1376,7 +1376,7 @@
           "Penetration resistant steel midsole tested 1100 newtons.",
           "Passes SRA Slip Resistance Standards."
         ],
-        "safety_class": "SB",
+        "safety_class": "SBP",
         "features": [
           "P",
           "SRA"
@@ -1566,7 +1566,7 @@
     },
     {
       "vendor_code": "FS",
-      "vendor_product_id": "1055-00821",
+      "vendor_product_id": "1055",
       "product_type": "safety-footwear",
       "status": "published",
       "brand": "Amblers Safety",
@@ -1592,7 +1592,7 @@
           "Conforms to EN ISO 20345:2011 Safety Footwear Standard",
           "Passes SRC slip resistance standards"
         ],
-        "safety_class": "S1",
+        "safety_class": "S1P",
         "features": [
           "P",
           "SRC"
@@ -1694,7 +1694,7 @@
     },
     {
       "vendor_code": "FS",
-      "vendor_product_id": "345-00772",
+      "vendor_product_id": "345",
       "product_type": "safety-footwear",
       "status": "published",
       "brand": "Centek",
@@ -1818,7 +1818,7 @@
     },
     {
       "vendor_code": "FS",
-      "vendor_product_id": "48-00480",
+      "vendor_product_id": "48",
       "product_type": "safety-footwear",
       "status": "published",
       "brand": "GBS",
@@ -2029,7 +2029,7 @@
     },
     {
       "vendor_code": "FS",
-      "vendor_product_id": "52-00095",
+      "vendor_product_id": "52",
       "product_type": "safety-footwear",
       "status": "published",
       "brand": "GBS",

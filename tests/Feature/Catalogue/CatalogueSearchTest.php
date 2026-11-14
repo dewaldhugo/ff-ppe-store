@@ -17,8 +17,8 @@ use Tests\Support\SearchIndex;
  *
  *   Ligero   Safety Jogger   S1P  SRC CI ESD METAL_FREE   ex 68.90  inc 82.68
  *   SX310    Maxguard        S3   SRC HI HRO WR CI ...    ex 59.99  inc 71.99  (no stock)
- *   FS9      Amblers Safety  SB   P SRA                   ex 52.48  inc 52.48  (zero rated)
- *   FS65     Amblers Safety  S1   P SRC                   ex 40.48  inc 48.58
+ *   FS9      Amblers Safety  SBP  P SRA                   ex 52.48  inc 52.48  (zero rated)
+ *   FS65     Amblers Safety  S1P  P SRC                   ex 40.48  inc 48.58
  *   FS30C    Centek          -    SR                      ex 40.48  inc 40.48  (zero rated)
  */
 
@@ -61,34 +61,34 @@ it('lists a leaf collection and a range', function (string $collection, array $e
     ['clearance', ['FS9', 'FS65', 'Eva']],
 ]);
 
-it('returns Ligero only for S1P and SRC', function (): void {
+it('returns Ligero and FS65 for S1P and SRC', function (): void {
     $result = listing(['safety_class' => ['S1P'], 'features' => ['SRC']]);
 
-    expect(names($result))->toBe(['Ligero']);
+    expect(names($result))->toEqualCanonicalizing(['Ligero', 'FS65']);
 });
 
 it('ORs values within a facet and ANDs across facets', function (): void {
-    expect(names(listing(['safety_class' => ['S1P', 'SB']])))->toEqualCanonicalizing(['Ligero', 'FS9'])
-        ->and(names(listing(['safety_class' => ['S1P', 'SB'], 'brand' => ['Amblers Safety']])))->toBe(['FS9']);
+    expect(names(listing(['safety_class' => ['S1P', 'SBP']])))->toEqualCanonicalizing(['Ligero', 'FS65', 'FS9'])
+        ->and(names(listing(['safety_class' => ['S3', 'SBP'], 'brand' => ['Amblers Safety']])))->toBe(['FS9']);
 });
 
 it('counts a facet without its own selection, and other facets with it', function (): void {
     $result = listing(['safety_class' => ['S1P']]);
 
     // Own facet: every class is still on offer.
-    expect($result->counts('safety_class'))->toBe(['S1' => 1, 'S1P' => 1, 'S3' => 1, 'SB' => 1])
-        // Other facets: narrowed to the S1P product.
-        ->and($result->counts('brand'))->toBe(['Safety Jogger' => 1])
-        ->and($result->counts('features'))->toBe(['CI' => 1, 'ESD' => 1, 'METAL_FREE' => 1, 'SRC' => 1]);
+    expect($result->counts('safety_class'))->toBe(['S1P' => 2, 'S3' => 1, 'SBP' => 1])
+        // Other facets: narrowed to the S1P products.
+        ->and($result->counts('brand'))->toBe(['Amblers Safety' => 1, 'Safety Jogger' => 1])
+        ->and($result->counts('features'))->toBe(['CI' => 1, 'ESD' => 1, 'METAL_FREE' => 1, 'P' => 1, 'SRC' => 2]);
 });
 
 it('keeps counts disjunctive with two facets selected', function (): void {
     $result = listing(['safety_class' => ['S1P'], 'features' => ['SRC']]);
 
     // Classes among SRC products; features among S1P products.
-    expect($result->counts('safety_class'))->toBe(['S1' => 1, 'S1P' => 1, 'S3' => 1])
-        ->and($result->counts('features'))->toBe(['CI' => 1, 'ESD' => 1, 'METAL_FREE' => 1, 'SRC' => 1])
-        ->and($result->total)->toBe(1);
+    expect($result->counts('safety_class'))->toBe(['S1P' => 2, 'S3' => 1])
+        ->and($result->counts('features'))->toBe(['CI' => 1, 'ESD' => 1, 'METAL_FREE' => 1, 'P' => 1, 'SRC' => 2])
+        ->and($result->total)->toBe(2);
 });
 
 it('marks selected facet values', function (): void {
@@ -125,12 +125,12 @@ it('reports the price bounds ignoring the price filter', function (): void {
 });
 
 it('requires the colour and size combination to be in stock', function (): void {
-    // Ligero has Black in stock, and UK 9.5 in stock, but Black 9.5 is not.
+    // Ligero has Black in stock, and UK 10 in stock, but Black 10 is not.
     expect(names(listing(['colour' => ['black']], collection: null)))->toContain('Ligero')
-        ->and(names(listing(['size' => ['9.5']], collection: null)))->toContain('Ligero')
-        ->and(names(listing(['colour' => ['black'], 'size' => ['9.5']], collection: null)))->not->toContain('Ligero')
-        // Navy 9.5 and Black 9 are both in stock.
-        ->and(names(listing(['colour' => ['navy'], 'size' => ['9.5']], collection: null)))->toBe(['Ligero'])
+        ->and(names(listing(['size' => ['10']], collection: null)))->toContain('Ligero')
+        ->and(names(listing(['colour' => ['black'], 'size' => ['10']], collection: null)))->not->toContain('Ligero')
+        // Navy 10 and Black 9 are both in stock.
+        ->and(names(listing(['colour' => ['navy'], 'size' => ['10']], collection: null)))->toBe(['Ligero'])
         ->and(names(listing(['colour' => ['black'], 'size' => ['9']], collection: null)))->toBe(['Ligero']);
 });
 

@@ -6,6 +6,7 @@ namespace Database\Seeders;
 
 use App\Domain\Catalogue\Keys\CatalogueKeys;
 use App\Domain\Catalogue\Media\PlaceholderImageGenerator;
+use App\Domain\Catalogue\Options\SharedOptionValues;
 use App\Domain\Catalogue\Urls\GenerateProductSlug;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -22,8 +23,6 @@ use Lunar\Models\Language;
 use Lunar\Models\Price;
 use Lunar\Models\Product;
 use Lunar\Models\ProductAssociation;
-use Lunar\Models\ProductOption;
-use Lunar\Models\ProductOptionValue;
 use Lunar\Models\ProductVariant;
 use RuntimeException;
 
@@ -56,18 +55,13 @@ final class FixtureCatalogueSeeder extends Seeder
 
     private CustomerGroup $customerGroup;
 
-    /** @var array<string, ProductOption> */
-    private array $options = [];
-
-    /** @var array<string, ProductOptionValue> */
-    private array $optionValues = [];
-
     /** @var array<string, int> */
     private array $vendorIds = [];
 
     public function __construct(
         private readonly GenerateProductSlug $generateSlug,
         private readonly PlaceholderImageGenerator $placeholders,
+        private readonly SharedOptionValues $optionValues,
     ) {}
 
     public function run(?string $path = null): void
@@ -81,10 +75,6 @@ final class FixtureCatalogueSeeder extends Seeder
         $this->language = Language::getDefault();
         $this->currency = Currency::getDefault();
         $this->customerGroup = CustomerGroup::query()->where('handle', 'retail')->sole();
-
-        foreach (['colour', 'shoe_size'] as $handle) {
-            $this->options[$handle] = ProductOption::query()->where('handle', $handle)->sole();
-        }
 
         $productIds = [];
         $brandIds = [];
@@ -184,8 +174,8 @@ final class FixtureCatalogueSeeder extends Seeder
         }
 
         $product->productOptions()->attach([
-            $this->options['colour']->id => ['position' => 1],
-            $this->options['shoe_size']->id => ['position' => 2],
+            $this->optionValues->option('colour')->id => ['position' => 1],
+            $this->optionValues->option('shoe_size')->id => ['position' => 2],
         ]);
 
         $images = $this->images($product, $data);
@@ -257,7 +247,7 @@ final class FixtureCatalogueSeeder extends Seeder
 
             $images[$colour['name']] = $media->id;
 
-            $this->optionValue('colour', $colour['name'], ['hex' => $colour['hex']], $index + 1);
+            $this->optionValues->value('colour', $colour['name'], ['hex' => $colour['hex']], $index + 1);
         }
 
         return $images;
@@ -295,8 +285,8 @@ final class FixtureCatalogueSeeder extends Seeder
         $size = (string) $data['shoe_size'];
 
         $variant->values()->attach([
-            $this->optionValue('colour', $data['colour'])->id,
-            $this->optionValue('shoe_size', $size, ['sort' => (float) $size], (int) round((float) $size * 10))->id,
+            $this->optionValues->value('colour', $data['colour'])->id,
+            $this->optionValues->value('shoe_size', $size, ['sort' => (float) $size], (int) round((float) $size * 10))->id,
         ]);
 
         Price::query()->create([
@@ -328,34 +318,6 @@ final class FixtureCatalogueSeeder extends Seeder
             'created_at' => now(),
             'updated_at' => now(),
         ]);
-    }
-
-    /**
-     * Shared option values are reused across products. A colour first seen
-     * without a hex picks one up when a later product supplies it.
-     *
-     * @param  array<string, mixed>  $meta
-     */
-    private function optionValue(string $option, string $name, array $meta = [], int $position = 0): ProductOptionValue
-    {
-        $cacheKey = $option.':'.$name;
-
-        $value = $this->optionValues[$cacheKey] ??= ProductOptionValue::query()
-            ->where('product_option_id', $this->options[$option]->id)
-            ->where('name->en', $name)
-            ->first()
-            ?? ProductOptionValue::query()->create([
-                'product_option_id' => $this->options[$option]->id,
-                'name' => ['en' => $name],
-                'position' => $position,
-                'meta' => $meta,
-            ]);
-
-        if ($option === 'colour' && filled($meta['hex'] ?? null) && blank($value->meta['hex'] ?? null)) {
-            $value->update(['meta' => [...($value->meta?->toArray() ?? []), 'hex' => $meta['hex']]]);
-        }
-
-        return $value;
     }
 
     private function vendor(string $code): int

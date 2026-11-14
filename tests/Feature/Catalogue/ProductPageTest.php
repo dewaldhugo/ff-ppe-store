@@ -94,12 +94,12 @@ it('shows only black images and the sizes available in black when Black is selec
 
     expect(galleryColours($html))->toBe(['Black'])
         ->and(enabledSizes($html))->toBe(['3.5', '4', '5', '6', '6.5', '7', '8', '9', '10.5', '11', '12'])
-        ->and($html)->toContain('data-value="9.5"');
+        ->and($html)->toContain('data-value="10"');
 
     $navy = $this->get('/p/safety-jogger-ligero?colour=navy')->getContent();
 
     expect(galleryColours($navy))->toBe(['Navy'])
-        ->and(enabledSizes($navy))->toContain('9.5');
+        ->and(enabledSizes($navy))->toContain('10');
 });
 
 it('switches the gallery when a colour is chosen', function (): void {
@@ -166,9 +166,9 @@ it('disables sizes without stock but still shows them', function (): void {
 
 it('re-evaluates colours after a size is chosen', function (): void {
     $component = Livewire::test(ProductPage::class, ['slug' => 'safety-jogger-ligero'])
-        ->call('choose', 'shoe_size', '9.5');
+        ->call('choose', 'shoe_size', '10');
 
-    // Black 9.5 is out of stock, so Black is now disabled.
+    // Black 10 is out of stock, so Black is now disabled.
     expect($component->html())->toMatch('#<button[^>]*data-value="black"[^>]*\sdisabled#s');
 });
 
