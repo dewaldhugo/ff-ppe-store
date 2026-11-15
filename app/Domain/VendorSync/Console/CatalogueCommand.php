@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\VendorSync\Console;
 
+use App\Domain\VendorSync\Exceptions\RunAlreadyRunning;
 use App\Domain\VendorSync\Images\ImageRun;
 use App\Domain\VendorSync\Import\CatalogueImporter;
 use App\Domain\VendorSync\Import\RunReport;
@@ -14,7 +15,8 @@ final class CatalogueCommand extends Command
     protected $signature = 'vendorsync:catalogue
         {vendor : Vendor code (SJ or FS)}
         {--dry-run : Run everything except the writes and print the counts and a sample}
-        {--force : Reprocess products whose payload is unchanged}';
+        {--force : Reprocess products whose payload is unchanged}
+        {--without-images : Do not queue image jobs after the run}';
 
     protected $description = 'Import a vendor catalogue into Lunar and the vendor tables';
 
@@ -35,13 +37,34 @@ final class CatalogueCommand extends Command
         $this->render($report);
 
         if (! $dryRun && $report->ok()) {
-            $queued = $images->dispatch($vendor);
-            $this->line("Queued {$queued} image jobs.");
+            $this->queueImages($images, $vendor);
         }
 
         $this->footer($started, $report);
 
         return $report->ok() ? self::SUCCESS : self::FAILURE;
+    }
+
+    /**
+     * Image jobs follow a real catalogue run unless `--without-images` is
+     * passed or VENDORSYNC_QUEUE_IMAGES is false. When they are skipped the
+     * command says how to queue them later.
+     */
+    private function queueImages(ImageRun $images, string $vendor): void
+    {
+        if ($this->option('without-images') || ! config('vendorsync.queue_images')) {
+            $why = $this->option('without-images') ? '--without-images' : 'VENDORSYNC_QUEUE_IMAGES is false';
+            $this->line("Image jobs were not queued ({$why}). Queue them when ready: php artisan vendorsync:images {$vendor}");
+
+            return;
+        }
+
+        try {
+            $queued = $images->dispatch($vendor);
+            $this->line("Queued {$queued} image jobs.");
+        } catch (RunAlreadyRunning $exception) {
+            $this->error($exception->getMessage());
+        }
     }
 
     /**

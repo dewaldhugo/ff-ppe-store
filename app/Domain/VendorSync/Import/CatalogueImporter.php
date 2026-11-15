@@ -71,10 +71,34 @@ final class CatalogueImporter
             : $this->realRun($code, $source, $mapper, $force);
     }
 
+    /**
+     * A run takes the lock for its vendor and type, and releases it when it
+     * ends, however it ends. A second run while it is held is refused and
+     * leaves no record. Taking the lock also fails any earlier run of this
+     * vendor that is still marked running: the lock proves nothing else is.
+     */
     private function realRun(string $code, VendorSource $source, VendorMapper $mapper, bool $force): RunReport
     {
-        $report = new RunReport($code, self::TYPE);
         $vendor = $this->runs->vendor($code);
+        $lock = $this->runs->lock($vendor, self::TYPE);
+
+        if ($lock === null) {
+            return (new RunReport($code, self::TYPE))->finish(
+                RunReport::ABORTED,
+                "Another catalogue run for {$code} is already running. This run was not started.",
+            );
+        }
+
+        try {
+            return $this->performRealRun($code, $vendor, $source, $mapper, $force);
+        } finally {
+            $lock->release();
+        }
+    }
+
+    private function performRealRun(string $code, Vendor $vendor, VendorSource $source, VendorMapper $mapper, bool $force): RunReport
+    {
+        $report = new RunReport($code, self::TYPE);
         $run = $this->runs->start($vendor, self::TYPE);
 
         try {

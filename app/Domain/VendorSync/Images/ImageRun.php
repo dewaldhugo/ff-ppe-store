@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\VendorSync\Images;
 
+use App\Domain\VendorSync\Exceptions\RunAlreadyRunning;
 use App\Domain\VendorSync\Import\RunRecorder;
 use App\Domain\VendorSync\Models\SyncRun;
 use App\Domain\VendorSync\Models\Vendor;
@@ -43,6 +44,22 @@ final readonly class ImageRun
     {
         $vendor = $this->runs->vendor(strtoupper($vendorCode));
 
+        // The lock covers queuing, not the jobs: the batch outlives this call.
+        $lock = $this->runs->lock($vendor, self::TYPE, staleAfterSeconds: $this->runs->lockSeconds());
+
+        if ($lock === null) {
+            throw RunAlreadyRunning::for($vendor->code, self::TYPE);
+        }
+
+        try {
+            return $this->queue($vendor, $vendorProductId, $refresh);
+        } finally {
+            $lock->release();
+        }
+    }
+
+    private function queue(Vendor $vendor, ?string $vendorProductId, bool $refresh): int
+    {
         $ids = VendorProduct::query()
             ->where('vendor_id', $vendor->id)
             ->when($vendorProductId !== null, fn ($query) => $query->where('vendor_product_id', $vendorProductId))

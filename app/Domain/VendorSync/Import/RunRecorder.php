@@ -7,6 +7,8 @@ namespace App\Domain\VendorSync\Import;
 use App\Domain\VendorSync\Models\SyncRun;
 use App\Domain\VendorSync\Models\Vendor;
 use App\Domain\VendorSync\Notifications\SyncRunAlert;
+use Illuminate\Contracts\Cache\Lock;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 
@@ -22,6 +24,63 @@ final class RunRecorder
             ['code' => $code],
             ['name' => config("vendorsync.vendors.{$code}.name", $code)],
         );
+    }
+
+    /**
+     * Seconds a run keeps its lock. It must exceed the longest expected run
+     * with margin, so it never lapses under a run that is still going: at
+     * least two hours, whatever the config says. A run releases the lock when
+     * it ends; the time limit is only for a process that died.
+     */
+    public function lockSeconds(): int
+    {
+        return max(7200, (int) config('vendorsync.lock_seconds', 4 * 3600));
+    }
+
+    /**
+     * Take the lock for a vendor and type. Null when another run holds it.
+     * Once it is held, an earlier run still marked `running` has ended without
+     * saying so (the process stopped or crashed) and is marked failed.
+     *
+     * Image runs finish asynchronously, when their last queued job does, so a
+     * running image run is only failed once it is older than `$staleAfterSeconds`.
+     */
+    public function lock(Vendor $vendor, string $type, ?int $staleAfterSeconds = null): ?Lock
+    {
+        $lock = Cache::lock("vendorsync.run.{$vendor->code}.{$type}", $this->lockSeconds());
+
+        if (! $lock->get()) {
+            return null;
+        }
+
+        $this->failLeftover($vendor, $type, $staleAfterSeconds);
+
+        return $lock;
+    }
+
+    /**
+     * @return int The number of runs marked failed.
+     */
+    private function failLeftover(Vendor $vendor, string $type, ?int $staleAfterSeconds): int
+    {
+        $leftovers = SyncRun::query()
+            ->where('vendor_id', $vendor->id)
+            ->where('type', $type)
+            ->where('status', 'running')
+            ->when($staleAfterSeconds !== null, fn ($query) => $query->where('started_at', '<', now()->subSeconds($staleAfterSeconds)))
+            ->get();
+
+        foreach ($leftovers as $run) {
+            $run->update([
+                'status' => RunReport::FAILED,
+                'finished_at' => now(),
+                'messages' => [...($run->messages ?? []), 'Marked failed: this run never finished. The process stopped or crashed, and a later run found it still marked running.'],
+            ]);
+
+            $this->alert($run);
+        }
+
+        return $leftovers->count();
     }
 
     public function start(Vendor $vendor, string $type): SyncRun

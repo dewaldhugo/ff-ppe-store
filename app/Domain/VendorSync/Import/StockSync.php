@@ -43,6 +43,21 @@ final class StockSync
         }
 
         $vendor = $this->runs->vendor($code);
+        $lock = $this->runs->lock($vendor, self::TYPE);
+
+        if ($lock === null) {
+            return $report->finish(RunReport::ABORTED, "Another stock run for {$code} is already running. This run was not started.");
+        }
+
+        try {
+            return $this->performRun($code, $vendor, $report);
+        } finally {
+            $lock->release();
+        }
+    }
+
+    private function performRun(string $code, Vendor $vendor, RunReport $report): RunReport
+    {
         $run = $this->runs->start($vendor, self::TYPE);
 
         try {

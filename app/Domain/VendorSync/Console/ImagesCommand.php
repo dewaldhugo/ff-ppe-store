@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\VendorSync\Console;
 
+use App\Domain\VendorSync\Exceptions\RunAlreadyRunning;
 use App\Domain\VendorSync\Images\ImageRun;
 use Illuminate\Console\Command;
 
@@ -37,7 +38,13 @@ final class ImagesCommand extends Command
             return self::FAILURE;
         }
 
-        $queued = $images->dispatch($vendor, $product, (bool) $this->option('refresh'));
+        try {
+            $queued = $images->dispatch($vendor, $product, (bool) $this->option('refresh'));
+        } catch (RunAlreadyRunning $exception) {
+            $this->error($exception->getMessage());
+
+            return self::FAILURE;
+        }
 
         $this->line("Queued {$queued} image ".($queued === 1 ? 'job' : 'jobs')." for {$vendor}".($product === null ? '' : " product {$product}").'.');
         $this->line('A job that cannot save any image fails and appears in failed_jobs. Run `php artisan vendorsync:status` for the result.');
