@@ -37,10 +37,11 @@ final readonly class MappingResult
 
     /**
      * @param  list<array{0: string, 1: string}>  $facts
+     * @param  list<string>  $messages
      */
-    public static function outOfScope(string $reason, array $facts = []): self
+    public static function outOfScope(string $reason, array $facts = [], array $messages = []): self
     {
-        return new self(null, $reason, null, [], $facts);
+        return new self(null, $reason, null, $messages, $facts);
     }
 
     /**

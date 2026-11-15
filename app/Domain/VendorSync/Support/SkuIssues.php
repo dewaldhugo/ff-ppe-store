@@ -83,7 +83,7 @@ final class SkuIssues
                 self::DUPLICATE => "{$skus} repeating a colour and size ({$details}); skipped",
                 self::NO_COLOUR => "{$skus} with no colour; product drafted",
                 self::UNKNOWN_VAT => "{$skus} with a VAT rate that is not 0 or 20% ({$details}); not imported",
-                self::GHOST => "{$skus} that are placeholder rows (no barcode, no EU size, placeholder measurements); not imported",
+                self::GHOST => "{$count} placeholder ".($count === 1 ? 'row' : 'rows').' (no barcode, no EU size, placeholder measurements); not imported',
                 self::NO_EU_SIZE => "{$skus} at a zero VAT rate with no EU size, so the size scale is unknown; not imported",
                 default => "{$skus}: {$reason}",
             };

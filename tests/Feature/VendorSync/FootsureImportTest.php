@@ -154,7 +154,7 @@ it('skips the placeholder rows beside the real ones', function (): void {
     expect(ProductVariant::query()->where('sku', 'FS-00568-01277-07')->exists())->toBeTrue()
         ->and(ProductVariant::query()->where('sku', 'FS-00568-01277-12')->exists())->toBeFalse()
         // The three placeholder rows of product 568 are one line in the report.
-        ->and(collect($report->messages)->filter(fn (string $message): bool => str_contains($message, '[568]: 3 SKUs that are placeholder rows')))->toHaveCount(1);
+        ->and(collect($report->messages)->filter(fn (string $message): bool => str_contains($message, '[568]: 3 placeholder rows')))->toHaveCount(1);
 });
 
 it('keeps products draft until they have an image, then publishes them', function (): void {

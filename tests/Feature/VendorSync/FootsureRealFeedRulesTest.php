@@ -169,7 +169,7 @@ it('skips placeholder rows in one report line and keeps a real row with the same
     expect($kept)->toBe(['FS-E-1', 'FS-E-4'])
         ->and($real->weight_value)->toBeNull()
         ->and(collect($report->messages)->filter(fn ($m): bool => str_contains($m, 'placeholder rows')))->toHaveCount(1)
-        ->and($report->messages[0])->toContain('2 SKUs that are placeholder rows')
+        ->and($report->messages[0])->toContain('2 placeholder rows (no barcode, no EU size, placeholder measurements); not imported')
         ->and($report->messages[0])->toContain('(SKUs: E-2, E-3)');
 });
 
@@ -358,4 +358,24 @@ it('fails loudly when every Footsure image download fails', function (): void {
         ->toThrow(ImageSyncFailed::class, 'Image sync failed for vendor product 900001: none of the 1 images could be saved');
 
     Http::assertSent(fn (Request $request): bool => str_starts_with($request->url(), 'http://ts-images'));
+});
+
+it('does not count a product made only of placeholder rows as an error', function (): void {
+    $placeholder = ['Weight' => '999', 'Length' => '333', 'Width' => '222', 'Height' => '111', 'EU Size' => '', 'Barcode' => '', 'Stock' => '0'];
+
+    $report = importRows(fn (array $t): array => [
+        fsRow($t, ['Product Reference' => 'P-1', 'UK Size' => '7', 'VAT' => '0.2000', ...$placeholder]),
+        fsRow($t, ['Product Reference' => 'P-2', 'UK Size' => '10', 'VAT' => '0.2000', ...$placeholder]),
+        fsRow($t, [
+            'ProductID' => '900002', 'Family Product Reference' => '900002-1', 'Product Reference' => 'P-3',
+            'Short Product Name' => 'Real One', 'UK Size' => '8', 'EU Size' => '42', 'VAT' => '0.2000',
+        ]),
+    ]);
+
+    expect($report->errors)->toBe(0)
+        ->and($report->outOfScope)->toBe(1)
+        ->and($report->tallies['out_of_scope'])->toBe(['placeholder_rows_only' => 1])
+        ->and($report->created)->toBe(1)
+        ->and(VendorProduct::query()->pluck('vendor_product_id')->all())->toBe(['900002'])
+        ->and($report->messages[0])->toBe('Mirak Test Plimsoll [900001]: 2 placeholder rows (no barcode, no EU size, placeholder measurements); not imported (SKUs: P-1, P-2)');
 });

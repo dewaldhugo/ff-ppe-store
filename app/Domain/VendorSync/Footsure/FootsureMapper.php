@@ -118,7 +118,15 @@ final readonly class FootsureMapper implements VendorMapper
         $images = [];
         $clearance = $first['Product Status'] === 'Clearance';
 
-        foreach ($this->withoutDuplicates($this->withoutGhostRows($rows, $messages), $label, $messages) as $row) {
+        $real = $this->withoutGhostRows($rows, $messages);
+
+        // A product made only of placeholder rows has nothing to import. It is
+        // not an error: the vendor lists it, but with no real item behind it.
+        if ($real === []) {
+            return MappingResult::outOfScope('placeholder_rows_only', $facts, SkuIssues::collapse($label, $messages));
+        }
+
+        foreach ($this->withoutDuplicates($real, $label, $messages) as $row) {
             $colour = $this->colour($row);
 
             if ($colour === null) {
