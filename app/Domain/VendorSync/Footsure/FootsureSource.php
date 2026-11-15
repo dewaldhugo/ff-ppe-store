@@ -9,9 +9,10 @@ use App\Domain\VendorSync\Data\RawRecord;
 use App\Domain\VendorSync\Data\SourceBatch;
 use App\Domain\VendorSync\Exceptions\SourceAborted;
 use Carbon\CarbonImmutable;
+use DateTimeImmutable;
+use DateTimeZone;
 use Illuminate\Support\Facades\File;
 use SplFileObject;
-use Throwable;
 
 /**
  * Reads the newest Footsure CSV export from the incoming folder. Delivery
@@ -173,20 +174,36 @@ final class FootsureSource implements VendorSource
         return $header;
     }
 
+    /**
+     * The file must carry a readable creation date, not too old and not in
+     * the future. The format is configured because it is easy to get wrong
+     * without noticing: the real feed is month/day/year, and read as
+     * day/month/year `11/15/2026` is "month 15", which PHP rolls over into
+     * March 2027. A date in the future always looked fresh, so the staleness
+     * rule could never fire. Three guards stop that happening again: an exact
+     * format match without roll-over, a refusal of dates in the future, and
+     * the age limit itself.
+     */
     private function assertFresh(string $fileDate): void
     {
-        try {
-            $created = CarbonImmutable::createFromFormat(CsvColumns::FILE_DATE_FORMAT, $fileDate, 'Europe/London');
-        } catch (Throwable) {
-            $created = null;
-        }
+        $created = $this->parseFileDate($fileDate);
 
-        if (! $created instanceof CarbonImmutable) {
-            throw SourceAborted::because("The Footsure file has an unreadable File_Create_Date: '{$fileDate}'.");
+        if ($created === null) {
+            throw SourceAborted::because(
+                "The Footsure file has an unreadable File_Create_Date: '{$fileDate}' (expected format ".$this->dateFormat().').',
+            );
         }
 
         if (! $this->checkAge) {
             return;
+        }
+
+        $futureMinutes = (int) ($this->config['max_future_minutes'] ?? 60);
+
+        if ($created->gt(now()->addMinutes($futureMinutes))) {
+            throw SourceAborted::because(
+                "The Footsure file's File_Create_Date '{$fileDate}' is in the future, so it is not trusted. Check the date format ({$this->dateFormat()}).",
+            );
         }
 
         $maxAge = (int) $this->config['max_age_hours'];
@@ -196,5 +213,26 @@ final class FootsureSource implements VendorSource
                 "Stale Footsure feed: the file was created {$fileDate}, more than {$maxAge} hours ago.",
             );
         }
+    }
+
+    private function dateFormat(): string
+    {
+        return (string) ($this->config['file_date_format'] ?? 'm/d/Y H:i:s');
+    }
+
+    /**
+     * Exactly the configured format, in UK time. A value that PHP would only
+     * accept by rolling it over (month 15, day 40) is not a date.
+     */
+    private function parseFileDate(string $fileDate): ?CarbonImmutable
+    {
+        $parsed = DateTimeImmutable::createFromFormat('!'.$this->dateFormat(), $fileDate, new DateTimeZone('Europe/London'));
+        $errors = DateTimeImmutable::getLastErrors();
+
+        if ($parsed === false || ($errors !== false && ($errors['warning_count'] > 0 || $errors['error_count'] > 0))) {
+            return null;
+        }
+
+        return CarbonImmutable::instance($parsed);
     }
 }

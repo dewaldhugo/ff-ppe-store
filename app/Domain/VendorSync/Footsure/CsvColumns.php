@@ -12,8 +12,6 @@ final class CsvColumns
 {
     public const string FILE_DATE = 'File_Create_Date';
 
-    public const string FILE_DATE_FORMAT = 'd/m/Y H:i:s';
-
     public const array REQUIRED = [
         'File_Create_Date', 'Product Reference', 'ProductID', 'Family Product Reference', 'Barcode',
         'Short Product Name', 'Long Product Name', 'Group Class', 'Colour Code', 'Colour Extention',
