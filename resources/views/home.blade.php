@@ -7,4 +7,6 @@
     <x-home.hero />
 
     <x-home.category-tiles />
+
+    <x-home.standard-chips />
 </x-layouts.storefront>
