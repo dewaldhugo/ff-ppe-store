@@ -41,7 +41,7 @@ Pipeline per vendor: **Source** (fetch raw records) -> **raw store** (payload pl
 
 - Reads the newest `*.csv` from `VENDORSYNC_FS_INCOMING_PATH` (default `storage/app/vendorsync/footsure/incoming`). Delivery to that folder is handled outside this application.
 - Validates the header row against the expected columns before processing. A missing or renamed column aborts the run with a clear error.
-- Reads `File_Create_Date` (`d/m/Y H:i:s`). A file older than 36 hours aborts the run and alerts (stale feed).
+- Reads `File_Create_Date` (`m/d/Y H:i:s`). A file older than 36 hours aborts the run and alerts (stale feed).
 - After a successful run, moves the file to `.../footsure/archive/` with a timestamp. Keeps 30 days of archives.
 - Groups rows into products by `Family Product Reference`. One row is one variant. Barcodes are strings, never numbers.
 - **Catalogue scope.** Footsure has one rule: import everything except Safety Jogger products, which come directly from the Safety Jogger API. Skip rows whose `Brand` matches `vendorsync.footsure.excluded_brands` (default `['Safety Jogger']`, case-insensitive, matching any brand that starts with an entry, so `Safety Jogger Works` is also skipped). Skipped rows count as `out_of_scope`. As a second guard, a Footsure variant whose EAN already belongs to a Safety Jogger variant is skipped and reported.
