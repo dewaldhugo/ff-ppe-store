@@ -5,7 +5,8 @@
     :noindex="true"
     :full="true"
 >
-    <x-ui.hero>
+    {{-- The photo is decoration (its sign is not content), so it has no alt text. --}}
+    <x-ui.hero :image="asset('images/home-hero.jpg')" :image-width="1529" :image-height="750">
         <x-ui.eyebrow class="text-brand-teal">Trade supplier</x-ui.eyebrow>
         <h1 class="mt-3 max-w-3xl text-4xl text-white sm:text-5xl">Personal protective equipment for business</h1>
         <p class="mt-4 max-w-xl text-lg text-white/90">Content coming soon.</p>

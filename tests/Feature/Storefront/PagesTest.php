@@ -51,6 +51,23 @@ it('keeps the home page out of search engines, with a hero and an outline button
         ->and($html)->toMatch('#<a href="'.preg_quote(route('products'), '#').'"[^>]*border-brand-teal[^>]*>\s*Shop products\s*</a>#');
 });
 
+it('uses the site photo as the home hero background, under the brand-navy overlay', function (): void {
+    $html = $this->get('/')->assertOk()->getContent();
+
+    preg_match('#<section[^>]*surface-dark.*?</section>#s', $html, $hero);
+
+    expect(is_file(public_path('images/home-hero.jpg')))->toBeTrue()
+        // A decorative photo: empty alt text, dimensions set, behind the overlay.
+        ->and($hero[0])->toContain('src="'.asset('images/home-hero.jpg').'"')
+        ->and($hero[0])->toContain('alt=""')
+        ->and($hero[0])->toContain('width="1529"')
+        ->and($hero[0])->toContain('height="750"')
+        ->and($hero[0])->toContain('-z-20')
+        // The overlay keeps white text readable on any part of the photo.
+        ->and($hero[0])->toMatch('#data-hero-overlay[^>]*-z-10[^>]*from-brand-navy/90#')
+        ->and($hero[0])->toContain('Personal protective equipment for business');
+});
+
 it('shows a grid of the top-level categories on the home page, each linking to its listing', function (): void {
     $html = $this->get('/')->getContent();
 
