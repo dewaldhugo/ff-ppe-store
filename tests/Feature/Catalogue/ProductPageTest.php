@@ -3,8 +3,6 @@
 declare(strict_types=1);
 
 use App\Domain\Catalogue\Media\PlaceholderImageGenerator;
-use App\Domain\Pricing\PriceDisplay;
-use App\Domain\Pricing\VatDisplayMode;
 use App\Livewire\Catalogue\ProductPage;
 use Database\Seeders\FixtureCatalogueSeeder;
 use Livewire\Livewire;
@@ -56,9 +54,9 @@ it('shows the product with its price, description and specification', function (
         ->assertSee('LIGERO')
         ->assertSee('Lightweight ESD Safety Shoes')
         ->assertSee('Ultra-light, flexible safety shoe')
-        ->assertSee('£82.68')
-        ->assertSee('£91.80')
-        ->assertSee('inc VAT')
+        ->assertSee('£68.90')
+        ->assertSee('£76.50')
+        ->assertSee('ex VAT')
         ->assertSee('Slip resistant (SRC)')
         ->assertSee('ESD, electrostatic dissipative')
         ->assertSee('Metal free')
@@ -190,27 +188,20 @@ it('shows a stock message for the selection', function (string $slug, ?string $s
     ['maxguard-sx310', '8', 'Out of stock'],
 ]);
 
-it('shows a 20% difference between inc and ex VAT on a standard rated product', function (): void {
-    $this->get('/p/safety-jogger-ligero')->assertSee('£82.68')->assertDontSee('£68.90');
-
-    app(PriceDisplay::class)->setMode(VatDisplayMode::ExVat);
-
+it('shows a standard rated product ex VAT, with its compare price ex VAT', function (): void {
     $this->get('/p/safety-jogger-ligero')
         ->assertSee('£68.90')
         ->assertSee('£76.50')
         ->assertSee('ex VAT')
-        ->assertDontSee('£82.68');
+        ->assertDontSee('£82.68')
+        ->assertDontSee('£91.80')
+        ->assertDontSee('inc VAT');
 });
 
-it('shows the same price inc and ex VAT on a zero-protective product, with a note', function (): void {
+it('shows a zero-protective product ex VAT, with a note about employers', function (): void {
     $this->get('/p/amblers-safety-fs9')
         ->assertSee('£52.48')
-        ->assertSee('VAT at 20% applies when buying for employees');
-
-    app(PriceDisplay::class)->setMode(VatDisplayMode::ExVat);
-
-    $this->get('/p/amblers-safety-fs9')
-        ->assertSee('£52.48')
+        ->assertSee('ex VAT')
         ->assertSee('VAT at 20% applies when buying for employees');
 });
 
@@ -240,9 +231,7 @@ it('outputs Product structured data with an offer per variant', function (): voi
         ->and($offers['SJ-1492635']['availability'])->toBe('https://schema.org/OutOfStock');
 });
 
-it('keeps structured data prices inc VAT in ex VAT mode, and unchanged for zero rated products', function (): void {
-    app(PriceDisplay::class)->setMode(VatDisplayMode::ExVat);
-
+it('keeps structured data prices inc VAT although the page shows ex VAT', function (): void {
     $ligero = structuredData($this->get('/p/safety-jogger-ligero')->getContent());
     $fs9 = structuredData($this->get('/p/amblers-safety-fs9')->getContent());
 

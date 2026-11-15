@@ -12,15 +12,18 @@ function displayVariant(string $sku): ProductVariant
     return ProductVariant::query()->where('sku', $sku)->sole();
 }
 
-it('shows inc VAT by default', function (): void {
-    expect(app(PriceDisplay::class)->mode())->toBe(VatDisplayMode::IncVat);
-});
-
-it('remembers the chosen mode in the session', function (): void {
-    app(PriceDisplay::class)->setMode(VatDisplayMode::ExVat);
+it('always shows the storefront ex VAT', function (): void {
+    session(['vat_display_mode' => 'inc']);
 
     expect(app(PriceDisplay::class)->mode())->toBe(VatDisplayMode::ExVat)
-        ->and(session('vat_display_mode'))->toBe('ex');
+        ->and(VatDisplayMode::default())->toBe(VatDisplayMode::ExVat);
+});
+
+it('prices a variant ex VAT when no mode is asked for', function (): void {
+    $price = app(PriceDisplay::class)->forVariant(displayVariant('SJ-1492552'));
+
+    expect($price->formatted())->toBe('£68.90')
+        ->and($price->suffix())->toBe('ex VAT');
 });
 
 it('adds 20% to a standard rated variant in inc VAT mode', function (): void {

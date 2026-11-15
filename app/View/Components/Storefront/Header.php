@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\View\Components\Storefront;
 
-use App\Domain\Pricing\PriceDisplay;
-use App\Domain\Pricing\VatDisplayMode;
 use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
 use Lunar\Models\Collection;
@@ -13,14 +11,10 @@ use Lunar\Models\CollectionGroup;
 
 final class Header extends Component
 {
-    public function __construct(private readonly PriceDisplay $priceDisplay) {}
-
     public function render(): View
     {
         return view('components.storefront.header', [
             'categories' => $this->categories(),
-            'vatMode' => $this->priceDisplay->mode(),
-            'vatModes' => VatDisplayMode::cases(),
         ]);
     }
 

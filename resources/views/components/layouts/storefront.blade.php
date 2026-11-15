@@ -33,7 +33,7 @@
     <footer class="border-t border-slate-200 bg-slate-50">
         <div class="mx-auto max-w-7xl px-4 py-6 text-sm text-slate-600">
             <p>&copy; {{ date('Y') }} {{ config('app.name') }}. Personal protective equipment delivered across the UK.</p>
-            <p class="mt-1">Prices are shown {{ app(\App\Domain\Pricing\PriceDisplay::class)->mode()->label() }}. Use the toggle at the top of the page to change this.</p>
+            <p class="mt-1">All prices are shown ex VAT. VAT is added at checkout where it applies.</p>
         </div>
     </footer>
 </body>

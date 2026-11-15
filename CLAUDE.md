@@ -52,7 +52,7 @@ The ingestion module writes data in exactly this shape. The storefront depends o
 ### VAT
 
 - The storefront asks at checkout whether the customer is buying for employees. If yes, `zero-protective` lines are charged at 20%; otherwise at 0%. Store the answer on the order (meta `buying_for_employees`).
-- Display prices in the customer's mode: inc VAT by default, with an inc/ex VAT toggle remembered per session. Business buyers expect ex VAT prices.
+- The storefront displays, sorts and filters every price ex VAT, with an `ex VAT` suffix. There is no inc/ex VAT toggle: the store sells to business buyers. Structured data for search engines still states the VAT-inclusive price.
 - In Lunar the `zero-protective` class carries the individual-use rate (0%). The 20% employer rate is applied by the tax driver at checkout, not by a second tax class.
 
 ### Contract handles (key registry)

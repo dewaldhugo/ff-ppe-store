@@ -42,7 +42,7 @@ final readonly class ListingQuery
         public bool $inStockOnly = false,
         public ListingSort $sort = ListingSort::Relevance,
         public int $page = 1,
-        public VatDisplayMode $vatMode = VatDisplayMode::IncVat,
+        public VatDisplayMode $vatMode = VatDisplayMode::ExVat,
         public int $perPage = self::PER_PAGE,
     ) {}
 

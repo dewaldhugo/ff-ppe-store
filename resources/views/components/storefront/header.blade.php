@@ -24,29 +24,6 @@
                 Search
             </button>
         </form>
-
-        <form action="{{ route('vat-mode') }}" method="post" class="ml-auto" data-vat-toggle>
-            @csrf
-            <fieldset class="flex items-center gap-1 text-sm">
-                <legend class="sr-only">Show prices including or excluding VAT</legend>
-                <span class="mr-1 text-slate-600" aria-hidden="true">Prices</span>
-                @foreach ($vatModes as $mode)
-                    <button
-                        type="submit"
-                        name="mode"
-                        value="{{ $mode->value }}"
-                        aria-pressed="{{ $mode === $vatMode ? 'true' : 'false' }}"
-                        @class([
-                            'rounded border px-2 py-1 font-medium',
-                            'border-slate-900 bg-slate-900 text-white' => $mode === $vatMode,
-                            'border-slate-300 bg-white text-slate-700 hover:bg-slate-100' => $mode !== $vatMode,
-                        ])
-                    >
-                        {{ $mode->label() }}
-                    </button>
-                @endforeach
-            </fieldset>
-        </form>
     </div>
 
     @if ($categories !== [])

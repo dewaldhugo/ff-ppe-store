@@ -3,8 +3,6 @@
 declare(strict_types=1);
 
 use App\Domain\Catalogue\Search\ListingQuery;
-use App\Domain\Pricing\PriceDisplay;
-use App\Domain\Pricing\VatDisplayMode;
 use App\Livewire\Catalogue\CategoryListing;
 use Livewire\Livewire;
 use Tests\Support\SearchIndex;
@@ -116,30 +114,29 @@ it('filters by colour and size together as a combination', function (): void {
     expect(gridNames($component->html()))->toBe(['LIGERO']);
 });
 
-it('filters by price in the visitor\'s VAT mode', function (): void {
-    $range = '/c/safety-footwear?price_min=65&price_max=70';
-
-    expect(gridNames($this->get($range)->getContent()))->toBe([]);
-
-    app(PriceDisplay::class)->setMode(VatDisplayMode::ExVat);
-
-    expect(gridNames($this->get($range)->getContent()))->toBe(['LIGERO']);
+it('filters by price ex VAT', function (): void {
+    // LIGERO is 68.90 ex VAT and 82.68 inc VAT.
+    expect(gridNames($this->get('/c/safety-footwear?price_min=65&price_max=70')->getContent()))->toBe(['LIGERO'])
+        ->and(gridNames($this->get('/c/safety-footwear?price_min=80&price_max=85')->getContent()))->toBe([]);
 });
 
 it('sorts by price and by newest', function (): void {
     $sorted = fn (string $sort): array => gridNames($this->get('/c/safety-footwear?sort='.$sort)->getContent());
 
-    expect($sorted('price-asc')[0])->toBe('FS30C')
-        ->and($sorted('price-desc'))->toBe(['LIGERO', 'SX310', 'FS9', 'FS65', 'FS30C'])
+    // Ex VAT, FS65 and FS30C are both 40.48, so their order is a tie.
+    expect($sorted('price-asc')[0])->toBeIn(['FS30C', 'FS65'])
+        ->and(array_slice($sorted('price-desc'), 0, 3))->toBe(['LIGERO', 'SX310', 'FS9'])
+        ->and(array_slice($sorted('price-desc'), 3))->toEqualCanonicalizing(['FS65', 'FS30C'])
         ->and($sorted('newest'))->toHaveCount(5);
 });
 
-it('shows prices in the visitor\'s VAT mode', function (): void {
-    $this->get('/c/safety-footwear')->assertSee('£82.68')->assertSee('£52.48');
-
-    app(PriceDisplay::class)->setMode(VatDisplayMode::ExVat);
-
-    $this->get('/c/safety-footwear')->assertSee('£68.90')->assertSee('£52.48')->assertDontSee('£82.68');
+it('shows prices ex VAT with the suffix', function (): void {
+    $this->get('/c/safety-footwear')
+        ->assertSee('£68.90')
+        ->assertSee('£52.48')
+        ->assertSee('ex VAT')
+        ->assertDontSee('£82.68')
+        ->assertDontSee('inc VAT');
 });
 
 it('goes back to page one when a filter changes and clears filters', function (): void {

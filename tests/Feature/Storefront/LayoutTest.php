@@ -2,8 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Domain\Pricing\PriceDisplay;
-use App\Domain\Pricing\VatDisplayMode;
+use Illuminate\Support\Facades\Route;
 
 it('renders the home page with header, search and footer', function (): void {
     $this->get('/')
@@ -27,31 +26,19 @@ it('builds the category navigation from the categories collection group', functi
     $response->assertDontSee('href="'.route('category', 'clearance').'"', false);
 });
 
-it('shows prices inc VAT by default and marks the active mode', function (): void {
-    $html = $this->get('/')->getContent();
+it('has no VAT toggle and says that prices are ex VAT', function (): void {
+    $html = $this->get('/')->assertOk()->getContent();
 
-    expect($html)->toMatch('#value="inc"\s+aria-pressed="true"#')
-        ->and($html)->toMatch('#value="ex"\s+aria-pressed="false"#');
+    expect($html)->not->toContain('data-vat-toggle')
+        ->and($html)->not->toContain('aria-pressed')
+        ->and($html)->not->toContain('inc VAT')
+        ->and($html)->toContain('All prices are shown ex VAT.');
 });
 
-it('switches VAT mode from the header toggle and remembers it for the session', function (): void {
-    $this->from('/c/safety-footwear')
-        ->post('/vat-mode', ['mode' => 'ex'])
-        ->assertRedirect('/c/safety-footwear');
+it('no longer has a route to switch VAT mode', function (): void {
+    expect(Route::has('vat-mode'))->toBeFalse();
 
-    expect(app(PriceDisplay::class)->mode())->toBe(VatDisplayMode::ExVat);
-
-    expect($this->get('/')->getContent())->toMatch('#value="ex"\s+aria-pressed="true"#');
-
-    $this->post('/vat-mode', ['mode' => 'inc']);
-
-    expect(app(PriceDisplay::class)->mode())->toBe(VatDisplayMode::IncVat);
-});
-
-it('ignores an invalid VAT mode', function (): void {
-    $this->post('/vat-mode', ['mode' => 'free'])->assertRedirect();
-
-    expect(app(PriceDisplay::class)->mode())->toBe(VatDisplayMode::IncVat);
+    $this->post('/vat-mode', ['mode' => 'inc'])->assertNotFound();
 });
 
 it('shows the logo in the header, linked to the home page', function (): void {
