@@ -13,7 +13,7 @@
             @if ($imageWidth) width="{{ $imageWidth }}" @endif
             @if ($imageHeight) height="{{ $imageHeight }}" @endif
             fetchpriority="high"
-            class="absolute inset-0 -z-20 h-full w-full object-cover object-center"
+            class="absolute inset-0 -z-20 h-full w-full object-cover object-top"
         >
         <div aria-hidden="true" data-hero-overlay class="absolute inset-0 -z-10 bg-linear-to-r from-brand-navy/90 via-brand-navy/80 to-brand-navy/65"></div>
     @endif

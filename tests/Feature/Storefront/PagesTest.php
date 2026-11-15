@@ -63,6 +63,8 @@ it('uses the site photo as the home hero background, under the brand-navy overla
         ->and($hero[0])->toContain('width="1529"')
         ->and($hero[0])->toContain('height="750"')
         ->and($hero[0])->toContain('-z-20')
+        // Cropped from the top, so the heads stay in frame.
+        ->and($hero[0])->toContain('object-cover object-top')
         // The overlay keeps white text readable on any part of the photo.
         ->and($hero[0])->toMatch('#data-hero-overlay[^>]*-z-10[^>]*from-brand-navy/90#')
         ->and($hero[0])->toContain('Personal protective equipment for business');
