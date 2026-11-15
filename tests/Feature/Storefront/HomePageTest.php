@@ -3,6 +3,13 @@
 declare(strict_types=1);
 
 use App\Domain\Catalogue\Home\HeroImage;
+use App\Domain\Catalogue\Keys\CatalogueKeys;
+use Lunar\FieldTypes\Text;
+use Lunar\FieldTypes\TranslatedText;
+use Lunar\Models\Collection;
+use Lunar\Models\CollectionGroup;
+use Lunar\Models\Language;
+use Lunar\Models\Url;
 
 function heroSection(string $html): string
 {
@@ -102,4 +109,82 @@ it('claims no testimonials or client logos on the home page', function (): void 
     $html = strtolower($this->get('/')->getContent());
 
     expect($html)->not->toContain('testimonial')->and($html)->not->toContain('trusted by');
+});
+
+function tileCategory(string $name, string $slug): Collection
+{
+    $collection = Collection::create([
+        'collection_group_id' => CollectionGroup::query()->where('handle', 'categories')->sole()->id,
+        'attribute_data' => ['name' => new TranslatedText(['en' => new Text($name)])],
+    ], CatalogueKeys::collection('safety-footwear'));
+
+    $collection->urls()->create(['slug' => $slug, 'default' => true, 'language_id' => Language::getDefault()->id]);
+
+    return $collection;
+}
+
+function tilesOf(string $html): string
+{
+    preg_match('#<section[^>]*data-home-categories.*?</section>#s', $html, $section);
+
+    return $section[0] ?? '';
+}
+
+it('shows a tile for each child of safety footwear, each one a single link', function (): void {
+    $html = tilesOf($this->get('/')->assertOk()->getContent());
+
+    foreach (['safety-trainers' => 'Safety Trainers', 'safety-shoes' => 'Safety Shoes', 'safety-boots' => 'Safety Boots'] as $slug => $name) {
+        expect($html)->toContain('href="'.route('category', $slug).'"')
+            ->and($html)->toContain('aria-label="Shop '.$name.'"');
+    }
+
+    expect(substr_count($html, 'data-category-tile'))->toBe(3)
+        ->and($html)->not->toContain('All products')
+        ->and($html)->toMatch('#<h2[^>]*id="home-categories"#');
+});
+
+it('builds tiles from the collection tree, so a new child collection appears', function (): void {
+    tileCategory('Safety Sandals', 'safety-sandals');
+
+    $html = tilesOf($this->get('/')->getContent());
+
+    expect(substr_count($html, 'data-category-tile'))->toBe(4)
+        ->and($html)->toContain('href="'.route('category', 'safety-sandals').'"')
+        ->and($html)->toContain('aria-label="Shop Safety Sandals"');
+});
+
+it('uses the first published product with an image, lazy loaded with its size set', function (): void {
+    $product = Url::query()->where('slug', 'safety-jogger-ligero')->sole()->element;
+    $collection = tileCategory('Safety Sandals', 'safety-sandals');
+    $collection->products()->attach($product->id, ['position' => 1]);
+
+    $html = tilesOf($this->get('/')->getContent());
+    preg_match('#<a\s+href="'.preg_quote(route('category', 'safety-sandals'), '#').'".*?</a>#s', $html, $tile);
+
+    expect($tile[0])->toContain('<img')
+        ->and($tile[0])->toContain('loading="lazy"')
+        ->and($tile[0])->toContain('width="800"')
+        ->and($tile[0])->toContain('height="800"')
+        ->and($tile[0])->toContain('srcset=');
+});
+
+it('skips draft products and products with no image, and falls back to a plain tile', function (): void {
+    $product = Url::query()->where('slug', 'safety-jogger-ligero')->sole()->element;
+    $collection = tileCategory('Safety Sandals', 'safety-sandals');
+    $collection->products()->attach($product->id, ['position' => 1]);
+
+    $product->update(['status' => 'draft']);
+
+    $tile = fn (): string => (function (string $html): string {
+        preg_match('#<a\s+href="'.preg_quote(route('category', 'safety-sandals'), '#').'".*?</a>#s', $html, $m);
+
+        return $m[0];
+    })(tilesOf($this->get('/')->getContent()));
+
+    expect($tile())->not->toContain('<img')->and($tile())->toContain('Safety Sandals');
+
+    $product->update(['status' => 'published']);
+    $product->clearMediaCollection(config('lunar.media.collection'));
+
+    expect($tile())->not->toContain('<img');
 });

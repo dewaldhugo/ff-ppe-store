@@ -5,4 +5,6 @@
     :full="true"
 >
     <x-home.hero />
+
+    <x-home.category-tiles />
 </x-layouts.storefront>
