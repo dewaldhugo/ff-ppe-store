@@ -11,8 +11,8 @@ use App\Domain\VendorSync\Exceptions\SourceAborted;
 use Carbon\CarbonImmutable;
 use DateTimeImmutable;
 use DateTimeZone;
+use Generator;
 use Illuminate\Support\Facades\File;
-use SplFileObject;
 
 /**
  * Reads the newest Footsure CSV export from the incoming folder. Delivery
@@ -20,6 +20,19 @@ use SplFileObject;
  *
  * One raw record per ProductID. Each Family Product Reference inside it is
  * one colourway of that product, and each row is one variant.
+ *
+ * The rows of one product are not next to each other in the real file (69
+ * products appear in 283 separate runs), and the file may grow, so the file
+ * is never held in memory. Two passes:
+ *
+ * 1. `fetch()` reads the file line by line, checks the header and the file
+ *    date, and keeps only `ProductID => [byte offset of each of its rows]`:
+ *    one integer per row. The product count is known from this pass alone,
+ *    before any product is mapped, which the safety threshold needs.
+ * 2. The returned records are generated one at a time: seek to a product's
+ *    row offsets, read just those rows, yield one record, release it.
+ *
+ * Memory is one integer per row plus one product's rows at a time.
  */
 final class FootsureSource implements VendorSource
 {
@@ -39,35 +52,9 @@ final class FootsureSource implements VendorSource
     {
         $this->file = $this->onlyFile ?? $this->newestFile();
 
-        $rows = $this->rows($this->file);
+        [$header, $offsets, $noProductId] = $this->index($this->file);
 
-        if ($rows === []) {
-            throw SourceAborted::because('The Footsure file '.basename($this->file).' has no data rows.');
-        }
-
-        $this->assertFresh($rows[0][CsvColumns::FILE_DATE] ?? '');
-
-        $products = [];
-
-        foreach ($rows as $row) {
-            $products[$row['ProductID']][] = $row;
-        }
-
-        $records = [];
-
-        foreach ($products as $productId => $productRows) {
-            $records[] = new RawRecord(
-                externalId: (string) $productId,
-                payload: ['rows' => $productRows],
-                // The file date changes every day; it is not product data.
-                hashable: ['rows' => array_map(
-                    fn (array $row): array => array_diff_key($row, [CsvColumns::FILE_DATE => true]),
-                    $productRows,
-                )],
-            );
-        }
-
-        return new SourceBatch(count($records), $records);
+        return new SourceBatch(count($offsets) + ($noProductId > 0 ? 1 : 0), $this->records($this->file, $header, $offsets, $noProductId));
     }
 
     /**
@@ -110,47 +97,148 @@ final class FootsureSource implements VendorSource
     }
 
     /**
-     * @return list<array<string, string>>
+     * Pass 1: validate, and index the byte offset of every row by ProductID.
+     *
+     * @return array{0: list<string>, 1: array<string, list<int>>, 2: int} Header, offsets by ProductID, and the number of rows without a ProductID.
      */
-    private function rows(string $path): array
+    private function index(string $path): array
     {
         if (! is_file($path)) {
             throw SourceAborted::because("The Footsure file {$path} does not exist.");
         }
 
-        $file = new SplFileObject($path, 'r');
-        $file->setFlags(SplFileObject::READ_CSV | SplFileObject::READ_AHEAD | SplFileObject::SKIP_EMPTY | SplFileObject::DROP_NEW_LINE);
-        $file->setCsvControl(',', '"', '');
+        $handle = fopen($path, 'rb');
 
-        $header = null;
-        $rows = [];
-
-        foreach ($file as $line) {
-            if (! is_array($line) || $line === [null]) {
-                continue;
-            }
-
-            if ($header === null) {
-                $header = $this->header($line, basename($path));
-
-                continue;
-            }
-
-            if (count($line) !== count($header)) {
-                throw SourceAborted::because(sprintf(
-                    'Row %d of %s has %d columns, expected %d.',
-                    $file->key() + 1,
-                    basename($path),
-                    count($line),
-                    count($header),
-                ));
-            }
-
-            // Barcodes and references stay strings, never numbers.
-            $rows[] = array_combine($header, array_map(fn (?string $value): string => trim((string) $value), $line));
+        if ($handle === false) {
+            throw SourceAborted::because("The Footsure file {$path} could not be opened.");
         }
 
-        return $rows;
+        try {
+            $header = null;
+            $productColumn = null;
+            $offsets = [];
+            $noProductId = 0;
+            $firstDate = null;
+            $dateColumn = null;
+            $number = 0;
+
+            while (true) {
+                $offset = ftell($handle);
+                $line = fgetcsv($handle, 0, ',', '"', '');
+
+                if ($line === false) {
+                    break;
+                }
+
+                // A blank line is not a record.
+                if ($line === [null]) {
+                    continue;
+                }
+
+                if ($header === null) {
+                    $header = $this->header($line, basename($path));
+                    $productColumn = array_search('ProductID', $header, true);
+                    $dateColumn = array_search(CsvColumns::FILE_DATE, $header, true);
+
+                    continue;
+                }
+
+                $number++;
+
+                if (count($line) !== count($header)) {
+                    throw SourceAborted::because(sprintf(
+                        'Row %d of %s has %d columns, expected %d.',
+                        $number,
+                        basename($path),
+                        count($line),
+                        count($header),
+                    ));
+                }
+
+                // The date is read from the first data row. A feed that is
+                // checked once is checked before anything else is done.
+                if ($firstDate === null) {
+                    $firstDate = trim((string) $line[$dateColumn]);
+                    $this->assertFresh($firstDate);
+                }
+
+                $productId = trim((string) $line[$productColumn]);
+
+                if ($productId === '') {
+                    $noProductId++;
+
+                    continue;
+                }
+
+                $offsets[$productId][] = (int) $offset;
+            }
+        } finally {
+            fclose($handle);
+        }
+
+        if ($header === null || $number === 0) {
+            throw SourceAborted::because('The Footsure file '.basename($path).' has no data rows.');
+        }
+
+        return [$header, $offsets, $noProductId];
+    }
+
+    /**
+     * Pass 2: one record per product, read from its row offsets.
+     *
+     * The file is closed when the generator finishes or is discarded, so it
+     * can be archived afterwards (an open file cannot be moved on Windows).
+     *
+     * @param  list<string>  $header
+     * @param  array<string, list<int>>  $offsets
+     * @return Generator<int, RawRecord>
+     */
+    private function records(string $path, array $header, array $offsets, int $noProductId): Generator
+    {
+        $handle = fopen($path, 'rb');
+
+        if ($handle === false) {
+            throw SourceAborted::because("The Footsure file {$path} could not be opened.");
+        }
+
+        try {
+            foreach ($offsets as $productId => $rowOffsets) {
+                $rows = [];
+
+                foreach ($rowOffsets as $offset) {
+                    fseek($handle, $offset);
+                    $line = fgetcsv($handle, 0, ',', '"', '');
+
+                    if (! is_array($line) || count($line) !== count($header)) {
+                        throw SourceAborted::because('The Footsure file changed while it was being read.');
+                    }
+
+                    // Barcodes and references stay strings, never numbers.
+                    $rows[] = array_combine($header, array_map(fn (?string $value): string => trim((string) $value), $line));
+                }
+
+                yield new RawRecord(
+                    externalId: (string) $productId,
+                    payload: ['rows' => $rows],
+                    // The file date changes every day; it is not product data.
+                    hashable: ['rows' => array_map(
+                        fn (array $row): array => array_diff_key($row, [CsvColumns::FILE_DATE => true]),
+                        $rows,
+                    )],
+                );
+
+                unset($rows);
+            }
+
+            if ($noProductId > 0) {
+                yield new RawRecord(
+                    externalId: '(no ProductID)',
+                    error: "{$noProductId} rows have no ProductID and were not imported.",
+                );
+            }
+        } finally {
+            fclose($handle);
+        }
     }
 
     /**
