@@ -6,6 +6,8 @@
 >
     <x-home.hero />
 
+    <x-home.trust-strip />
+
     <x-home.category-tiles />
 
     <x-home.standard-chips />
