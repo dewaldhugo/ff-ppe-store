@@ -155,6 +155,30 @@
                     @endif
                 @endforeach
 
+                <div>
+                    <label for="quantity" class="block font-semibold text-slate-900">Quantity</label>
+                    <input
+                        id="quantity"
+                        type="number"
+                        inputmode="numeric"
+                        min="1"
+                        step="1"
+                        @if ($maxQuantity !== null) max="{{ $maxQuantity }}" @endif
+                        wire:model.live.debounce.300ms="quantity"
+                        @if ($quantityError !== null) aria-invalid="true" aria-describedby="error-quantity" @endif
+                        data-quantity
+                        @class([
+                            'mt-2 w-28 rounded border px-3 py-2 text-lg',
+                            'border-slate-300' => $quantityError === null,
+                            'border-red-600' => $quantityError !== null,
+                        ])
+                    >
+
+                    @if ($quantityError !== null)
+                        <p id="error-quantity" role="alert" class="mt-2 text-sm font-semibold text-red-700">{{ $quantityError }}</p>
+                    @endif
+                </div>
+
                 <button
                     type="submit"
                     @disabled(! $canAdd)

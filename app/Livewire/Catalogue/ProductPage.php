@@ -61,6 +61,13 @@ final class ProductPage extends Component
     /** Handle of the option the customer still has to choose, once they try to add to cart. */
     public ?string $missingOption = null;
 
+    /**
+     * The quantity as typed. Empty until the customer enters one: add to
+     * cart stays disabled until then. A string, so a cleared field or a
+     * stray character never breaks the page.
+     */
+    public string $quantity = '';
+
     public bool $added = false;
 
     private ?Product $product = null;
@@ -91,6 +98,11 @@ final class ProductPage extends Component
         $this->added = false;
     }
 
+    public function updatedQuantity(): void
+    {
+        $this->added = false;
+    }
+
     public function addToCart(): void
     {
         $selection = $this->selection();
@@ -105,6 +117,12 @@ final class ProductPage extends Component
         $this->missingOption = null;
 
         if (! $selection->canAddToCart()) {
+            return;
+        }
+
+        $quantity = $this->quantityValue();
+
+        if ($quantity === null || $quantity > (int) $selection->variant()?->stock) {
             return;
         }
 
@@ -129,8 +147,12 @@ final class ProductPage extends Component
             'price' => $this->price($priceDisplay, $selection, $variant),
             'pricesVary' => $variant === null && $this->pricesVary($selection),
             'stockMessage' => $this->stockMessage($selection, $variant),
-            // Enabled only once every option is chosen and that variant is in stock.
-            'canAdd' => $variant !== null && $variant->stock > 0,
+            // Enabled only once every option is chosen, that variant is in
+            // stock, and a quantity it can cover has been entered.
+            'canAdd' => $variant !== null && $variant->stock > 0
+                && $this->quantityValue() !== null && $this->quantityValue() <= $variant->stock,
+            'quantityError' => $this->quantityError($variant),
+            'maxQuantity' => $variant !== null && $variant->stock > 0 ? $variant->stock : null,
             'addLabel' => $this->addLabel($selection, $variant),
             'euSizes' => $this->euSizes($product, $selection),
             'specification' => $this->specification($product),
@@ -259,7 +281,8 @@ final class ProductPage extends Component
 
     /**
      * The button says what is still needed, so a disabled button is never
-     * unexplained: "Select a size", "Out of stock" or "Add to cart".
+     * unexplained: "Select a size", "Enter a quantity", "Out of stock" or
+     * "Add to cart".
      */
     private function addLabel(VariantSelection $selection, ?ProductVariant $variant): string
     {
@@ -268,7 +291,7 @@ final class ProductPage extends Component
         }
 
         if ($variant !== null) {
-            return 'Add to cart';
+            return $this->quantityValue() === null ? 'Enter a quantity' : 'Add to cart';
         }
 
         $missing = $selection->missing()[0] ?? null;
@@ -276,6 +299,44 @@ final class ProductPage extends Component
         return $missing === null
             ? 'Unavailable'
             : Str::replaceFirst('Please select', 'Select', $selection->promptFor($missing));
+    }
+
+    /**
+     * The quantity as a whole number of at least 1, or null when the field
+     * is empty or holds anything else.
+     */
+    private function quantityValue(): ?int
+    {
+        $quantity = trim($this->quantity);
+
+        if (! ctype_digit($quantity) || strlen($quantity) > 6) {
+            return null;
+        }
+
+        return (int) $quantity >= 1 ? (int) $quantity : null;
+    }
+
+    /**
+     * Shown under the field once something has been typed that cannot be
+     * ordered. An untouched, empty field is not an error.
+     */
+    private function quantityError(?ProductVariant $variant): ?string
+    {
+        if (trim($this->quantity) === '') {
+            return null;
+        }
+
+        $quantity = $this->quantityValue();
+
+        if ($quantity === null) {
+            return 'Enter a whole number, 1 or more.';
+        }
+
+        if ($variant !== null && $variant->stock > 0 && $quantity > $variant->stock) {
+            return "Only {$variant->stock} available in this size.";
+        }
+
+        return null;
     }
 
     private function stockMessage(VariantSelection $selection, ?ProductVariant $variant): string

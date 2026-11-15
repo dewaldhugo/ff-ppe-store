@@ -119,6 +119,7 @@ it('highlights the missing option when adding to cart without a size', function 
         ->call('choose', 'shoe_size', '8')
         ->assertSet('missingOption', null)
         ->assertDontSee('Please select a size')
+        ->set('quantity', '2')
         ->call('addToCart')
         ->assertSet('added', true);
 });
@@ -147,6 +148,7 @@ it('adds a product with one variant and no options directly', function (): void 
     CatalogueFactory::product('Plain', [['stock' => 4]]);
 
     Livewire::test(ProductPage::class, ['slug' => 'test-brand-plain'])
+        ->set('quantity', '1')
         ->call('addToCart')
         ->assertSet('missingOption', null)
         ->assertSet('added', true);
@@ -331,20 +333,84 @@ function addButton(string $html): array
     ];
 }
 
-it('keeps add to cart disabled until a size is selected, and says what is needed', function (): void {
+it('keeps add to cart disabled until a size and a quantity are chosen, and says what is needed', function (): void {
     $component = Livewire::test(ProductPage::class, ['slug' => 'safety-jogger-ligero']);
 
-    // The colour is pre-selected, the size never is.
-    expect(addButton($component->html()))->toBe(['disabled' => true, 'label' => 'Select a size']);
+    // The colour is pre-selected. The size and the quantity never are.
+    expect(addButton($component->html()))->toBe(['disabled' => true, 'label' => 'Select a size'])
+        ->and($component->get('quantity'))->toBe('');
 
     $component->call('choose', 'shoe_size', '8');
 
+    expect(addButton($component->html()))->toBe(['disabled' => true, 'label' => 'Enter a quantity']);
+
+    $component->set('quantity', '3');
+
     expect(addButton($component->html()))->toBe(['disabled' => false, 'label' => 'Add to cart']);
 
-    // Choosing a combination that is out of stock disables it again.
-    $component->call('choose', 'colour', 'black')->call('choose', 'shoe_size', '10');
+    // Clearing the quantity disables it again.
+    $component->set('quantity', '');
+
+    expect(addButton($component->html()))->toBe(['disabled' => true, 'label' => 'Enter a quantity']);
+
+    // Choosing a combination that is out of stock disables it whatever the quantity.
+    $component->set('quantity', '1')->call('choose', 'colour', 'black')->call('choose', 'shoe_size', '10');
 
     expect(addButton($component->html()))->toBe(['disabled' => true, 'label' => 'Out of stock']);
+});
+
+it('entering a quantity first still needs a size', function (): void {
+    $component = Livewire::test(ProductPage::class, ['slug' => 'safety-jogger-ligero'])->set('quantity', '2');
+
+    expect(addButton($component->html()))->toBe(['disabled' => true, 'label' => 'Select a size']);
+
+    $component->call('addToCart')->assertSet('added', false)->assertSet('missingOption', 'shoe_size');
+});
+
+it('rejects a quantity that is not a whole number of 1 or more', function (string $quantity): void {
+    $component = Livewire::test(ProductPage::class, ['slug' => 'safety-jogger-ligero'])
+        ->call('choose', 'shoe_size', '8')
+        ->set('quantity', $quantity);
+
+    expect(addButton($component->html())['disabled'])->toBeTrue();
+
+    $component
+        ->assertSee('Enter a whole number, 1 or more.')
+        ->assertSeeHtml('aria-invalid="true"')
+        ->call('addToCart')
+        ->assertSet('added', false);
+})->with(['0', '-2', '1.5', 'abc', '9999999']);
+
+it('does not allow more than the stock of the chosen size', function (): void {
+    // FS65 in size 6 has 3 in stock.
+    $component = Livewire::test(ProductPage::class, ['slug' => 'amblers-safety-fs65'])
+        ->call('choose', 'shoe_size', '6')
+        ->set('quantity', '4');
+
+    expect(addButton($component->html())['disabled'])->toBeTrue();
+
+    $component
+        ->assertSee('Only 3 available in this size.')
+        ->assertSeeHtml('max="3"')
+        ->call('addToCart')
+        ->assertSet('added', false)
+        ->set('quantity', '3');
+
+    expect(addButton($component->html()))->toBe(['disabled' => false, 'label' => 'Add to cart']);
+
+    $component->assertDontSee('available in this size')->call('addToCart')->assertSet('added', true);
+});
+
+it('shows a labelled quantity field that starts empty', function (): void {
+    $html = $this->get('/p/safety-jogger-ligero')->assertOk()->getContent();
+
+    preg_match('#<input[^>]*data-quantity[^>]*>#s', $html, $input);
+
+    expect($html)->toContain('<label for="quantity"')
+        ->and($input[0])->toContain('type="number"')
+        ->and($input[0])->toContain('min="1"')
+        ->and($input[0])->not->toContain('value=')
+        ->and($input[0])->not->toContain('aria-invalid');
 });
 
 it('says out of stock, not select a size, when nothing is in stock', function (): void {
