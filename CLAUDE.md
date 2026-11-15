@@ -78,8 +78,8 @@ Lunar has no handle column on tax classes, product types, tax zones or collectio
 | `title` | TranslatedText | all | Descriptive title, e.g. "Lightweight ESD Safety Shoes" |
 | `short_description` | TranslatedText | all | One or two sentences |
 | `description` | TranslatedText | all | Long description, plain text with paragraphs |
-| `safety_class` | Text | safety-footwear | Normalised, no spaces: `SB`, `SBP`, `S1`, `S1P`, `S2`, `S3`, `S7`, `OB`, `O1`, `O2`... The EN ISO 20345:2022 classes `S1PS`, `S3S` and `S7S`, and the occupational class `O6`, are valid values. |
-| `features` | ListField | safety-footwear | Normalised codes: `SRA`, `SRB`, `SRC`, `SR`, `ESD`, `CI`, `HI`, `HRO`, `WR`, `FO`, `M`, `AN`, `E`, `A`, `P`, `LG` (ladder grip), `SC` (scuff cap), `METAL_FREE` |
+| `safety_class` | Text | safety-footwear | Normalised, no spaces: `SB`, `SBP`, `S1`, `S1P`, `S2`, `S3`, `S7`, `OB`, `O1`, `O2`... The EN ISO 20345:2022 classes `S1PS`, `S3S` and `S7S`, the occupational class `O6`, and the EN ISO 20346 protective class `PB` are valid values. |
+| `features` | ListField | safety-footwear | Normalised codes: `SRA`, `SRB`, `SRC`, `SR`, `ESD`, `CI`, `HI`, `HRO`, `WR`, `FO`, `M`, `AN`, `E`, `A`, `P`, `LG` (ladder grip), `SC` (scuff cap), `WRU` (water resistant upper), `METAL_FREE` |
 | `standards` | ListField | all | e.g. `EN ISO 20345:2011`, `EN ISO 20345:2022`, `ASTM F2413:2024` |
 | `toecap` | Text | safety-footwear | e.g. `Nano Carbon`, `Steel`, `Composite`, `None` |
 | `midsole` | Text | safety-footwear | |
@@ -106,7 +106,8 @@ Waterproofing is the `WR` feature, not a separate attribute. Which attributes ar
 ### Product options
 - `colour`: values are customer-facing colour names, title case (`Navy`, `Black`). Each value has meta `hex` (e.g. `394656`, may be null).
 - `shoe_size`: values are **UK sizes** as strings (`3`, `3.5`, ... `13.5`), with meta `sort` (numeric) for ordering. The EU size is the variant attribute `eu_size`.
-  - Children's sizes: a variant whose tax class is `zero-childrens` uses the value `Kids {size}` (e.g. `Kids 10`, `Kids 1`), so a child size never shares a value with an adult size. Their `sort` is below every adult size and follows the UK children's scale, where 7 to 13.5 come before 1 to 6.5: `sort = size - 100` for sizes 7 and above, `sort = size - 80` below 7.
+  - Size labels follow the size scale, never the VAT rate. A row whose EU size is below 33 is on the infant scale and its value is `Kids {UK size}` (e.g. `Kids 6`). Every other row uses the plain UK size (`1`, `2`, `6`), whether zero rated or not: junior and adult sizes from UK 1 upward are one physical scale. A zero rated row with no EU size is skipped as a variant and reported.
+  - `sort` is the EU size, for both vendors, so the options order correctly (`Kids 6` = 23, `1` = 33, `6` = 39). A size with no EU size sorts by the vendor's chart for that UK size.
 - `garment_size`: reserved for workwear (`XS` ... `4XL`). Unused at launch.
 
 Every safety-footwear variant has exactly one `colour` value and one `shoe_size` value.
@@ -129,8 +130,8 @@ Every safety-footwear variant has exactly one `colour` value and one `shoe_size`
 - URLs: Lunar URL records, default language `en`. The product slug is `Str::slug(brand . ' ' . name)`, e.g. `safety-jogger-ligero`. On collision a numeric suffix is appended (`-2`, `-3`, ...) in order of creation. This rule is implemented once, in the action `App\Domain\Catalogue\Urls\GenerateProductSlug`, which the fixture seeder and the ingestion module both call. Lunar's automatic URL generator is disabled. A product's slug is set once when the product is created and is never changed afterwards, including by the ingestion module when a vendor renames a product. Renamed products keep their original URL.
 
 ### Collections
-- Collection group `categories`: the customer-facing category tree, e.g. Safety Footwear > Safety Trainers, Safety Boots, Safety Shoes; Occupational Footwear; Slippers; Plimsolls; Casual Footwear; Accessories. Products belong to one or more leaf collections.
-- Contract handles in `categories`: `safety-footwear` (parent of `safety-trainers`, `safety-shoes`, `safety-boots`), `occupational-footwear`, `slippers`, `plimsolls`, `casual-footwear`, `accessories`. In `ranges`: `clearance`.
+- Collection group `categories`: the customer-facing category tree, e.g. Safety Footwear > Safety Trainers, Safety Boots, Safety Shoes; Occupational Footwear; Slippers; Plimsolls; Casual Footwear; Accessories; Wellingtons. Products belong to one or more leaf collections.
+- Contract handles in `categories`: `safety-footwear` (parent of `safety-trainers`, `safety-shoes`, `safety-boots`), `occupational-footwear`, `slippers`, `plimsolls`, `casual-footwear`, `accessories`, `wellingtons`. In `ranges`: `clearance`.
 - Collection group `ranges`: marketing collections (New in, Clearance, Industry ranges). Managed in the admin.
 - Collections the contract names (the category tree and `clearance`) are resolved by handle through the key registry. Each also has a Lunar URL whose slug equals its handle.
 
@@ -184,3 +185,9 @@ One Meilisearch document per product, written by Lunar's product indexing throug
 - Before writing code for a phase, produce a short plan and list any assumption about the data contract.
 - Verify package versions and APIs against current documentation (composer, Lunar docs) rather than relying on memory.
 - Commit at the end of each completed step with a conventional commit message.
+
+## Later
+
+Known follow-ups, not in the current phase:
+
+- Merge vendor products split by size band into one Lunar product with several `vendor_products` rows. Footsure lists one line as several ProductIDs (Morris, Dunlop Sport, 6045/PSG27 plimsolls, Audrey Slipper, Primera Gardening Shoe); each is its own product today, with numeric slug suffixes.

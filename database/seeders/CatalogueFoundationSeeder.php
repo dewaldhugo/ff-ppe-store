@@ -110,6 +110,7 @@ final class CatalogueFoundationSeeder extends Seeder
             'plimsolls' => ['Plimsolls', []],
             'casual-footwear' => ['Casual Footwear', []],
             'accessories' => ['Accessories', []],
+            'wellingtons' => ['Wellingtons', []],
         ]],
         'ranges' => ['Ranges', [
             'clearance' => ['Clearance', []],

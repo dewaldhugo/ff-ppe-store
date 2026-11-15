@@ -34,6 +34,14 @@ return [
 
     'messages_cap' => 200,
 
+    // Queue image jobs after a real catalogue run. `--without-images` turns
+    // this off for one run; the command then prints the images command to run later.
+    'queue_images' => (bool) env('VENDORSYNC_QUEUE_IMAGES', true),
+
+    // Seconds a run holds its vendor and type lock. It must exceed the longest
+    // expected run with margin (at least two hours); a run releases it when it ends.
+    'lock_seconds' => 4 * 3600,
+
     'reports_path' => storage_path('app/vendorsync/reports'),
 
     'vendors' => [
@@ -53,7 +61,7 @@ return [
     // The feature codes of the data contract. Anything else is dropped and
     // reported, never invented.
     'features' => [
-        'SRA', 'SRB', 'SRC', 'SR', 'ESD', 'CI', 'HI', 'HRO', 'WR', 'FO', 'M', 'AN', 'E', 'A', 'P', 'LG', 'SC', 'METAL_FREE',
+        'SRA', 'SRB', 'SRC', 'SR', 'ESD', 'CI', 'HI', 'HRO', 'WR', 'FO', 'M', 'AN', 'E', 'A', 'P', 'LG', 'SC', 'WRU', 'METAL_FREE',
     ],
 
     // EU to UK size charts by vendor code. Safety Jogger's published chart,
@@ -139,6 +147,14 @@ return [
         'archive_days' => 30,
         'max_age_hours' => 36,
 
+        // The export's File_Create_Date format. The real feed is month/day/year
+        // (11/15/2026 06:05:26). Read as day/month/year it parses without error
+        // as a date in the future, so the staleness rule could never fire.
+        'file_date_format' => 'm/d/Y H:i:s',
+
+        // A file created further ahead than this is unreadable, not fresh.
+        'max_future_minutes' => 60,
+
         // Case-insensitive, matching any brand that starts with an entry.
         // Safety Jogger products come directly from the Safety Jogger API.
         'excluded_brands' => ['Safety Jogger'],
@@ -165,6 +181,21 @@ return [
             'Unisex Sports' => 'casual-footwear',
             'Mens Boots' => 'casual-footwear',
             'Insoles' => 'accessories',
+            'Mule Ladies Slippers' => 'slippers',
+            'Mens Mule Slippers' => 'slippers',
+            'Touch Fastening Mens Slippers' => 'slippers',
+            'Trainers Safety' => 'safety-trainers',
+            // Certified to EN ISO 20346 (protective footwear), class PB.
+            'Ladies Safety Shoes' => 'safety-shoes',
+            'Waterproof Safety Footwear' => 'safety-boots',
+            'Mens Classic Lace Shoes' => 'occupational-footwear',
+            'Plain PVC Wellingtons' => 'wellingtons',
+            'Plain Rubber Wellingtons' => 'wellingtons',
+            'Childrens Wellingtons' => 'wellingtons',
+            'Waders' => 'wellingtons',
+            'Canvas Ladies Summer' => 'casual-footwear',
+            'Garden Shoes' => 'casual-footwear',
+            'Boys BTS' => 'casual-footwear',
         ],
 
         'gender_map' => [
@@ -190,6 +221,7 @@ return [
             'Turkey' => 'TR',
             'Pakistan' => 'PK',
             'Cambodia' => 'KH',
+            'France' => 'FR',
         ],
 
         // Rows without real measurements carry these placeholders. They are

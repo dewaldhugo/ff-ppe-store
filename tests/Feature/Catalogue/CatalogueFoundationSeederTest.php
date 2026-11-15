@@ -113,6 +113,7 @@ it('resolves every collection handle in the contract', function (string $handle,
     ['plimsolls', 'categories', null],
     ['casual-footwear', 'categories', null],
     ['accessories', 'categories', null],
+    ['wellingtons', 'categories', null],
     ['clearance', 'ranges', null],
 ]);
 
