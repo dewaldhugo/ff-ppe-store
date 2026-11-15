@@ -27,3 +27,6 @@ Thumbs.db
 /public/fonts/filament
 /public/css/lunarphp
 /public/js/app
+
+/.vite
+/storage/media-library
