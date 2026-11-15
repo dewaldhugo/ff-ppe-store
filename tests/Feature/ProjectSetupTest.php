@@ -27,7 +27,6 @@ it('leaves variants and products shareable between vendors', function (): void {
         ->and($unique('vendor_offers'))->toBe([['vendor_id', 'vendor_sku']]);
 });
 
-it('has no ingestion module code', function (): void {
-    expect(is_dir(app_path('Domain/VendorSync')))->toBeFalse()
-        ->and(file_exists(config_path('vendorsync.php')))->toBeFalse();
-});
+it('creates the ingestion module tables', function (string $table): void {
+    expect(Schema::hasTable($table))->toBeTrue();
+})->with(['sync_runs', 'vendor_raw_records', 'vendor_field_locks']);

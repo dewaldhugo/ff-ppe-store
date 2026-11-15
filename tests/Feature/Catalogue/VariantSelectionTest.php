@@ -65,10 +65,10 @@ it('lets a product with one variant and no options be added directly', function 
 it('disables values that lead to an out of stock variant', function (): void {
     $selection = VariantSelection::forProduct(fixtureProduct('safety-jogger-ligero'), ['colour' => 'black']);
 
-    // Black 9.5 has no stock; every other Black size does.
+    // Black 10 has no stock; every other Black size does.
     $sizes = availability($selection, 'shoe_size');
 
-    expect($sizes['9.5'])->toBeFalse()
+    expect($sizes['10'])->toBeFalse()
         ->and(array_filter($sizes))->toHaveCount(11);
 });
 
@@ -90,9 +90,9 @@ it('re-evaluates availability after each selection', function (): void {
     // Navy is pre-selected and every colour is available.
     expect(availability($selection, 'colour'))->toBe(['navy' => true, 'black' => true, 'orange' => true]);
 
-    $selection->select('shoe_size', '9.5');
+    $selection->select('shoe_size', '10');
 
-    // With 9.5 chosen, Black is no longer reachable.
+    // With 10 chosen, Black is no longer reachable.
     expect(availability($selection, 'colour'))->toBe(['navy' => true, 'black' => false, 'orange' => true]);
 
     $selection->select('shoe_size', '9');

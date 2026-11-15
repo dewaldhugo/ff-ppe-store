@@ -1,0 +1,5704 @@
+{
+  "id": 284096,
+  "name": "LIGERO",
+  "commercialName": "LIGERO",
+  "brand": "SAFETY",
+  "brandDescription": "Safety Jogger",
+  "priority": 134,
+  "colors": [
+    {
+      "id": 1025202,
+      "ref": "201005",
+      "code": "NAV",
+      "hexValue": "394656",
+      "patternURL": null,
+      "description": "navy",
+      "sequence": 1,
+      "alternatives": [
+        {
+          "brand": "SAFETY",
+          "color": "NAV",
+          "product": "ABSOLUTE",
+          "productId": 276147,
+          "productColorId": 1028554
+        },
+        {
+          "brand": "SAFETY",
+          "color": "NAV",
+          "product": "LIGERO2S1P",
+          "productId": 342962,
+          "productColorId": 1132473
+        }
+      ],
+      "skus": [
+        {
+          "id": 1492552,
+          "productId": 284096,
+          "productColorId": 1025202,
+          "pieces": 1,
+          "eanCode": "5400812979016",
+          "sizeRange": "38",
+          "sizeDivision": "38(1)",
+          "assortment": "S3801",
+          "brand": null,
+          "article": null,
+          "commercialName": null,
+          "category": null,
+          "color": null,
+          "colorLongDescription": null,
+          "colorShortDescription": null,
+          "productReference": null,
+          "stock": 206,
+          "stockType": "N",
+          "buyPer": 1,
+          "defaultPrice": {
+            "currency": "GBP",
+            "value": 46.5
+          },
+          "customerPrice": {
+            "currency": "GBP",
+            "value": 45.93
+          },
+          "promoPrice": null,
+          "rrpPrice": {
+            "currency": "GBP",
+            "value": 91.8
+          }
+        },
+        {
+          "id": 1492682,
+          "productId": 284096,
+          "productColorId": 1025202,
+          "pieces": 1,
+          "eanCode": "5400812979177",
+          "sizeRange": "47",
+          "sizeDivision": "47(1)",
+          "assortment": "S4701",
+          "brand": null,
+          "article": null,
+          "commercialName": null,
+          "category": null,
+          "color": null,
+          "colorLongDescription": null,
+          "colorShortDescription": null,
+          "productReference": null,
+          "stock": 77,
+          "stockType": "N",
+          "buyPer": 1,
+          "defaultPrice": {
+            "currency": "GBP",
+            "value": 46.5
+          },
+          "customerPrice": {
+            "currency": "GBP",
+            "value": 45.93
+          },
+          "promoPrice": null,
+          "rrpPrice": {
+            "currency": "GBP",
+            "value": 91.8
+          }
+        },
+        {
+          "id": 1454454,
+          "productId": 284096,
+          "productColorId": 1025202,
+          "pieces": 1,
+          "eanCode": "5400812974585",
+          "sizeRange": "41",
+          "sizeDivision": "41(1)",
+          "assortment": "S4101",
+          "brand": null,
+          "article": null,
+          "commercialName": null,
+          "category": null,
+          "color": null,
+          "colorLongDescription": null,
+          "colorShortDescription": null,
+          "productReference": null,
+          "stock": 313,
+          "stockType": "N",
+          "buyPer": 1,
+          "defaultPrice": {
+            "currency": "GBP",
+            "value": 46.5
+          },
+          "customerPrice": {
+            "currency": "GBP",
+            "value": 45.93
+          },
+          "promoPrice": null,
+          "rrpPrice": {
+            "currency": "GBP",
+            "value": 91.8
+          }
+        },
+        {
+          "id": 1492667,
+          "productId": 284096,
+          "productColorId": 1025202,
+          "pieces": 1,
+          "eanCode": "5400812979153",
+          "sizeRange": "46",
+          "sizeDivision": "46(1)",
+          "assortment": "S4601",
+          "brand": null,
+          "article": null,
+          "commercialName": null,
+          "category": null,
+          "color": null,
+          "colorLongDescription": null,
+          "colorShortDescription": null,
+          "productReference": null,
+          "stock": 153,
+          "stockType": "N",
+          "buyPer": 1,
+          "defaultPrice": {
+            "currency": "GBP",
+            "value": 46.5
+          },
+          "customerPrice": {
+            "currency": "GBP",
+            "value": 45.93
+          },
+          "promoPrice": null,
+          "rrpPrice": {
+            "currency": "GBP",
+            "value": 91.8
+          }
+        },
+        {
+          "id": 1492522,
+          "productId": 284096,
+          "productColorId": 1025202,
+          "pieces": 1,
+          "eanCode": "5400812978972",
+          "sizeRange": "36",
+          "sizeDivision": "36(1)",
+          "assortment": "S3601",
+          "brand": null,
+          "article": null,
+          "commercialName": null,
+          "category": null,
+          "color": null,
+          "colorLongDescription": null,
+          "colorShortDescription": null,
+          "productReference": null,
+          "stock": 55,
+          "stockType": "N",
+          "buyPer": 1,
+          "defaultPrice": {
+            "currency": "GBP",
+            "value": 46.5
+          },
+          "customerPrice": {
+            "currency": "GBP",
+            "value": 45.93
+          },
+          "promoPrice": null,
+          "rrpPrice": {
+            "currency": "GBP",
+            "value": 91.8
+          }
+        },
+        {
+          "id": 1492567,
+          "productId": 284096,
+          "productColorId": 1025202,
+          "pieces": 1,
+          "eanCode": "5400812979030",
+          "sizeRange": "39",
+          "sizeDivision": "39(1)",
+          "assortment": "S3901",
+          "brand": null,
+          "article": null,
+          "commercialName": null,
+          "category": null,
+          "color": null,
+          "colorLongDescription": null,
+          "colorShortDescription": null,
+          "productReference": null,
+          "stock": 326,
+          "stockType": "N",
+          "buyPer": 1,
+          "defaultPrice": {
+            "currency": "GBP",
+            "value": 46.5
+          },
+          "customerPrice": {
+            "currency": "GBP",
+            "value": 45.93
+          },
+          "promoPrice": null,
+          "rrpPrice": {
+            "currency": "GBP",
+            "value": 91.8
+          }
+        },
+        {
+          "id": 1492622,
+          "productId": 284096,
+          "productColorId": 1025202,
+          "pieces": 1,
+          "eanCode": "5400812979092",
+          "sizeRange": "43",
+          "sizeDivision": "43(1)",
+          "assortment": "S4301",
+          "brand": null,
+          "article": null,
+          "commercialName": null,
+          "category": null,
+          "color": null,
+          "colorLongDescription": null,
+          "colorShortDescription": null,
+          "productReference": null,
+          "stock": 613,
+          "stockType": "N",
+          "buyPer": 1,
+          "defaultPrice": {
+            "currency": "GBP",
+            "value": 46.5
+          },
+          "customerPrice": {
+            "currency": "GBP",
+            "value": 45.93
+          },
+          "promoPrice": null,
+          "rrpPrice": {
+            "currency": "GBP",
+            "value": 91.8
+          }
+        },
+        {
+          "id": 1492652,
+          "productId": 284096,
+          "productColorId": 1025202,
+          "pieces": 1,
+          "eanCode": "5400812979139",
+          "sizeRange": "45",
+          "sizeDivision": "45(1)",
+          "assortment": "S4501",
+          "brand": null,
+          "article": null,
+          "commercialName": null,
+          "category": null,
+          "color": null,
+          "colorLongDescription": null,
+          "colorShortDescription": null,
+          "productReference": null,
+          "stock": 340,
+          "stockType": "N",
+          "buyPer": 1,
+          "defaultPrice": {
+            "currency": "GBP",
+            "value": 46.5
+          },
+          "customerPrice": {
+            "currency": "GBP",
+            "value": 45.93
+          },
+          "promoPrice": null,
+          "rrpPrice": {
+            "currency": "GBP",
+            "value": 91.8
+          }
+        },
+        {
+          "id": 1492582,
+          "productId": 284096,
+          "productColorId": 1025202,
+          "pieces": 1,
+          "eanCode": "5400812979054",
+          "sizeRange": "40",
+          "sizeDivision": "40(1)",
+          "assortment": "S4001",
+          "brand": null,
+          "article": null,
+          "commercialName": null,
+          "category": null,
+          "color": null,
+          "colorLongDescription": null,
+          "colorShortDescription": null,
+          "productReference": null,
+          "stock": 261,
+          "stockType": "N",
+          "buyPer": 1,
+          "defaultPrice": {
+            "currency": "GBP",
+            "value": 46.5
+          },
+          "customerPrice": {
+            "currency": "GBP",
+            "value": 45.93
+          },
+          "promoPrice": null,
+          "rrpPrice": {
+            "currency": "GBP",
+            "value": 91.8
+          }
+        },
+        {
+          "id": 1492607,
+          "productId": 284096,
+          "productColorId": 1025202,
+          "pieces": 1,
+          "eanCode": "5400812979078",
+          "sizeRange": "42",
+          "sizeDivision": "42(1)",
+          "assortment": "S4201",
+          "brand": null,
+          "article": null,
+          "commercialName": null,
+          "category": null,
+          "color": null,
+          "colorLongDescription": null,
+          "colorShortDescription": null,
+          "productReference": null,
+          "stock": 533,
+          "stockType": "N",
+          "buyPer": 1,
+          "defaultPrice": {
+            "currency": "GBP",
+            "value": 46.5
+          },
+          "customerPrice": {
+            "currency": "GBP",
+            "value": 45.93
+          },
+          "promoPrice": null,
+          "rrpPrice": {
+            "currency": "GBP",
+            "value": 91.8
+          }
+        },
+        {
+          "id": 1492537,
+          "productId": 284096,
+          "productColorId": 1025202,
+          "pieces": 1,
+          "eanCode": "5400812978996",
+          "sizeRange": "37",
+          "sizeDivision": "37(1)",
+          "assortment": "S3701",
+          "brand": null,
+          "article": null,
+          "commercialName": null,
+          "category": null,
+          "color": null,
+          "colorLongDescription": null,
+          "colorShortDescription": null,
+          "productReference": null,
+          "stock": 85,
+          "stockType": "N",
+          "buyPer": 1,
+          "defaultPrice": {
+            "currency": "GBP",
+            "value": 46.5
+          },
+          "customerPrice": {
+            "currency": "GBP",
+            "value": 45.93
+          },
+          "promoPrice": null,
+          "rrpPrice": {
+            "currency": "GBP",
+            "value": 91.8
+          }
+        },
+        {
+          "id": 1492637,
+          "productId": 284096,
+          "productColorId": 1025202,
+          "pieces": 1,
+          "eanCode": "5400812979115",
+          "sizeRange": "44",
+          "sizeDivision": "44(1)",
+          "assortment": "S4401",
+          "brand": null,
+          "article": null,
+          "commercialName": null,
+          "category": null,
+          "color": null,
+          "colorLongDescription": null,
+          "colorShortDescription": null,
+          "productReference": null,
+          "stock": 472,
+          "stockType": "N",
+          "buyPer": 1,
+          "defaultPrice": {
+            "currency": "GBP",
+            "value": 46.5
+          },
+          "customerPrice": {
+            "currency": "GBP",
+            "value": 45.93
+          },
+          "promoPrice": null,
+          "rrpPrice": {
+            "currency": "GBP",
+            "value": 91.8
+          }
+        }
+      ],
+      "defaultPrice": {
+        "currency": "GBP",
+        "minValue": 46.5,
+        "maxValue": 46.5
+      },
+      "customerPrice": {
+        "currency": "GBP",
+        "minValue": 45.93,
+        "maxValue": 45.93
+      },
+      "promoPrice": null,
+      "rrpPrice": {
+        "currency": "GBP",
+        "minValue": 91.8,
+        "maxValue": 91.8
+      },
+      "images": {
+        "360": [
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-NAV-0000.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-NAV-0001.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-NAV-0002.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-NAV-0003.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-NAV-0004.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-NAV-0005.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-NAV-0006.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-NAV-0007.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-NAV-0008.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-NAV-0009.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-NAV-0010.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-NAV-0011.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-NAV-0012.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-NAV-0013.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-NAV-0014.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-NAV-0015.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-NAV-0016.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-NAV-0017.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-NAV-0018.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-NAV-0019.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-NAV-0020.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-NAV-0021.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-NAV-0022.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-NAV-0023.JPG"
+        ],
+        "main": "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-NAV-CTLG.JPG",
+        "hires": [
+          "https://ws.safetyjogger.com/image/web/SAFETY/HIRES/LIGERO-NAV-HIRES.PNG",
+          "https://ws.safetyjogger.com/image/web/SAFETY/HIRES/LIGERO-NAV-HR01.PNG",
+          "https://ws.safetyjogger.com/image/web/SAFETY/HIRES/LIGERO-NAV-HR02.PNG",
+          "https://ws.safetyjogger.com/image/web/SAFETY/HIRES/LIGERO-NAV-HR03.PNG"
+        ],
+        "outsole": "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-NAV-OUTS.JPG",
+        "web": [
+          "https://ws.safetyjogger.com/image/web/SAFETY/1280/LIGERO-NAV-WEB01.JPG",
+          "https://ws.safetyjogger.com/image/web/SAFETY/1280/LIGERO-NAV-WEB02.JPG",
+          "https://ws.safetyjogger.com/image/web/SAFETY/1280/LIGERO-NAV-WEB03.JPG",
+          "https://ws.safetyjogger.com/image/web/SAFETY/1280/LIGERO-NAV-WEBOUTS.JPG"
+        ]
+      }
+    },
+    {
+      "id": 1030296,
+      "ref": "010531",
+      "code": "BLK",
+      "hexValue": "000000",
+      "patternURL": null,
+      "description": "black",
+      "sequence": 999,
+      "alternatives": [
+        {
+          "brand": "SAFETY",
+          "color": "BLK",
+          "product": "LIGERO2S1P",
+          "productId": 342962,
+          "productColorId": 1132471
+        },
+        {
+          "brand": "SAFETY",
+          "color": "BLK",
+          "product": "ABSOLUTE",
+          "productId": 276147,
+          "productColorId": 1011189
+        }
+      ],
+      "skus": [
+        {
+          "id": 1492535,
+          "productId": 284096,
+          "productColorId": 1030296,
+          "pieces": 1,
+          "eanCode": "5400812980326",
+          "sizeRange": "37",
+          "sizeDivision": "37(1)",
+          "assortment": "S3701",
+          "brand": null,
+          "article": null,
+          "commercialName": null,
+          "category": null,
+          "color": null,
+          "colorLongDescription": null,
+          "colorShortDescription": null,
+          "productReference": null,
+          "stock": 202,
+          "stockType": "N",
+          "buyPer": 1,
+          "defaultPrice": {
+            "currency": "GBP",
+            "value": 46.5
+          },
+          "customerPrice": {
+            "currency": "GBP",
+            "value": 45.93
+          },
+          "promoPrice": null,
+          "rrpPrice": {
+            "currency": "GBP",
+            "value": 91.8
+          }
+        },
+        {
+          "id": 1492550,
+          "productId": 284096,
+          "productColorId": 1030296,
+          "pieces": 1,
+          "eanCode": "5400812980340",
+          "sizeRange": "38",
+          "sizeDivision": "38(1)",
+          "assortment": "S3801",
+          "brand": null,
+          "article": null,
+          "commercialName": null,
+          "category": null,
+          "color": null,
+          "colorLongDescription": null,
+          "colorShortDescription": null,
+          "productReference": null,
+          "stock": 198,
+          "stockType": "N",
+          "buyPer": 1,
+          "defaultPrice": {
+            "currency": "GBP",
+            "value": 46.5
+          },
+          "customerPrice": {
+            "currency": "GBP",
+            "value": 45.93
+          },
+          "promoPrice": null,
+          "rrpPrice": {
+            "currency": "GBP",
+            "value": 91.8
+          }
+        },
+        {
+          "id": 1492635,
+          "productId": 284096,
+          "productColorId": 1030296,
+          "pieces": 1,
+          "eanCode": "5400812980449",
+          "sizeRange": "44",
+          "sizeDivision": "44(1)",
+          "assortment": "S4401",
+          "brand": null,
+          "article": null,
+          "commercialName": null,
+          "category": null,
+          "color": null,
+          "colorLongDescription": null,
+          "colorShortDescription": null,
+          "productReference": null,
+          "stock": 0,
+          "stockType": "N",
+          "buyPer": 1,
+          "defaultPrice": {
+            "currency": "GBP",
+            "value": 46.5
+          },
+          "customerPrice": {
+            "currency": "GBP",
+            "value": 45.93
+          },
+          "promoPrice": null,
+          "rrpPrice": {
+            "currency": "GBP",
+            "value": 91.8
+          }
+        },
+        {
+          "id": 1492565,
+          "productId": 284096,
+          "productColorId": 1030296,
+          "pieces": 1,
+          "eanCode": "5400812980364",
+          "sizeRange": "39",
+          "sizeDivision": "39(1)",
+          "assortment": "S3901",
+          "brand": null,
+          "article": null,
+          "commercialName": null,
+          "category": null,
+          "color": null,
+          "colorLongDescription": null,
+          "colorShortDescription": null,
+          "productReference": null,
+          "stock": 309,
+          "stockType": "N",
+          "buyPer": 1,
+          "defaultPrice": {
+            "currency": "GBP",
+            "value": 46.5
+          },
+          "customerPrice": {
+            "currency": "GBP",
+            "value": 45.93
+          },
+          "promoPrice": null,
+          "rrpPrice": {
+            "currency": "GBP",
+            "value": 91.8
+          }
+        },
+        {
+          "id": 1492650,
+          "productId": 284096,
+          "productColorId": 1030296,
+          "pieces": 1,
+          "eanCode": "5400812980463",
+          "sizeRange": "45",
+          "sizeDivision": "45(1)",
+          "assortment": "S4501",
+          "brand": null,
+          "article": null,
+          "commercialName": null,
+          "category": null,
+          "color": null,
+          "colorLongDescription": null,
+          "colorShortDescription": null,
+          "productReference": null,
+          "stock": 78,
+          "stockType": "N",
+          "buyPer": 1,
+          "defaultPrice": {
+            "currency": "GBP",
+            "value": 46.5
+          },
+          "customerPrice": {
+            "currency": "GBP",
+            "value": 45.93
+          },
+          "promoPrice": null,
+          "rrpPrice": {
+            "currency": "GBP",
+            "value": 91.8
+          }
+        },
+        {
+          "id": 1492665,
+          "productId": 284096,
+          "productColorId": 1030296,
+          "pieces": 1,
+          "eanCode": "5400812980487",
+          "sizeRange": "46",
+          "sizeDivision": "46(1)",
+          "assortment": "S4601",
+          "brand": null,
+          "article": null,
+          "commercialName": null,
+          "category": null,
+          "color": null,
+          "colorLongDescription": null,
+          "colorShortDescription": null,
+          "productReference": null,
+          "stock": 83,
+          "stockType": "N",
+          "buyPer": 1,
+          "defaultPrice": {
+            "currency": "GBP",
+            "value": 46.5
+          },
+          "customerPrice": {
+            "currency": "GBP",
+            "value": 45.93
+          },
+          "promoPrice": null,
+          "rrpPrice": {
+            "currency": "GBP",
+            "value": 91.8
+          }
+        },
+        {
+          "id": 1481428,
+          "productId": 284096,
+          "productColorId": 1030296,
+          "pieces": 1,
+          "eanCode": "5400812974745",
+          "sizeRange": "41",
+          "sizeDivision": "41(1)",
+          "assortment": "S4101",
+          "brand": null,
+          "article": null,
+          "commercialName": null,
+          "category": null,
+          "color": null,
+          "colorLongDescription": null,
+          "colorShortDescription": null,
+          "productReference": null,
+          "stock": 172,
+          "stockType": "N",
+          "buyPer": 1,
+          "defaultPrice": {
+            "currency": "GBP",
+            "value": 46.5
+          },
+          "customerPrice": {
+            "currency": "GBP",
+            "value": 45.93
+          },
+          "promoPrice": null,
+          "rrpPrice": {
+            "currency": "GBP",
+            "value": 91.8
+          }
+        },
+        {
+          "id": 1492520,
+          "productId": 284096,
+          "productColorId": 1030296,
+          "pieces": 1,
+          "eanCode": "5400812980302",
+          "sizeRange": "36",
+          "sizeDivision": "36(1)",
+          "assortment": "S3601",
+          "brand": null,
+          "article": null,
+          "commercialName": null,
+          "category": null,
+          "color": null,
+          "colorLongDescription": null,
+          "colorShortDescription": null,
+          "productReference": null,
+          "stock": 106,
+          "stockType": "N",
+          "buyPer": 1,
+          "defaultPrice": {
+            "currency": "GBP",
+            "value": 46.5
+          },
+          "customerPrice": {
+            "currency": "GBP",
+            "value": 45.93
+          },
+          "promoPrice": null,
+          "rrpPrice": {
+            "currency": "GBP",
+            "value": 91.8
+          }
+        },
+        {
+          "id": 1492580,
+          "productId": 284096,
+          "productColorId": 1030296,
+          "pieces": 1,
+          "eanCode": "5400812980388",
+          "sizeRange": "40",
+          "sizeDivision": "40(1)",
+          "assortment": "S4001",
+          "brand": null,
+          "article": null,
+          "commercialName": null,
+          "category": null,
+          "color": null,
+          "colorLongDescription": null,
+          "colorShortDescription": null,
+          "productReference": null,
+          "stock": 188,
+          "stockType": "N",
+          "buyPer": 1,
+          "defaultPrice": {
+            "currency": "GBP",
+            "value": 46.5
+          },
+          "customerPrice": {
+            "currency": "GBP",
+            "value": 45.93
+          },
+          "promoPrice": null,
+          "rrpPrice": {
+            "currency": "GBP",
+            "value": 91.8
+          }
+        },
+        {
+          "id": 1492620,
+          "productId": 284096,
+          "productColorId": 1030296,
+          "pieces": 1,
+          "eanCode": "5400812980425",
+          "sizeRange": "43",
+          "sizeDivision": "43(1)",
+          "assortment": "S4301",
+          "brand": null,
+          "article": null,
+          "commercialName": null,
+          "category": null,
+          "color": null,
+          "colorLongDescription": null,
+          "colorShortDescription": null,
+          "productReference": null,
+          "stock": 245,
+          "stockType": "N",
+          "buyPer": 1,
+          "defaultPrice": {
+            "currency": "GBP",
+            "value": 46.5
+          },
+          "customerPrice": {
+            "currency": "GBP",
+            "value": 45.93
+          },
+          "promoPrice": null,
+          "rrpPrice": {
+            "currency": "GBP",
+            "value": 91.8
+          }
+        },
+        {
+          "id": 1492680,
+          "productId": 284096,
+          "productColorId": 1030296,
+          "pieces": 1,
+          "eanCode": "5400812980500",
+          "sizeRange": "47",
+          "sizeDivision": "47(1)",
+          "assortment": "S4701",
+          "brand": null,
+          "article": null,
+          "commercialName": null,
+          "category": null,
+          "color": null,
+          "colorLongDescription": null,
+          "colorShortDescription": null,
+          "productReference": null,
+          "stock": 43,
+          "stockType": "N",
+          "buyPer": 1,
+          "defaultPrice": {
+            "currency": "GBP",
+            "value": 46.5
+          },
+          "customerPrice": {
+            "currency": "GBP",
+            "value": 45.93
+          },
+          "promoPrice": null,
+          "rrpPrice": {
+            "currency": "GBP",
+            "value": 91.8
+          }
+        },
+        {
+          "id": 1492605,
+          "productId": 284096,
+          "productColorId": 1030296,
+          "pieces": 1,
+          "eanCode": "5400812980401",
+          "sizeRange": "42",
+          "sizeDivision": "42(1)",
+          "assortment": "S4201",
+          "brand": null,
+          "article": null,
+          "commercialName": null,
+          "category": null,
+          "color": null,
+          "colorLongDescription": null,
+          "colorShortDescription": null,
+          "productReference": null,
+          "stock": 304,
+          "stockType": "N",
+          "buyPer": 1,
+          "defaultPrice": {
+            "currency": "GBP",
+            "value": 46.5
+          },
+          "customerPrice": {
+            "currency": "GBP",
+            "value": 45.93
+          },
+          "promoPrice": null,
+          "rrpPrice": {
+            "currency": "GBP",
+            "value": 91.8
+          }
+        }
+      ],
+      "defaultPrice": {
+        "currency": "GBP",
+        "minValue": 46.5,
+        "maxValue": 46.5
+      },
+      "customerPrice": {
+        "currency": "GBP",
+        "minValue": 45.93,
+        "maxValue": 45.93
+      },
+      "promoPrice": null,
+      "rrpPrice": {
+        "currency": "GBP",
+        "minValue": 91.8,
+        "maxValue": 91.8
+      },
+      "images": {
+        "360": [
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-BLK-0000.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-BLK-0001.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-BLK-0002.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-BLK-0003.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-BLK-0004.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-BLK-0005.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-BLK-0006.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-BLK-0007.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-BLK-0008.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-BLK-0009.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-BLK-0010.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-BLK-0011.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-BLK-0012.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-BLK-0013.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-BLK-0014.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-BLK-0015.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-BLK-0016.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-BLK-0017.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-BLK-0018.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-BLK-0019.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-BLK-0020.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-BLK-0021.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-BLK-0022.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-BLK-0023.JPG"
+        ],
+        "main": "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-BLK-CTLG.JPG",
+        "hires": [
+          "https://ws.safetyjogger.com/image/web/SAFETY/HIRES/LIGERO-BLK-HIRES.PNG",
+          "https://ws.safetyjogger.com/image/web/SAFETY/HIRES/LIGERO-BLK-HR01.PNG",
+          "https://ws.safetyjogger.com/image/web/SAFETY/HIRES/LIGERO-BLK-HR02.PNG",
+          "https://ws.safetyjogger.com/image/web/SAFETY/HIRES/LIGERO-BLK-HR03.PNG"
+        ],
+        "outsole": "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-BLK-OUTS.JPG",
+        "web": [
+          "https://ws.safetyjogger.com/image/web/SAFETY/1280/LIGERO-BLK-WEB01.JPG",
+          "https://ws.safetyjogger.com/image/web/SAFETY/1280/LIGERO-BLK-WEB02.JPG",
+          "https://ws.safetyjogger.com/image/web/SAFETY/1280/LIGERO-BLK-WEB03.JPG",
+          "https://ws.safetyjogger.com/image/web/SAFETY/1280/LIGERO-BLK-WEBOUTS.JPG"
+        ]
+      }
+    },
+    {
+      "id": 1025201,
+      "ref": "201002",
+      "code": "ORA",
+      "hexValue": "E8AA4C",
+      "patternURL": null,
+      "description": "orange",
+      "sequence": 999,
+      "alternatives": [
+        {
+          "brand": "SAFETY",
+          "color": "ORA",
+          "product": "LIGERO2S1P",
+          "productId": 342962,
+          "productColorId": 1132472
+        }
+      ],
+      "skus": [
+        {
+          "id": 1454453,
+          "productId": 284096,
+          "productColorId": 1025201,
+          "pieces": 1,
+          "eanCode": "5400812974943",
+          "sizeRange": "41",
+          "sizeDivision": "41(1)",
+          "assortment": "S4101",
+          "brand": null,
+          "article": null,
+          "commercialName": null,
+          "category": null,
+          "color": null,
+          "colorLongDescription": null,
+          "colorShortDescription": null,
+          "productReference": null,
+          "stock": 189,
+          "stockType": "N",
+          "buyPer": 1,
+          "defaultPrice": {
+            "currency": "GBP",
+            "value": 46.5
+          },
+          "customerPrice": {
+            "currency": "GBP",
+            "value": 45.93
+          },
+          "promoPrice": null,
+          "rrpPrice": {
+            "currency": "GBP",
+            "value": 91.8
+          }
+        },
+        {
+          "id": 1492583,
+          "productId": 284096,
+          "productColorId": 1025201,
+          "pieces": 1,
+          "eanCode": "5400812980609",
+          "sizeRange": "40",
+          "sizeDivision": "40(1)",
+          "assortment": "S4001",
+          "brand": null,
+          "article": null,
+          "commercialName": null,
+          "category": null,
+          "color": null,
+          "colorLongDescription": null,
+          "colorShortDescription": null,
+          "productReference": null,
+          "stock": 158,
+          "stockType": "N",
+          "buyPer": 1,
+          "defaultPrice": {
+            "currency": "GBP",
+            "value": 46.5
+          },
+          "customerPrice": {
+            "currency": "GBP",
+            "value": 45.93
+          },
+          "promoPrice": null,
+          "rrpPrice": {
+            "currency": "GBP",
+            "value": 91.8
+          }
+        },
+        {
+          "id": 1492638,
+          "productId": 284096,
+          "productColorId": 1025201,
+          "pieces": 1,
+          "eanCode": "5400812980661",
+          "sizeRange": "44",
+          "sizeDivision": "44(1)",
+          "assortment": "S4401",
+          "brand": null,
+          "article": null,
+          "commercialName": null,
+          "category": null,
+          "color": null,
+          "colorLongDescription": null,
+          "colorShortDescription": null,
+          "productReference": null,
+          "stock": 211,
+          "stockType": "N",
+          "buyPer": 1,
+          "defaultPrice": {
+            "currency": "GBP",
+            "value": 46.5
+          },
+          "customerPrice": {
+            "currency": "GBP",
+            "value": 45.93
+          },
+          "promoPrice": null,
+          "rrpPrice": {
+            "currency": "GBP",
+            "value": 91.8
+          }
+        },
+        {
+          "id": 1492653,
+          "productId": 284096,
+          "productColorId": 1025201,
+          "pieces": 1,
+          "eanCode": "5400812980685",
+          "sizeRange": "45",
+          "sizeDivision": "45(1)",
+          "assortment": "S4501",
+          "brand": null,
+          "article": null,
+          "commercialName": null,
+          "category": null,
+          "color": null,
+          "colorLongDescription": null,
+          "colorShortDescription": null,
+          "productReference": null,
+          "stock": 346,
+          "stockType": "N",
+          "buyPer": 1,
+          "defaultPrice": {
+            "currency": "GBP",
+            "value": 46.5
+          },
+          "customerPrice": {
+            "currency": "GBP",
+            "value": 45.93
+          },
+          "promoPrice": null,
+          "rrpPrice": {
+            "currency": "GBP",
+            "value": 91.8
+          }
+        },
+        {
+          "id": 1492623,
+          "productId": 284096,
+          "productColorId": 1025201,
+          "pieces": 1,
+          "eanCode": "5400812980647",
+          "sizeRange": "43",
+          "sizeDivision": "43(1)",
+          "assortment": "S4301",
+          "brand": null,
+          "article": null,
+          "commercialName": null,
+          "category": null,
+          "color": null,
+          "colorLongDescription": null,
+          "colorShortDescription": null,
+          "productReference": null,
+          "stock": 487,
+          "stockType": "N",
+          "buyPer": 1,
+          "defaultPrice": {
+            "currency": "GBP",
+            "value": 46.5
+          },
+          "customerPrice": {
+            "currency": "GBP",
+            "value": 45.93
+          },
+          "promoPrice": null,
+          "rrpPrice": {
+            "currency": "GBP",
+            "value": 91.8
+          }
+        },
+        {
+          "id": 1492538,
+          "productId": 284096,
+          "productColorId": 1025201,
+          "pieces": 1,
+          "eanCode": "5400812980548",
+          "sizeRange": "37",
+          "sizeDivision": "37(1)",
+          "assortment": "S3701",
+          "brand": null,
+          "article": null,
+          "commercialName": null,
+          "category": null,
+          "color": null,
+          "colorLongDescription": null,
+          "colorShortDescription": null,
+          "productReference": null,
+          "stock": 107,
+          "stockType": "N",
+          "buyPer": 1,
+          "defaultPrice": {
+            "currency": "GBP",
+            "value": 46.5
+          },
+          "customerPrice": {
+            "currency": "GBP",
+            "value": 45.93
+          },
+          "promoPrice": null,
+          "rrpPrice": {
+            "currency": "GBP",
+            "value": 91.8
+          }
+        },
+        {
+          "id": 1492668,
+          "productId": 284096,
+          "productColorId": 1025201,
+          "pieces": 1,
+          "eanCode": "5400812980708",
+          "sizeRange": "46",
+          "sizeDivision": "46(1)",
+          "assortment": "S4601",
+          "brand": null,
+          "article": null,
+          "commercialName": null,
+          "category": null,
+          "color": null,
+          "colorLongDescription": null,
+          "colorShortDescription": null,
+          "productReference": null,
+          "stock": 289,
+          "stockType": "N",
+          "buyPer": 1,
+          "defaultPrice": {
+            "currency": "GBP",
+            "value": 46.5
+          },
+          "customerPrice": {
+            "currency": "GBP",
+            "value": 45.93
+          },
+          "promoPrice": null,
+          "rrpPrice": {
+            "currency": "GBP",
+            "value": 91.8
+          }
+        },
+        {
+          "id": 1492553,
+          "productId": 284096,
+          "productColorId": 1025201,
+          "pieces": 1,
+          "eanCode": "5400812980562",
+          "sizeRange": "38",
+          "sizeDivision": "38(1)",
+          "assortment": "S3801",
+          "brand": null,
+          "article": null,
+          "commercialName": null,
+          "category": null,
+          "color": null,
+          "colorLongDescription": null,
+          "colorShortDescription": null,
+          "productReference": null,
+          "stock": 168,
+          "stockType": "N",
+          "buyPer": 1,
+          "defaultPrice": {
+            "currency": "GBP",
+            "value": 46.5
+          },
+          "customerPrice": {
+            "currency": "GBP",
+            "value": 45.93
+          },
+          "promoPrice": null,
+          "rrpPrice": {
+            "currency": "GBP",
+            "value": 91.8
+          }
+        },
+        {
+          "id": 1492608,
+          "productId": 284096,
+          "productColorId": 1025201,
+          "pieces": 1,
+          "eanCode": "5400812980623",
+          "sizeRange": "42",
+          "sizeDivision": "42(1)",
+          "assortment": "S4201",
+          "brand": null,
+          "article": null,
+          "commercialName": null,
+          "category": null,
+          "color": null,
+          "colorLongDescription": null,
+          "colorShortDescription": null,
+          "productReference": null,
+          "stock": 288,
+          "stockType": "N",
+          "buyPer": 1,
+          "defaultPrice": {
+            "currency": "GBP",
+            "value": 46.5
+          },
+          "customerPrice": {
+            "currency": "GBP",
+            "value": 45.93
+          },
+          "promoPrice": null,
+          "rrpPrice": {
+            "currency": "GBP",
+            "value": 91.8
+          }
+        },
+        {
+          "id": 1492683,
+          "productId": 284096,
+          "productColorId": 1025201,
+          "pieces": 1,
+          "eanCode": "5400812980722",
+          "sizeRange": "47",
+          "sizeDivision": "47(1)",
+          "assortment": "S4701",
+          "brand": null,
+          "article": null,
+          "commercialName": null,
+          "category": null,
+          "color": null,
+          "colorLongDescription": null,
+          "colorShortDescription": null,
+          "productReference": null,
+          "stock": 77,
+          "stockType": "N",
+          "buyPer": 1,
+          "defaultPrice": {
+            "currency": "GBP",
+            "value": 46.5
+          },
+          "customerPrice": {
+            "currency": "GBP",
+            "value": 45.93
+          },
+          "promoPrice": null,
+          "rrpPrice": {
+            "currency": "GBP",
+            "value": 91.8
+          }
+        },
+        {
+          "id": 1492523,
+          "productId": 284096,
+          "productColorId": 1025201,
+          "pieces": 1,
+          "eanCode": "5400812980524",
+          "sizeRange": "36",
+          "sizeDivision": "36(1)",
+          "assortment": "S3601",
+          "brand": null,
+          "article": null,
+          "commercialName": null,
+          "category": null,
+          "color": null,
+          "colorLongDescription": null,
+          "colorShortDescription": null,
+          "productReference": null,
+          "stock": 155,
+          "stockType": "N",
+          "buyPer": 1,
+          "defaultPrice": {
+            "currency": "GBP",
+            "value": 46.5
+          },
+          "customerPrice": {
+            "currency": "GBP",
+            "value": 45.93
+          },
+          "promoPrice": null,
+          "rrpPrice": {
+            "currency": "GBP",
+            "value": 91.8
+          }
+        },
+        {
+          "id": 1492568,
+          "productId": 284096,
+          "productColorId": 1025201,
+          "pieces": 1,
+          "eanCode": "5400812980586",
+          "sizeRange": "39",
+          "sizeDivision": "39(1)",
+          "assortment": "S3901",
+          "brand": null,
+          "article": null,
+          "commercialName": null,
+          "category": null,
+          "color": null,
+          "colorLongDescription": null,
+          "colorShortDescription": null,
+          "productReference": null,
+          "stock": 181,
+          "stockType": "N",
+          "buyPer": 1,
+          "defaultPrice": {
+            "currency": "GBP",
+            "value": 46.5
+          },
+          "customerPrice": {
+            "currency": "GBP",
+            "value": 45.93
+          },
+          "promoPrice": null,
+          "rrpPrice": {
+            "currency": "GBP",
+            "value": 91.8
+          }
+        }
+      ],
+      "defaultPrice": {
+        "currency": "GBP",
+        "minValue": 46.5,
+        "maxValue": 46.5
+      },
+      "customerPrice": {
+        "currency": "GBP",
+        "minValue": 45.93,
+        "maxValue": 45.93
+      },
+      "promoPrice": null,
+      "rrpPrice": {
+        "currency": "GBP",
+        "minValue": 91.8,
+        "maxValue": 91.8
+      },
+      "images": {
+        "360": [
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-ORA-0000.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-ORA-0001.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-ORA-0002.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-ORA-0003.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-ORA-0004.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-ORA-0005.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-ORA-0006.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-ORA-0007.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-ORA-0008.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-ORA-0009.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-ORA-0010.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-ORA-0011.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-ORA-0012.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-ORA-0013.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-ORA-0014.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-ORA-0015.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-ORA-0016.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-ORA-0017.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-ORA-0018.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-ORA-0019.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-ORA-0020.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-ORA-0021.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-ORA-0022.JPG",
+          "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-ORA-0023.JPG"
+        ],
+        "main": "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-ORA-CTLG.JPG",
+        "hires": [
+          "https://ws.safetyjogger.com/image/web/SAFETY/HIRES/LIGERO-ORA-HIRES.PNG",
+          "https://ws.safetyjogger.com/image/web/SAFETY/HIRES/LIGERO-ORA-HR01.PNG",
+          "https://ws.safetyjogger.com/image/web/SAFETY/HIRES/LIGERO-ORA-HR02.PNG",
+          "https://ws.safetyjogger.com/image/web/SAFETY/HIRES/LIGERO-ORA-HR03.PNG"
+        ],
+        "outsole": "https://ws.safetyjogger.com/image/general/SAFETY/LIGERO-ORA-OUTS.JPG",
+        "web": [
+          "https://ws.safetyjogger.com/image/web/SAFETY/1280/LIGERO-ORA-WEB01.JPG",
+          "https://ws.safetyjogger.com/image/web/SAFETY/1280/LIGERO-ORA-WEB02.JPG",
+          "https://ws.safetyjogger.com/image/web/SAFETY/1280/LIGERO-ORA-WEB03.JPG",
+          "https://ws.safetyjogger.com/image/web/SAFETY/1280/LIGERO-ORA-WEBOUTS.JPG"
+        ]
+      }
+    }
+  ],
+  "standards": [
+    {
+      "id": 34595,
+      "name": "S1 P",
+      "priority": 0,
+      "value": "S1 P",
+      "title": ""
+    }
+  ],
+  "documents": [
+    {
+      "type": "CERTIFICATE",
+      "fileName": "LIGERO-JSAA-Vaild Untill.pdf",
+      "url": "https://ws.safetyjogger.com/document/CERTIFICATE/LIGERO/C_0070/LIGERO-JSAA-Vaild Untill.pdf",
+      "label": "JSAA (Japan)"
+    },
+    {
+      "type": "CERTIFICATE",
+      "fileName": "LIGERO & TITAN -KOSHA-Valid untill.pdf",
+      "url": "https://ws.safetyjogger.com/document/CERTIFICATE/LIGERO/C_0030/LIGERO & TITAN -KOSHA-Valid untill.pdf",
+      "label": "KOSHA (Korea)"
+    },
+    {
+      "type": "CERTIFICATE",
+      "fileName": "LIGERO ABSOLUTE-M2528 S1P SRC CI_CE CERT_0598_PPE_22_2357 Issue 1-2022 SGS.pdf",
+      "url": "https://ws.safetyjogger.com/document/CERTIFICATE/LIGERO/C_0001/LIGERO ABSOLUTE-M2528 S1P SRC CI_CE CERT_0598_PPE_22_2357 Issue 1-2022 SGS.pdf",
+      "label": "EN ISO 20345:2011 (Europe)"
+    },
+    {
+      "type": "CERTIFICATE",
+      "fileName": "LIGERO COC.pdf",
+      "url": "https://ws.safetyjogger.com/document/CERTIFICATE/LIGERO/C_2018/LIGERO COC.pdf",
+      "label": "ASTM F2413:2024 (USA)"
+    },
+    {
+      "type": "CERTIFICATE",
+      "fileName": "SIRIM-PC012309 _(P5-017609).pdf",
+      "url": "https://ws.safetyjogger.com/document/CERTIFICATE/LIGERO/C_0050/SIRIM-PC012309 _(P5-017609).pdf",
+      "label": "SIRIM (Malaysia)"
+    },
+    {
+      "type": "DeclarationofConformity",
+      "fileName": "DOC_LIGERO_DE.PDF",
+      "url": "https://ws.safetyjogger.com/document/DeclarationofConformity/LIGERO/DOC_LIGERO_DE.PDF",
+      "label": "Deutsch"
+    },
+    {
+      "type": "DeclarationofConformity",
+      "fileName": "DOC_LIGERO_ZH.PDF",
+      "url": "https://ws.safetyjogger.com/document/DeclarationofConformity/LIGERO/DOC_LIGERO_ZH.PDF",
+      "label": "Chinese"
+    },
+    {
+      "type": "DeclarationofConformity",
+      "fileName": "DOC_LIGERO_RU.PDF",
+      "url": "https://ws.safetyjogger.com/document/DeclarationofConformity/LIGERO/DOC_LIGERO_RU.PDF",
+      "label": "Russian"
+    },
+    {
+      "type": "DeclarationofConformity",
+      "fileName": "DOC_LIGERO_FR.PDF",
+      "url": "https://ws.safetyjogger.com/document/DeclarationofConformity/LIGERO/DOC_LIGERO_FR.PDF",
+      "label": "français"
+    },
+    {
+      "type": "DeclarationofConformity",
+      "fileName": "DOC_LIGERO_EN.PDF",
+      "url": "https://ws.safetyjogger.com/document/DeclarationofConformity/LIGERO/DOC_LIGERO_EN.PDF",
+      "label": "English"
+    },
+    {
+      "type": "DeclarationofConformity",
+      "fileName": "DOC_LIGERO_FI.PDF",
+      "url": "https://ws.safetyjogger.com/document/DeclarationofConformity/LIGERO/DOC_LIGERO_FI.PDF",
+      "label": "suomi"
+    },
+    {
+      "type": "DeclarationofConformity",
+      "fileName": "DOC_LIGERO_IT.PDF",
+      "url": "https://ws.safetyjogger.com/document/DeclarationofConformity/LIGERO/DOC_LIGERO_IT.PDF",
+      "label": "italiano"
+    },
+    {
+      "type": "DeclarationofConformity",
+      "fileName": "DOC_LIGERO_HU.PDF",
+      "url": "https://ws.safetyjogger.com/document/DeclarationofConformity/LIGERO/DOC_LIGERO_HU.PDF",
+      "label": "Magyar"
+    },
+    {
+      "type": "DeclarationofConformity",
+      "fileName": "DOC_LIGERO_NL.PDF",
+      "url": "https://ws.safetyjogger.com/document/DeclarationofConformity/LIGERO/DOC_LIGERO_NL.PDF",
+      "label": "Nederlands"
+    },
+    {
+      "type": "DeclarationofConformity",
+      "fileName": "DOC_LIGERO_SL.PDF",
+      "url": "https://ws.safetyjogger.com/document/DeclarationofConformity/LIGERO/DOC_LIGERO_SL.PDF",
+      "label": "Slovenian"
+    },
+    {
+      "type": "DeclarationofConformity",
+      "fileName": "DOC_LIGERO_DA.PDF",
+      "url": "https://ws.safetyjogger.com/document/DeclarationofConformity/LIGERO/DOC_LIGERO_DA.PDF",
+      "label": "dansk"
+    },
+    {
+      "type": "DeclarationofConformity",
+      "fileName": "DOC_LIGERO_SV.PDF",
+      "url": "https://ws.safetyjogger.com/document/DeclarationofConformity/LIGERO/DOC_LIGERO_SV.PDF",
+      "label": "svenska"
+    },
+    {
+      "type": "DeclarationofConformity",
+      "fileName": "DOC_LIGERO_LT.PDF",
+      "url": "https://ws.safetyjogger.com/document/DeclarationofConformity/LIGERO/DOC_LIGERO_LT.PDF",
+      "label": "Lithuanian"
+    },
+    {
+      "type": "DeclarationofConformity",
+      "fileName": "DOC_LIGERO_ES.PDF",
+      "url": "https://ws.safetyjogger.com/document/DeclarationofConformity/LIGERO/DOC_LIGERO_ES.PDF",
+      "label": "español"
+    },
+    {
+      "type": "DeclarationofConformity",
+      "fileName": "DOC_LIGERO_SK.PDF",
+      "url": "https://ws.safetyjogger.com/document/DeclarationofConformity/LIGERO/DOC_LIGERO_SK.PDF",
+      "label": "Slovak"
+    },
+    {
+      "type": "DeclarationofConformity",
+      "fileName": "DOC_LIGERO_ET.PDF",
+      "url": "https://ws.safetyjogger.com/document/DeclarationofConformity/LIGERO/DOC_LIGERO_ET.PDF",
+      "label": "Estonian"
+    },
+    {
+      "type": "DeclarationofConformity",
+      "fileName": "DOC_LIGERO_CS.PDF",
+      "url": "https://ws.safetyjogger.com/document/DeclarationofConformity/LIGERO/DOC_LIGERO_CS.PDF",
+      "label": "Czech"
+    },
+    {
+      "type": "DeclarationofConformity",
+      "fileName": "DOC_LIGERO_PL.PDF",
+      "url": "https://ws.safetyjogger.com/document/DeclarationofConformity/LIGERO/DOC_LIGERO_PL.PDF",
+      "label": "Polski"
+    },
+    {
+      "type": "DeclarationofConformity",
+      "fileName": "DOC_LIGERO_EL.PDF",
+      "url": "https://ws.safetyjogger.com/document/DeclarationofConformity/LIGERO/DOC_LIGERO_EL.PDF",
+      "label": "Greek"
+    },
+    {
+      "type": "DeclarationofConformity",
+      "fileName": "DOC_LIGERO_PT.PDF",
+      "url": "https://ws.safetyjogger.com/document/DeclarationofConformity/LIGERO/DOC_LIGERO_PT.PDF",
+      "label": "Portuguese"
+    },
+    {
+      "type": "DeclarationofConformity",
+      "fileName": "DOC_LIGERO_HR.PDF",
+      "url": "https://ws.safetyjogger.com/document/DeclarationofConformity/LIGERO/DOC_LIGERO_HR.PDF",
+      "label": "Croatian"
+    },
+    {
+      "type": "DeclarationofConformity",
+      "fileName": "DOC_LIGERO_RO.PDF",
+      "url": "https://ws.safetyjogger.com/document/DeclarationofConformity/LIGERO/DOC_LIGERO_RO.PDF",
+      "label": "Română"
+    },
+    {
+      "type": "PRODUCT_SHEET",
+      "fileName": "LIGERO_NAV_ko.pdf",
+      "url": "https://ws.safetyjogger.com/document/PRODUCT_SHEET/LIGERO/ko/LIGERO_NAV_ko.pdf",
+      "label": "Korean"
+    },
+    {
+      "type": "PRODUCT_SHEET",
+      "fileName": "LIGERO_BLK_ko.pdf",
+      "url": "https://ws.safetyjogger.com/document/PRODUCT_SHEET/LIGERO/ko/LIGERO_BLK_ko.pdf",
+      "label": "Korean"
+    },
+    {
+      "type": "PRODUCT_SHEET",
+      "fileName": "LIGERO_ORA_ko.pdf",
+      "url": "https://ws.safetyjogger.com/document/PRODUCT_SHEET/LIGERO/ko/LIGERO_ORA_ko.pdf",
+      "label": "Korean"
+    },
+    {
+      "type": "PRODUCT_SHEET",
+      "fileName": "LIGERO_NAV_es.pdf",
+      "url": "https://ws.safetyjogger.com/document/PRODUCT_SHEET/LIGERO/es/LIGERO_NAV_es.pdf",
+      "label": "español"
+    },
+    {
+      "type": "PRODUCT_SHEET",
+      "fileName": "LIGERO_BLK_es.pdf",
+      "url": "https://ws.safetyjogger.com/document/PRODUCT_SHEET/LIGERO/es/LIGERO_BLK_es.pdf",
+      "label": "español"
+    },
+    {
+      "type": "PRODUCT_SHEET",
+      "fileName": "LIGERO_ORA_es.pdf",
+      "url": "https://ws.safetyjogger.com/document/PRODUCT_SHEET/LIGERO/es/LIGERO_ORA_es.pdf",
+      "label": "español"
+    },
+    {
+      "type": "PRODUCT_SHEET",
+      "fileName": "LIGERO_NAV_pl.pdf",
+      "url": "https://ws.safetyjogger.com/document/PRODUCT_SHEET/LIGERO/pl/LIGERO_NAV_pl.pdf",
+      "label": "Polski"
+    },
+    {
+      "type": "PRODUCT_SHEET",
+      "fileName": "LIGERO_BLK_pl.pdf",
+      "url": "https://ws.safetyjogger.com/document/PRODUCT_SHEET/LIGERO/pl/LIGERO_BLK_pl.pdf",
+      "label": "Polski"
+    },
+    {
+      "type": "PRODUCT_SHEET",
+      "fileName": "LIGERO_ORA_pl.pdf",
+      "url": "https://ws.safetyjogger.com/document/PRODUCT_SHEET/LIGERO/pl/LIGERO_ORA_pl.pdf",
+      "label": "Polski"
+    },
+    {
+      "type": "PRODUCT_SHEET",
+      "fileName": "LIGERO_NAV_it.pdf",
+      "url": "https://ws.safetyjogger.com/document/PRODUCT_SHEET/LIGERO/it/LIGERO_NAV_it.pdf",
+      "label": "italiano"
+    },
+    {
+      "type": "PRODUCT_SHEET",
+      "fileName": "LIGERO_BLK_it.pdf",
+      "url": "https://ws.safetyjogger.com/document/PRODUCT_SHEET/LIGERO/it/LIGERO_BLK_it.pdf",
+      "label": "italiano"
+    },
+    {
+      "type": "PRODUCT_SHEET",
+      "fileName": "LIGERO_ORA_it.pdf",
+      "url": "https://ws.safetyjogger.com/document/PRODUCT_SHEET/LIGERO/it/LIGERO_ORA_it.pdf",
+      "label": "italiano"
+    },
+    {
+      "type": "PRODUCT_SHEET",
+      "fileName": "LIGERO_NAV_ro.pdf",
+      "url": "https://ws.safetyjogger.com/document/PRODUCT_SHEET/LIGERO/ro/LIGERO_NAV_ro.pdf",
+      "label": "Română"
+    },
+    {
+      "type": "PRODUCT_SHEET",
+      "fileName": "LIGERO_BLK_ro.pdf",
+      "url": "https://ws.safetyjogger.com/document/PRODUCT_SHEET/LIGERO/ro/LIGERO_BLK_ro.pdf",
+      "label": "Română"
+    },
+    {
+      "type": "PRODUCT_SHEET",
+      "fileName": "LIGERO_ORA_ro.pdf",
+      "url": "https://ws.safetyjogger.com/document/PRODUCT_SHEET/LIGERO/ro/LIGERO_ORA_ro.pdf",
+      "label": "Română"
+    },
+    {
+      "type": "PRODUCT_SHEET",
+      "fileName": "LIGERO_NAV_pt.pdf",
+      "url": "https://ws.safetyjogger.com/document/PRODUCT_SHEET/LIGERO/pt/LIGERO_NAV_pt.pdf",
+      "label": "Portuguese"
+    },
+    {
+      "type": "PRODUCT_SHEET",
+      "fileName": "LIGERO_BLK_pt.pdf",
+      "url": "https://ws.safetyjogger.com/document/PRODUCT_SHEET/LIGERO/pt/LIGERO_BLK_pt.pdf",
+      "label": "Portuguese"
+    },
+    {
+      "type": "PRODUCT_SHEET",
+      "fileName": "LIGERO_ORA_pt.pdf",
+      "url": "https://ws.safetyjogger.com/document/PRODUCT_SHEET/LIGERO/pt/LIGERO_ORA_pt.pdf",
+      "label": "Portuguese"
+    },
+    {
+      "type": "PRODUCT_SHEET",
+      "fileName": "LIGERO_NAV_fr.pdf",
+      "url": "https://ws.safetyjogger.com/document/PRODUCT_SHEET/LIGERO/fr/LIGERO_NAV_fr.pdf",
+      "label": "français"
+    },
+    {
+      "type": "PRODUCT_SHEET",
+      "fileName": "LIGERO_BLK_fr.pdf",
+      "url": "https://ws.safetyjogger.com/document/PRODUCT_SHEET/LIGERO/fr/LIGERO_BLK_fr.pdf",
+      "label": "français"
+    },
+    {
+      "type": "PRODUCT_SHEET",
+      "fileName": "LIGERO_ORA_fr.pdf",
+      "url": "https://ws.safetyjogger.com/document/PRODUCT_SHEET/LIGERO/fr/LIGERO_ORA_fr.pdf",
+      "label": "français"
+    },
+    {
+      "type": "PRODUCT_SHEET",
+      "fileName": "LIGERO_NAV_id.pdf",
+      "url": "https://ws.safetyjogger.com/document/PRODUCT_SHEET/LIGERO/id/LIGERO_NAV_id.pdf",
+      "label": "Bahasa Indonesia"
+    },
+    {
+      "type": "PRODUCT_SHEET",
+      "fileName": "LIGERO_BLK_id.pdf",
+      "url": "https://ws.safetyjogger.com/document/PRODUCT_SHEET/LIGERO/id/LIGERO_BLK_id.pdf",
+      "label": "Bahasa Indonesia"
+    },
+    {
+      "type": "PRODUCT_SHEET",
+      "fileName": "LIGERO_ORA_id.pdf",
+      "url": "https://ws.safetyjogger.com/document/PRODUCT_SHEET/LIGERO/id/LIGERO_ORA_id.pdf",
+      "label": "Bahasa Indonesia"
+    },
+    {
+      "type": "PRODUCT_SHEET",
+      "fileName": "LIGERO_NAV_th.pdf",
+      "url": "https://ws.safetyjogger.com/document/PRODUCT_SHEET/LIGERO/th/LIGERO_NAV_th.pdf",
+      "label": "ไทย"
+    },
+    {
+      "type": "PRODUCT_SHEET",
+      "fileName": "LIGERO_BLK_th.pdf",
+      "url": "https://ws.safetyjogger.com/document/PRODUCT_SHEET/LIGERO/th/LIGERO_BLK_th.pdf",
+      "label": "ไทย"
+    },
+    {
+      "type": "PRODUCT_SHEET",
+      "fileName": "LIGERO_ORA_th.pdf",
+      "url": "https://ws.safetyjogger.com/document/PRODUCT_SHEET/LIGERO/th/LIGERO_ORA_th.pdf",
+      "label": "ไทย"
+    },
+    {
+      "type": "PRODUCT_SHEET",
+      "fileName": "LIGERO_NAV_de.pdf",
+      "url": "https://ws.safetyjogger.com/document/PRODUCT_SHEET/LIGERO/de/LIGERO_NAV_de.pdf",
+      "label": "Deutsch"
+    },
+    {
+      "type": "PRODUCT_SHEET",
+      "fileName": "LIGERO_BLK_de.pdf",
+      "url": "https://ws.safetyjogger.com/document/PRODUCT_SHEET/LIGERO/de/LIGERO_BLK_de.pdf",
+      "label": "Deutsch"
+    },
+    {
+      "type": "PRODUCT_SHEET",
+      "fileName": "LIGERO_ORA_de.pdf",
+      "url": "https://ws.safetyjogger.com/document/PRODUCT_SHEET/LIGERO/de/LIGERO_ORA_de.pdf",
+      "label": "Deutsch"
+    },
+    {
+      "type": "PRODUCT_SHEET",
+      "fileName": "LIGERO_NAV_ru.pdf",
+      "url": "https://ws.safetyjogger.com/document/PRODUCT_SHEET/LIGERO/ru/LIGERO_NAV_ru.pdf",
+      "label": "Russian"
+    },
+    {
+      "type": "PRODUCT_SHEET",
+      "fileName": "LIGERO_BLK_ru.pdf",
+      "url": "https://ws.safetyjogger.com/document/PRODUCT_SHEET/LIGERO/ru/LIGERO_BLK_ru.pdf",
+      "label": "Russian"
+    },
+    {
+      "type": "PRODUCT_SHEET",
+      "fileName": "LIGERO_ORA_ru.pdf",
+      "url": "https://ws.safetyjogger.com/document/PRODUCT_SHEET/LIGERO/ru/LIGERO_ORA_ru.pdf",
+      "label": "Russian"
+    },
+    {
+      "type": "PRODUCT_SHEET",
+      "fileName": "LIGERO_NAV_ja.pdf",
+      "url": "https://ws.safetyjogger.com/document/PRODUCT_SHEET/LIGERO/ja/LIGERO_NAV_ja.pdf",
+      "label": "Japanese"
+    },
+    {
+      "type": "PRODUCT_SHEET",
+      "fileName": "LIGERO_BLK_ja.pdf",
+      "url": "https://ws.safetyjogger.com/document/PRODUCT_SHEET/LIGERO/ja/LIGERO_BLK_ja.pdf",
+      "label": "Japanese"
+    },
+    {
+      "type": "PRODUCT_SHEET",
+      "fileName": "LIGERO_ORA_ja.pdf",
+      "url": "https://ws.safetyjogger.com/document/PRODUCT_SHEET/LIGERO/ja/LIGERO_ORA_ja.pdf",
+      "label": "Japanese"
+    },
+    {
+      "type": "PRODUCT_SHEET",
+      "fileName": "LIGERO_NAV_en.pdf",
+      "url": "https://ws.safetyjogger.com/document/PRODUCT_SHEET/LIGERO/en/LIGERO_NAV_en.pdf",
+      "label": "English"
+    },
+    {
+      "type": "PRODUCT_SHEET",
+      "fileName": "LIGERO_BLK_en.pdf",
+      "url": "https://ws.safetyjogger.com/document/PRODUCT_SHEET/LIGERO/en/LIGERO_BLK_en.pdf",
+      "label": "English"
+    },
+    {
+      "type": "PRODUCT_SHEET",
+      "fileName": "LIGERO_ORA_en.pdf",
+      "url": "https://ws.safetyjogger.com/document/PRODUCT_SHEET/LIGERO/en/LIGERO_ORA_en.pdf",
+      "label": "English"
+    },
+    {
+      "type": "PRODUCT_SHEET",
+      "fileName": "LIGERO_NAV_vi.pdf",
+      "url": "https://ws.safetyjogger.com/document/PRODUCT_SHEET/LIGERO/vi/LIGERO_NAV_vi.pdf",
+      "label": "Tiếng Việt"
+    },
+    {
+      "type": "PRODUCT_SHEET",
+      "fileName": "LIGERO_BLK_vi.pdf",
+      "url": "https://ws.safetyjogger.com/document/PRODUCT_SHEET/LIGERO/vi/LIGERO_BLK_vi.pdf",
+      "label": "Tiếng Việt"
+    },
+    {
+      "type": "PRODUCT_SHEET",
+      "fileName": "LIGERO_ORA_vi.pdf",
+      "url": "https://ws.safetyjogger.com/document/PRODUCT_SHEET/LIGERO/vi/LIGERO_ORA_vi.pdf",
+      "label": "Tiếng Việt"
+    },
+    {
+      "type": "PRODUCT_SHEET",
+      "fileName": "LIGERO_NAV_nl.pdf",
+      "url": "https://ws.safetyjogger.com/document/PRODUCT_SHEET/LIGERO/nl/LIGERO_NAV_nl.pdf",
+      "label": "Nederlands"
+    },
+    {
+      "type": "PRODUCT_SHEET",
+      "fileName": "LIGERO_BLK_nl.pdf",
+      "url": "https://ws.safetyjogger.com/document/PRODUCT_SHEET/LIGERO/nl/LIGERO_BLK_nl.pdf",
+      "label": "Nederlands"
+    },
+    {
+      "type": "PRODUCT_SHEET",
+      "fileName": "LIGERO_ORA_nl.pdf",
+      "url": "https://ws.safetyjogger.com/document/PRODUCT_SHEET/LIGERO/nl/LIGERO_ORA_nl.pdf",
+      "label": "Nederlands"
+    },
+    {
+      "type": "PRODUCT_SHEET",
+      "fileName": "LIGERO_NAV_zh.pdf",
+      "url": "https://ws.safetyjogger.com/document/PRODUCT_SHEET/LIGERO/zh/LIGERO_NAV_zh.pdf",
+      "label": "Chinese"
+    },
+    {
+      "type": "PRODUCT_SHEET",
+      "fileName": "LIGERO_BLK_zh.pdf",
+      "url": "https://ws.safetyjogger.com/document/PRODUCT_SHEET/LIGERO/zh/LIGERO_BLK_zh.pdf",
+      "label": "Chinese"
+    },
+    {
+      "type": "PRODUCT_SHEET",
+      "fileName": "LIGERO_ORA_zh.pdf",
+      "url": "https://ws.safetyjogger.com/document/PRODUCT_SHEET/LIGERO/zh/LIGERO_ORA_zh.pdf",
+      "label": "Chinese"
+    }
+  ],
+  "properties": [
+    52096,
+    52134,
+    42204,
+    10433,
+    5674,
+    5654,
+    39146,
+    39167,
+    39562,
+    34595,
+    12609,
+    39249,
+    12598,
+    12613,
+    39314,
+    12607,
+    39251,
+    12612,
+    39316,
+    5798,
+    5889,
+    5790,
+    5792,
+    5795,
+    5796,
+    5789,
+    5794,
+    5787,
+    10269,
+    10431,
+    10430,
+    52491,
+    28143,
+    10425,
+    10426,
+    11120,
+    49758,
+    10428,
+    29812,
+    42205,
+    29827,
+    28859,
+    10429,
+    35705,
+    35704,
+    35710,
+    35711,
+    35709,
+    35701,
+    35700,
+    35702,
+    35708,
+    35707,
+    35703,
+    35706,
+    10281,
+    10305,
+    10329,
+    10289,
+    10317,
+    10321,
+    10313,
+    10297,
+    10301,
+    10325,
+    10285,
+    10274,
+    10293,
+    29784,
+    29773,
+    29744,
+    29776,
+    29816,
+    29747,
+    29750,
+    29754,
+    29756,
+    29767,
+    29770,
+    29762,
+    29759,
+    29785,
+    29813,
+    29814,
+    29815,
+    29745,
+    29753,
+    29766,
+    29748,
+    29757,
+    29768,
+    29771,
+    29763,
+    29760,
+    33326,
+    33318,
+    33324,
+    33312,
+    33308,
+    33304,
+    33322,
+    33310,
+    33306,
+    33316,
+    33314,
+    33320,
+    33302,
+    33327,
+    33319,
+    33325,
+    33313,
+    33309,
+    33305,
+    33323,
+    33311,
+    33307,
+    33317,
+    33315,
+    33321,
+    33303,
+    5699,
+    38711,
+    39685,
+    14777,
+    14897,
+    40436,
+    10203,
+    10206,
+    7720,
+    7697,
+    36709,
+    10423,
+    54278,
+    14915,
+    53884,
+    14918,
+    8517,
+    30056,
+    7699,
+    7957,
+    8322,
+    8324,
+    9024,
+    8523,
+    7987,
+    9176,
+    7354,
+    7355,
+    7353,
+    8477,
+    7350,
+    8488,
+    8480,
+    7341,
+    8476,
+    31020
+  ],
+  "defaultPrice": {
+    "currency": "GBP",
+    "minValue": 46.5,
+    "maxValue": 46.5
+  },
+  "customerPrice": {
+    "currency": "GBP",
+    "minValue": 45.93,
+    "maxValue": 45.93
+  },
+  "promoPrice": null,
+  "rrpPrice": {
+    "currency": "GBP",
+    "minValue": 91.8,
+    "maxValue": 91.8
+  },
+  "new_arrival": false,
+  "icons": [
+    {
+      "id": 36709,
+      "name": "CE",
+      "priority": 1,
+      "value": "CE",
+      "title": "",
+      "url": "https://ws.safetyjogger.com/static/safetyjogger/icon/ce.png"
+    },
+    {
+      "id": 7987,
+      "name": "safetytoecap",
+      "priority": 0,
+      "value": "Safety toecap",
+      "title": "",
+      "url": "https://ws.safetyjogger.com/static/safetyjogger/icon/safetytoecap.png"
+    },
+    {
+      "id": 7354,
+      "name": "punctureresistant",
+      "priority": 17,
+      "value": "Puncture resistant",
+      "title": "",
+      "url": "https://ws.safetyjogger.com/static/safetyjogger/icon/punctureresistant.png"
+    },
+    {
+      "id": 7355,
+      "name": "slipresistantoutsole",
+      "priority": 18,
+      "value": "Slip resistant outsole",
+      "title": "",
+      "url": "https://ws.safetyjogger.com/static/safetyjogger/icon/slipresistantoutsole.png"
+    },
+    {
+      "id": 7353,
+      "name": "oilandfuelresistantoutsole",
+      "priority": 16,
+      "value": "Oil and fuel resistant outsole",
+      "title": "",
+      "url": "https://ws.safetyjogger.com/static/safetyjogger/icon/oilandfuelresistantoutsole.png"
+    },
+    {
+      "id": 8477,
+      "name": "electrostaticdischarge",
+      "priority": 0,
+      "value": "Electrostatic discharge (ESD)",
+      "title": "",
+      "url": "https://ws.safetyjogger.com/static/safetyjogger/icon/electrostaticdischarge.png"
+    },
+    {
+      "id": 7350,
+      "name": "metalfree",
+      "priority": 13,
+      "value": "Metalfree",
+      "title": "",
+      "url": "https://ws.safetyjogger.com/static/safetyjogger/icon/metalfree.png"
+    },
+    {
+      "id": 8488,
+      "name": "lightweight",
+      "priority": 0,
+      "value": "Lightweight",
+      "title": "",
+      "url": "https://ws.safetyjogger.com/static/safetyjogger/icon/lightweight.png"
+    },
+    {
+      "id": 8480,
+      "name": "breathableupper",
+      "priority": 0,
+      "value": "Breathable upper",
+      "title": "",
+      "url": "https://ws.safetyjogger.com/static/safetyjogger/icon/breathableupper.png"
+    },
+    {
+      "id": 7341,
+      "name": "coldinsulated",
+      "priority": 4,
+      "value": "Cold insulated (CI)",
+      "title": "",
+      "url": "https://ws.safetyjogger.com/static/safetyjogger/icon/coldinsulated.png"
+    },
+    {
+      "id": 8476,
+      "name": "3fitsystem",
+      "priority": 0,
+      "value": "3-Fit system",
+      "title": "",
+      "url": "https://ws.safetyjogger.com/static/safetyjogger/icon/3fitsystem.png"
+    },
+    {
+      "id": 31020,
+      "name": "individualorthopedicsolutions",
+      "priority": 0,
+      "value": "Individual Orthopedic Solution",
+      "title": "",
+      "url": "https://ws.safetyjogger.com/static/safetyjogger/icon/individualorthopedicsolutions.png"
+    }
+  ],
+  "features": [
+    {
+      "id": 10269,
+      "name": "15012",
+      "priority": 40,
+      "value": "SRC",
+      "title": "SRC (slip resistance - C)"
+    },
+    {
+      "id": 10431,
+      "name": "15089",
+      "priority": 800,
+      "value": "CI",
+      "title": "CI (cold insulation)"
+    },
+    {
+      "id": 10430,
+      "name": "15007",
+      "priority": 999,
+      "value": "ESD",
+      "title": "ESD (≤ 100 MΩ)"
+    }
+  ],
+  "benefits": [
+    {
+      "id": 12609,
+      "name": "NOPUNCTURE",
+      "priority": 0,
+      "value": "Puncture-resistant midsole",
+      "title": "Puncture-resistant midsole"
+    },
+    {
+      "id": 39249,
+      "name": "ESD",
+      "priority": 0,
+      "value": "ESD-certified footwear",
+      "title": "ESD-certified footwear"
+    },
+    {
+      "id": 12598,
+      "name": "LIGHT",
+      "priority": 0,
+      "value": "Lightweight",
+      "title": "Lightweight"
+    },
+    {
+      "id": 12613,
+      "name": "NOMETAL",
+      "priority": 0,
+      "value": "Metal free",
+      "title": "Metal free"
+    },
+    {
+      "id": 39314,
+      "name": "BREATHABLE",
+      "priority": 0,
+      "value": "Breathable",
+      "title": "Breathable"
+    },
+    {
+      "id": 12607,
+      "name": "SAFETOES",
+      "priority": 0,
+      "value": "Toe protection",
+      "title": "Toe protection"
+    },
+    {
+      "id": 39251,
+      "name": "NESKRID",
+      "priority": 0,
+      "value": "Orthopaedic fitting (Neskrid)",
+      "title": "Orthopaedic fitting (Neskrid)"
+    },
+    {
+      "id": 12612,
+      "name": "ADJUSTBED",
+      "priority": 0,
+      "value": "Customizable footbed",
+      "title": "Adjustable fit (SJ3Fit)"
+    },
+    {
+      "id": 39316,
+      "name": "SLIPRESIST",
+      "priority": 0,
+      "value": "Slip resistant",
+      "title": "Slip resistant"
+    }
+  ],
+  "collections": [
+    {
+      "id": 5654,
+      "name": "industrial",
+      "priority": 1,
+      "value": "Industrial",
+      "title": ""
+    }
+  ],
+  "productTitles": [
+    {
+      "id": 2321,
+      "name": null,
+      "priority": null,
+      "value": "Lightweight ESD Safety Shoes",
+      "title": ""
+    }
+  ],
+  "shortDescriptions": [
+    {
+      "id": 3066,
+      "name": null,
+      "priority": null,
+      "value": "Ultra-light, flexible safety shoe with SJ-3FIT adjustable width, nano carbon toe cap, and hybrid insole for unmatched comfort at work.",
+      "title": ""
+    }
+  ],
+  "article_description_workwear": null,
+  "productReviews": [
+    {
+      "language": "nl",
+      "path": "https://www.youtube.com/embed/iPTXiOPoZxY"
+    },
+    {
+      "language": "en",
+      "path": "https://www.youtube.com/embed/7mkvgFkc0N8"
+    },
+    {
+      "language": "fr",
+      "path": "https://www.youtube.com/embed/eU8dGkECn34"
+    }
+  ],
+  "productVideos": [
+    {
+      "language": "en",
+      "path": "https://www.youtube.com/embed/fux4KhcHMLw"
+    }
+  ],
+  "norms": [
+    {
+      "id": 42204,
+      "name": "N_2018",
+      "priority": 0,
+      "value": "ASTM F2413:2024",
+      "title": ""
+    },
+    {
+      "id": 10433,
+      "name": "N_0001",
+      "priority": 1,
+      "value": "EN ISO 20345:2011",
+      "title": ""
+    }
+  ],
+  "industries": [
+    {
+      "id": 8517,
+      "name": "automotive",
+      "priority": 0,
+      "value": "Automotive",
+      "title": ""
+    },
+    {
+      "id": 8523,
+      "name": "logistics",
+      "priority": 0,
+      "value": "Logistics",
+      "title": ""
+    },
+    {
+      "id": 9176,
+      "name": "production",
+      "priority": 0,
+      "value": "Industry",
+      "title": ""
+    }
+  ],
+  "performanceLevels": null,
+  "keyFeatures": [
+    {
+      "id": 7697,
+      "name": "electrostatic_discharge",
+      "priority": 0,
+      "value": "Electrostatic discharge (ESD)",
+      "title": "Electrostatic Discharge (ESD)"
+    },
+    {
+      "id": 7699,
+      "name": "metal_free",
+      "priority": 0,
+      "value": "Metal free",
+      "title": "Metal free"
+    },
+    {
+      "id": 7957,
+      "name": "nano_carbon_toecap",
+      "priority": 0,
+      "value": "Nano carbon toecap",
+      "title": "Nano carbon toecap"
+    },
+    {
+      "id": 8322,
+      "name": "puncture_resistant_lightweight",
+      "priority": 0,
+      "value": "Puncture resistant lightweight midsole",
+      "title": "Puncture resistant lightweight"
+    },
+    {
+      "id": 8324,
+      "name": "3d_mesh",
+      "priority": 0,
+      "value": "3D mesh",
+      "title": "3D mesh"
+    },
+    {
+      "id": 9024,
+      "name": "sj_foam",
+      "priority": 0,
+      "value": "SJ Foam",
+      "title": "SJ Foam"
+    }
+  ],
+  "certificates": [
+    {
+      "id": 28143,
+      "name": "C_0031",
+      "priority": 8,
+      "value": "UKCA Certificate (UK Conformity Assessed) For Footwear",
+      "title": ""
+    },
+    {
+      "id": 10425,
+      "name": "C_0030",
+      "priority": 10,
+      "value": "KOSHA (Korea)",
+      "title": ""
+    },
+    {
+      "id": 10426,
+      "name": "C_0040",
+      "priority": 40,
+      "value": "AS/NZ (Australia + New Zealand)",
+      "title": ""
+    },
+    {
+      "id": 11120,
+      "name": "C_0050",
+      "priority": 50,
+      "value": "SIRIM (Malaysia)",
+      "title": ""
+    },
+    {
+      "id": 49758,
+      "name": "C_2034",
+      "priority": 60,
+      "value": "SNI 8877:2023 (Indonesia)",
+      "title": ""
+    },
+    {
+      "id": 10428,
+      "name": "C_0070",
+      "priority": 70,
+      "value": "JSAA (Japan)",
+      "title": ""
+    },
+    {
+      "id": 29812,
+      "name": "C_0034",
+      "priority": 999,
+      "value": "TP TC 019/2011 Certificate(Russia)",
+      "title": ""
+    },
+    {
+      "id": 42205,
+      "name": "C_2018",
+      "priority": 999,
+      "value": "ASTM F2413:2024 (USA)",
+      "title": ""
+    },
+    {
+      "id": 29827,
+      "name": "C_0014",
+      "priority": 999,
+      "value": "DCTU EN ISO20345:2016(Ukraine)",
+      "title": ""
+    },
+    {
+      "id": 28859,
+      "name": "C_0033",
+      "priority": 999,
+      "value": "Certified Orthopedic Footbed Adjustment (NESKRID NS system)",
+      "title": ""
+    },
+    {
+      "id": 10429,
+      "name": "C_0080",
+      "priority": 999,
+      "value": "LA Certification (China)",
+      "title": ""
+    },
+    {
+      "id": 10423,
+      "name": "C_0001",
+      "priority": 1,
+      "value": "EN ISO 20345:2011 (Europe)",
+      "title": ""
+    }
+  ],
+  "sock": [
+    {
+      "id": 14915,
+      "name": "67",
+      "priority": 0,
+      "value": "SJ Recycled Foam Footbed (96% recycled)",
+      "title": ""
+    }
+  ],
+  "upper": [
+    {
+      "id": 14777,
+      "name": "30",
+      "priority": 0,
+      "value": "Mesh",
+      "title": ""
+    }
+  ],
+  "lining": [
+    {
+      "id": 54278,
+      "name": "330",
+      "priority": 0,
+      "value": "Recycled 3D-Mesh (100% recycled)",
+      "title": ""
+    }
+  ],
+  "model": [
+    {
+      "id": 5699,
+      "name": "low",
+      "priority": 20,
+      "value": "Low",
+      "title": ""
+    }
+  ],
+  "toecap": [
+    {
+      "id": 14897,
+      "name": "35",
+      "priority": 0,
+      "value": "Nano Carbon",
+      "title": ""
+    }
+  ],
+  "midsole": [
+    {
+      "id": 53884,
+      "name": "319",
+      "priority": 0,
+      "value": "Anti-Puncture Nonwoven",
+      "title": ""
+    }
+  ],
+  "outsole": [
+    {
+      "id": 14918,
+      "name": "45",
+      "priority": 0,
+      "value": "Phylon/Rubber (NBR)",
+      "title": ""
+    }
+  ],
+  "liner": null,
+  "coating": null,
+  "outside_layer": null,
+  "mid_layer": null,
+  "inner_layer": null,
+  "nose_strip": null,
+  "articletype": [
+    {
+      "id": 5674,
+      "name": "shoes",
+      "priority": 10,
+      "value": "Shoes",
+      "title": ""
+    }
+  ],
+  "price_level": [
+    {
+      "id": 39685,
+      "name": "HIGH",
+      "priority": 0,
+      "value": "High",
+      "title": ""
+    }
+  ],
+  "available-size-range_eu": [
+    {
+      "id": 1564974,
+      "name": null,
+      "priority": null,
+      "value": "35-49",
+      "title": ""
+    }
+  ],
+  "available-size-range_uk": [
+    {
+      "id": 1564973,
+      "name": null,
+      "priority": null,
+      "value": "3.0-13.5",
+      "title": ""
+    }
+  ],
+  "available-size-range_us": [
+    {
+      "id": 1564976,
+      "name": null,
+      "priority": null,
+      "value": "3.0-14.5",
+      "title": ""
+    }
+  ],
+  "available-size-range_jpn": [
+    {
+      "id": 1564977,
+      "name": null,
+      "priority": null,
+      "value": "21.5-32.5",
+      "title": ""
+    }
+  ],
+  "available-size-range_kor": [
+    {
+      "id": 1564978,
+      "name": null,
+      "priority": null,
+      "value": "230-325",
+      "title": ""
+    }
+  ],
+  "available-size-range_fr": null,
+  "workwear_product_category": null,
+  "workwear_product_subcategory": null,
+  "headprotection_product_category": null,
+  "headprotection_product_subcategory": null,
+  "sample-weight": [
+    {
+      "id": 132371,
+      "name": null,
+      "priority": null,
+      "value": "0,439",
+      "title": ""
+    }
+  ],
+  "sample-size": [
+    {
+      "id": 1683959,
+      "name": null,
+      "priority": null,
+      "value": "42",
+      "title": ""
+    }
+  ],
+  "countryOfOrigin": {
+    "id": 36,
+    "name": "CHINA",
+    "code": "CHN",
+    "iso2": "CN",
+    "iso3": "CHN",
+    "translationKey": null,
+    "value": null,
+    "states": null
+  },
+  "taricCodes": [
+    {
+      "country": {
+        "id": 202,
+        "name": "BONAIR EUSTAT SABA",
+        "code": "BES",
+        "iso2": "BQ",
+        "iso3": "BES",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 2,
+        "name": "ARUBA",
+        "code": "ABW",
+        "iso2": "AW",
+        "iso3": "ABW",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 3,
+        "name": "AFGHANISTAN",
+        "code": "AFG",
+        "iso2": "AF",
+        "iso3": "AFG",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 4,
+        "name": "ANGOLA",
+        "code": "AGO",
+        "iso2": "AO",
+        "iso3": "AGO",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 5,
+        "name": "ANGUILLA",
+        "code": "AIA",
+        "iso2": "AI",
+        "iso3": "AIA",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 6,
+        "name": "ALBANIA",
+        "code": "ALB",
+        "iso2": "AL",
+        "iso3": "ALB",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 7,
+        "name": "ANDORRA",
+        "code": "AND",
+        "iso2": "AD",
+        "iso3": "AND",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 8,
+        "name": "NETHERLANDS ANTILLES",
+        "code": "ANT",
+        "iso2": "AN",
+        "iso3": "ANT",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 9,
+        "name": "UNITED ARAB EMIRATES",
+        "code": "ARE",
+        "iso2": "AE",
+        "iso3": "ARE",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 10,
+        "name": "ARGENTINA",
+        "code": "ARG",
+        "iso2": "AR",
+        "iso3": "ARG",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 11,
+        "name": "ARMENIA",
+        "code": "ARM",
+        "iso2": "AM",
+        "iso3": "ARM",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 12,
+        "name": "ANTIGUA AND BARBUDA",
+        "code": "ATG",
+        "iso2": "AG",
+        "iso3": "ATG",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 13,
+        "name": "AUSTRALIA",
+        "code": "AUS",
+        "iso2": "AU",
+        "iso3": "AUS",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 14,
+        "name": "AUSTRIA",
+        "code": "AUT",
+        "iso2": "AT",
+        "iso3": "AUT",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 15,
+        "name": "AZERBEIDZJAN",
+        "code": "AZE",
+        "iso2": "AZ",
+        "iso3": "AZE",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 16,
+        "name": "BURUNDI",
+        "code": "BDI",
+        "iso2": "BI",
+        "iso3": "BDI",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 17,
+        "name": "BELGIE",
+        "code": "BEL",
+        "iso2": "BE",
+        "iso3": "BEL",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 18,
+        "name": "BENIN",
+        "code": "BEN",
+        "iso2": "BJ",
+        "iso3": "BEN",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 19,
+        "name": "BANGLADESH",
+        "code": "BGD",
+        "iso2": "BD",
+        "iso3": "BGD",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 20,
+        "name": "BULGARIA",
+        "code": "BGR",
+        "iso2": "BG",
+        "iso3": "BGR",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 21,
+        "name": "BAHRAIN",
+        "code": "BHR",
+        "iso2": "BH",
+        "iso3": "BHR",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 22,
+        "name": "BAHAMAS",
+        "code": "BHS",
+        "iso2": "BS",
+        "iso3": "BHS",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 23,
+        "name": "BOSNIA-HERZEGOVINA",
+        "code": "BIH",
+        "iso2": "BA",
+        "iso3": "BIH",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 24,
+        "name": "REPUBLIC OF BELARUS",
+        "code": "BLR",
+        "iso2": "BY",
+        "iso3": "BLR",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 25,
+        "name": "BELIZE",
+        "code": "BLZ",
+        "iso2": "BZ",
+        "iso3": "BLZ",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 26,
+        "name": "BERMUDA",
+        "code": "BMU",
+        "iso2": "BM",
+        "iso3": "BMU",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 27,
+        "name": "BOLIVIA",
+        "code": "BOL",
+        "iso2": "BO",
+        "iso3": "BOL",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 28,
+        "name": "BRASIL",
+        "code": "BRA",
+        "iso2": "BR",
+        "iso3": "BRA",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 29,
+        "name": "BARBADOS",
+        "code": "BRB",
+        "iso2": "BB",
+        "iso3": "BRB",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 30,
+        "name": "BRUNEI",
+        "code": "BRN",
+        "iso2": "BN",
+        "iso3": "BRN",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 31,
+        "name": "BHUTAN",
+        "code": "BTN",
+        "iso2": "BT",
+        "iso3": "BTN",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 32,
+        "name": "BOTSWANA",
+        "code": "BWA",
+        "iso2": "BW",
+        "iso3": "BWA",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 33,
+        "name": "CANADA",
+        "code": "CAN",
+        "iso2": "CA",
+        "iso3": "CAN",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 34,
+        "name": "SWITZERLAND",
+        "code": "CHE",
+        "iso2": "CH",
+        "iso3": "CHE",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 35,
+        "name": "CHILE",
+        "code": "CHL",
+        "iso2": "CL",
+        "iso3": "CHL",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 36,
+        "name": "CHINA",
+        "code": "CHN",
+        "iso2": "CN",
+        "iso3": "CHN",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 37,
+        "name": "COTE D IVOIRE",
+        "code": "CIV",
+        "iso2": "CI",
+        "iso3": "CIV",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 38,
+        "name": "CAMEROON",
+        "code": "CMR",
+        "iso2": "CM",
+        "iso3": "CMR",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 39,
+        "name": "DEM.REP.OF THE CONGO",
+        "code": "COD",
+        "iso2": "CD",
+        "iso3": "COD",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 40,
+        "name": "COLOMBIA",
+        "code": "COL",
+        "iso2": "CO",
+        "iso3": "COL",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 41,
+        "name": "COMOROS",
+        "code": "COM",
+        "iso2": "KM",
+        "iso3": "COM",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 42,
+        "name": "KAAPVERDIE",
+        "code": "CPV",
+        "iso2": "CV",
+        "iso3": "CPV",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 43,
+        "name": "COSTA RICA",
+        "code": "CRI",
+        "iso2": "CR",
+        "iso3": "CRI",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 44,
+        "name": "CUBA",
+        "code": "CUB",
+        "iso2": "CU",
+        "iso3": "CUB",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 45,
+        "name": "CURAÇAO",
+        "code": "CUW",
+        "iso2": "CW",
+        "iso3": "CUW",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 46,
+        "name": "CAYMAN ISLANDS",
+        "code": "CYM",
+        "iso2": "KY",
+        "iso3": "CYM",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 47,
+        "name": "CYPRUS",
+        "code": "CYP",
+        "iso2": "CY",
+        "iso3": "CYP",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 48,
+        "name": "CZECH REPUBLIC",
+        "code": "CZE",
+        "iso2": "CZ",
+        "iso3": "CZE",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 49,
+        "name": "DEUTSCHLAND",
+        "code": "DEU",
+        "iso2": "DE",
+        "iso3": "DEU",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 50,
+        "name": "DJIBOUTI",
+        "code": "DJI",
+        "iso2": "DJ",
+        "iso3": "DJI",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 51,
+        "name": "DOMINICA",
+        "code": "DMA",
+        "iso2": "DM",
+        "iso3": "DMA",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 52,
+        "name": "DENMARK",
+        "code": "DNK",
+        "iso2": "DK",
+        "iso3": "DNK",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 53,
+        "name": "DOMINICAN REPUBLIC",
+        "code": "DOM",
+        "iso2": "DO",
+        "iso3": "DOM",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 54,
+        "name": "ALGERIA",
+        "code": "DZA",
+        "iso2": "DZ",
+        "iso3": "DZA",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 55,
+        "name": "ECUADOR",
+        "code": "ECU",
+        "iso2": "EC",
+        "iso3": "ECU",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 56,
+        "name": "EGYPT",
+        "code": "EGY",
+        "iso2": "EG",
+        "iso3": "EGY",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 57,
+        "name": "SPAIN",
+        "code": "ESP",
+        "iso2": "ES",
+        "iso3": "ESP",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 58,
+        "name": "REPUBLIC OF ESTONIA",
+        "code": "EST",
+        "iso2": "EE",
+        "iso3": "EST",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 59,
+        "name": "ETHIOPIA",
+        "code": "ETH",
+        "iso2": "ET",
+        "iso3": "ETH",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 60,
+        "name": "FINLAND",
+        "code": "FIN",
+        "iso2": "FI",
+        "iso3": "FIN",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 61,
+        "name": "FIJI ISLANDS",
+        "code": "FJI",
+        "iso2": "FJ",
+        "iso3": "FJI",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 62,
+        "name": "FRANCE",
+        "code": "FRA",
+        "iso2": "FR",
+        "iso3": "FRA",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 63,
+        "name": "FAROE ISLANDS",
+        "code": "FRO",
+        "iso2": "FO",
+        "iso3": "FRO",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 64,
+        "name": "GREAT BRITAIN",
+        "code": "GBR",
+        "iso2": "GB",
+        "iso3": "GBR",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 65,
+        "name": "GEORGIA",
+        "code": "GEO",
+        "iso2": "GE",
+        "iso3": "GEO",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 66,
+        "name": "GHANA",
+        "code": "GHA",
+        "iso2": "GH",
+        "iso3": "GHA",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 67,
+        "name": "GIBRALTAR",
+        "code": "GIB",
+        "iso2": "GI",
+        "iso3": "GIB",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 68,
+        "name": "GUINEA",
+        "code": "GIN",
+        "iso2": "GN",
+        "iso3": "GIN",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 69,
+        "name": "GAMBIA",
+        "code": "GMB",
+        "iso2": "GM",
+        "iso3": "GMB",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 70,
+        "name": "GREECE",
+        "code": "GRC",
+        "iso2": "GR",
+        "iso3": "GRC",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 71,
+        "name": "GRENADA",
+        "code": "GRD",
+        "iso2": "GD",
+        "iso3": "GRD",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 72,
+        "name": "GREENLAND",
+        "code": "GRL",
+        "iso2": "GL",
+        "iso3": "GRL",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 73,
+        "name": "GUATEMALA",
+        "code": "GTM",
+        "iso2": "GT",
+        "iso3": "GTM",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 74,
+        "name": "GUADELOUPE",
+        "code": "GUA",
+        "iso2": "GP",
+        "iso3": "GLP",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 75,
+        "name": "FRENCH GUIANA",
+        "code": "GUF",
+        "iso2": "GF",
+        "iso3": "GUF",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 76,
+        "name": "GUYANE",
+        "code": "GUY",
+        "iso2": "GY",
+        "iso3": "GUY",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 77,
+        "name": "HONG KONG",
+        "code": "HKG",
+        "iso2": "HK",
+        "iso3": "HKG",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 78,
+        "name": "HONDURAS",
+        "code": "HND",
+        "iso2": "HN",
+        "iso3": "HND",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 79,
+        "name": "CROATIA",
+        "code": "HRV",
+        "iso2": "HR",
+        "iso3": "HRV",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 80,
+        "name": "HAITI",
+        "code": "HTI",
+        "iso2": "HT",
+        "iso3": "HTI",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 81,
+        "name": "HUNGARY",
+        "code": "HUN",
+        "iso2": "HU",
+        "iso3": "HUN",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 82,
+        "name": "INDONESIA",
+        "code": "IDN",
+        "iso2": "ID",
+        "iso3": "IDN",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 83,
+        "name": "INDIA",
+        "code": "IND",
+        "iso2": "IN",
+        "iso3": "IND",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 84,
+        "name": "IRELAND",
+        "code": "IRL",
+        "iso2": "IE",
+        "iso3": "IRL",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 85,
+        "name": "IRAN",
+        "code": "IRN",
+        "iso2": "IR",
+        "iso3": "IRN",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 86,
+        "name": "IRAQ",
+        "code": "IRQ",
+        "iso2": "IQ",
+        "iso3": "IRQ",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 87,
+        "name": "ICELAND",
+        "code": "ISL",
+        "iso2": "IS",
+        "iso3": "ISL",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 88,
+        "name": "ISRAEL",
+        "code": "ISR",
+        "iso2": "IL",
+        "iso3": "ISR",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 89,
+        "name": "ITALY",
+        "code": "ITA",
+        "iso2": "IT",
+        "iso3": "ITA",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 90,
+        "name": "JAMAICA",
+        "code": "JAM",
+        "iso2": "JM",
+        "iso3": "JAM",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 91,
+        "name": "JORDAN",
+        "code": "JOR",
+        "iso2": "JO",
+        "iso3": "JOR",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 92,
+        "name": "JAPAN",
+        "code": "JPN",
+        "iso2": "JP",
+        "iso3": "JPN",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 93,
+        "name": "REP OF KAZAKHSTAN",
+        "code": "KAZ",
+        "iso2": "KZ",
+        "iso3": "KAZ",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 94,
+        "name": "KENYA",
+        "code": "KEN",
+        "iso2": "KE",
+        "iso3": "KEN",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 95,
+        "name": "KYRGYSTAN",
+        "code": "KGZ",
+        "iso2": "KG",
+        "iso3": "KGZ",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 96,
+        "name": "CAMBODIA",
+        "code": "KHM",
+        "iso2": "KH",
+        "iso3": "KHM",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 97,
+        "name": "ST KITTS AND NEVIS",
+        "code": "KNA",
+        "iso2": "KN",
+        "iso3": "KNA",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 98,
+        "name": "SOUTH-KOREA",
+        "code": "KOR",
+        "iso2": "KR",
+        "iso3": "KOR",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 99,
+        "name": "KOSOVO",
+        "code": "KOS",
+        "iso2": "XK",
+        "iso3": "XKX",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 100,
+        "name": "KUWAIT",
+        "code": "KWT",
+        "iso2": "KW",
+        "iso3": "KWT",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 101,
+        "name": "LAOS",
+        "code": "LAO",
+        "iso2": "LA",
+        "iso3": "LAO",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 102,
+        "name": "LEBANON",
+        "code": "LBN",
+        "iso2": "LB",
+        "iso3": "LBN",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 103,
+        "name": "LIBYA",
+        "code": "LBY",
+        "iso2": "LY",
+        "iso3": "LBY",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 104,
+        "name": "SAINT LUCIA",
+        "code": "LCA",
+        "iso2": "LC",
+        "iso3": "LCA",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 105,
+        "name": "LIECHTENSTEIN",
+        "code": "LIE",
+        "iso2": "LI",
+        "iso3": "LIE",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 106,
+        "name": "SRI LANKA",
+        "code": "LKA",
+        "iso2": "LK",
+        "iso3": "LKA",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 107,
+        "name": "LITHUANIA",
+        "code": "LTU",
+        "iso2": "LT",
+        "iso3": "LTU",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 108,
+        "name": "LUXEMBOURG",
+        "code": "LUX",
+        "iso2": "LU",
+        "iso3": "LUX",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 109,
+        "name": "LATVIA",
+        "code": "LVA",
+        "iso2": "LV",
+        "iso3": "LVA",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 110,
+        "name": "MACAU",
+        "code": "MAC",
+        "iso2": "MO",
+        "iso3": "MAC",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 111,
+        "name": "MOROCCO",
+        "code": "MAR",
+        "iso2": "MA",
+        "iso3": "MAR",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 112,
+        "name": "MAYOTTE",
+        "code": "MAY",
+        "iso2": "YT",
+        "iso3": "MYT",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 113,
+        "name": "MONACO",
+        "code": "MCO",
+        "iso2": "MC",
+        "iso3": "MCO",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 114,
+        "name": "REPUBLIC OF MOLDAVIA",
+        "code": "MDA",
+        "iso2": "MD",
+        "iso3": "MDA",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 115,
+        "name": "MADAGASCAR",
+        "code": "MDG",
+        "iso2": "MG",
+        "iso3": "MDG",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 116,
+        "name": "MALDIVES",
+        "code": "MDV",
+        "iso2": "MV",
+        "iso3": "MDV",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 117,
+        "name": "MEXICO",
+        "code": "MEX",
+        "iso2": "MX",
+        "iso3": "MEX",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 118,
+        "name": "MARSHALL ISLANDS",
+        "code": "MHL",
+        "iso2": "MH",
+        "iso3": "MHL",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 119,
+        "name": "REP. NORTH MACEDONIA",
+        "code": "MKD",
+        "iso2": "MK",
+        "iso3": "MKD",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 120,
+        "name": "MALI",
+        "code": "MLI",
+        "iso2": "ML",
+        "iso3": "MLI",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 121,
+        "name": "MALTA",
+        "code": "MLT",
+        "iso2": "MT",
+        "iso3": "MLT",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 122,
+        "name": "MYANMAR",
+        "code": "MMR",
+        "iso2": "MM",
+        "iso3": "MMR",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 123,
+        "name": "MONGOLIA",
+        "code": "MNG",
+        "iso2": "MN",
+        "iso3": "MNG",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 124,
+        "name": "MONTENEGRO",
+        "code": "MON",
+        "iso2": "ME",
+        "iso3": "MNE",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 125,
+        "name": "MOZAMBIQUE",
+        "code": "MOZ",
+        "iso2": "MZ",
+        "iso3": "MOZ",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 126,
+        "name": "MONTSERRAT",
+        "code": "MSR",
+        "iso2": "MS",
+        "iso3": "MSR",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 127,
+        "name": "MARTINIQUE",
+        "code": "MTQ",
+        "iso2": "MQ",
+        "iso3": "MTQ",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 128,
+        "name": "MAURITIUS",
+        "code": "MUS",
+        "iso2": "MU",
+        "iso3": "MUS",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 129,
+        "name": "MALAWI",
+        "code": "MWI",
+        "iso2": "MW",
+        "iso3": "MWI",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 130,
+        "name": "MALAYSIA",
+        "code": "MYS",
+        "iso2": "MY",
+        "iso3": "MYS",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 131,
+        "name": "NEW CALEDONIA",
+        "code": "NCL",
+        "iso2": "NC",
+        "iso3": "NCL",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 132,
+        "name": "NIGER",
+        "code": "NER",
+        "iso2": "NE",
+        "iso3": "NER",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 133,
+        "name": "NICARAGUA",
+        "code": "NIC",
+        "iso2": "NI",
+        "iso3": "NIC",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 134,
+        "name": "NIGERIA",
+        "code": "NIG",
+        "iso2": "NG",
+        "iso3": "NGA",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 135,
+        "name": "NEDERLAND",
+        "code": "NLD",
+        "iso2": "NL",
+        "iso3": "NLD",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 136,
+        "name": "NORWAY",
+        "code": "NOR",
+        "iso2": "NO",
+        "iso3": "NOR",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 137,
+        "name": "NEPAL",
+        "code": "NPL",
+        "iso2": "NP",
+        "iso3": "NPL",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 138,
+        "name": "NEW ZEALAND",
+        "code": "NZL",
+        "iso2": "NZ",
+        "iso3": "NZL",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 139,
+        "name": "OMAN",
+        "code": "OMN",
+        "iso2": "OM",
+        "iso3": "OMN",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 140,
+        "name": "PAKISTAN",
+        "code": "PAK",
+        "iso2": "PK",
+        "iso3": "PAK",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 141,
+        "name": "PANAMA",
+        "code": "PAN",
+        "iso2": "PA",
+        "iso3": "PAN",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 142,
+        "name": "PERU",
+        "code": "PER",
+        "iso2": "PE",
+        "iso3": "PER",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 143,
+        "name": "PHILIPPINES",
+        "code": "PHL",
+        "iso2": "PH",
+        "iso3": "PHL",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 144,
+        "name": "PAPUA NEW GUINEA",
+        "code": "PNG",
+        "iso2": "PG",
+        "iso3": "PNG",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 145,
+        "name": "POLAND",
+        "code": "POL",
+        "iso2": "PL",
+        "iso3": "POL",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 146,
+        "name": "PUERTO RICO",
+        "code": "PRI",
+        "iso2": "PR",
+        "iso3": "PRI",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 147,
+        "name": "NORD-KOREA",
+        "code": "PRK",
+        "iso2": "KP",
+        "iso3": "PRK",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 148,
+        "name": "PORTUGAL",
+        "code": "PRT",
+        "iso2": "PT",
+        "iso3": "PRT",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 149,
+        "name": "PARAGUAY",
+        "code": "PRY",
+        "iso2": "PY",
+        "iso3": "PRY",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 150,
+        "name": "PALESTINE",
+        "code": "PSE",
+        "iso2": "PS",
+        "iso3": "PSE",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 151,
+        "name": "FRENCH POLYNESIA",
+        "code": "PYF",
+        "iso2": "PF",
+        "iso3": "PYF",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 152,
+        "name": "QATAR",
+        "code": "QAT",
+        "iso2": "QA",
+        "iso3": "QAT",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 153,
+        "name": "REUNION",
+        "code": "REU",
+        "iso2": "RE",
+        "iso3": "REU",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 154,
+        "name": "ROMANIA",
+        "code": "ROM",
+        "iso2": "RO",
+        "iso3": "ROU",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 155,
+        "name": "RUSSIA",
+        "code": "RUS",
+        "iso2": "RU",
+        "iso3": "RUS",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 156,
+        "name": "RWANDA",
+        "code": "RWA",
+        "iso2": "RW",
+        "iso3": "RWA",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 157,
+        "name": "SAUDI ARABIA",
+        "code": "SAU",
+        "iso2": "SA",
+        "iso3": "SAU",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 158,
+        "name": "SERBIAMONTENEGRO",
+        "code": "SCG",
+        "iso2": "CS",
+        "iso3": "SCG",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 159,
+        "name": "SUDAN",
+        "code": "SDN",
+        "iso2": "SD",
+        "iso3": "SDN",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 160,
+        "name": "SENEGAL",
+        "code": "SEN",
+        "iso2": "SN",
+        "iso3": "SEN",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 161,
+        "name": "SINGAPORE",
+        "code": "SGP",
+        "iso2": "SG",
+        "iso3": "SGP",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 162,
+        "name": "SIERRA LEONE",
+        "code": "SLE",
+        "iso2": "SL",
+        "iso3": "SLE",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 163,
+        "name": "EL SALVADOR",
+        "code": "SLV",
+        "iso2": "SV",
+        "iso3": "SLV",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 164,
+        "name": "SAN MARINO",
+        "code": "SMR",
+        "iso2": "SM",
+        "iso3": "SMR",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 165,
+        "name": "SAINT-PIERRE ET MIQU",
+        "code": "SPM",
+        "iso2": "PM",
+        "iso3": "SPM",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 166,
+        "name": "SOUTH SUDAN",
+        "code": "SSD",
+        "iso2": "SS",
+        "iso3": "SSD",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 167,
+        "name": "SURINAME",
+        "code": "SUR",
+        "iso2": "SR",
+        "iso3": "SUR",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 168,
+        "name": "REPUBLIC SLOVAKIA",
+        "code": "SVK",
+        "iso2": "SK",
+        "iso3": "SVK",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 169,
+        "name": "SLOVENIA",
+        "code": "SVN",
+        "iso2": "SI",
+        "iso3": "SVN",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 170,
+        "name": "SWEDEN",
+        "code": "SWE",
+        "iso2": "SE",
+        "iso3": "SWE",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 171,
+        "name": "SAINT MARTIN",
+        "code": "SXM",
+        "iso2": "SX",
+        "iso3": "SXM",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 172,
+        "name": "SEYCHELLES",
+        "code": "SYC",
+        "iso2": "SC",
+        "iso3": "SYC",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 173,
+        "name": "SYRIA",
+        "code": "SYR",
+        "iso2": "SY",
+        "iso3": "SYR",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 174,
+        "name": "TAHITI",
+        "code": "TAH",
+        "iso2": "TY",
+        "iso3": "TAH",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 175,
+        "name": "TURKS AND CAICOS ISL",
+        "code": "TCA",
+        "iso2": "TC",
+        "iso3": "TCA",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 176,
+        "name": "TOGO",
+        "code": "TGO",
+        "iso2": "TG",
+        "iso3": "TGO",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 177,
+        "name": "THAILAND",
+        "code": "THA",
+        "iso2": "TH",
+        "iso3": "THA",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 178,
+        "name": "REP. TADJIKISTAN",
+        "code": "TJK",
+        "iso2": "TJ",
+        "iso3": "TJK",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 179,
+        "name": "TURKMENISTAN",
+        "code": "TKM",
+        "iso2": "TM",
+        "iso3": "TKM",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 180,
+        "name": "TRINIDAD AND TOBAGO",
+        "code": "TTO",
+        "iso2": "TT",
+        "iso3": "TTO",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 181,
+        "name": "TUNISIA",
+        "code": "TUN",
+        "iso2": "TN",
+        "iso3": "TUN",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 182,
+        "name": "TURKEY",
+        "code": "TUR",
+        "iso2": "TR",
+        "iso3": "TUR",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 183,
+        "name": "TAIWAN,CHINA",
+        "code": "TWN",
+        "iso2": "TW",
+        "iso3": "TWN",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 184,
+        "name": "TANZANIA",
+        "code": "TZA",
+        "iso2": "TZ",
+        "iso3": "TZA",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 185,
+        "name": "UGANDA",
+        "code": "UGA",
+        "iso2": "UG",
+        "iso3": "UGA",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 186,
+        "name": "UKRAINE",
+        "code": "UKR",
+        "iso2": "UA",
+        "iso3": "UKR",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 187,
+        "name": "URUGUAY",
+        "code": "URY",
+        "iso2": "UY",
+        "iso3": "URY",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 188,
+        "name": "U.S.A.",
+        "code": "USA",
+        "iso2": "US",
+        "iso3": "USA",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 189,
+        "name": "UZBEKISTAN",
+        "code": "UZB",
+        "iso2": "UZ",
+        "iso3": "UZB",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 190,
+        "name": "VATICAN CITY STATE",
+        "code": "VAT",
+        "iso2": "VA",
+        "iso3": "VAT",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 191,
+        "name": "ST VINCENT - GRENAD.",
+        "code": "VCT",
+        "iso2": "VC",
+        "iso3": "VCT",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 192,
+        "name": "VENEZUELA",
+        "code": "VEN",
+        "iso2": "VE",
+        "iso3": "VEN",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 193,
+        "name": "BRITISH VIRGIN ISL.",
+        "code": "VGB",
+        "iso2": "VG",
+        "iso3": "VGB",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 194,
+        "name": "VIETNAM",
+        "code": "VNM",
+        "iso2": "VN",
+        "iso3": "VNM",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 195,
+        "name": "VANUATU",
+        "code": "VUT",
+        "iso2": "VU",
+        "iso3": "VUT",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 196,
+        "name": "SAMOA",
+        "code": "WSM",
+        "iso2": "WS",
+        "iso3": "WSM",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 197,
+        "name": "YEMEN",
+        "code": "YEM",
+        "iso2": "YE",
+        "iso3": "YEM",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 198,
+        "name": "YUGOSLAVIA",
+        "code": "YUG",
+        "iso2": "YU",
+        "iso3": "YUG",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 199,
+        "name": "SOUTH AFRICA",
+        "code": "ZAF",
+        "iso2": "ZA",
+        "iso3": "ZAF",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 200,
+        "name": "ZIMBABWE",
+        "code": "ZIM",
+        "iso2": "ZW",
+        "iso3": "ZWE",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 201,
+        "name": "ZAMBIA",
+        "code": "ZMB",
+        "iso2": "ZM",
+        "iso3": "ZMB",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 203,
+        "name": "ST. BARTHÉLEMY",
+        "code": "BLM",
+        "iso2": "BL",
+        "iso3": "BLM",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 204,
+        "name": "GABON",
+        "code": "GAB",
+        "iso2": "GA",
+        "iso3": "GAB",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 205,
+        "name": "SOMALIA",
+        "code": "SOM",
+        "iso2": "SO",
+        "iso3": "SOM",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 221,
+        "name": "EQUATORIAL GUINEA",
+        "code": "GNQ",
+        "iso2": "GQ",
+        "iso3": "GNQ",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 222,
+        "name": "BURKINA FASO",
+        "code": "BFA",
+        "iso2": "BF",
+        "iso3": "BFA",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 223,
+        "name": "CHRISTMAS ISLAND",
+        "code": "CXR",
+        "iso2": "CX",
+        "iso3": "CXR",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 224,
+        "name": "COCOS ISLAND",
+        "code": "CCK",
+        "iso2": "CC",
+        "iso3": "CCK",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 225,
+        "name": "COOK ISLANDS",
+        "code": "COK",
+        "iso2": "CK",
+        "iso3": "COK",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 226,
+        "name": "MICRONESIA",
+        "code": "FSM",
+        "iso2": "FM",
+        "iso3": "FSM",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 227,
+        "name": "NAURU",
+        "code": "NRU",
+        "iso2": "NR",
+        "iso3": "NRU",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 228,
+        "name": "NIUE",
+        "code": "NIU",
+        "iso2": "NU",
+        "iso3": "NIU",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 229,
+        "name": "PALAU",
+        "code": "PLW",
+        "iso2": "PW",
+        "iso3": "PLW",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 230,
+        "name": "TOKELAU",
+        "code": "TKL",
+        "iso2": "TK",
+        "iso3": "TKL",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 231,
+        "name": "TONGA",
+        "code": "TON",
+        "iso2": "TO",
+        "iso3": "TON",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 232,
+        "name": "TUVALU",
+        "code": "TUV",
+        "iso2": "TV",
+        "iso3": "TUV",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 233,
+        "name": "NORFOLK ISLAND",
+        "code": "NFK",
+        "iso2": "NF",
+        "iso3": "NFK",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 261,
+        "name": "SOLOMON ISLANDS",
+        "code": "SLB",
+        "iso2": "SB",
+        "iso3": "SLB",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 9051,
+        "name": "SAO TOME E PRINCIPE",
+        "code": "STP",
+        "iso2": "ST",
+        "iso3": "STP",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 9061,
+        "name": "CHAD",
+        "code": "TCD",
+        "iso2": "TD",
+        "iso3": "TCD",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 9062,
+        "name": "LIBERIA",
+        "code": "LBR",
+        "iso2": "LR",
+        "iso3": "LBR",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 9063,
+        "name": "MAURITANIA",
+        "code": "MRT",
+        "iso2": "MR",
+        "iso3": "MRT",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 9064,
+        "name": "LESOTHO",
+        "code": "LSO",
+        "iso2": "LS",
+        "iso3": "LSO",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 9065,
+        "name": "SWAZILAND",
+        "code": "SWZ",
+        "iso2": "SZ",
+        "iso3": "SWZ",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 9147,
+        "name": "SAINT HELENA",
+        "code": "SHN",
+        "iso2": "SH",
+        "iso3": "SHN",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 9391,
+        "name": "TIMOR-LESTE",
+        "code": "TLS",
+        "iso2": "TL",
+        "iso3": "TLS",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 9461,
+        "name": "REP. OF THE CONGO",
+        "code": "COG",
+        "iso2": "CG",
+        "iso3": "COG",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 9462,
+        "name": "CENTRAL AFRICAN REP",
+        "code": "CAF",
+        "iso2": "CF",
+        "iso3": "CAF",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 9463,
+        "name": "NAMIBIA",
+        "code": "NAM",
+        "iso2": "NA",
+        "iso3": "NAM",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 9464,
+        "name": "???",
+        "code": "?",
+        "iso2": "",
+        "iso3": "",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    },
+    {
+      "country": {
+        "id": 9510,
+        "name": "SERBIA",
+        "code": "SRB",
+        "iso2": "RS",
+        "iso3": "SRB",
+        "translationKey": null,
+        "value": null,
+        "states": null
+      },
+      "taricCode": "6404199000"
+    }
+  ],
+  "workwear_key_features": null,
+  "workwear_product_details": null,
+  "fabric": null,
+  "product-long-description": [
+    {
+      "id": 2320,
+      "name": null,
+      "priority": null,
+      "value": "The Safety Jogger lightweight shoe with SJ-3FIT is the must-have for the hybrid workplace. With unique features such as a removable hybrid insole with a built-in air circulation system and shock absorption, you will have the lightest safety shoe on the market. Next to being ultra-comfortable, the light weight shoe has a topmost flexing & bending performance. Whereas toe cap is made of ultra-light nano carbon, the insole features our unique SJ-3FIT technology. The SJ-3FIT technology is a flexible, modular concept that allows the width of the shoe to be adjusted. All you need for happy feet at work!",
+      "title": ""
+    }
+  ]
+}

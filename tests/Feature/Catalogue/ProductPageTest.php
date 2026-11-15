@@ -2,8 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Domain\Pricing\PriceDisplay;
-use App\Domain\Pricing\VatDisplayMode;
+use App\Domain\Catalogue\Media\PlaceholderImageGenerator;
 use App\Livewire\Catalogue\ProductPage;
 use Database\Seeders\FixtureCatalogueSeeder;
 use Livewire\Livewire;
@@ -52,12 +51,12 @@ function enabledSizes(string $html): array
 it('shows the product with its price, description and specification', function (): void {
     $this->get('/p/safety-jogger-ligero')
         ->assertOk()
-        ->assertSee('Ligero')
+        ->assertSee('LIGERO')
         ->assertSee('Lightweight ESD Safety Shoes')
         ->assertSee('Ultra-light, flexible safety shoe')
-        ->assertSee('£82.68')
-        ->assertSee('£91.80')
-        ->assertSee('inc VAT')
+        ->assertSee('£68.90')
+        ->assertSee('£76.50')
+        ->assertSee('ex VAT')
         ->assertSee('Slip resistant (SRC)')
         ->assertSee('ESD, electrostatic dissipative')
         ->assertSee('Metal free')
@@ -94,12 +93,12 @@ it('shows only black images and the sizes available in black when Black is selec
 
     expect(galleryColours($html))->toBe(['Black'])
         ->and(enabledSizes($html))->toBe(['3.5', '4', '5', '6', '6.5', '7', '8', '9', '10.5', '11', '12'])
-        ->and($html)->toContain('data-value="9.5"');
+        ->and($html)->toContain('data-value="10"');
 
     $navy = $this->get('/p/safety-jogger-ligero?colour=navy')->getContent();
 
     expect(galleryColours($navy))->toBe(['Navy'])
-        ->and(enabledSizes($navy))->toContain('9.5');
+        ->and(enabledSizes($navy))->toContain('10');
 });
 
 it('switches the gallery when a colour is chosen', function (): void {
@@ -120,6 +119,7 @@ it('highlights the missing option when adding to cart without a size', function 
         ->call('choose', 'shoe_size', '8')
         ->assertSet('missingOption', null)
         ->assertDontSee('Please select a size')
+        ->set('quantity', '2')
         ->call('addToCart')
         ->assertSet('added', true);
 });
@@ -148,6 +148,7 @@ it('adds a product with one variant and no options directly', function (): void 
     CatalogueFactory::product('Plain', [['stock' => 4]]);
 
     Livewire::test(ProductPage::class, ['slug' => 'test-brand-plain'])
+        ->set('quantity', '1')
         ->call('addToCart')
         ->assertSet('missingOption', null)
         ->assertSet('added', true);
@@ -166,9 +167,9 @@ it('disables sizes without stock but still shows them', function (): void {
 
 it('re-evaluates colours after a size is chosen', function (): void {
     $component = Livewire::test(ProductPage::class, ['slug' => 'safety-jogger-ligero'])
-        ->call('choose', 'shoe_size', '9.5');
+        ->call('choose', 'shoe_size', '10');
 
-    // Black 9.5 is out of stock, so Black is now disabled.
+    // Black 10 is out of stock, so Black is now disabled.
     expect($component->html())->toMatch('#<button[^>]*data-value="black"[^>]*\sdisabled#s');
 });
 
@@ -189,27 +190,20 @@ it('shows a stock message for the selection', function (string $slug, ?string $s
     ['maxguard-sx310', '8', 'Out of stock'],
 ]);
 
-it('shows a 20% difference between inc and ex VAT on a standard rated product', function (): void {
-    $this->get('/p/safety-jogger-ligero')->assertSee('£82.68')->assertDontSee('£68.90');
-
-    app(PriceDisplay::class)->setMode(VatDisplayMode::ExVat);
-
+it('shows a standard rated product ex VAT, with its compare price ex VAT', function (): void {
     $this->get('/p/safety-jogger-ligero')
         ->assertSee('£68.90')
         ->assertSee('£76.50')
         ->assertSee('ex VAT')
-        ->assertDontSee('£82.68');
+        ->assertDontSee('£82.68')
+        ->assertDontSee('£91.80')
+        ->assertDontSee('inc VAT');
 });
 
-it('shows the same price inc and ex VAT on a zero-protective product, with a note', function (): void {
+it('shows a zero-protective product ex VAT, with a note about employers', function (): void {
     $this->get('/p/amblers-safety-fs9')
         ->assertSee('£52.48')
-        ->assertSee('VAT at 20% applies when buying for employees');
-
-    app(PriceDisplay::class)->setMode(VatDisplayMode::ExVat);
-
-    $this->get('/p/amblers-safety-fs9')
-        ->assertSee('£52.48')
+        ->assertSee('ex VAT')
         ->assertSee('VAT at 20% applies when buying for employees');
 });
 
@@ -223,7 +217,7 @@ it('outputs Product structured data with an offer per variant', function (): voi
 
     expect($data['@context'])->toBe('https://schema.org')
         ->and($data['@type'])->toBe('Product')
-        ->and($data['name'])->toBe('Safety Jogger Ligero')
+        ->and($data['name'])->toBe('Safety Jogger LIGERO')
         ->and($data['brand'])->toBe(['@type' => 'Brand', 'name' => 'Safety Jogger'])
         ->and($data['url'])->toBe(route('product', 'safety-jogger-ligero'))
         ->and($data['image'])->toHaveCount(3)
@@ -239,9 +233,7 @@ it('outputs Product structured data with an offer per variant', function (): voi
         ->and($offers['SJ-1492635']['availability'])->toBe('https://schema.org/OutOfStock');
 });
 
-it('keeps structured data prices inc VAT in ex VAT mode, and unchanged for zero rated products', function (): void {
-    app(PriceDisplay::class)->setMode(VatDisplayMode::ExVat);
-
+it('keeps structured data prices inc VAT although the page shows ex VAT', function (): void {
     $ligero = structuredData($this->get('/p/safety-jogger-ligero')->getContent());
     $fs9 = structuredData($this->get('/p/amblers-safety-fs9')->getContent());
 
@@ -278,4 +270,150 @@ it('does not embed a video from an unexpected host', function (): void {
     $product->update(['attribute_data' => $data]);
 
     $this->get('/p/gbs-eva')->assertOk()->assertDontSee('<iframe', false);
+});
+
+it('lets the customer choose a thumbnail to show in the main frame', function (): void {
+    $product = Url::query()->where('slug', 'safety-jogger-ligero')->sole()->element;
+    $directory = storage_path('app/private/fixture-placeholders');
+
+    foreach (['detail', 'outsole'] as $role) {
+        $product
+            ->addMedia(app(PlaceholderImageGenerator::class)->generate("Ligero Navy {$role}", '394656', $directory, 240))
+            ->withCustomProperties(['colour' => 'Navy', 'role' => $role, 'primary' => false])
+            ->toMediaCollection(config('lunar.media.collection'));
+    }
+
+    $html = $this->get('/p/safety-jogger-ligero?colour=navy')->assertOk()->getContent();
+
+    preg_match('#<section[^>]*data-testid="gallery".*?</section>#s', $html, $gallery);
+    preg_match_all('#<button[^>]*data-gallery-thumb="(\d)"[^>]*>#s', $gallery[0], $thumbs);
+
+    // One button per image, each selecting its own index.
+    expect($thumbs[1])->toBe(['0', '1', '2'])
+        ->and($thumbs[0][1])->toContain('x-on:click="active = 1"')
+        ->and($thumbs[0][2])->toContain('aria-label="Show image 3 of 3: outsole view"')
+        // The first image is the one shown, with or without JavaScript.
+        ->and($thumbs[0][0])->toContain('aria-current="true"')
+        ->and($gallery[0])->toContain('x-bind:src="images[active]"')
+        ->and(substr_count($gallery[0], '/conversions/'))->toBeGreaterThanOrEqual(4);
+
+    // The main frame can show every image of the colour, and only those.
+    // The medium rendition of all three is in the gallery's data, plus the
+    // one in the main frame's own src.
+    preg_match('#x-data="([^"]*)"#', $gallery[0], $data);
+
+    expect($data[1])->toContain('active: 0')
+        ->and(substr_count(html_entity_decode($data[1], ENT_QUOTES), '-medium.'))->toBe(3);
+
+    // Black has a single image: no thumbnails, and a different gallery key,
+    // so choosing a colour starts on that colour's first image.
+    $black = $this->get('/p/safety-jogger-ligero?colour=black')->getContent();
+    preg_match('#<section[^>]*data-testid="gallery"[^>]*>#s', $black, $blackGallery);
+    preg_match('#<section[^>]*data-testid="gallery"[^>]*>#s', $html, $navyGallery);
+    preg_match('#wire:key="(gallery-\d+)"#', $blackGallery[0], $blackKey);
+    preg_match('#wire:key="(gallery-\d+)"#', $navyGallery[0], $navyKey);
+
+    expect($black)->not->toContain('data-gallery-thumb')
+        ->and($blackKey[1])->not->toBe($navyKey[1]);
+});
+
+/**
+ * The add to cart button: whether it is disabled, and what it says.
+ *
+ * @return array{disabled: bool, label: string}
+ */
+function addButton(string $html): array
+{
+    preg_match('#<button[^>]*data-add-to-cart[^>]*>(.*?)</button>#s', $html, $button);
+
+    return [
+        // The attribute, not the `disabled:` utility classes.
+        'disabled' => preg_match('#\sdisabled(?![:\w-])#', explode('>', $button[0])[0]) === 1,
+        'label' => trim($button[1]),
+    ];
+}
+
+it('keeps add to cart disabled until a size and a quantity are chosen, and says what is needed', function (): void {
+    $component = Livewire::test(ProductPage::class, ['slug' => 'safety-jogger-ligero']);
+
+    // The colour is pre-selected. The size and the quantity never are.
+    expect(addButton($component->html()))->toBe(['disabled' => true, 'label' => 'Select a size'])
+        ->and($component->get('quantity'))->toBe('');
+
+    $component->call('choose', 'shoe_size', '8');
+
+    expect(addButton($component->html()))->toBe(['disabled' => true, 'label' => 'Enter a quantity']);
+
+    $component->set('quantity', '3');
+
+    expect(addButton($component->html()))->toBe(['disabled' => false, 'label' => 'Add to cart']);
+
+    // Clearing the quantity disables it again.
+    $component->set('quantity', '');
+
+    expect(addButton($component->html()))->toBe(['disabled' => true, 'label' => 'Enter a quantity']);
+
+    // Choosing a combination that is out of stock disables it whatever the quantity.
+    $component->set('quantity', '1')->call('choose', 'colour', 'black')->call('choose', 'shoe_size', '10');
+
+    expect(addButton($component->html()))->toBe(['disabled' => true, 'label' => 'Out of stock']);
+});
+
+it('entering a quantity first still needs a size', function (): void {
+    $component = Livewire::test(ProductPage::class, ['slug' => 'safety-jogger-ligero'])->set('quantity', '2');
+
+    expect(addButton($component->html()))->toBe(['disabled' => true, 'label' => 'Select a size']);
+
+    $component->call('addToCart')->assertSet('added', false)->assertSet('missingOption', 'shoe_size');
+});
+
+it('rejects a quantity that is not a whole number of 1 or more', function (string $quantity): void {
+    $component = Livewire::test(ProductPage::class, ['slug' => 'safety-jogger-ligero'])
+        ->call('choose', 'shoe_size', '8')
+        ->set('quantity', $quantity);
+
+    expect(addButton($component->html())['disabled'])->toBeTrue();
+
+    $component
+        ->assertSee('Enter a whole number, 1 or more.')
+        ->assertSeeHtml('aria-invalid="true"')
+        ->call('addToCart')
+        ->assertSet('added', false);
+})->with(['0', '-2', '1.5', 'abc', '9999999']);
+
+it('does not allow more than the stock of the chosen size', function (): void {
+    // FS65 in size 6 has 3 in stock.
+    $component = Livewire::test(ProductPage::class, ['slug' => 'amblers-safety-fs65'])
+        ->call('choose', 'shoe_size', '6')
+        ->set('quantity', '4');
+
+    expect(addButton($component->html())['disabled'])->toBeTrue();
+
+    $component
+        ->assertSee('Only 3 available in this size.')
+        ->assertSeeHtml('max="3"')
+        ->call('addToCart')
+        ->assertSet('added', false)
+        ->set('quantity', '3');
+
+    expect(addButton($component->html()))->toBe(['disabled' => false, 'label' => 'Add to cart']);
+
+    $component->assertDontSee('available in this size')->call('addToCart')->assertSet('added', true);
+});
+
+it('shows a labelled quantity field that starts empty', function (): void {
+    $html = $this->get('/p/safety-jogger-ligero')->assertOk()->getContent();
+
+    preg_match('#<input[^>]*data-quantity[^>]*>#s', $html, $input);
+
+    expect($html)->toContain('<label for="quantity"')
+        ->and($input[0])->toContain('type="number"')
+        ->and($input[0])->toContain('min="1"')
+        ->and($input[0])->not->toContain('value=')
+        ->and($input[0])->not->toContain('aria-invalid');
+});
+
+it('says out of stock, not select a size, when nothing is in stock', function (): void {
+    expect(addButton($this->get('/p/maxguard-sx310')->getContent()))
+        ->toBe(['disabled' => true, 'label' => 'Out of stock']);
 });

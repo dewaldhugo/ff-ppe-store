@@ -1,7 +1,13 @@
 <header class="border-b border-slate-200 bg-white">
     <div class="mx-auto flex max-w-7xl flex-wrap items-center gap-x-6 gap-y-3 px-4 py-4">
-        <a href="{{ route('home') }}" class="text-xl font-bold tracking-tight text-slate-900">
-            {{ config('app.name') }}
+        <a href="{{ route('home') }}" class="shrink-0" data-site-logo>
+            <img
+                src="{{ asset('images/the-bridge-group-logo.svg') }}"
+                alt="{{ config('app.name') }}"
+                width="286"
+                height="32"
+                class="h-7 w-auto sm:h-8"
+            >
         </a>
 
         <form action="{{ route('search') }}" method="get" role="search" class="order-3 flex w-full gap-2 sm:order-none sm:w-auto sm:flex-1">
@@ -17,29 +23,6 @@
             <button type="submit" class="rounded bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700">
                 Search
             </button>
-        </form>
-
-        <form action="{{ route('vat-mode') }}" method="post" class="ml-auto" data-vat-toggle>
-            @csrf
-            <fieldset class="flex items-center gap-1 text-sm">
-                <legend class="sr-only">Show prices including or excluding VAT</legend>
-                <span class="mr-1 text-slate-600" aria-hidden="true">Prices</span>
-                @foreach ($vatModes as $mode)
-                    <button
-                        type="submit"
-                        name="mode"
-                        value="{{ $mode->value }}"
-                        aria-pressed="{{ $mode === $vatMode ? 'true' : 'false' }}"
-                        @class([
-                            'rounded border px-2 py-1 font-medium',
-                            'border-slate-900 bg-slate-900 text-white' => $mode === $vatMode,
-                            'border-slate-300 bg-white text-slate-700 hover:bg-slate-100' => $mode !== $vatMode,
-                        ])
-                    >
-                        {{ $mode->label() }}
-                    </button>
-                @endforeach
-            </fieldset>
         </form>
     </div>
 

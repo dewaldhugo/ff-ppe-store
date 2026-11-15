@@ -107,6 +107,10 @@ final class CatalogueFoundationSeeder extends Seeder
             ]],
             'occupational-footwear' => ['Occupational Footwear', []],
             'slippers' => ['Slippers', []],
+            'plimsolls' => ['Plimsolls', []],
+            'casual-footwear' => ['Casual Footwear', []],
+            'accessories' => ['Accessories', []],
+            'wellingtons' => ['Wellingtons', []],
         ]],
         'ranges' => ['Ranges', [
             'clearance' => ['Clearance', []],

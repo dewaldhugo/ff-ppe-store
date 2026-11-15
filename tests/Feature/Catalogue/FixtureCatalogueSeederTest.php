@@ -48,7 +48,7 @@ describe('catalogue.json', function (): void {
     it('stores product attributes in their contract types', function (): void {
         $ligero = productBySlug('safety-jogger-ligero');
 
-        expect($ligero->translateAttribute('name'))->toBe('Ligero')
+        expect($ligero->translateAttribute('name'))->toBe('LIGERO')
             ->and($ligero->translateAttribute('title'))->toBe('Lightweight ESD Safety Shoes')
             ->and($ligero->attr('safety_class'))->toBe('S1P')
             ->and($ligero->attr('features'))->toBe(['SRC', 'CI', 'ESD', 'METAL_FREE'])
@@ -169,12 +169,12 @@ describe('catalogue.json', function (): void {
 
         $size = ProductOptionValue::query()
             ->whereHas('option', fn ($query) => $query->where('handle', 'shoe_size'))
-            ->where('name->en', '9.5')
+            ->where('name->en', '10')
             ->sole();
 
         expect($black->meta['hex'])->toBe('000000')
             ->and($black->variants()->distinct()->count('product_id'))->toBe(5)
-            ->and((float) $size->meta['sort'])->toBe(9.5);
+            ->and((float) $size->meta['sort'])->toBe(44.0);
     });
 
     it('links both options to every product', function (): void {

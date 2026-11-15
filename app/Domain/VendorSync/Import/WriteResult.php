@@ -1,0 +1,28 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Domain\VendorSync\Import;
+
+final readonly class WriteResult
+{
+    /**
+     * @param  list<string>  $draftReasons
+     * @param  list<string>  $messages
+     */
+    public function __construct(
+        public int $productId,
+        public bool $created,
+        public string $status,
+        public array $draftReasons,
+        public array $messages,
+    ) {}
+
+    /**
+     * Drafted by a rule, as opposed to waiting for its first image.
+     */
+    public function draftedByRule(): bool
+    {
+        return array_diff($this->draftReasons, [DraftReason::NO_IMAGE]) !== [];
+    }
+}

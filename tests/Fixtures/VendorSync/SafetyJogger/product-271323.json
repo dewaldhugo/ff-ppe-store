@@ -1,0 +1,840 @@
+{
+  "id": 271323,
+  "name": "SX310",
+  "commercialName": "SX310",
+  "brand": "MAXGUARD",
+  "brandDescription": "Maxguard",
+  "priority": 1600,
+  "colors": [
+    {
+      "id": 1000383,
+      "ref": "012664",
+      "code": "RED",
+      "hexValue": "940D0D",
+      "patternURL": null,
+      "description": "dark red",
+      "sequence": 1,
+      "alternatives": [],
+      "skus": [
+        {
+          "id": 1342265,
+          "productId": 271323,
+          "productColorId": 1000383,
+          "pieces": 1,
+          "eanCode": "4250401531986",
+          "sizeRange": "47",
+          "sizeDivision": "47(1)",
+          "assortment": "S4701",
+          "brand": null,
+          "article": null,
+          "commercialName": null,
+          "category": null,
+          "color": null,
+          "colorLongDescription": null,
+          "colorShortDescription": null,
+          "productReference": null,
+          "stock": 0,
+          "stockType": "",
+          "buyPer": 1,
+          "defaultPrice": null,
+          "customerPrice": null,
+          "promoPrice": null,
+          "rrpPrice": {
+            "currency": "",
+            "value": 0
+          }
+        },
+        {
+          "id": 1342249,
+          "productId": 271323,
+          "productColorId": 1000383,
+          "pieces": 1,
+          "eanCode": "4250401531900",
+          "sizeRange": "39",
+          "sizeDivision": "39(1)",
+          "assortment": "S3901",
+          "brand": null,
+          "article": null,
+          "commercialName": null,
+          "category": null,
+          "color": null,
+          "colorLongDescription": null,
+          "colorShortDescription": null,
+          "productReference": null,
+          "stock": 0,
+          "stockType": "",
+          "buyPer": 1,
+          "defaultPrice": null,
+          "customerPrice": null,
+          "promoPrice": null,
+          "rrpPrice": {
+            "currency": "",
+            "value": 0
+          }
+        },
+        {
+          "id": 1342267,
+          "productId": 271323,
+          "productColorId": 1000383,
+          "pieces": 1,
+          "eanCode": "4250401531993",
+          "sizeRange": "48",
+          "sizeDivision": "48(1)",
+          "assortment": "S4801",
+          "brand": null,
+          "article": null,
+          "commercialName": null,
+          "category": null,
+          "color": null,
+          "colorLongDescription": null,
+          "colorShortDescription": null,
+          "productReference": null,
+          "stock": 0,
+          "stockType": "",
+          "buyPer": 1,
+          "defaultPrice": null,
+          "customerPrice": null,
+          "promoPrice": null,
+          "rrpPrice": {
+            "currency": "",
+            "value": 0
+          }
+        },
+        {
+          "id": 1342263,
+          "productId": 271323,
+          "productColorId": 1000383,
+          "pieces": 1,
+          "eanCode": "4250401531979",
+          "sizeRange": "46",
+          "sizeDivision": "46(1)",
+          "assortment": "S4601",
+          "brand": null,
+          "article": null,
+          "commercialName": null,
+          "category": null,
+          "color": null,
+          "colorLongDescription": null,
+          "colorShortDescription": null,
+          "productReference": null,
+          "stock": 0,
+          "stockType": "",
+          "buyPer": 1,
+          "defaultPrice": null,
+          "customerPrice": null,
+          "promoPrice": null,
+          "rrpPrice": {
+            "currency": "",
+            "value": 0
+          }
+        },
+        {
+          "id": 1342257,
+          "productId": 271323,
+          "productColorId": 1000383,
+          "pieces": 1,
+          "eanCode": "4250401531948",
+          "sizeRange": "43",
+          "sizeDivision": "43(1)",
+          "assortment": "S4301",
+          "brand": null,
+          "article": null,
+          "commercialName": null,
+          "category": null,
+          "color": null,
+          "colorLongDescription": null,
+          "colorShortDescription": null,
+          "productReference": null,
+          "stock": 0,
+          "stockType": "",
+          "buyPer": 1,
+          "defaultPrice": null,
+          "customerPrice": null,
+          "promoPrice": null,
+          "rrpPrice": {
+            "currency": "",
+            "value": 0
+          }
+        },
+        {
+          "id": 1342251,
+          "productId": 271323,
+          "productColorId": 1000383,
+          "pieces": 1,
+          "eanCode": "4250401531917",
+          "sizeRange": "40",
+          "sizeDivision": "40(1)",
+          "assortment": "S4001",
+          "brand": null,
+          "article": null,
+          "commercialName": null,
+          "category": null,
+          "color": null,
+          "colorLongDescription": null,
+          "colorShortDescription": null,
+          "productReference": null,
+          "stock": 0,
+          "stockType": "",
+          "buyPer": 1,
+          "defaultPrice": null,
+          "customerPrice": null,
+          "promoPrice": null,
+          "rrpPrice": {
+            "currency": "",
+            "value": 0
+          }
+        },
+        {
+          "id": 1342261,
+          "productId": 271323,
+          "productColorId": 1000383,
+          "pieces": 1,
+          "eanCode": "4250401531962",
+          "sizeRange": "45",
+          "sizeDivision": "45(1)",
+          "assortment": "S4501",
+          "brand": null,
+          "article": null,
+          "commercialName": null,
+          "category": null,
+          "color": null,
+          "colorLongDescription": null,
+          "colorShortDescription": null,
+          "productReference": null,
+          "stock": 0,
+          "stockType": "",
+          "buyPer": 1,
+          "defaultPrice": null,
+          "customerPrice": null,
+          "promoPrice": null,
+          "rrpPrice": {
+            "currency": "",
+            "value": 0
+          }
+        },
+        {
+          "id": 1342255,
+          "productId": 271323,
+          "productColorId": 1000383,
+          "pieces": 1,
+          "eanCode": "4250401531931",
+          "sizeRange": "42",
+          "sizeDivision": "42(1)",
+          "assortment": "S4201",
+          "brand": null,
+          "article": null,
+          "commercialName": null,
+          "category": null,
+          "color": null,
+          "colorLongDescription": null,
+          "colorShortDescription": null,
+          "productReference": null,
+          "stock": 0,
+          "stockType": "",
+          "buyPer": 1,
+          "defaultPrice": null,
+          "customerPrice": null,
+          "promoPrice": null,
+          "rrpPrice": {
+            "currency": "",
+            "value": 0
+          }
+        },
+        {
+          "id": 1342259,
+          "productId": 271323,
+          "productColorId": 1000383,
+          "pieces": 1,
+          "eanCode": "4250401531955",
+          "sizeRange": "44",
+          "sizeDivision": "44(1)",
+          "assortment": "S4401",
+          "brand": null,
+          "article": null,
+          "commercialName": null,
+          "category": null,
+          "color": null,
+          "colorLongDescription": null,
+          "colorShortDescription": null,
+          "productReference": null,
+          "stock": 0,
+          "stockType": "",
+          "buyPer": 1,
+          "defaultPrice": null,
+          "customerPrice": null,
+          "promoPrice": null,
+          "rrpPrice": {
+            "currency": "",
+            "value": 0
+          }
+        },
+        {
+          "id": 1342253,
+          "productId": 271323,
+          "productColorId": 1000383,
+          "pieces": 1,
+          "eanCode": "4250401531924",
+          "sizeRange": "41",
+          "sizeDivision": "41(1)",
+          "assortment": "S4101",
+          "brand": null,
+          "article": null,
+          "commercialName": null,
+          "category": null,
+          "color": null,
+          "colorLongDescription": null,
+          "colorShortDescription": null,
+          "productReference": null,
+          "stock": 0,
+          "stockType": "",
+          "buyPer": 1,
+          "defaultPrice": null,
+          "customerPrice": null,
+          "promoPrice": null,
+          "rrpPrice": {
+            "currency": "",
+            "value": 0
+          }
+        }
+      ],
+      "defaultPrice": null,
+      "customerPrice": null,
+      "promoPrice": null,
+      "rrpPrice": null,
+      "images": {
+        "HIRES": 1605654000000,
+        "HR01": 1750197600000,
+        "CTLG": 1662674400000,
+        "OUTS": 1572822000000,
+        "0000": 1529100000000,
+        "0001": 1529100000000,
+        "0002": 1529100000000,
+        "0003": 1529100000000,
+        "0004": 1529100000000,
+        "0005": 1529100000000,
+        "0006": 1529100000000,
+        "0007": 1529100000000,
+        "0008": 1529100000000,
+        "0009": 1529100000000,
+        "0010": 1529100000000,
+        "0011": 1529100000000,
+        "0012": 1529100000000,
+        "0013": 1529100000000,
+        "0014": 1529100000000,
+        "0015": 1529100000000,
+        "0016": 1529100000000,
+        "0017": 1529100000000,
+        "0018": 1529100000000,
+        "0019": 1529100000000,
+        "0020": 1529100000000,
+        "0021": 1529100000000,
+        "0022": 1529100000000,
+        "0023": 1529100000000,
+        "WEB01": 1598824800000
+      }
+    }
+  ],
+  "standards": [
+    {
+      "id": 14567,
+      "name": "S3",
+      "priority": 0,
+      "value": "S3",
+      "title": ""
+    }
+  ],
+  "documents": null,
+  "properties": null,
+  "defaultPrice": null,
+  "customerPrice": null,
+  "promoPrice": null,
+  "rrpPrice": null,
+  "new_arrival": false,
+  "icons": [
+    {
+      "id": 36709,
+      "name": "CE",
+      "priority": 1,
+      "value": "CE",
+      "title": "",
+      "url": null
+    },
+    {
+      "id": 8476,
+      "name": "3fitsystem",
+      "priority": 0,
+      "value": "3-Fit system",
+      "title": "",
+      "url": null
+    },
+    {
+      "id": 7338,
+      "name": "antistaticshoe",
+      "priority": 1,
+      "value": "Antistatic shoe",
+      "title": "",
+      "url": null
+    },
+    {
+      "id": 8480,
+      "name": "breathableupper",
+      "priority": 0,
+      "value": "Breathable upper",
+      "title": "",
+      "url": null
+    },
+    {
+      "id": 7341,
+      "name": "coldinsulated",
+      "priority": 4,
+      "value": "Cold insulated (CI)",
+      "title": "",
+      "url": null
+    },
+    {
+      "id": 7346,
+      "name": "heatinsulated",
+      "priority": 9,
+      "value": "Heat insulated (HI)",
+      "title": "",
+      "url": null
+    },
+    {
+      "id": 8486,
+      "name": "heatresistantoutsole",
+      "priority": 0,
+      "value": "Heat resistant outsole (HRO)",
+      "title": "",
+      "url": null
+    },
+    {
+      "id": 7347,
+      "name": "heelenergyabsorption",
+      "priority": 10,
+      "value": "Heel energy absorption",
+      "title": "",
+      "url": null
+    },
+    {
+      "id": 7350,
+      "name": "metalfree",
+      "priority": 13,
+      "value": "Metalfree",
+      "title": "",
+      "url": null
+    },
+    {
+      "id": 7353,
+      "name": "oilandfuelresistantoutsole",
+      "priority": 16,
+      "value": "Oil and fuel resistant outsole",
+      "title": "",
+      "url": null
+    },
+    {
+      "id": 7354,
+      "name": "punctureresistant",
+      "priority": 17,
+      "value": "Puncture resistant",
+      "title": "",
+      "url": null
+    },
+    {
+      "id": 7987,
+      "name": "safetytoecap",
+      "priority": 0,
+      "value": "Safety toecap",
+      "title": "",
+      "url": null
+    },
+    {
+      "id": 7355,
+      "name": "slipresistantoutsole",
+      "priority": 18,
+      "value": "Slip resistant outsole",
+      "title": "",
+      "url": null
+    },
+    {
+      "id": 8493,
+      "name": "sympatexlining",
+      "priority": 0,
+      "value": "Sympatex® lining",
+      "title": "",
+      "url": null
+    },
+    {
+      "id": 7993,
+      "name": "waterproof",
+      "priority": 0,
+      "value": "Waterproof (WR)",
+      "title": "",
+      "url": null
+    }
+  ],
+  "features": [
+    {
+      "id": 10269,
+      "name": "15012",
+      "priority": 40,
+      "value": "SRC",
+      "title": "SRC (slip resistance - C)"
+    },
+    {
+      "id": 10811,
+      "name": "15088",
+      "priority": 90,
+      "value": "HI",
+      "title": "HI (heat insulation)"
+    },
+    {
+      "id": 10442,
+      "name": "15094",
+      "priority": 100,
+      "value": "HRO",
+      "title": "HRO (heat resistant outsole)"
+    },
+    {
+      "id": 10441,
+      "name": "15013",
+      "priority": 130,
+      "value": "WR",
+      "title": "WR (waterproof)"
+    },
+    {
+      "id": 10431,
+      "name": "15089",
+      "priority": 800,
+      "value": "CI",
+      "title": "CI (cold insulation)"
+    }
+  ],
+  "benefits": [
+    {
+      "id": 12613,
+      "name": "NOMETAL",
+      "priority": 0,
+      "value": "Metal free",
+      "title": "Metal free"
+    },
+    {
+      "id": 12607,
+      "name": "SAFETOES",
+      "priority": 0,
+      "value": "Toe protection",
+      "title": "Toe protection"
+    },
+    {
+      "id": 39314,
+      "name": "BREATHABLE",
+      "priority": 0,
+      "value": "Breathable",
+      "title": "Breathable"
+    },
+    {
+      "id": 39254,
+      "name": "WATERPROOF",
+      "priority": 0,
+      "value": "Waterproof",
+      "title": "Waterproof"
+    },
+    {
+      "id": 12596,
+      "name": "ANTISTATIC",
+      "priority": 0,
+      "value": "Prevents static sparks or charges",
+      "title": "Antistatic"
+    },
+    {
+      "id": 39316,
+      "name": "SLIPRESIST",
+      "priority": 0,
+      "value": "Slip resistant",
+      "title": "Slip resistant"
+    },
+    {
+      "id": 12609,
+      "name": "NOPUNCTURE",
+      "priority": 0,
+      "value": "Puncture-resistant midsole",
+      "title": "Puncture-resistant midsole"
+    },
+    {
+      "id": 12612,
+      "name": "ADJUSTBED",
+      "priority": 0,
+      "value": "Customizable footbed",
+      "title": "Adjustable fit (SJ3Fit)"
+    },
+    {
+      "id": 12614,
+      "name": "HOTSURFACE",
+      "priority": 0,
+      "value": "Heat-resistant outsole",
+      "title": "Heat-resistant outsole"
+    }
+  ],
+  "collections": [
+    {
+      "id": 5654,
+      "name": "industrial",
+      "priority": 1,
+      "value": "Industrial",
+      "title": ""
+    }
+  ],
+  "productTitles": null,
+  "shortDescriptions": null,
+  "article_description_workwear": null,
+  "productReviews": null,
+  "productVideos": null,
+  "norms": [
+    {
+      "id": 10433,
+      "name": "N_0001",
+      "priority": 1,
+      "value": "EN ISO 20345:2011",
+      "title": ""
+    }
+  ],
+  "industries": [
+    {
+      "id": 8517,
+      "name": "automotive",
+      "priority": 0,
+      "value": "Automotive",
+      "title": ""
+    },
+    {
+      "id": 8518,
+      "name": "chemical",
+      "priority": 0,
+      "value": "Chemical",
+      "title": ""
+    },
+    {
+      "id": 8519,
+      "name": "cleaning",
+      "priority": 0,
+      "value": "Cleaning",
+      "title": ""
+    },
+    {
+      "id": 9177,
+      "name": "construction",
+      "priority": 0,
+      "value": "Construction",
+      "title": ""
+    },
+    {
+      "id": 8523,
+      "name": "logistics",
+      "priority": 0,
+      "value": "Logistics",
+      "title": ""
+    },
+    {
+      "id": 8524,
+      "name": "mining",
+      "priority": 0,
+      "value": "Mining",
+      "title": ""
+    },
+    {
+      "id": 8525,
+      "name": "oilandgas",
+      "priority": 0,
+      "value": "Oil & Gas",
+      "title": ""
+    },
+    {
+      "id": 9176,
+      "name": "production",
+      "priority": 0,
+      "value": "Industry",
+      "title": ""
+    }
+  ],
+  "performanceLevels": null,
+  "keyFeatures": [
+    {
+      "id": 7705,
+      "name": "waterproof",
+      "priority": 0,
+      "value": "Waterproof",
+      "title": "Waterproof (WR)"
+    },
+    {
+      "id": 7710,
+      "name": "sympatex_lining",
+      "priority": 0,
+      "value": "Sympatex lining",
+      "title": "Sympatex® lining"
+    },
+    {
+      "id": 7696,
+      "name": "heat_resistant_outsole",
+      "priority": 0,
+      "value": "Heat resistant outsole (HRO)",
+      "title": "Heat resistant outsole (HRO)"
+    },
+    {
+      "id": 7701,
+      "name": "heat_insulated",
+      "priority": 0,
+      "value": "Heat insulated (HI)",
+      "title": "Heat insulated (HI)"
+    },
+    {
+      "id": 7702,
+      "name": "cold_insulated",
+      "priority": 0,
+      "value": "Cold insulated (CI)",
+      "title": "Cold insulated (CI)"
+    }
+  ],
+  "certificates": [
+    {
+      "id": 49758,
+      "name": "C_2034",
+      "priority": 60,
+      "value": "SNI 8877:2023 (Indonesia)",
+      "title": ""
+    },
+    {
+      "id": 29812,
+      "name": "C_0034",
+      "priority": 999,
+      "value": "TP TC 019/2011 Certificate(Russia)",
+      "title": ""
+    },
+    {
+      "id": 10429,
+      "name": "C_0080",
+      "priority": 999,
+      "value": "LA Certification (China)",
+      "title": ""
+    },
+    {
+      "id": 10423,
+      "name": "C_0001",
+      "priority": 1,
+      "value": "EN ISO 20345:2011 (Europe)",
+      "title": ""
+    }
+  ],
+  "sock": null,
+  "upper": null,
+  "lining": null,
+  "model": [
+    {
+      "id": 5699,
+      "name": "low",
+      "priority": 20,
+      "value": "Low",
+      "title": ""
+    }
+  ],
+  "toecap": null,
+  "midsole": null,
+  "outsole": null,
+  "liner": null,
+  "coating": null,
+  "outside_layer": null,
+  "mid_layer": null,
+  "inner_layer": null,
+  "nose_strip": null,
+  "articletype": [
+    {
+      "id": 5674,
+      "name": "shoes",
+      "priority": 10,
+      "value": "Shoes",
+      "title": ""
+    }
+  ],
+  "price_level": null,
+  "available-size-range_eu": [
+    {
+      "id": 1182029,
+      "name": null,
+      "priority": null,
+      "value": "35-48",
+      "title": ""
+    }
+  ],
+  "available-size-range_uk": [
+    {
+      "id": 1182031,
+      "name": null,
+      "priority": null,
+      "value": "3.0-13.0",
+      "title": ""
+    }
+  ],
+  "available-size-range_us": [
+    {
+      "id": 1182033,
+      "name": null,
+      "priority": null,
+      "value": "3.0-13.5",
+      "title": ""
+    }
+  ],
+  "available-size-range_jpn": [
+    {
+      "id": 1182037,
+      "name": null,
+      "priority": null,
+      "value": "21.5-31.5",
+      "title": ""
+    }
+  ],
+  "available-size-range_kor": [
+    {
+      "id": 1182039,
+      "name": null,
+      "priority": null,
+      "value": "230-315",
+      "title": ""
+    }
+  ],
+  "available-size-range_fr": null,
+  "workwear_product_category": null,
+  "workwear_product_subcategory": null,
+  "headprotection_product_category": null,
+  "headprotection_product_subcategory": null,
+  "sample-weight": [
+    {
+      "id": 136629,
+      "name": null,
+      "priority": null,
+      "value": "0,578",
+      "title": ""
+    }
+  ],
+  "sample-size": [
+    {
+      "id": 1637576,
+      "name": null,
+      "priority": null,
+      "value": "41",
+      "title": ""
+    }
+  ],
+  "countryOfOrigin": {
+    "id": 154,
+    "name": "ROMANIA",
+    "code": "ROM",
+    "iso2": "RO",
+    "iso3": "ROU",
+    "translationKey": null,
+    "value": null,
+    "states": null
+  },
+  "taricCodes": null,
+  "workwear_key_features": null,
+  "workwear_product_details": null,
+  "fabric": null,
+  "product-long-description": null
+}

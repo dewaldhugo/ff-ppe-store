@@ -3,8 +3,6 @@
 declare(strict_types=1);
 
 use App\Domain\Catalogue\Search\ListingQuery;
-use App\Domain\Pricing\PriceDisplay;
-use App\Domain\Pricing\VatDisplayMode;
 use App\Livewire\Catalogue\CategoryListing;
 use Livewire\Livewire;
 use Tests\Support\SearchIndex;
@@ -42,7 +40,7 @@ function facetCounts(string $html, string $facet): array
 it('lists the collection and its descendants', function (): void {
     $html = $this->get('/c/safety-footwear')->assertOk()->getContent();
 
-    expect(gridNames($html))->toEqualCanonicalizing(['Ligero', 'SX310', 'FS9', 'FS65', 'FS30C'])
+    expect(gridNames($html))->toEqualCanonicalizing(['LIGERO', 'SX310', 'FS9', 'FS65', 'FS30C'])
         ->and($html)->toContain('5 products');
 });
 
@@ -50,11 +48,11 @@ it('returns 404 for an unknown category', function (): void {
     $this->get('/c/not-a-category')->assertNotFound();
 });
 
-it('filters Safety Footwear by S1P and SRC down to Ligero', function (): void {
+it('filters Safety Footwear by S1P and SRC down to Ligero and FS65', function (): void {
     $html = $this->get('/c/safety-footwear?safety_class[0]=S1P&features[0]=SRC')->assertOk()->getContent();
 
-    expect(gridNames($html))->toBe(['Ligero'])
-        ->and($html)->toContain('1 product');
+    expect(gridNames($html))->toEqualCanonicalizing(['LIGERO', 'FS65'])
+        ->and($html)->toContain('2 products');
 });
 
 it('reads every filter from the query string so filtered URLs can be shared', function (): void {
@@ -72,7 +70,7 @@ it('shows facet counts from the search index', function (): void {
     $html = $this->get('/c/safety-footwear')->getContent();
 
     expect(facetCounts($html, 'brand'))->toBe(['Amblers Safety' => 2, 'Centek' => 1, 'Maxguard' => 1, 'Safety Jogger' => 1])
-        ->and(facetCounts($html, 'safety_class'))->toBe(['S1' => 1, 'S1P' => 1, 'S3' => 1, 'SB' => 1])
+        ->and(facetCounts($html, 'safety_class'))->toBe(['S1P' => 2, 'S3' => 1, 'SBP' => 1])
         ->and(facetCounts($html, 'gender'))->toBe(['Men' => 3, 'Unisex' => 2]);
 });
 
@@ -101,45 +99,44 @@ it('shows an out of stock badge and hides the product when in stock only is tick
         ->set('in_stock', true)
         ->html();
 
-    expect(gridNames($inStock))->toEqualCanonicalizing(['Ligero', 'FS9', 'FS65', 'FS30C']);
+    expect(gridNames($inStock))->toEqualCanonicalizing(['LIGERO', 'FS9', 'FS65', 'FS30C']);
 });
 
 it('filters by colour and size together as a combination', function (): void {
     $component = Livewire::test(CategoryListing::class, ['slug' => 'safety-footwear'])
         ->set('colour', ['black'])
-        ->set('size', ['9.5']);
+        ->set('size', ['10']);
 
-    expect(gridNames($component->html()))->not->toContain('Ligero');
+    expect(gridNames($component->html()))->not->toContain('LIGERO');
 
     $component->set('colour', ['navy']);
 
-    expect(gridNames($component->html()))->toBe(['Ligero']);
+    expect(gridNames($component->html()))->toBe(['LIGERO']);
 });
 
-it('filters by price in the visitor\'s VAT mode', function (): void {
-    $range = '/c/safety-footwear?price_min=65&price_max=70';
-
-    expect(gridNames($this->get($range)->getContent()))->toBe([]);
-
-    app(PriceDisplay::class)->setMode(VatDisplayMode::ExVat);
-
-    expect(gridNames($this->get($range)->getContent()))->toBe(['Ligero']);
+it('filters by price ex VAT', function (): void {
+    // LIGERO is 68.90 ex VAT and 82.68 inc VAT.
+    expect(gridNames($this->get('/c/safety-footwear?price_min=65&price_max=70')->getContent()))->toBe(['LIGERO'])
+        ->and(gridNames($this->get('/c/safety-footwear?price_min=80&price_max=85')->getContent()))->toBe([]);
 });
 
 it('sorts by price and by newest', function (): void {
     $sorted = fn (string $sort): array => gridNames($this->get('/c/safety-footwear?sort='.$sort)->getContent());
 
-    expect($sorted('price-asc')[0])->toBe('FS30C')
-        ->and($sorted('price-desc'))->toBe(['Ligero', 'SX310', 'FS9', 'FS65', 'FS30C'])
+    // Ex VAT, FS65 and FS30C are both 40.48, so their order is a tie.
+    expect($sorted('price-asc')[0])->toBeIn(['FS30C', 'FS65'])
+        ->and(array_slice($sorted('price-desc'), 0, 3))->toBe(['LIGERO', 'SX310', 'FS9'])
+        ->and(array_slice($sorted('price-desc'), 3))->toEqualCanonicalizing(['FS65', 'FS30C'])
         ->and($sorted('newest'))->toHaveCount(5);
 });
 
-it('shows prices in the visitor\'s VAT mode', function (): void {
-    $this->get('/c/safety-footwear')->assertSee('£82.68')->assertSee('£52.48');
-
-    app(PriceDisplay::class)->setMode(VatDisplayMode::ExVat);
-
-    $this->get('/c/safety-footwear')->assertSee('£68.90')->assertSee('£52.48')->assertDontSee('£82.68');
+it('shows prices ex VAT with the suffix', function (): void {
+    $this->get('/c/safety-footwear')
+        ->assertSee('£68.90')
+        ->assertSee('£52.48')
+        ->assertSee('ex VAT')
+        ->assertDontSee('£82.68')
+        ->assertDontSee('inc VAT');
 });
 
 it('goes back to page one when a filter changes and clears filters', function (): void {

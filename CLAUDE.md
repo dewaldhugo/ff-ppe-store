@@ -30,6 +30,10 @@ Rules:
 - The three `*_vendorsync_*` migrations that create `vendors`, `vendor_products` and `vendor_offers` were created once during Phase 1 so the storefront and fixtures can use the tables. They belong to the ingestion module: never modify them.
 - The fixture seeder (local and testing only) is the only storefront code that writes to the vendor tables.
 
+## Ingestion phases
+
+When the current phase prompt is an ingestion phase (prompts/phase-2-vendorsync.md or a later vendorsync prompt), the scope is inverted: the ingestion area (app/Domain/VendorSync, config/vendorsync.php, *_vendorsync_* migrations, tests/*/VendorSync, tests/Fixtures/VendorSync) is in scope and may be created and changed, and the storefront is out of scope except for the touchpoints the phase prompt lists. The three Phase 1 vendorsync migrations remain unchanged; new tables and columns go in new migrations. The data contract still applies in full, and the importer must write exactly the shape the fixture seeder writes.
+
 ## Data contract
 
 The ingestion module writes data in exactly this shape. The storefront depends on it. Changing it requires updating both sides, so treat it as fixed.
@@ -48,7 +52,7 @@ The ingestion module writes data in exactly this shape. The storefront depends o
 ### VAT
 
 - The storefront asks at checkout whether the customer is buying for employees. If yes, `zero-protective` lines are charged at 20%; otherwise at 0%. Store the answer on the order (meta `buying_for_employees`).
-- Display prices in the customer's mode: inc VAT by default, with an inc/ex VAT toggle remembered per session. Business buyers expect ex VAT prices.
+- The storefront displays, sorts and filters every price ex VAT, with an `ex VAT` suffix. There is no inc/ex VAT toggle: the store sells to business buyers. Structured data for search engines still states the VAT-inclusive price.
 - In Lunar the `zero-protective` class carries the individual-use rate (0%). The 20% employer rate is applied by the tax driver at checkout, not by a second tax class.
 
 ### Contract handles (key registry)
@@ -74,8 +78,8 @@ Lunar has no handle column on tax classes, product types, tax zones or collectio
 | `title` | TranslatedText | all | Descriptive title, e.g. "Lightweight ESD Safety Shoes" |
 | `short_description` | TranslatedText | all | One or two sentences |
 | `description` | TranslatedText | all | Long description, plain text with paragraphs |
-| `safety_class` | Text | safety-footwear | Normalised, no spaces: `SB`, `S1`, `S1P`, `S2`, `S3`, `S3S`, `S7`, `OB`, `O1`, `O2`... |
-| `features` | ListField | safety-footwear | Normalised codes: `SRA`, `SRB`, `SRC`, `SR`, `ESD`, `CI`, `HI`, `HRO`, `WR`, `FO`, `M`, `AN`, `E`, `A`, `P`, `METAL_FREE` |
+| `safety_class` | Text | safety-footwear | Normalised, no spaces: `SB`, `SBP`, `S1`, `S1P`, `S2`, `S3`, `S7`, `OB`, `O1`, `O2`... The EN ISO 20345:2022 classes `S1PS`, `S3S` and `S7S`, the occupational class `O6`, and the EN ISO 20346 protective class `PB` are valid values. |
+| `features` | ListField | safety-footwear | Normalised codes: `SRA`, `SRB`, `SRC`, `SR`, `ESD`, `CI`, `HI`, `HRO`, `WR`, `FO`, `M`, `AN`, `E`, `A`, `P`, `LG` (ladder grip), `SC` (scuff cap), `WRU` (water resistant upper), `METAL_FREE` |
 | `standards` | ListField | all | e.g. `EN ISO 20345:2011`, `EN ISO 20345:2022`, `ASTM F2413:2024` |
 | `toecap` | Text | safety-footwear | e.g. `Nano Carbon`, `Steel`, `Composite`, `None` |
 | `midsole` | Text | safety-footwear | |
@@ -102,6 +106,8 @@ Waterproofing is the `WR` feature, not a separate attribute. Which attributes ar
 ### Product options
 - `colour`: values are customer-facing colour names, title case (`Navy`, `Black`). Each value has meta `hex` (e.g. `394656`, may be null).
 - `shoe_size`: values are **UK sizes** as strings (`3`, `3.5`, ... `13.5`), with meta `sort` (numeric) for ordering. The EU size is the variant attribute `eu_size`.
+  - Size labels follow the size scale, never the VAT rate. A row whose EU size is below 33 is on the infant scale and its value is `Kids {UK size}` (e.g. `Kids 6`). Every other row uses the plain UK size (`1`, `2`, `6`), whether zero rated or not: junior and adult sizes from UK 1 upward are one physical scale. A zero rated row with no EU size is skipped as a variant and reported.
+  - `sort` is the EU size, for both vendors, so the options order correctly (`Kids 6` = 23, `1` = 33, `6` = 39). A size with no EU size sorts by the vendor's chart for that UK size.
 - `garment_size`: reserved for workwear (`XS` ... `4XL`). Unused at launch.
 
 Every safety-footwear variant has exactly one `colour` value and one `shoe_size` value.
@@ -117,14 +123,15 @@ Every safety-footwear variant has exactly one `colour` value and one `shoe_size`
 
 ### Products
 - `status`: `published` or `draft`. Discontinued products are set to `draft`, never deleted, because orders reference them.
-- `brand`: Lunar Brand (e.g. `Safety Jogger`, `Maxguard`, `Amblers Safety`, `GBS`).
+- `brand`: Lunar Brand (e.g. `Safety Jogger`, `Maxguard`, `Amblers Safety`, `GBS`). May be null: vendor placeholder brands (Footsure `Miscellaneous Other`) are mapped to no brand by the ingestion module and are never shown to customers.
 - Lunar products have no meta column. `vendor_code`, `vendor_product_id` and `commodity_code` live in `vendor_products` (see Vendor tables).
 - Related products are Lunar's native product associations of type `cross-sell`. The writer resolves the vendor's related product IDs to Lunar products and creates an association for each one that exists.
 - Products the vendor marks as clearance are added to the `clearance` collection in the `ranges` group.
 - URLs: Lunar URL records, default language `en`. The product slug is `Str::slug(brand . ' ' . name)`, e.g. `safety-jogger-ligero`. On collision a numeric suffix is appended (`-2`, `-3`, ...) in order of creation. This rule is implemented once, in the action `App\Domain\Catalogue\Urls\GenerateProductSlug`, which the fixture seeder and the ingestion module both call. Lunar's automatic URL generator is disabled. A product's slug is set once when the product is created and is never changed afterwards, including by the ingestion module when a vendor renames a product. Renamed products keep their original URL.
 
 ### Collections
-- Collection group `categories`: the customer-facing category tree, e.g. Safety Footwear > Safety Trainers, Safety Boots, Safety Shoes; Occupational Footwear; Slippers. Products belong to one or more leaf collections.
+- Collection group `categories`: the customer-facing category tree, e.g. Safety Footwear > Safety Trainers, Safety Boots, Safety Shoes; Occupational Footwear; Slippers; Plimsolls; Casual Footwear; Accessories; Wellingtons. Products belong to one or more leaf collections.
+- Contract handles in `categories`: `safety-footwear` (parent of `safety-trainers`, `safety-shoes`, `safety-boots`), `occupational-footwear`, `slippers`, `plimsolls`, `casual-footwear`, `accessories`, `wellingtons`. In `ranges`: `clearance`.
 - Collection group `ranges`: marketing collections (New in, Clearance, Industry ranges). Managed in the admin.
 - Collections the contract names (the category tree and `clearance`) are resolved by handle through the key registry. Each also has a Lunar URL whose slug equals its handle.
 
@@ -143,7 +150,7 @@ Orders are placed with vendors manually at launch (no vendor API ordering). When
 Vendor identity and ordering data live here, not in Lunar.
 
 - `vendors`: `id`, `code` (unique, e.g. `SJ`, `FS`), `name`.
-- `vendor_products`: `product_id` (Lunar product), `vendor_id`, `vendor_product_id`, `commodity_code` (UK tariff code, may be null). Unique on (`vendor_id`, `vendor_product_id`). Non-unique index on `product_id`.
+- `vendor_products`: `product_id` (Lunar product), `vendor_id`, `vendor_product_id`, `commodity_code` (UK tariff code, may be null). Unique on (`vendor_id`, `vendor_product_id`). Non-unique index on `product_id`. For Safety Jogger `vendor_product_id` is the API product `id`; for Footsure it is the `ProductID` column (each `Family Product Reference` is one colourway of that product).
 - `vendor_offers`: `product_variant_id` (Lunar variant), `vendor_id`, `vendor_sku`, `vendor_product_name`, `vendor_colour`, `vendor_size`, `ean` (may be null), `cost_price` (pence ex VAT, may be null), `stock`, `last_seen_at`. Unique on (`vendor_id`, `vendor_sku`). Non-unique index on `product_variant_id`. The `vendor_*` values are the vendor's own wording, used to place orders manually.
 - The same Lunar product or variant may be supplied by more than one vendor, so neither table is unique on the Lunar ID. At launch each variant has one offer.
 - Cost is never derived from the selling price. It comes only from `vendor_offers.cost_price`.
@@ -178,3 +185,9 @@ One Meilisearch document per product, written by Lunar's product indexing throug
 - Before writing code for a phase, produce a short plan and list any assumption about the data contract.
 - Verify package versions and APIs against current documentation (composer, Lunar docs) rather than relying on memory.
 - Commit at the end of each completed step with a conventional commit message.
+
+## Later
+
+Known follow-ups, not in the current phase:
+
+- Merge vendor products split by size band into one Lunar product with several `vendor_products` rows. Footsure lists one line as several ProductIDs (Morris, Dunlop Sport, 6045/PSG27 plimsolls, Audrey Slipper, Primera Gardening Shoe); each is its own product today, with numeric slug suffixes.

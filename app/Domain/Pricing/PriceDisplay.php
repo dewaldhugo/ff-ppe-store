@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace App\Domain\Pricing;
 
 use App\Domain\Catalogue\Keys\CatalogueKeys;
-use Illuminate\Contracts\Session\Session;
 use Lunar\Facades\Pricing;
 use Lunar\Models\Product;
 use Lunar\Models\ProductVariant;
 
 /**
- * Shows stored ex VAT prices in the customer's VAT display mode.
+ * Shows stored ex VAT prices. The storefront always displays them ex VAT;
+ * a caller that needs the VAT-inclusive figure asks for it explicitly.
  *
  * All calculation is Lunar's: the pricing manager picks the price and
  * Lunar's Price model adds tax from the variant's tax class in the default
@@ -20,19 +20,12 @@ use Lunar\Models\ProductVariant;
  */
 final class PriceDisplay
 {
-    private const string SESSION_KEY = 'vat_display_mode';
-
-    public function __construct(private readonly Session $session) {}
-
+    /**
+     * The mode the storefront shows prices in: always ex VAT.
+     */
     public function mode(): VatDisplayMode
     {
-        return VatDisplayMode::tryFrom((string) $this->session->get(self::SESSION_KEY, ''))
-            ?? VatDisplayMode::default();
-    }
-
-    public function setMode(VatDisplayMode $mode): void
-    {
-        $this->session->put(self::SESSION_KEY, $mode->value);
+        return VatDisplayMode::default();
     }
 
     public function forVariant(ProductVariant $variant, ?VatDisplayMode $mode = null): DisplayPrice

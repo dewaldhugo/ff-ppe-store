@@ -1,32 +1,53 @@
 <article>
     <div class="grid gap-8 lg:grid-cols-2">
         {{-- Gallery: the selected colour's images. --}}
-        <section aria-label="Product images" data-testid="gallery">
+        {{--
+            Choosing a thumbnail shows that image in the main frame. The key
+            changes with the colour, so a new colour starts on its first image.
+        --}}
+        <section
+            aria-label="Product images"
+            data-testid="gallery"
+            wire:key="gallery-{{ $images === [] ? 'none' : $images[0]->id }}"
+            x-data="{ active: 0, images: @js(array_map(fn ($image) => $image->getUrl('medium'), $images)) }"
+        >
             @if ($images !== [])
                 <div class="aspect-square overflow-hidden rounded border border-slate-200 bg-slate-100">
                     <img
                         src="{{ $images[0]->getUrl('medium') }}"
+                        x-bind:src="images[active]"
                         alt="{{ $product->translateAttribute('name') }}{{ $selection->selectedName('colour') ? ' in '.$selection->selectedName('colour') : '' }}"
                         width="800"
                         height="800"
                         class="h-full w-full object-contain"
+                        data-gallery-main
                         data-colour="{{ $images[0]->getCustomProperty('colour') }}"
                     >
                 </div>
 
                 @if (count($images) > 1)
                     <ul class="mt-3 grid grid-cols-5 gap-2">
-                        @foreach ($images as $image)
+                        @foreach ($images as $index => $image)
                             <li wire:key="image-{{ $image->id }}">
-                                <img
-                                    src="{{ $image->getUrl('thumb') }}"
-                                    alt="{{ ucfirst((string) $image->getCustomProperty('role')) }} view"
-                                    loading="lazy"
-                                    width="300"
-                                    height="300"
-                                    class="aspect-square w-full rounded border border-slate-200 object-contain"
-                                    data-colour="{{ $image->getCustomProperty('colour') }}"
+                                <button
+                                    type="button"
+                                    class="block w-full rounded border-2 border-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900"
+                                    x-on:click="active = {{ $index }}"
+                                    x-bind:class="active === {{ $index }} ? 'border-slate-900' : 'border-slate-200'"
+                                    x-bind:aria-current="active === {{ $index }} ? 'true' : null"
+                                    aria-label="Show image {{ $index + 1 }} of {{ count($images) }}: {{ $image->getCustomProperty('role') }} view"
+                                    data-gallery-thumb="{{ $index }}"
+                                    @if ($index === 0) aria-current="true" @endif
                                 >
+                                    <img
+                                        src="{{ $image->getUrl('thumb') }}"
+                                        alt=""
+                                        loading="lazy"
+                                        width="300"
+                                        height="300"
+                                        class="aspect-square w-full rounded object-contain"
+                                    >
+                                </button>
                             </li>
                         @endforeach
                     </ul>
@@ -134,12 +155,37 @@
                     @endif
                 @endforeach
 
+                <div>
+                    <label for="quantity" class="block font-semibold text-slate-900">Quantity</label>
+                    <input
+                        id="quantity"
+                        type="number"
+                        inputmode="numeric"
+                        min="1"
+                        step="1"
+                        @if ($maxQuantity !== null) max="{{ $maxQuantity }}" @endif
+                        wire:model.live.debounce.300ms="quantity"
+                        @if ($quantityError !== null) aria-invalid="true" aria-describedby="error-quantity" @endif
+                        data-quantity
+                        @class([
+                            'mt-2 w-28 rounded border px-3 py-2 text-lg',
+                            'border-slate-300' => $quantityError === null,
+                            'border-red-600' => $quantityError !== null,
+                        ])
+                    >
+
+                    @if ($quantityError !== null)
+                        <p id="error-quantity" role="alert" class="mt-2 text-sm font-semibold text-red-700">{{ $quantityError }}</p>
+                    @endif
+                </div>
+
                 <button
                     type="submit"
                     @disabled(! $canAdd)
+                    data-add-to-cart
                     class="w-full rounded bg-amber-500 px-6 py-3 text-lg font-bold text-slate-900 hover:bg-amber-400 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500 sm:w-auto"
                 >
-                    {{ $canAdd ? 'Add to cart' : 'Out of stock' }}
+                    {{ $addLabel }}
                 </button>
 
                 @if ($added)
