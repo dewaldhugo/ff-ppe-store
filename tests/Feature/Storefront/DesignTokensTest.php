@@ -159,7 +159,7 @@ it('never puts white text on a teal fill or teal text on a light surface', funct
 
         // Teal text is only for dark surfaces. The only place it is used is the
         // eyebrow on the navy hero of the home page.
-        if (str_contains($source, 'text-brand-teal') && $name !== 'home.blade.php') {
+        if (str_contains($source, 'text-brand-teal') && ! in_array(str_replace('\\', '/', $name), ['components/home/hero.blade.php'], true)) {
             $offenders[] = "{$name}: text-brand-teal outside a dark hero";
         }
     }

@@ -48,8 +48,8 @@ it('lists the categories collection tree, with children, in the Products menu', 
         ->and($menu)->not->toContain('href="'.route('category', 'clearance').'"');
 });
 
-it('puts the same categories in the drawer, the footer and the home grid', function (): void {
-    $html = $this->get('/')->getContent();
+it('puts the same categories in the drawer, the footer and the products grid', function (): void {
+    $html = $this->get('/products')->getContent();
 
     // The drawer's lists are nested, so it runs to the end of its navigation.
     foreach (['data-drawer-categories' => '</nav>', 'data-footer-categories' => '</ul>', 'data-category-grid' => '</ul>'] as $marker => $end) {

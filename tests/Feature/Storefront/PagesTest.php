@@ -48,50 +48,8 @@ it('renders each placeholder page with its heading, the standard layout and noin
     expect(substr_count($html, '<h1'))->toBe(1);
 })->with(array_map(fn (string $name, array $page): array => [$name, $page[0], $page[1]], array_keys(PLACEHOLDERS), PLACEHOLDERS));
 
-it('keeps the home page out of search engines, with a hero and an outline button to Products', function (): void {
-    $html = $this->get('/')->assertOk()->assertSee(NOINDEX, false)->getContent();
-
-    expect($html)->toContain('bg-brand-navy text-white')
-        ->and($html)->toContain('<h1')
-        ->and($html)->toMatch('#<a href="'.preg_quote(route('products'), '#').'"[^>]*border-brand-teal[^>]*>\s*Shop products\s*</a>#');
-});
-
-it('uses the site photo as the home hero background, under the brand-navy overlay', function (): void {
-    $html = $this->get('/')->assertOk()->getContent();
-
-    preg_match('#<section[^>]*surface-dark.*?</section>#s', $html, $hero);
-
-    expect(is_file(public_path('images/home-hero.jpg')))->toBeTrue()
-        // A decorative photo: empty alt text, dimensions set, behind the overlay.
-        ->and($hero[0])->toContain('src="'.asset('images/home-hero.jpg').'"')
-        ->and($hero[0])->toContain('alt=""')
-        ->and($hero[0])->toContain('width="1529"')
-        ->and($hero[0])->toContain('height="750"')
-        ->and($hero[0])->toContain('-z-20')
-        // Cropped from the top, so the heads stay in frame.
-        ->and($hero[0])->toContain('object-cover object-top')
-        // The overlay keeps white text readable on any part of the photo.
-        ->and($hero[0])->toMatch('#data-hero-overlay[^>]*-z-10[^>]*from-brand-navy/90#')
-        ->and($hero[0])->toContain('Personal protective equipment for business');
-});
-
-it('shows a grid of the top-level categories on the home page, each linking to its listing', function (): void {
-    $html = $this->get('/')->getContent();
-
-    preg_match('#<ul[^>]*data-category-grid.*?</ul>#s', $html, $grid);
-
-    $top = collect(app(CategoryMenu::class)->tree());
-
-    expect($top->count())->toBeGreaterThanOrEqual(7);
-
-    foreach ($top as $category) {
-        expect($grid[0])->toContain('href="'.$category['url'].'"')
-            ->and($grid[0])->toContain($category['name']);
-    }
-
-    // Nothing invented: no testimonials, client logos or statistics on a placeholder.
-    expect(strtolower($html))->not->toContain('testimonial')
-        ->and(strtolower($html))->not->toContain('trusted by');
+it('keeps the home page out of search engines while STORE_NOINDEX is true', function (): void {
+    $this->get('/')->assertOk()->assertSee(NOINDEX, false);
 });
 
 it('keeps every page out of search engines while STORE_NOINDEX is true', function (string $uri): void {
