@@ -7,6 +7,7 @@ namespace Database\Seeders;
 use App\Domain\Catalogue\Keys\CatalogueKeys;
 use App\Domain\Catalogue\Media\PlaceholderImageGenerator;
 use App\Domain\Catalogue\Options\SharedOptionValues;
+use App\Domain\Catalogue\Options\ShoeSizes;
 use App\Domain\Catalogue\Urls\GenerateProductSlug;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -286,7 +287,7 @@ final class FixtureCatalogueSeeder extends Seeder
 
         $variant->values()->attach([
             $this->optionValues->value('colour', $data['colour'])->id,
-            $this->optionValues->value('shoe_size', $size, ['sort' => (float) $size], (int) round((float) $size * 10))->id,
+            $this->optionValues->value('shoe_size', $size, ['sort' => ShoeSizes::sort($size)], (int) round((float) $size * 10))->id,
         ]);
 
         Price::query()->create([

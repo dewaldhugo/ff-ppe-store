@@ -68,20 +68,6 @@ describe('sizes', function (): void {
             ->and(Sizes::fromChart($chart, '44.5'))->toBeNull()
             ->and(Sizes::fromChart($chart, ''))->toBeNull();
     });
-
-    it('sorts a jump size by its first part', function (): void {
-        expect(Sizes::sort('3/3.5'))->toBe(3.0)
-            ->and(Sizes::sort('10.5'))->toBe(10.5);
-    });
-
-    it('keeps kids sizes apart from and below adult sizes', function (): void {
-        expect(Sizes::kidsName('10'))->toBe('Kids 10')
-            // Children's scale: 8 ... 13 come before 1, 2 ...
-            ->and(Sizes::kidsSort('8'))->toBeLessThan(Sizes::kidsSort('13'))
-            ->and(Sizes::kidsSort('13'))->toBeLessThan(Sizes::kidsSort('1'))
-            ->and(Sizes::kidsSort('1'))->toBeLessThan(Sizes::kidsSort('5'))
-            ->and(Sizes::kidsSort('6.5'))->toBeLessThan(Sizes::sort('1'));
-    });
 });
 
 describe('money', function (): void {

@@ -174,7 +174,7 @@ describe('catalogue.json', function (): void {
 
         expect($black->meta['hex'])->toBe('000000')
             ->and($black->variants()->distinct()->count('product_id'))->toBe(5)
-            ->and((float) $size->meta['sort'])->toBe(10.0);
+            ->and((float) $size->meta['sort'])->toBe(44.0);
     });
 
     it('links both options to every product', function (): void {

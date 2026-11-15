@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\VendorSync\Footsure;
 
+use App\Domain\Catalogue\Options\ShoeSizes;
 use App\Domain\VendorSync\Contracts\VendorMapper;
 use App\Domain\VendorSync\Data\MappingResult;
 use App\Domain\VendorSync\Data\NormalisedImage;
@@ -52,6 +53,7 @@ final readonly class FootsureMapper implements VendorMapper
             return MappingResult::error("Footsure product {$record->externalId} has no rows.");
         }
 
+        [$rows, $damaged] = $this->repairedRows($rows);
         $first = $rows[0];
 
         if ($this->isExcludedBrand($first['Brand'])) {
@@ -62,6 +64,14 @@ final readonly class FootsureMapper implements VendorMapper
         $facts = [];
         $draftReasons = [];
         $label = trim("{$first['Brand']} {$first['Short Product Name']}")." [{$record->externalId}]";
+
+        foreach ($damaged as $field) {
+            $facts[] = ['damaged_text', $field];
+        }
+
+        if ($damaged !== []) {
+            $messages[] = "{$label}: damaged characters repaired in ".implode(', ', $damaged).'.';
+        }
 
         $collection = $this->config['categories'][$first['Group Class']] ?? null;
 
@@ -108,12 +118,12 @@ final readonly class FootsureMapper implements VendorMapper
         $images = [];
         $clearance = $first['Product Status'] === 'Clearance';
 
-        foreach ($this->withoutDuplicates($rows, $label, $messages) as $row) {
+        foreach ($this->withoutDuplicates($this->withoutGhostRows($rows, $messages), $label, $messages) as $row) {
             $colour = $this->colour($row);
 
             if ($colour === null) {
                 $draftReasons[] = DraftReason::NO_COLOUR;
-                $messages[] = "{$label}: row {$row['Product Reference']} has no colour; product drafted.";
+                $messages[] = [SkuIssues::NO_COLOUR, $row['Product Reference']];
 
                 // The contract needs a colour value. The vendor's own
                 // placeholder is kept so the variant can still be created.
@@ -219,7 +229,18 @@ final readonly class FootsureMapper implements VendorMapper
         $vatBasisPoints = $this->vatBasisPoints($row['VAT']);
 
         if ($vatBasisPoints === null) {
-            $messages[] = "{$label}: row {$reference} has an unknown VAT rate '{$row['VAT']}'; row skipped.";
+            $messages[] = [SkuIssues::UNKNOWN_VAT, $reference, "VAT '{$row['VAT']}'"];
+
+            return null;
+        }
+
+        // The size scale comes from the EU size. A zero rated row without one
+        // cannot be placed on a scale, so it is not imported.
+        $eu = is_numeric($row['EU Size']) ? (float) $row['EU Size'] : null;
+
+        if ($vatBasisPoints === 0 && $eu === null) {
+            $messages[] = [SkuIssues::NO_EU_SIZE, $reference];
+            $facts[] = ['unknown_size', 'no EU size at zero VAT'];
 
             return null;
         }
@@ -247,7 +268,7 @@ final readonly class FootsureMapper implements VendorMapper
         }
 
         $discontinued = $row['Colour Status'] === 'No More' || $row['Product Status'] === 'No More';
-        $kids = $taxClass === 'zero-childrens';
+        $sizeName = ShoeSizes::name($uk, $eu);
         [$weight, $length, $width, $height] = $this->measurements($row);
 
         return new NormalisedVariant(
@@ -256,8 +277,8 @@ final readonly class FootsureMapper implements VendorMapper
             ean: $this->text($row['Barcode']),
             colour: $colour,
             colourHex: null,
-            shoeSize: $kids ? Sizes::kidsName($uk) : $uk,
-            sizeSort: $kids ? Sizes::kidsSort($uk) : Sizes::sort($uk),
+            shoeSize: $sizeName,
+            sizeSort: ShoeSizes::sort($sizeName),
             euSize: $this->text($row['EU Size']),
             vendorStock: max(0, (int) $row['Stock']),
             sellable: $price['sellable'] && ! $discontinued,
@@ -288,7 +309,7 @@ final readonly class FootsureMapper implements VendorMapper
         $kept = [];
 
         foreach ($rows as $row) {
-            $key = $row['Family Product Reference'].'|'.($this->colour($row) ?? '').'|'.$row['UK Size'];
+            $key = $row['Family Product Reference'].'|'.($this->colour($row) ?? '').'|'.$this->sizeName($row);
 
             if (! isset($kept[$key])) {
                 $kept[$key] = $row;
@@ -303,14 +324,14 @@ final readonly class FootsureMapper implements VendorMapper
                 $kept[$key] = $row;
             }
 
-            $messages[] = "{$label}: row {$skipped['Product Reference']} duplicates colour and size {$row['UK Size']}; row skipped.";
+            $messages[] = [SkuIssues::DUPLICATE, $skipped['Product Reference'], ($this->colour($row) ?? 'no colour').' '.$this->sizeName($row)];
         }
 
         // Colourways of one product can also repeat a colour name.
         $byColourAndSize = [];
 
         foreach ($kept as $row) {
-            $key = ($this->colour($row) ?? '').'|'.$row['UK Size'];
+            $key = ($this->colour($row) ?? '').'|'.$this->sizeName($row);
 
             if (! isset($byColourAndSize[$key])) {
                 $byColourAndSize[$key] = $row;
@@ -325,10 +346,90 @@ final readonly class FootsureMapper implements VendorMapper
                 $byColourAndSize[$key] = $row;
             }
 
-            $messages[] = "{$label}: row {$skipped['Product Reference']} duplicates colour and size {$row['UK Size']}; row skipped.";
+            $messages[] = [SkuIssues::DUPLICATE, $skipped['Product Reference'], ($this->colour($row) ?? 'no colour').' '.$this->sizeName($row)];
         }
 
         return array_values($byColourAndSize);
+    }
+
+    /**
+     * The option value a row's size will have, for telling two rows of one
+     * colour apart: an infant UK 6 and a junior UK 6 are different sizes.
+     *
+     * @param  array<string, string>  $row
+     */
+    private function sizeName(array $row): string
+    {
+        $uk = Sizes::uk($row['UK Size']) ?? $row['UK Size'];
+
+        return ShoeSizes::name($uk, is_numeric($row['EU Size']) ? (float) $row['EU Size'] : null);
+    }
+
+    /**
+     * Rows that are placeholders, not products: the vendor's placeholder
+     * measurements (999 g, 333 x 222 x 111 mm) with no barcode, no EU size
+     * and no stock. They are skipped and reported, one line per product.
+     * A row with the same measurements that has a barcode or an EU size is a
+     * real row and is kept.
+     *
+     * @param  list<array<string, string>>  $rows
+     * @param  list<mixed>  $messages
+     * @return list<array<string, string>>
+     */
+    private function withoutGhostRows(array $rows, array &$messages): array
+    {
+        $placeholder = $this->config['placeholder_measurements'] ?? [];
+        $kept = [];
+
+        foreach ($rows as $row) {
+            $ghost = $placeholder !== []
+                && $row['Weight'] === (string) $placeholder['weight']
+                && $row['Length'] === (string) $placeholder['length']
+                && $row['Width'] === (string) $placeholder['width']
+                && $row['Height'] === (string) $placeholder['height']
+                && blank($row['Barcode'])
+                && blank($row['EU Size'])
+                && (int) $row['Stock'] === 0;
+
+            if ($ghost) {
+                $messages[] = [SkuIssues::GHOST, $row['Product Reference']];
+
+                continue;
+            }
+
+            $kept[] = $row;
+        }
+
+        return $kept;
+    }
+
+    /**
+     * The export has lost some characters before it reaches us: an
+     * apostrophe in `Women's` arrives as U+FFFD replacement characters. A
+     * run between a letter and an `s` is an apostrophe; any other run is
+     * removed. Returns the repaired rows and the names of the fields that
+     * were damaged.
+     *
+     * @param  list<array<string, string>>  $rows
+     * @return array{0: list<array<string, string>>, 1: list<string>}
+     */
+    private function repairedRows(array $rows): array
+    {
+        $damaged = [];
+
+        foreach ($rows as $index => $row) {
+            foreach ($row as $field => $value) {
+                if (! str_contains($value, "\u{FFFD}")) {
+                    continue;
+                }
+
+                $damaged[$field] = true;
+                $value = (string) preg_replace('/(?<=\p{L})\x{FFFD}+(?=s\b)/u', "'", $value);
+                $rows[$index][$field] = trim((string) preg_replace('/\x{FFFD}+/u', '', $value));
+            }
+        }
+
+        return [$rows, array_map(strval(...), array_keys($damaged))];
     }
 
     /**

@@ -5,13 +5,11 @@ declare(strict_types=1);
 namespace App\Domain\VendorSync\Normalisers;
 
 /**
- * UK shoe sizes as the `shoe_size` option values of the data contract.
+ * Reading vendor sizes as UK sizes. How a size is named and sorted as an
+ * option value is `App\Domain\Catalogue\Options\ShoeSizes`.
  */
 final class Sizes
 {
-    /** Kids sizes below this are the larger sizes of the children's scale (1 to 6.5). */
-    private const float KIDS_SCALE_RESTART = 7.0;
-
     /**
      * A vendor UK size as the contract string: no trailing `.0`
      * (`10`, not `10.0`). Null when the value is not a size.
@@ -39,33 +37,5 @@ final class Sizes
         $eu = preg_replace('/\s+/', '', (string) $eu);
 
         return $eu === '' || $eu === null ? null : ($chart[$eu] ?? null);
-    }
-
-    /**
-     * Numeric sort value of an adult size. A jump size sorts by its first
-     * part.
-     */
-    public static function sort(string $uk): float
-    {
-        return (float) explode('/', $uk)[0];
-    }
-
-    /**
-     * A children's size never shares an option value with an adult size.
-     */
-    public static function kidsName(string $uk): string
-    {
-        return 'Kids '.$uk;
-    }
-
-    /**
-     * Below every adult size, following the UK children's scale where 7 to
-     * 13.5 come before 1 to 6.5.
-     */
-    public static function kidsSort(string $uk): float
-    {
-        $size = self::sort($uk);
-
-        return $size >= self::KIDS_SCALE_RESTART ? $size - 100 : $size - 80;
     }
 }

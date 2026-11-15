@@ -108,16 +108,22 @@ it('writes classes, tax classes, prices and vendor rows in contract shape', func
         ->and($fs30c->attr('eu_size'))->toBe('38');
 });
 
-it('gives children\'s plimsolls the zero-childrens class and Kids sizes', function (): void {
+it('gives children\'s plimsolls the zero-childrens class and names sizes by scale', function (): void {
     VendorSync::footsureFile();
     VendorSync::import('FS');
 
-    $variant = VendorSync::product('FS', '570')->variants->first();
-    $size = $variant->values->firstWhere('option.handle', 'shoe_size');
+    $sizes = fn (string $id): array => VendorSync::product('FS', $id)->variants
+        ->mapWithKeys(fn (ProductVariant $variant): array => [
+            $variant->values->firstWhere('option.handle', 'shoe_size')->translate('name') => (float) $variant->values->firstWhere('option.handle', 'shoe_size')->meta['sort'],
+        ])->sort()->all();
 
-    expect(taxHandle($variant))->toBe('zero-childrens')
-        ->and($size->translate('name'))->toStartWith('Kids ')
-        ->and((float) $size->meta['sort'])->toBeLessThan(0.0)
+    // Product 320: UK 10 to 13 are EU 28 to 32 (infant scale), UK 2 is EU 35 (junior).
+    expect(taxHandle(VendorSync::product('FS', '570')->variants->first()))->toBe('zero-childrens')
+        ->and(array_map(strval(...), array_keys($sizes('320'))))->toBe(['Kids 10', 'Kids 11', 'Kids 12', 'Kids 13', '2'])
+        // Product 570: UK 1 is EU 33 and UK 2 is EU 34, so plain sizes even though zero rated.
+        ->and(array_map(strval(...), array_keys($sizes('570'))))->toContain('1')->not->toContain('Kids 1')->not->toContain('Kids 2')
+        // Sorted by EU size: infant sizes before 1, before 2.
+        ->and($sizes('320')['Kids 13'])->toBeLessThan($sizes('320')['2'])
         ->and(VendorSync::product('FS', '570')->collections->pluck('id')->all())->toContain(CatalogueKeys::collection('plimsolls')->id)
         // The placeholder brand is never customer-facing.
         ->and(VendorSync::product('FS', '570')->brand_id)->toBeNull();
@@ -141,13 +147,14 @@ it('maps every Group Class in the fixture, so only rule drafts remain', function
         ->and(collect($report->messages)->contains(fn (string $message): bool => str_contains($message, 'Dasco Bama Warm Felta 5 Pack [1615]: 1 SKU with cost at or above RRP; stock set to 0 (SKUs: 01615-05821-04)')))->toBeTrue();
 });
 
-it('skips a duplicate colour and size, keeping the row with a barcode', function (): void {
+it('skips the placeholder rows beside the real ones', function (): void {
     VendorSync::footsureFile();
     $report = VendorSync::import('FS');
 
     expect(ProductVariant::query()->where('sku', 'FS-00568-01277-07')->exists())->toBeTrue()
         ->and(ProductVariant::query()->where('sku', 'FS-00568-01277-12')->exists())->toBeFalse()
-        ->and(collect($report->messages)->contains(fn (string $message): bool => str_contains($message, '00568-01277-12 duplicates')))->toBeTrue();
+        // The three placeholder rows of product 568 are one line in the report.
+        ->and(collect($report->messages)->filter(fn (string $message): bool => str_contains($message, '[568]: 3 SKUs that are placeholder rows')))->toHaveCount(1);
 });
 
 it('keeps products draft until they have an image, then publishes them', function (): void {

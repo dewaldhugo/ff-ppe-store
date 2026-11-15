@@ -24,6 +24,16 @@ final class SkuIssues
 
     public const string NO_COST = 'no_cost';
 
+    public const string DUPLICATE = 'duplicate';
+
+    public const string NO_COLOUR = 'no_colour';
+
+    public const string UNKNOWN_VAT = 'unknown_vat';
+
+    public const string GHOST = 'ghost';
+
+    public const string NO_EU_SIZE = 'no_eu_size';
+
     /** SKUs listed per line before the list is cut short. */
     private const int LISTED = 40;
 
@@ -61,13 +71,20 @@ final class SkuIssues
         foreach ($issues as $reason => $issue) {
             $count = count($issue['skus']);
             $skus = $count === 1 ? '1 SKU' : "{$count} SKUs";
-            $details = implode(', ', array_map(strval(...), array_keys($issue['details'] ?? [])));
+            $shown = array_slice(array_keys($issue['details'] ?? []), 0, 10);
+            $details = implode(', ', array_map(strval(...), $shown))
+                .(count($issue['details'] ?? []) > 10 ? ', ...' : '');
 
             $text = match ($reason) {
                 self::COST_ABOVE_RRP => "{$skus} with cost at or above RRP; stock set to 0",
                 self::NOT_PER_PAIR => "{$skus} not sold per single pair; not imported",
                 self::UNKNOWN_SIZE => "{$skus} with a size that is not in the size chart ({$details}); not imported",
                 self::NO_COST => "{$skus} with no cost; not imported",
+                self::DUPLICATE => "{$skus} repeating a colour and size ({$details}); skipped",
+                self::NO_COLOUR => "{$skus} with no colour; product drafted",
+                self::UNKNOWN_VAT => "{$skus} with a VAT rate that is not 0 or 20% ({$details}); not imported",
+                self::GHOST => "{$skus} that are placeholder rows (no barcode, no EU size, placeholder measurements); not imported",
+                self::NO_EU_SIZE => "{$skus} at a zero VAT rate with no EU size, so the size scale is unknown; not imported",
                 default => "{$skus}: {$reason}",
             };
 

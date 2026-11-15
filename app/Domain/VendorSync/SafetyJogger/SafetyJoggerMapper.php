@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\VendorSync\SafetyJogger;
 
+use App\Domain\Catalogue\Options\ShoeSizes;
 use App\Domain\VendorSync\Contracts\VendorMapper;
 use App\Domain\VendorSync\Data\MappingResult;
 use App\Domain\VendorSync\Data\NormalisedImage;
@@ -288,7 +289,7 @@ final readonly class SafetyJoggerMapper implements VendorMapper
             colour: $colour,
             colourHex: $hex,
             shoeSize: $uk,
-            sizeSort: Sizes::sort($uk),
+            sizeSort: ShoeSizes::sort($uk),
             euSize: $eu,
             vendorStock: max(0, (int) ($sku['stock'] ?? 0)),
             sellable: $price['sellable'],
