@@ -314,3 +314,40 @@ it('lets the customer choose a thumbnail to show in the main frame', function ()
     expect($black)->not->toContain('data-gallery-thumb')
         ->and($blackKey[1])->not->toBe($navyKey[1]);
 });
+
+/**
+ * The add to cart button: whether it is disabled, and what it says.
+ *
+ * @return array{disabled: bool, label: string}
+ */
+function addButton(string $html): array
+{
+    preg_match('#<button[^>]*data-add-to-cart[^>]*>(.*?)</button>#s', $html, $button);
+
+    return [
+        // The attribute, not the `disabled:` utility classes.
+        'disabled' => preg_match('#\sdisabled(?![:\w-])#', explode('>', $button[0])[0]) === 1,
+        'label' => trim($button[1]),
+    ];
+}
+
+it('keeps add to cart disabled until a size is selected, and says what is needed', function (): void {
+    $component = Livewire::test(ProductPage::class, ['slug' => 'safety-jogger-ligero']);
+
+    // The colour is pre-selected, the size never is.
+    expect(addButton($component->html()))->toBe(['disabled' => true, 'label' => 'Select a size']);
+
+    $component->call('choose', 'shoe_size', '8');
+
+    expect(addButton($component->html()))->toBe(['disabled' => false, 'label' => 'Add to cart']);
+
+    // Choosing a combination that is out of stock disables it again.
+    $component->call('choose', 'colour', 'black')->call('choose', 'shoe_size', '10');
+
+    expect(addButton($component->html()))->toBe(['disabled' => true, 'label' => 'Out of stock']);
+});
+
+it('says out of stock, not select a size, when nothing is in stock', function (): void {
+    expect(addButton($this->get('/p/maxguard-sx310')->getContent()))
+        ->toBe(['disabled' => true, 'label' => 'Out of stock']);
+});

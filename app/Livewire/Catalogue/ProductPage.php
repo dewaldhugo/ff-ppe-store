@@ -11,6 +11,7 @@ use App\Domain\Pricing\DisplayPrice;
 use App\Domain\Pricing\PriceDisplay;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\HtmlString;
+use Illuminate\Support\Str;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -128,7 +129,9 @@ final class ProductPage extends Component
             'price' => $this->price($priceDisplay, $selection, $variant),
             'pricesVary' => $variant === null && $this->pricesVary($selection),
             'stockMessage' => $this->stockMessage($selection, $variant),
-            'canAdd' => $variant === null || $variant->stock > 0,
+            // Enabled only once every option is chosen and that variant is in stock.
+            'canAdd' => $variant !== null && $variant->stock > 0,
+            'addLabel' => $this->addLabel($selection, $variant),
             'euSizes' => $this->euSizes($product, $selection),
             'specification' => $this->specification($product),
             'paragraphs' => preg_split('/\R{2,}|\R/', trim((string) $product->translateAttribute('description')), flags: PREG_SPLIT_NO_EMPTY) ?: [],
@@ -252,6 +255,27 @@ final class ProductPage extends Component
         }
 
         return count($values) > 1;
+    }
+
+    /**
+     * The button says what is still needed, so a disabled button is never
+     * unexplained: "Select a size", "Out of stock" or "Add to cart".
+     */
+    private function addLabel(VariantSelection $selection, ?ProductVariant $variant): string
+    {
+        if ($this->stockMessage($selection, $variant) === 'Out of stock') {
+            return 'Out of stock';
+        }
+
+        if ($variant !== null) {
+            return 'Add to cart';
+        }
+
+        $missing = $selection->missing()[0] ?? null;
+
+        return $missing === null
+            ? 'Unavailable'
+            : Str::replaceFirst('Please select', 'Select', $selection->promptFor($missing));
     }
 
     private function stockMessage(VariantSelection $selection, ?ProductVariant $variant): string

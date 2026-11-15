@@ -158,9 +158,10 @@
                 <button
                     type="submit"
                     @disabled(! $canAdd)
+                    data-add-to-cart
                     class="w-full rounded bg-amber-500 px-6 py-3 text-lg font-bold text-slate-900 hover:bg-amber-400 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500 sm:w-auto"
                 >
-                    {{ $canAdd ? 'Add to cart' : 'Out of stock' }}
+                    {{ $addLabel }}
                 </button>
 
                 @if ($added)
