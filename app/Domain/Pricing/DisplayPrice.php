@@ -7,14 +7,20 @@ namespace App\Domain\Pricing;
 use Lunar\DataTypes\Price;
 
 /**
- * A price ready to show to the customer in their VAT display mode.
+ * A price ready to show to the customer.
+ *
+ * The store sells to business buyers, so every price is shown ex VAT and
+ * labelled as such. The compare price is the manufacturer's recommended
+ * retail price (RRP), also ex VAT, and is always labelled as that: never a
+ * bare struck-through amount.
  */
 final readonly class DisplayPrice
 {
+    public const string SUFFIX = 'ex VAT';
+
     public function __construct(
         public Price $price,
         public ?Price $comparePrice,
-        public VatDisplayMode $mode,
         /** True when VAT is 0% for individuals but 20% when buying for employees. */
         public bool $vatAppliesForEmployers,
     ) {}
@@ -24,7 +30,10 @@ final readonly class DisplayPrice
         return (string) $this->price->formatted(trimTrailingZeros: false);
     }
 
-    public function compareFormatted(): ?string
+    /**
+     * The manufacturer's RRP, ex VAT, or null when there is none.
+     */
+    public function rrpFormatted(): ?string
     {
         return $this->comparePrice === null
             ? null
@@ -33,6 +42,6 @@ final readonly class DisplayPrice
 
     public function suffix(): string
     {
-        return $this->mode->label();
+        return self::SUFFIX;
     }
 }

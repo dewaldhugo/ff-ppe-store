@@ -1,12 +1,25 @@
-<x-layouts.storefront description="Safety footwear and personal protective equipment, delivered across the UK.">
-    <h1 class="text-3xl font-bold tracking-tight">Safety footwear for work</h1>
-    <p class="mt-2 max-w-2xl text-slate-600">
-        Safety boots, shoes and trainers from trusted brands. Choose a category above, or search by name, brand or safety class.
-    </p>
+{{-- Placeholder home page: kept out of search engines until it has real content. --}}
+<x-layouts.storefront
+    title="Personal protective equipment for business"
+    description="Personal protective equipment for business customers. All prices exclude VAT."
+    :noindex="true"
+    :full="true"
+>
+    <x-ui.hero>
+        <x-ui.eyebrow class="text-brand-teal">Trade supplier</x-ui.eyebrow>
+        <h1 class="mt-3 max-w-3xl text-4xl text-white sm:text-5xl">Personal protective equipment for business</h1>
+        <p class="mt-4 max-w-xl text-lg text-white/90">Content coming soon.</p>
 
-    <p class="mt-6">
-        <a href="{{ route('category', 'safety-footwear') }}" class="inline-block rounded bg-slate-900 px-5 py-3 font-semibold text-white hover:bg-slate-700">
-            Shop safety footwear
-        </a>
-    </p>
+        <div class="mt-8">
+            <x-ui.button-outline :href="route('products')" :on-dark="true">Shop products</x-ui.button-outline>
+        </div>
+    </x-ui.hero>
+
+    <section class="py-12 sm:py-16" aria-labelledby="home-categories">
+        <x-ui.container>
+            <x-ui.section-heading id="home-categories" eyebrow="Products" title="Shop by category" />
+
+            <x-storefront.category-grid class="mt-8" />
+        </x-ui.container>
+    </section>
 </x-layouts.storefront>

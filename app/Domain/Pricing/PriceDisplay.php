@@ -10,50 +10,32 @@ use Lunar\Models\Product;
 use Lunar\Models\ProductVariant;
 
 /**
- * Shows stored ex VAT prices. The storefront always displays them ex VAT;
- * a caller that needs the VAT-inclusive figure asks for it explicitly.
+ * Shows stored ex VAT prices. The storefront only ever shows them ex VAT.
  *
- * All calculation is Lunar's: the pricing manager picks the price and
- * Lunar's Price model adds tax from the variant's tax class in the default
- * tax zone. For zero-protective variants that is the individual-use rate
- * (0%) until checkout asks whether the order is for employees.
+ * All calculation is Lunar's: the pricing manager picks the price. For
+ * zero-protective variants the individual-use rate is 0% until checkout asks
+ * whether the order is for employees; the product page says so.
  */
 final class PriceDisplay
 {
-    /**
-     * The mode the storefront shows prices in: always ex VAT.
-     */
-    public function mode(): VatDisplayMode
+    public function forVariant(ProductVariant $variant): DisplayPrice
     {
-        return VatDisplayMode::default();
-    }
-
-    public function forVariant(ProductVariant $variant, ?VatDisplayMode $mode = null): DisplayPrice
-    {
-        $mode ??= $this->mode();
-
         $matched = Pricing::for($variant)->get()->matched;
         $matched->setRelation('priceable', $variant);
 
         $hasCompare = $matched->compare_price !== null && $matched->compare_price->value > $matched->price->value;
 
         return new DisplayPrice(
-            price: $mode === VatDisplayMode::IncVat ? $matched->priceIncTax() : $matched->priceExTax(),
-            comparePrice: match (true) {
-                ! $hasCompare => null,
-                $mode === VatDisplayMode::IncVat => $matched->comparePriceIncTax(),
-                default => $matched->compare_price,
-            },
-            mode: $mode,
+            price: $matched->priceExTax(),
+            comparePrice: $hasCompare ? $matched->compare_price : null,
             vatAppliesForEmployers: $variant->tax_class_id === CatalogueKeys::taxClass('zero-protective')->id,
         );
     }
 
     /**
-     * The lowest-priced variant's price, for "from" prices on listings.
-     * Null when the product has no priced variant.
+     * The lowest price among a product's variants.
      */
-    public function fromPrice(Product $product, ?VatDisplayMode $mode = null): ?DisplayPrice
+    public function fromPrice(Product $product): ?DisplayPrice
     {
         $lowest = null;
 
@@ -62,7 +44,7 @@ final class PriceDisplay
                 continue;
             }
 
-            $price = $this->forVariant($variant, $mode);
+            $price = $this->forVariant($variant);
 
             if ($lowest === null || $price->price->value < $lowest->price->value) {
                 $lowest = $price;

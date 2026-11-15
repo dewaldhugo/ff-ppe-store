@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Domain\Catalogue\Search;
 
-use App\Domain\Pricing\VatDisplayMode;
-
 enum ListingSort: string
 {
     case Relevance = 'relevance';
@@ -24,17 +22,17 @@ enum ListingSort: string
     }
 
     /**
-     * Meilisearch sort expressions. Price sorts follow the customer's VAT
-     * display mode so the order matches the prices they see.
+     * Meilisearch sort expressions. Price sorts use the ex VAT price, so the
+     * order matches the prices shown.
      *
      * @return list<string>
      */
-    public function expressions(VatDisplayMode $vatMode): array
+    public function expressions(): array
     {
         return match ($this) {
             self::Relevance => ['sort_order:asc'],
-            self::PriceAscending => [$vatMode->priceField().':asc'],
-            self::PriceDescending => [$vatMode->priceField().':desc'],
+            self::PriceAscending => [ListingQuery::PRICE_FIELD.':asc'],
+            self::PriceDescending => [ListingQuery::PRICE_FIELD.':desc'],
             self::Newest => ['created_at:desc'],
         };
     }

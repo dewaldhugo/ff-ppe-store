@@ -6,7 +6,6 @@ use App\Domain\Catalogue\Keys\CatalogueKeys;
 use App\Domain\Catalogue\Search\CatalogueSearch;
 use App\Domain\Catalogue\Search\ListingQuery;
 use App\Domain\Catalogue\Search\ListingResult;
-use App\Domain\Pricing\VatDisplayMode;
 use Lunar\Models\Product;
 use Tests\Support\SearchIndex;
 
@@ -29,11 +28,11 @@ beforeEach(function (): void {
 /**
  * @param  array<string, mixed>  $input
  */
-function listing(array $input = [], ?string $collection = 'safety-footwear', VatDisplayMode $vatMode = VatDisplayMode::IncVat): ListingResult
+function listing(array $input = [], ?string $collection = 'safety-footwear'): ListingResult
 {
     $collectionId = $collection === null ? null : CatalogueKeys::collection($collection)->id;
 
-    return app(CatalogueSearch::class)->search(ListingQuery::fromArray($input, $collectionId, $vatMode));
+    return app(CatalogueSearch::class)->search(ListingQuery::fromArray($input, $collectionId));
 }
 
 /**
@@ -99,29 +98,16 @@ it('marks selected facet values', function (): void {
         ->and($values['Amblers Safety']->count)->toBe(2);
 });
 
-it('filters by price range in the inc VAT mode', function (): void {
-    expect(names(listing(['price_min' => 80, 'price_max' => 85], vatMode: VatDisplayMode::IncVat)))->toBe(['LIGERO'])
-        ->and(listing(['price_min' => 65, 'price_max' => 70], vatMode: VatDisplayMode::IncVat)->total)->toBe(0);
-});
-
-it('filters by price range in the ex VAT mode', function (): void {
-    expect(names(listing(['price_min' => 65, 'price_max' => 70], vatMode: VatDisplayMode::ExVat)))->toBe(['LIGERO'])
-        ->and(listing(['price_min' => 80, 'price_max' => 85], vatMode: VatDisplayMode::ExVat)->total)->toBe(0);
-});
-
-it('treats zero rated products the same in both VAT modes', function (): void {
-    $range = ['price_min' => 52, 'price_max' => 53];
-
-    expect(names(listing($range, vatMode: VatDisplayMode::IncVat)))->toBe(['FS9'])
-        ->and(names(listing($range, vatMode: VatDisplayMode::ExVat)))->toBe(['FS9']);
+it('filters by price range ex VAT', function (): void {
+    // LIGERO is 68.90 ex VAT and 82.68 inc VAT: only the ex VAT figure counts.
+    expect(names(listing(['price_min' => 65, 'price_max' => 70])))->toBe(['LIGERO'])
+        ->and(listing(['price_min' => 80, 'price_max' => 85])->total)->toBe(0);
 });
 
 it('reports the price bounds ignoring the price filter', function (): void {
-    $inc = listing(['price_min' => 80], vatMode: VatDisplayMode::IncVat);
-    $ex = listing(['price_min' => 65], vatMode: VatDisplayMode::ExVat);
+    $result = listing(['price_min' => 65]);
 
-    expect([$inc->priceFloor, $inc->priceCeiling])->toBe([4048, 8268])
-        ->and([$ex->priceFloor, $ex->priceCeiling])->toBe([4048, 6890]);
+    expect([$result->priceFloor, $result->priceCeiling])->toBe([4048, 6890]);
 });
 
 it('requires the colour and size combination to be in stock', function (): void {
@@ -147,10 +133,10 @@ it('only offers sizes and colours that are in stock, sizes in numeric order', fu
         ->and($result->counts('colour'))->toBe(['blue' => 1, 'brown' => 1]);
 });
 
-it('sorts by price in the current VAT mode', function (): void {
-    expect(names(listing(['sort' => 'price-asc']))[0])->toBe('FS30C')
-        ->and(names(listing(['sort' => 'price-desc'])))->toBe(['LIGERO', 'SX310', 'FS9', 'FS65', 'FS30C'])
-        ->and(names(listing(['sort' => 'price-desc'], vatMode: VatDisplayMode::ExVat))[0])->toBe('LIGERO');
+it('sorts by the ex VAT price', function (): void {
+    // FS65 and FS30C are both 40.48 ex VAT, so their order is a tie.
+    expect(names(listing(['sort' => 'price-asc']))[0])->toBeIn(['FS30C', 'FS65'])
+        ->and(array_slice(names(listing(['sort' => 'price-desc'])), 0, 3))->toBe(['LIGERO', 'SX310', 'FS9']);
 });
 
 it('searches by term', function (string $term, string $expected): void {

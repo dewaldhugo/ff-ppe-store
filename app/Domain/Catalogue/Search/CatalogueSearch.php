@@ -26,7 +26,7 @@ final class CatalogueSearch
     public function search(ListingQuery $query): ListingResult
     {
         $index = (new Product)->searchableAs();
-        $priceField = $query->vatMode->priceField();
+        $priceField = ListingQuery::PRICE_FIELD;
 
         // The page of results, with counts for every facet. Counts for
         // facets that have a selection are replaced below.
@@ -35,7 +35,7 @@ final class CatalogueSearch
             ->setQuery($query->term)
             ->setFilter($this->filters($query))
             ->setFacets([...array_values(ListingQuery::FACETS), $priceField])
-            ->setSort($query->sort->expressions($query->vatMode))
+            ->setSort($query->sort->expressions())
             ->setAttributesToRetrieve(['id'])
             ->setHitsPerPage($query->perPage)
             ->setPage($query->page);
@@ -123,7 +123,7 @@ final class CatalogueSearch
         }
 
         if ($except !== self::PRICE) {
-            $priceField = $query->vatMode->priceField();
+            $priceField = ListingQuery::PRICE_FIELD;
 
             if ($query->priceMin !== null) {
                 $filters[] = "{$priceField} >= {$query->priceMin}";
