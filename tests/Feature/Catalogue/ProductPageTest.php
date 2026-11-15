@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domain\Catalogue\Media\PlaceholderImageGenerator;
 use App\Domain\Pricing\PriceDisplay;
 use App\Domain\Pricing\VatDisplayMode;
 use App\Livewire\Catalogue\ProductPage;
@@ -278,4 +279,49 @@ it('does not embed a video from an unexpected host', function (): void {
     $product->update(['attribute_data' => $data]);
 
     $this->get('/p/gbs-eva')->assertOk()->assertDontSee('<iframe', false);
+});
+
+it('lets the customer choose a thumbnail to show in the main frame', function (): void {
+    $product = Url::query()->where('slug', 'safety-jogger-ligero')->sole()->element;
+    $directory = storage_path('app/private/fixture-placeholders');
+
+    foreach (['detail', 'outsole'] as $role) {
+        $product
+            ->addMedia(app(PlaceholderImageGenerator::class)->generate("Ligero Navy {$role}", '394656', $directory, 240))
+            ->withCustomProperties(['colour' => 'Navy', 'role' => $role, 'primary' => false])
+            ->toMediaCollection(config('lunar.media.collection'));
+    }
+
+    $html = $this->get('/p/safety-jogger-ligero?colour=navy')->assertOk()->getContent();
+
+    preg_match('#<section[^>]*data-testid="gallery".*?</section>#s', $html, $gallery);
+    preg_match_all('#<button[^>]*data-gallery-thumb="(\d)"[^>]*>#s', $gallery[0], $thumbs);
+
+    // One button per image, each selecting its own index.
+    expect($thumbs[1])->toBe(['0', '1', '2'])
+        ->and($thumbs[0][1])->toContain('x-on:click="active = 1"')
+        ->and($thumbs[0][2])->toContain('aria-label="Show image 3 of 3: outsole view"')
+        // The first image is the one shown, with or without JavaScript.
+        ->and($thumbs[0][0])->toContain('aria-current="true"')
+        ->and($gallery[0])->toContain('x-bind:src="images[active]"')
+        ->and(substr_count($gallery[0], '/conversions/'))->toBeGreaterThanOrEqual(4);
+
+    // The main frame can show every image of the colour, and only those.
+    // The medium rendition of all three is in the gallery's data, plus the
+    // one in the main frame's own src.
+    preg_match('#x-data="([^"]*)"#', $gallery[0], $data);
+
+    expect($data[1])->toContain('active: 0')
+        ->and(substr_count(html_entity_decode($data[1], ENT_QUOTES), '-medium.'))->toBe(3);
+
+    // Black has a single image: no thumbnails, and a different gallery key,
+    // so choosing a colour starts on that colour's first image.
+    $black = $this->get('/p/safety-jogger-ligero?colour=black')->getContent();
+    preg_match('#<section[^>]*data-testid="gallery"[^>]*>#s', $black, $blackGallery);
+    preg_match('#<section[^>]*data-testid="gallery"[^>]*>#s', $html, $navyGallery);
+    preg_match('#wire:key="(gallery-\d+)"#', $blackGallery[0], $blackKey);
+    preg_match('#wire:key="(gallery-\d+)"#', $navyGallery[0], $navyKey);
+
+    expect($black)->not->toContain('data-gallery-thumb')
+        ->and($blackKey[1])->not->toBe($navyKey[1]);
 });

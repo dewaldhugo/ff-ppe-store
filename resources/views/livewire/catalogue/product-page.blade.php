@@ -1,32 +1,53 @@
 <article>
     <div class="grid gap-8 lg:grid-cols-2">
         {{-- Gallery: the selected colour's images. --}}
-        <section aria-label="Product images" data-testid="gallery">
+        {{--
+            Choosing a thumbnail shows that image in the main frame. The key
+            changes with the colour, so a new colour starts on its first image.
+        --}}
+        <section
+            aria-label="Product images"
+            data-testid="gallery"
+            wire:key="gallery-{{ $images === [] ? 'none' : $images[0]->id }}"
+            x-data="{ active: 0, images: @js(array_map(fn ($image) => $image->getUrl('medium'), $images)) }"
+        >
             @if ($images !== [])
                 <div class="aspect-square overflow-hidden rounded border border-slate-200 bg-slate-100">
                     <img
                         src="{{ $images[0]->getUrl('medium') }}"
+                        x-bind:src="images[active]"
                         alt="{{ $product->translateAttribute('name') }}{{ $selection->selectedName('colour') ? ' in '.$selection->selectedName('colour') : '' }}"
                         width="800"
                         height="800"
                         class="h-full w-full object-contain"
+                        data-gallery-main
                         data-colour="{{ $images[0]->getCustomProperty('colour') }}"
                     >
                 </div>
 
                 @if (count($images) > 1)
                     <ul class="mt-3 grid grid-cols-5 gap-2">
-                        @foreach ($images as $image)
+                        @foreach ($images as $index => $image)
                             <li wire:key="image-{{ $image->id }}">
-                                <img
-                                    src="{{ $image->getUrl('thumb') }}"
-                                    alt="{{ ucfirst((string) $image->getCustomProperty('role')) }} view"
-                                    loading="lazy"
-                                    width="300"
-                                    height="300"
-                                    class="aspect-square w-full rounded border border-slate-200 object-contain"
-                                    data-colour="{{ $image->getCustomProperty('colour') }}"
+                                <button
+                                    type="button"
+                                    class="block w-full rounded border-2 border-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900"
+                                    x-on:click="active = {{ $index }}"
+                                    x-bind:class="active === {{ $index }} ? 'border-slate-900' : 'border-slate-200'"
+                                    x-bind:aria-current="active === {{ $index }} ? 'true' : null"
+                                    aria-label="Show image {{ $index + 1 }} of {{ count($images) }}: {{ $image->getCustomProperty('role') }} view"
+                                    data-gallery-thumb="{{ $index }}"
+                                    @if ($index === 0) aria-current="true" @endif
                                 >
+                                    <img
+                                        src="{{ $image->getUrl('thumb') }}"
+                                        alt=""
+                                        loading="lazy"
+                                        width="300"
+                                        height="300"
+                                        class="aspect-square w-full rounded object-contain"
+                                    >
+                                </button>
                             </li>
                         @endforeach
                     </ul>

@@ -53,3 +53,15 @@ it('ignores an invalid VAT mode', function (): void {
 
     expect(app(PriceDisplay::class)->mode())->toBe(VatDisplayMode::IncVat);
 });
+
+it('shows the logo in the header, linked to the home page', function (): void {
+    $html = $this->get('/')->assertOk()->getContent();
+
+    preg_match('#<a href="'.preg_quote(route('home'), '#').'"[^>]*data-site-logo[^>]*>.*?</a>#s', $html, $link);
+
+    expect($link)->not->toBeEmpty()
+        ->and($link[0])->toContain('src="'.asset('images/the-bridge-group-logo.svg').'"')
+        // The image is the only content of the link, so its alt text names the site.
+        ->and($link[0])->toContain('alt="'.e(config('app.name')).'"')
+        ->and(is_file(public_path('images/the-bridge-group-logo.svg')))->toBeTrue();
+});

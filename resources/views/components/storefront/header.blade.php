@@ -1,7 +1,13 @@
 <header class="border-b border-slate-200 bg-white">
     <div class="mx-auto flex max-w-7xl flex-wrap items-center gap-x-6 gap-y-3 px-4 py-4">
-        <a href="{{ route('home') }}" class="text-xl font-bold tracking-tight text-slate-900">
-            {{ config('app.name') }}
+        <a href="{{ route('home') }}" class="shrink-0" data-site-logo>
+            <img
+                src="{{ asset('images/the-bridge-group-logo.svg') }}"
+                alt="{{ config('app.name') }}"
+                width="286"
+                height="32"
+                class="h-7 w-auto sm:h-8"
+            >
         </a>
 
         <form action="{{ route('search') }}" method="get" role="search" class="order-3 flex w-full gap-2 sm:order-none sm:w-auto sm:flex-1">
