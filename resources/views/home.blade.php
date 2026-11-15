@@ -1,8 +1,7 @@
-{{-- Placeholder home page: kept out of search engines until it has real content. --}}
+{{-- The home page. Search engines are kept out site-wide by STORE_NOINDEX. --}}
 <x-layouts.storefront
     title="Personal protective equipment for business"
     description="Personal protective equipment for business customers. All prices exclude VAT."
-    :noindex="true"
     :full="true"
 >
     {{-- The photo is decoration (its sign is not content), so it has no alt text. --}}

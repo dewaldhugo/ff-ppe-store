@@ -6,6 +6,11 @@ use App\Domain\Catalogue\Menu\CategoryMenu;
 
 const NOINDEX = '<meta name="robots" content="noindex">';
 
+beforeEach(function (): void {
+    // The flag is the environment's choice; the tests pick their own.
+    config()->set('store.noindex', true);
+});
+
 /** Route name => [URI, heading]. Placeholder pages: noindex until they have real content. */
 const PLACEHOLDERS = [
     'about' => ['/about', 'About us'],
@@ -89,9 +94,38 @@ it('shows a grid of the top-level categories on the home page, each linking to i
         ->and(strtolower($html))->not->toContain('trusted by');
 });
 
-it('lets search engines index the products page, listings and product pages', function (string $uri): void {
+it('keeps every page out of search engines while STORE_NOINDEX is true', function (string $uri): void {
+    $this->get($uri)->assertOk()->assertSee(NOINDEX, false);
+})->with(['/', '/products', '/c/safety-footwear', '/p/safety-jogger-ligero', '/search?q=boots', '/about', '/privacy']);
+
+it('lets search engines index the real pages once STORE_NOINDEX is false', function (string $uri): void {
+    config()->set('store.noindex', false);
+
     $this->get($uri)->assertOk()->assertDontSee(NOINDEX, false);
-})->with(['/products', '/c/safety-footwear', '/p/safety-jogger-ligero', '/search?q=boots']);
+})->with(['/', '/products', '/c/safety-footwear', '/p/safety-jogger-ligero', '/search?q=boots']);
+
+it('keeps a placeholder page out of search engines until it has content, even after launch', function (): void {
+    config()->set('store.noindex', false);
+
+    $this->get('/privacy')->assertOk()->assertSee(NOINDEX, false);
+});
+
+it('turns noindex on from a single flag that defaults to on', function (): void {
+    expect(config('store.noindex'))->toBeTrue()
+        ->and((string) file_get_contents(config_path('store.php')))->toContain("env('STORE_NOINDEX', true)")
+        ->and((string) file_get_contents(base_path('.env.example')))->toContain('STORE_NOINDEX=true')
+        // The flag, not a page, owns the decision: no view sets noindex for the home page.
+        ->and((string) file_get_contents(resource_path('views/home.blade.php')))->not->toContain('noindex');
+});
+
+it('has a Launch checklist in CLAUDE.md with the three launch tasks', function (): void {
+    $claude = (string) file_get_contents(base_path('CLAUDE.md'));
+
+    expect($claude)->toContain('## Launch checklist')
+        ->and($claude)->toContain('Lift noindex')
+        ->and($claude)->toContain('chip returns products on real data')
+        ->and($claude)->toContain('Confirm the trust strip claims with the client');
+});
 
 it('renders the existing listing and product pages inside the new layout', function (): void {
     $this->get('/c/safety-footwear')

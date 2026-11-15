@@ -14,4 +14,10 @@ return [
     'vat_number' => env('STORE_VAT_NUMBER', 'TBC'),
     'phone' => env('STORE_PHONE', 'TBC'),
     'email' => env('STORE_EMAIL', 'TBC'),
+
+    // One switch for search engines. While true, every page of the site carries
+    // <meta name="robots" content="noindex">. Set STORE_NOINDEX=false at launch
+    // (see the Launch checklist in CLAUDE.md). It defaults to true so a new
+    // environment is never indexed by accident.
+    'noindex' => (bool) env('STORE_NOINDEX', true),
 ];
