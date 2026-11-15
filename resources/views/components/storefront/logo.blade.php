@@ -6,5 +6,5 @@
     alt="{{ \App\Support\Store::name() }}"
     width="286"
     height="32"
-    {{ $attributes->class('h-7 w-auto sm:h-8') }}
+    {{ $attributes->class('h-6 w-auto sm:h-8') }}
 >

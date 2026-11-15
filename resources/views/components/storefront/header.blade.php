@@ -105,7 +105,8 @@
                         Products
                         <svg aria-hidden="true" class="h-4 w-4 transition-transform" x-bind:class="mega && 'rotate-180'" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6"/></svg>
                     </button>
-                    <a href="{{ route('products') }}" class="hidden no-js:inline-block {{ $linkClass }}">Products</a>
+                    {{-- Only without JavaScript. It must not share $linkClass: its inline-block would override hidden. --}}
+                    <a href="{{ route('products') }}" class="hidden no-js:inline-block py-3 font-semibold text-ink hover:text-brand-blue" data-products-link>Products</a>
                 </li>
 
                 @foreach ($links as $link)
@@ -145,18 +146,19 @@
         </div>
     </nav>
 
-    {{-- Mobile drawer --}}
-    <div x-show="drawer" x-cloak class="lg:hidden">
-        <div class="fixed inset-0 z-40 bg-brand-navy/60" aria-hidden="true" x-on:click="drawer = false"></div>
+    {{-- Mobile drawer. x-show and x-trap sit on the same element, as Alpine's focus plugin expects. --}}
+    <div x-show="drawer" x-cloak class="fixed inset-0 z-40 bg-brand-navy/60 lg:hidden" aria-hidden="true" x-on:click="drawer = false"></div>
 
-        <div
-            id="mobile-menu"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Menu"
-            x-trap.noscroll="drawer"
-            class="fixed inset-y-0 left-0 z-50 w-full max-w-sm overflow-y-auto bg-white p-6 shadow-xl"
-        >
+    <div
+        id="mobile-menu"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Menu"
+        x-show="drawer"
+        x-cloak
+        x-trap.noscroll="drawer"
+        class="fixed inset-y-0 left-0 z-50 w-full max-w-sm overflow-y-auto bg-white p-6 shadow-xl lg:hidden"
+    >
             <div class="flex items-center justify-between">
                 <x-storefront.logo />
                 <button
@@ -211,6 +213,5 @@
                     <li><a href="{{ route('account') }}" class="block py-3 font-semibold text-ink">Account</a></li>
                 </ul>
             </nav>
-        </div>
     </div>
 </header>
