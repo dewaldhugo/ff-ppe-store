@@ -224,8 +224,12 @@ it('outputs Product structured data with an offer per variant', function (): voi
         ->and($offers)->toHaveCount(36)
         ->and($offers['SJ-1492552'])->toMatchArray([
             '@type' => 'Offer',
-            'price' => '82.68',
-            'priceCurrency' => 'GBP',
+            'priceSpecification' => [
+                '@type' => 'UnitPriceSpecification',
+                'price' => '68.90',
+                'priceCurrency' => 'GBP',
+                'valueAddedTaxIncluded' => false,
+            ],
             'availability' => 'https://schema.org/InStock',
             'gtin13' => '5400812979016',
             'url' => route('product', 'safety-jogger-ligero').'?colour=navy',
@@ -233,12 +237,23 @@ it('outputs Product structured data with an offer per variant', function (): voi
         ->and($offers['SJ-1492635']['availability'])->toBe('https://schema.org/OutOfStock');
 });
 
-it('keeps structured data prices inc VAT although the page shows ex VAT', function (): void {
+it('states every offer price ex VAT, explicitly, in the structured data', function (): void {
     $ligero = structuredData($this->get('/p/safety-jogger-ligero')->getContent());
     $fs9 = structuredData($this->get('/p/amblers-safety-fs9')->getContent());
 
-    expect($ligero['offers'][0]['price'])->toBe('82.68')
-        ->and($fs9['offers'][0]['price'])->toBe('52.48');
+    foreach ([$ligero, $fs9] as $data) {
+        foreach ($data['offers'] as $offer) {
+            // Only the specification carries a price, and it says VAT is not in it.
+            expect($offer)->not->toHaveKey('price')
+                ->and($offer['priceSpecification']['@type'])->toBe('UnitPriceSpecification')
+                ->and($offer['priceSpecification']['valueAddedTaxIncluded'])->toBeFalse()
+                ->and($offer['priceSpecification']['priceCurrency'])->toBe('GBP');
+        }
+    }
+
+    // LIGERO is 68.90 ex VAT (82.68 inc VAT); the zero-protective FS9 is 52.48 either way.
+    expect($ligero['offers'][0]['priceSpecification']['price'])->toBe('68.90')
+        ->and($fs9['offers'][0]['priceSpecification']['price'])->toBe('52.48');
 });
 
 it('has a canonical URL without the colour', function (): void {

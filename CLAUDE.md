@@ -191,3 +191,12 @@ One Meilisearch document per product, written by Lunar's product indexing throug
 Known follow-ups, not in the current phase:
 
 - Merge vendor products split by size band into one Lunar product with several `vendor_products` rows. Footsure lists one line as several ProductIDs (Morris, Dunlop Sport, 6045/PSG27 plimsolls, Audrey Slipper, Primera Gardening Shoe); each is its own product today, with numeric slug suffixes.
+
+## Launch checklist
+
+Do these before the store goes live. Nothing here is done by default.
+
+- [ ] Lift noindex: set `STORE_NOINDEX=false` in the production environment. One flag drives every page (`config/store.php`). A placeholder page also carries its own noindex: remove the `:noindex="true"` from `resources/views/pages/placeholder.blade.php` for a page once it has real content, or give the page its own view.
+- [ ] Verify every homepage "Shop by standard" chip returns products on real data (the chips are in `config/homepage.php`; the tests only prove it against the fixture catalogue).
+- [ ] Confirm the trust strip claims with the client (`config/homepage.php`, `trust`). The fourth slot is for a delivery claim that is not confirmed yet: leave it empty until it is.
+- [ ] Replace every TBC in the store identity: name, legal name, company number, registered office, VAT number, phone and email (`STORE_*` in `.env`).

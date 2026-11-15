@@ -12,7 +12,7 @@
             x-data="{ active: 0, images: @js(array_map(fn ($image) => $image->getUrl('medium'), $images)) }"
         >
             @if ($images !== [])
-                <div class="aspect-square overflow-hidden rounded border border-slate-200 bg-slate-100">
+                <div class="aspect-square overflow-hidden rounded border border-border bg-surface-muted">
                     <img
                         src="{{ $images[0]->getUrl('medium') }}"
                         x-bind:src="images[active]"
@@ -31,9 +31,9 @@
                             <li wire:key="image-{{ $image->id }}">
                                 <button
                                     type="button"
-                                    class="block w-full rounded border-2 border-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-900"
+                                    class="block w-full rounded border-2 border-border focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue"
                                     x-on:click="active = {{ $index }}"
-                                    x-bind:class="active === {{ $index }} ? 'border-slate-900' : 'border-slate-200'"
+                                    x-bind:class="active === {{ $index }} ? 'border-brand-blue' : 'border-border'"
                                     x-bind:aria-current="active === {{ $index }} ? 'true' : null"
                                     aria-label="Show image {{ $index + 1 }} of {{ count($images) }}: {{ $image->getCustomProperty('role') }} view"
                                     data-gallery-thumb="{{ $index }}"
@@ -56,28 +56,28 @@
         </section>
 
         <section aria-labelledby="product-heading">
-            <p class="text-sm uppercase tracking-wide text-slate-500">{{ $product->brand?->name }}</p>
+            <p class="text-sm uppercase tracking-wide text-ink-muted">{{ $product->brand?->name }}</p>
             <h1 id="product-heading" class="text-3xl font-bold tracking-tight">{{ $product->translateAttribute('name') }}</h1>
-            <p class="text-lg text-slate-700">{{ $product->translateAttribute('title') }}</p>
+            <p class="text-lg text-ink-muted">{{ $product->translateAttribute('title') }}</p>
 
             @if (filled($product->translateAttribute('short_description')))
-                <p class="mt-3 text-slate-700">{{ $product->translateAttribute('short_description') }}</p>
+                <p class="mt-3 text-ink-muted">{{ $product->translateAttribute('short_description') }}</p>
             @endif
 
             @if ($price)
-                <p class="mt-4" data-testid="price">
+                <p class="mt-4" data-testid="price" data-price>
                     @if ($pricesVary)
-                        <span class="text-slate-600">From</span>
+                        <span class="text-ink-muted">From</span>
                     @endif
                     <span class="text-2xl font-bold">{{ $price->formatted() }}</span>
-                    <span class="text-sm text-slate-600">{{ $price->suffix() }}</span>
-                    @if ($price->compareFormatted())
-                        <s class="ml-2 text-slate-500"><span class="sr-only">Was</span> {{ $price->compareFormatted() }}</s>
+                    <span class="text-sm text-ink-muted">{{ $price->suffix() }}</span>
+                    @if ($price->rrpFormatted())
+                        <span class="ml-2 text-sm text-ink-muted" data-rrp><abbr title="Manufacturer's recommended retail price">RRP</abbr> {{ $price->rrpFormatted() }} {{ $price->suffix() }}</span>
                     @endif
                 </p>
 
                 @if ($price->vatAppliesForEmployers)
-                    <p class="mt-1 text-sm text-slate-600" data-testid="vat-note">
+                    <p class="mt-1 text-sm text-ink-muted" data-testid="vat-note">
                         Zero rated for VAT when bought for your own use. VAT at 20% applies when buying for employees.
                     </p>
                 @endif
@@ -95,13 +95,13 @@
                             <span class="font-semibold">{{ $option['name'] }}:</span>
                             {{ $option['values'][0]['name'] }}
                             @if ($option['handle'] === 'shoe_size' && isset($euSizes[$option['values'][0]['key']]))
-                                <span class="text-sm text-slate-600">(EU {{ $euSizes[$option['values'][0]['key']] }})</span>
+                                <span class="text-sm text-ink-muted">(EU {{ $euSizes[$option['values'][0]['key']] }})</span>
                             @endif
                         </p>
                     @else
                         <fieldset
                             data-option="{{ $option['handle'] }}"
-                            @class(['rounded', 'outline outline-2 outline-offset-4 outline-red-600' => $isMissing])
+                            @class(['rounded', 'outline outline-2 outline-offset-4 outline-danger' => $isMissing])
                             @if ($isMissing) aria-describedby="error-{{ $option['handle'] }}" @endif
                         >
                             <legend class="font-semibold">
@@ -120,15 +120,15 @@
                                         @if (! $value['available']) title="Out of stock" @endif
                                         @class([
                                             'flex min-w-12 items-center gap-2 rounded border px-3 py-2 text-sm',
-                                            'border-slate-900 bg-slate-900 text-white' => $value['selected'],
-                                            'border-slate-300 bg-white hover:border-slate-900' => ! $value['selected'] && $value['available'],
-                                            'cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400 line-through' => ! $value['available'],
+                                            'border-brand-blue bg-brand-blue text-white' => $value['selected'],
+                                            'border-border-strong bg-white hover:border-brand-blue' => ! $value['selected'] && $value['available'],
+                                            'cursor-not-allowed border-border bg-surface-muted text-ink-muted line-through' => ! $value['available'],
                                         ])
                                     >
                                         @if ($option['handle'] === 'colour')
                                             <span
                                                 aria-hidden="true"
-                                                class="inline-block h-4 w-4 rounded-full border border-slate-300"
+                                                class="inline-block h-4 w-4 rounded-full border border-border-strong"
                                                 @if (filled($value['meta']['hex'] ?? null)) style="background-color: #{{ $value['meta']['hex'] }}" @endif
                                             ></span>
                                         @endif
@@ -147,7 +147,7 @@
                             </div>
 
                             @if ($isMissing)
-                                <p id="error-{{ $option['handle'] }}" role="alert" class="mt-2 text-sm font-semibold text-red-700">
+                                <p id="error-{{ $option['handle'] }}" role="alert" class="mt-2 text-sm font-semibold text-danger">
                                     {{ $missingPrompt }}
                                 </p>
                             @endif
@@ -156,7 +156,7 @@
                 @endforeach
 
                 <div>
-                    <label for="quantity" class="block font-semibold text-slate-900">Quantity</label>
+                    <label for="quantity" class="block font-semibold text-ink">Quantity</label>
                     <input
                         id="quantity"
                         type="number"
@@ -169,13 +169,13 @@
                         data-quantity
                         @class([
                             'mt-2 w-28 rounded border px-3 py-2 text-lg',
-                            'border-slate-300' => $quantityError === null,
-                            'border-red-600' => $quantityError !== null,
+                            'border-border-strong' => $quantityError === null,
+                            'border-danger' => $quantityError !== null,
                         ])
                     >
 
                     @if ($quantityError !== null)
-                        <p id="error-quantity" role="alert" class="mt-2 text-sm font-semibold text-red-700">{{ $quantityError }}</p>
+                        <p id="error-quantity" role="alert" class="mt-2 text-sm font-semibold text-danger">{{ $quantityError }}</p>
                     @endif
                 </div>
 
@@ -183,20 +183,20 @@
                     type="submit"
                     @disabled(! $canAdd)
                     data-add-to-cart
-                    class="w-full rounded bg-amber-500 px-6 py-3 text-lg font-bold text-slate-900 hover:bg-amber-400 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500 sm:w-auto"
+                    class="w-full rounded-md bg-brand-blue px-6 py-3 text-lg font-bold text-white transition-colors hover:bg-brand-navy disabled:cursor-not-allowed disabled:bg-disabled-surface disabled:text-disabled-ink sm:w-auto"
                 >
                     {{ $addLabel }}
                 </button>
 
                 @if ($added)
-                    <p role="status" class="rounded border border-emerald-300 bg-emerald-50 p-3 text-sm text-emerald-900">
+                    <p role="status" class="rounded border border-success bg-success-surface p-3 text-sm text-success">
                         Online ordering opens soon. Your selection is available.
                     </p>
                 @endif
             </form>
 
             @if (filled($product->attr('key_points')))
-                <ul class="mt-6 list-disc space-y-1 pl-5 text-slate-700">
+                <ul class="mt-6 list-disc space-y-1 pl-5 text-ink-muted">
                     @foreach ($product->attr('key_points') as $point)
                         <li>{{ $point }}</li>
                     @endforeach
@@ -209,7 +209,7 @@
         <section aria-labelledby="description-heading" class="mt-10 max-w-3xl">
             <h2 id="description-heading" class="text-xl font-bold">Description</h2>
             @foreach ($paragraphs as $paragraph)
-                <p class="mt-3 text-slate-700">{{ $paragraph }}</p>
+                <p class="mt-3 text-ink-muted">{{ $paragraph }}</p>
             @endforeach
         </section>
     @endif
@@ -220,7 +220,7 @@
             <table class="mt-3 w-full text-left text-sm" data-testid="specification">
                 <tbody>
                     @foreach ($specification as $row)
-                        <tr class="border-b border-slate-200">
+                        <tr class="border-b border-border">
                             <th scope="row" class="w-1/3 py-2 pr-4 align-top font-semibold">{{ $row['label'] }}</th>
                             <td class="py-2">
                                 @if (count($row['values']) === 1)
@@ -250,7 +250,7 @@
                     loading="lazy"
                     allow="accelerometer; encrypted-media; gyroscope; picture-in-picture"
                     allowfullscreen
-                    class="h-full w-full rounded border border-slate-200"
+                    class="h-full w-full rounded border border-border"
                 ></iframe>
             </div>
         </section>
@@ -262,16 +262,16 @@
             <ul class="mt-3 grid grid-cols-2 gap-4 md:grid-cols-4">
                 @foreach ($related as $relatedProduct)
                     @php $relatedPrice = $priceDisplay->fromPrice($relatedProduct); @endphp
-                    <li wire:key="related-{{ $relatedProduct->id }}" class="relative rounded border border-slate-200 p-3">
+                    <li wire:key="related-{{ $relatedProduct->id }}" class="relative rounded border border-border p-3">
                         @if ($relatedProduct->thumbnail)
-                            <img src="{{ $relatedProduct->thumbnail->getUrl('thumb') }}" alt="" loading="lazy" width="300" height="300" class="aspect-square w-full rounded bg-slate-100 object-contain">
+                            <img src="{{ $relatedProduct->thumbnail->getUrl('thumb') }}" alt="" loading="lazy" width="300" height="300" class="aspect-square w-full rounded bg-surface-muted object-contain">
                         @endif
-                        <p class="mt-2 text-xs uppercase tracking-wide text-slate-500">{{ $relatedProduct->brand?->name }}</p>
+                        <p class="mt-2 text-xs uppercase tracking-wide text-ink-muted">{{ $relatedProduct->brand?->name }}</p>
                         <a href="{{ route('product', $relatedProduct->defaultUrl?->slug ?? $relatedProduct->id) }}" class="font-semibold after:absolute after:inset-0 hover:underline">
                             {{ $relatedProduct->translateAttribute('name') }}
                         </a>
                         @if ($relatedPrice)
-                            <p class="text-sm"><span class="font-bold">{{ $relatedPrice->formatted() }}</span> <span class="text-xs text-slate-600">{{ $relatedPrice->suffix() }}</span></p>
+                            <p class="text-sm" data-price><span class="font-bold">{{ $relatedPrice->formatted() }}</span> <span class="text-xs text-ink-muted">{{ $relatedPrice->suffix() }}</span></p>
                         @endif
                     </li>
                 @endforeach

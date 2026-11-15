@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Domain\Catalogue\Search;
 
-use App\Domain\Pricing\VatDisplayMode;
-
 /**
  * Everything that defines one listing request: where it is (collection or
  * search term), the selected facets, price range, sort and page.
@@ -14,6 +12,13 @@ use App\Domain\Pricing\VatDisplayMode;
  */
 final readonly class ListingQuery
 {
+    /**
+     * The index field every price is filtered and sorted on. The storefront
+     * shows ex VAT prices only. The index also holds the inc VAT figure for
+     * the admin panel, and the storefront does not read it.
+     */
+    public const string PRICE_FIELD = 'price_min_ex_vat';
+
     public const int PER_PAGE = 24;
 
     /**
@@ -42,7 +47,6 @@ final readonly class ListingQuery
         public bool $inStockOnly = false,
         public ListingSort $sort = ListingSort::Relevance,
         public int $page = 1,
-        public VatDisplayMode $vatMode = VatDisplayMode::ExVat,
         public int $perPage = self::PER_PAGE,
     ) {}
 
@@ -57,7 +61,7 @@ final readonly class ListingQuery
      *
      * @param  array<string, mixed>  $input
      */
-    public static function fromArray(array $input, ?int $collectionId = null, ?VatDisplayMode $vatMode = null): self
+    public static function fromArray(array $input, ?int $collectionId = null): self
     {
         $facets = [];
 
@@ -78,7 +82,6 @@ final readonly class ListingQuery
             inStockOnly: filter_var($input['in_stock'] ?? false, FILTER_VALIDATE_BOOLEAN),
             sort: ListingSort::tryFrom(is_string($input['sort'] ?? null) ? $input['sort'] : '') ?? ListingSort::Relevance,
             page: max(1, (int) (is_numeric($input['page'] ?? null) ? $input['page'] : 1)),
-            vatMode: $vatMode ?? VatDisplayMode::default(),
         );
     }
 

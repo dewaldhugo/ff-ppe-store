@@ -18,7 +18,7 @@
                 @foreach ($group['values'] as $value)
                     <li wire:key="{{ $idPrefix }}-{{ $group['name'] }}-{{ $value['value'] }}">
                         <label
-                            class="flex items-center gap-2 {{ $value['count'] === 0 && ! $value['selected'] ? 'text-slate-400' : '' }}"
+                            class="flex items-center gap-2 {{ $value['count'] === 0 && ! $value['selected'] ? 'text-ink-muted' : '' }}"
                             @if ($value['tooltip']) title="{{ $value['tooltip'] }}" @endif
                         >
                             <input
@@ -30,12 +30,12 @@
                             @if ($group['name'] === 'colour')
                                 <span
                                     aria-hidden="true"
-                                    class="inline-block h-4 w-4 rounded-full border border-slate-300"
+                                    class="inline-block h-4 w-4 rounded-full border border-border-strong"
                                     @if ($value['hex']) style="background-color: #{{ $value['hex'] }}" @endif
                                 ></span>
                             @endif
                             <span>{{ $value['label'] }}</span>
-                            <span class="ml-auto text-slate-500" data-count>({{ $value['count'] }})</span>
+                            <span class="ml-auto text-ink-muted" data-count>({{ $value['count'] }})</span>
                         </label>
                     </li>
                 @endforeach
@@ -44,7 +44,7 @@
     @endforeach
 
     <fieldset>
-        <legend class="font-semibold">Price ({{ $priceDisplay->mode()->label() }})</legend>
+        <legend class="font-semibold">Price (ex VAT)</legend>
         <div class="mt-2 flex items-center gap-2">
             <label for="{{ $idPrefix }}-price-min" class="sr-only">Minimum price in pounds</label>
             <input
@@ -55,7 +55,7 @@
                 inputmode="numeric"
                 wire:model.live.debounce.500ms="price_min"
                 placeholder="{{ $result->priceFloor !== null ? '£'.intdiv($result->priceFloor, 100) : 'Min' }}"
-                class="w-full rounded border border-slate-300 px-2 py-1"
+                class="w-full rounded border border-border-strong px-2 py-1"
             >
             <span aria-hidden="true">to</span>
             <label for="{{ $idPrefix }}-price-max" class="sr-only">Maximum price in pounds</label>
@@ -67,7 +67,7 @@
                 inputmode="numeric"
                 wire:model.live.debounce.500ms="price_max"
                 placeholder="{{ $result->priceCeiling !== null ? '£'.(int) ceil($result->priceCeiling / 100) : 'Max' }}"
-                class="w-full rounded border border-slate-300 px-2 py-1"
+                class="w-full rounded border border-border-strong px-2 py-1"
             >
         </div>
     </fieldset>

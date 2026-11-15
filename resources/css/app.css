@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import '@fontsource-variable/figtree';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
@@ -6,11 +7,75 @@
 @source '../**/*.js';
 @source '../../app/**/*.php';
 
+/*
+ * Design tokens. Templates use these utilities (bg-brand-blue, text-ink,
+ * border-border ...) and never a hex code or a default palette colour.
+ * tests/Feature/Storefront/DesignTokensTest.php checks the contrast of the
+ * pairs used for text and fails on a hard-coded colour in a template.
+ *
+ * Contrast rules (WCAG 2.2 AA):
+ * - Text is 4.5:1 or better on the surface it sits on.
+ * - White text on teal fails (2.4:1), so teal is never a text colour on a
+ *   light surface and never a background for white text. A teal-filled
+ *   element uses brand-navy text.
+ * - Primary buttons are brand-blue with white text. Secondary buttons are
+ *   pill outlines: brand-teal border, brand-blue text (white text on dark
+ *   surfaces, where brand-blue would not be readable).
+ */
+@theme {
+    --color-brand-blue: #0F2E99;
+    --color-brand-teal: #44BAB1;
+    --color-brand-navy: #001227;
+    --color-ink: #222222;
+    --color-surface-muted: #F8F8F8;
+    --color-white: #FFFFFF;
+
+    /* Supporting tokens for text, borders and states. */
+    --color-ink-muted: #555555;
+    --color-border: #DADDE2;
+    --color-border-strong: #8A8F98;
+    --color-danger: #B42318;
+    --color-success: #05603A;
+    --color-success-surface: #ECFDF3;
+    --color-disabled-surface: #E5E7EB;
+    --color-disabled-ink: #6B7280;
+
+    /* A geometric sans, self-hosted (@fontsource-variable/figtree, SIL OFL):
+       no font CDN, for UK GDPR. A stand-in until the client's font is known. */
+    --font-sans: 'Figtree Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
 @layer base {
-    /* A visible focus ring on every interactive element, for keyboard users. */
+    html {
+        font-family: var(--font-sans);
+    }
+
+    body {
+        color: var(--color-ink);
+        line-height: 1.6;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+        font-weight: 600;
+        line-height: 1.25;
+        letter-spacing: -0.01em;
+    }
+
+    /*
+     * Keyboard focus. On light surfaces a 3px brand-blue ring (11:1 on white)
+     * with the brand-teal showing in the gap around it. Teal alone is 2.4:1 on
+     * white, below the 3:1 a focus indicator needs. On dark surfaces
+     * (.surface-dark) the ring is brand-teal, which is 8:1 on brand-navy.
+     */
     :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
-        outline: 3px solid var(--color-amber-500);
+        outline: 3px solid var(--color-brand-blue);
         outline-offset: 2px;
+        box-shadow: 0 0 0 5px var(--color-brand-teal);
+    }
+
+    .surface-dark :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+        outline-color: var(--color-brand-teal);
+        box-shadow: none;
     }
 
     button:not(:disabled),
@@ -18,4 +83,12 @@
     label:has(input:not(:disabled)) {
         cursor: pointer;
     }
+
+    [x-cloak] {
+        display: none !important;
+    }
 }
+
+/* Without JavaScript (the no-js class is removed by a script in the layout head)
+   the menus cannot open, so navigation falls back to plain links. */
+@custom-variant no-js (html.no-js &);

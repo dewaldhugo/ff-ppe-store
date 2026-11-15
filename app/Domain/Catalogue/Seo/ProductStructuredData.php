@@ -6,14 +6,14 @@ namespace App\Domain\Catalogue\Seo;
 
 use App\Domain\Catalogue\Variants\VariantSelection;
 use App\Domain\Pricing\PriceDisplay;
-use App\Domain\Pricing\VatDisplayMode;
 use Lunar\Models\Product;
 
 /**
  * schema.org Product markup with one Offer per variant.
  *
- * Offer prices are always inc VAT at the individual-use rate, whatever the
- * visitor's display mode, because that is what a consumer pays.
+ * Every offer states its price ex VAT, explicitly: a priceSpecification with
+ * valueAddedTaxIncluded false. The store sells to business buyers and shows
+ * ex VAT prices everywhere, so the markup says the same.
  */
 final class ProductStructuredData
 {
@@ -59,14 +59,18 @@ final class ProductStructuredData
                 continue;
             }
 
-            $pence = $this->priceDisplay->forVariant($variant, VatDisplayMode::IncVat)->price->value;
+            $pence = $this->priceDisplay->forVariant($variant)->price->value;
             $colour = $variant->values->firstWhere('option.handle', 'colour');
 
             $offer = [
                 '@type' => 'Offer',
                 'sku' => $variant->sku,
-                'price' => sprintf('%d.%02d', intdiv($pence, 100), $pence % 100),
-                'priceCurrency' => 'GBP',
+                'priceSpecification' => [
+                    '@type' => 'UnitPriceSpecification',
+                    'price' => sprintf('%d.%02d', intdiv($pence, 100), $pence % 100),
+                    'priceCurrency' => 'GBP',
+                    'valueAddedTaxIncluded' => false,
+                ],
                 'availability' => $variant->stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
                 'itemCondition' => 'https://schema.org/NewCondition',
                 'url' => $colour === null

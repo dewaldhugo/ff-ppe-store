@@ -117,7 +117,7 @@ final class CategoryListing extends Component
 
     public function render(CatalogueSearch $search, PriceDisplay $priceDisplay): View
     {
-        $query = ListingQuery::fromArray($this->state(), $this->collectionId, $priceDisplay->mode());
+        $query = ListingQuery::fromArray($this->state(), $this->collectionId);
         $result = $search->search($query);
 
         $collection = $this->collectionId === null ? null : Collection::query()->find($this->collectionId);

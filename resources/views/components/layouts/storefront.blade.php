@@ -1,11 +1,14 @@
 <!DOCTYPE html>
-<html lang="en-GB">
+<html lang="en-GB" class="no-js">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ isset($title) ? $title.' | '.config('app.name') : config('app.name') }}</title>
+    {{-- Menus need JavaScript. This tells the stylesheet whether it is there. --}}
+    <script>document.documentElement.classList.remove('no-js')</script>
+
+    <title>{{ isset($title) ? $title.' | '.\App\Support\Store::name() : \App\Support\Store::name() }}</title>
 
     @isset($description)
         <meta name="description" content="{{ $description }}">
@@ -15,26 +18,38 @@
         <link rel="canonical" href="{{ $canonical }}">
     @endisset
 
+    {{-- The site is out of search engines while STORE_NOINDEX is true. A placeholder page
+         also stays out, once the site is live, until it has real content. --}}
+    @if (config('store.noindex') || ! empty($noindex))
+        <meta name="robots" content="noindex">
+    @endif
+
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @livewireStyles
 
     {{ $head ?? '' }}
 </head>
-<body class="flex min-h-screen flex-col bg-white text-slate-900 antialiased">
+<body class="flex min-h-screen flex-col bg-white text-ink antialiased">
     <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded focus:bg-white focus:px-4 focus:py-2 focus:shadow">
         Skip to main content
     </a>
 
     <x-storefront.header />
 
-    <main id="main" class="mx-auto w-full max-w-7xl flex-1 px-4 py-6">
-        {{ $slot }}
-    </main>
+    @if (! empty($full))
+        <main id="main" class="flex-1">
+            {{ $slot }}
+        </main>
+    @else
+        <main id="main" class="flex-1">
+            <x-ui.container class="py-8">
+                {{ $slot }}
+            </x-ui.container>
+        </main>
+    @endif
 
-    <footer class="border-t border-slate-200 bg-slate-50">
-        <div class="mx-auto max-w-7xl px-4 py-6 text-sm text-slate-600">
-            <p>&copy; {{ date('Y') }} {{ config('app.name') }}. Personal protective equipment delivered across the UK.</p>
-            <p class="mt-1">All prices are shown ex VAT. VAT is added at checkout where it applies.</p>
-        </div>
-    </footer>
+    <x-storefront.footer />
+
+    @livewireScripts
 </body>
 </html>
