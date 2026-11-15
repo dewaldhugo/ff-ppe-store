@@ -51,9 +51,16 @@ it('links the primary button to safety footwear and the secondary button to cont
         ->and($hero)->toMatch('#<a href="'.preg_quote(route('contact'), '#').'"[^>]*border-brand-teal[^>]*>Contact us for trade enquiries</a>#');
 });
 
-it('has no hero photo background any more', function (): void {
-    expect(is_file(public_path('images/home-hero.jpg')))->toBeFalse()
-        ->and(heroSection($this->get('/')->getContent()))->not->toContain('home-hero.jpg');
+it('uses the site photo as the hero background, cropped from the top under the navy overlay', function (): void {
+    $hero = heroSection($this->get('/')->getContent());
+
+    expect(is_file(public_path('images/home-hero.jpg')))->toBeTrue()
+        ->and($hero)->toContain('src="'.asset('images/home-hero.jpg').'"')
+        ->and($hero)->toContain('alt=""')
+        ->and($hero)->toContain('width="1529"')
+        ->and($hero)->toContain('height="750"')
+        ->and($hero)->toContain('object-cover object-top')
+        ->and($hero)->toMatch('#data-hero-overlay[^>]*-z-10[^>]*from-brand-navy/90#');
 });
 
 it('gives the text the full width when there is no hero image file', function (): void {
@@ -61,8 +68,7 @@ it('gives the text the full width when there is no hero image file', function ()
 
     $hero = heroSection($this->get('/')->getContent());
 
-    expect($hero)->not->toContain('<img')
-        ->and($hero)->not->toContain('data-hero-image')
+    expect($hero)->not->toContain('data-hero-image')
         ->and($hero)->not->toContain('md:grid-cols-2')
         ->and($hero)->toContain('data-hero-text');
 });
@@ -89,7 +95,7 @@ it('renders no image column when the built file has no URL', function (): void {
     $path = fakeHeroFile();
     app()->instance(HeroImage::class, new HeroImage($path, fn (): string => ''));
 
-    expect(heroSection($this->get('/')->getContent()))->not->toContain('<img');
+    expect(heroSection($this->get('/')->getContent()))->not->toContain('data-hero-image');
 
     unlink($path);
 });
