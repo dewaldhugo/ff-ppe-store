@@ -402,6 +402,7 @@ it('keeps a product draft when its first image fails, and a later run completes 
     $product = VendorSync::product('SJ', '215754');
     $media = $product->getMedia('images');
     $variantPrimary = $product->variants->first()->images()->wherePivot('primary', true)->get();
+    $primaries = $media->filter(fn ($image): bool => (bool) $image->getCustomProperty('primary'));
 
     expect($second->heroFailed)->toBeFalse()
         ->and($second->downloaded)->toBe(1)
@@ -410,6 +411,10 @@ it('keeps a product draft when its first image fails, and a later run completes 
         // Final order: the hero first, then the details, then the outsole.
         ->and($media->map(fn ($image): string => $image->getCustomProperty('role'))->all())->toBe(['main', 'detail', 'detail', 'detail', 'detail', 'outsole'])
         ->and($media[0]->getCustomProperty('source_url'))->toEndWith('BESTBOOT-BLK-HIRES.PNG')
+        // After the retry the product's one primary image is the hero.
+        ->and($primaries)->toHaveCount(1)
+        ->and($primaries->first()->getCustomProperty('source_url'))->toEndWith('BESTBOOT-BLK-HIRES.PNG')
+        ->and($primaries->first()->is($media->first()))->toBeTrue()
         // Only the hero is primary, on the product and on the variant.
         ->and($media->map(fn ($image): bool => (bool) $image->getCustomProperty('primary'))->all())->toBe([true, false, false, false, false, false])
         ->and($variantPrimary)->toHaveCount(1)
@@ -546,4 +551,85 @@ it('reports a partial result, with the rest not attempted, when the time budget 
         // The hero was saved, so the product is published with what it has.
         ->and(VendorSync::product('SJ', '215754')->status)->toBe('published')
         ->and(VendorSync::product('SJ', '215754')->getMedia('images'))->toHaveCount(2);
+});
+
+it('keeps a published product published, with its existing hero, when a changed hero URL fails to download', function (): void {
+    Log::spy();
+    $link = importBestboot();
+    app(ProductImageSync::class)->sync($link);
+
+    // The vendor moved the hero: the stored hero came from an older URL, and
+    // the URL the list gives now is down.
+    $oldHero = VendorSync::product('SJ', '215754')->getMedia('images')->first();
+    $oldHero->setCustomProperty('source_url', 'https://ws.safetyjogger.com/image/general/SAFETY/OLD-HERO.JPG')->save();
+    $link->update(['image_urls_hash' => null]);
+    VendorSync::fakeHttp(brokenImages: ['BESTBOOT-BLK-HIRES']);
+
+    $this->artisan('vendorsync:images', ['vendor' => 'SJ', '--product' => '215754'])->assertSuccessful();
+
+    $run = imageRun();
+    $product = VendorSync::product('SJ', '215754');
+    $media = $product->getMedia('images');
+    $messages = implode("\n", $run->messages);
+
+    expect($run->status)->toBe('succeeded')
+        // A distinct line, not the draft wording, and not counted as a held-back hero.
+        ->and($messages)->toContain('Product 215754: hero refresh failed, kept existing image: https://ws.safetyjogger.com/image/')
+        ->and($messages)->toContain('BESTBOOT-BLK-HIRES.PNG: download failed: HTTP 404')
+        ->and($messages)->not->toContain('left draft')
+        ->and($messages)->not->toContain('HERO IMAGE FAILED')
+        ->and($messages)->not->toContain('PARTIAL')
+        ->and($run->stats['hero_refresh_failed_jobs'])->toBe(1)
+        ->and($run->stats['hero_failed_jobs'])->toBe(0)
+        ->and($run->stats['partial_jobs'])->toBe(0)
+        ->and($run->stats['images_failed'])->toBe(1)
+        // The product is untouched: published, no_image absent, the old hero first and the only primary.
+        ->and($product->status)->toBe('published')
+        ->and($link->refresh()->draft_reasons)->toBe([])
+        ->and($media)->toHaveCount(6)
+        ->and($media->first()->is($oldHero))->toBeTrue()
+        ->and($media->filter(fn ($image): bool => (bool) $image->getCustomProperty('primary')))->toHaveCount(1)
+        ->and($media->first()->getCustomProperty('primary'))->toBeTrue()
+        ->and($product->variants->first()->images()->wherePivot('primary', true)->pluck('media.id')->all())->toBe([$oldHero->id])
+        ->and(DB::table('failed_jobs')->count())->toBe(0);
+
+    Log::shouldHaveReceived('warning')->withArgs(fn (string $message): bool => str_contains($message, 'hero refresh failed, kept existing image'))->once();
+    Log::shouldNotHaveReceived('error');
+});
+
+it('holds a product back when its first image cannot be saved to the media library', function (): void {
+    $link = importBestboot();
+    $model = config('media-library.media_model');
+
+    // The first image downloads, then the media library refuses it (a full disk, say).
+    $model::creating(function ($media): void {
+        if (str_contains((string) ($media->custom_properties['source_url'] ?? ''), 'BESTBOOT-BLK-HIRES')) {
+            throw new RuntimeException('disk full');
+        }
+    });
+
+    $result = app(ProductImageSync::class)->sync($link);
+
+    expect($result->heroFailed)->toBeTrue()
+        ->and($result->heroKept)->toBeFalse()
+        ->and($result->stored)->toBe(5)
+        ->and($result->failed)->toHaveCount(1)
+        ->and($result->failed[0])->toContain('BESTBOOT-BLK-HIRES.PNG: RuntimeException: disk full')
+        ->and(VendorSync::product('SJ', '215754')->status)->toBe('draft')
+        ->and($link->refresh()->draft_reasons)->toBe([DraftReason::NO_IMAGE]);
+});
+
+it('holds a product back, and stores nothing, when its first image fails and no other image can be saved', function (): void {
+    $link = importBestboot(brokenImages: ['BESTBOOT']);
+
+    $result = app(ProductImageSync::class)->sync($link);
+    $link->refresh();
+
+    expect($result->heroFailed)->toBeTrue()
+        ->and($result->stored)->toBe(0)
+        ->and($result->failed)->toHaveCount(6)
+        ->and(VendorSync::product('SJ', '215754')->status)->toBe('draft')
+        ->and($link->draft_reasons)->toBe([DraftReason::NO_IMAGE])
+        ->and($link->image_urls_hash)->toBeNull()
+        ->and($link->images_synced_at)->toBeNull();
 });

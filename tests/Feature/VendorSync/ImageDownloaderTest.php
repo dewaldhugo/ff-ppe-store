@@ -193,3 +193,38 @@ it('derives the worst-case download time from the configuration', function (): v
         ->and(downloader(['retries' => 2, 'timeout' => 30, 'retry_backoff_ms' => 100, 'slot_lock_seconds' => 2])
             ->worstCaseDownloadSeconds('https://'.IMAGE_HOST.'/a.png'))->toBe(65);
 });
+
+it('takes two slots when a retry succeeds', function (): void {
+    $times = [];
+    $calls = 0;
+
+    Http::fake(function () use (&$times, &$calls) {
+        $times[] = clockMs();
+
+        return ++$calls === 1 ? Http::response('unavailable', 503) : Http::response(tinyPng(), 200);
+    });
+
+    $start = clockMs();
+    $result = downloader(['retry_backoff_ms' => 0])->download('https://'.IMAGE_HOST.'/a.png');
+
+    // A 503, then the image: two requests, two slots, 250 ms apart, nothing left reserved.
+    expect($result->succeeded())->toBeTrue()
+        ->and($result->body)->toBe(tinyPng())
+        ->and($times)->toBe([$start, $start + 250])
+        ->and(Cache::get('vendorsync.images.'.sha1(IMAGE_HOST).'.next'))->toBe($start + 500);
+});
+
+it('makes one request per candidate on a 404, so an http URL makes two', function (): void {
+    $urls = [];
+
+    Http::fake(function (Request $request) use (&$urls) {
+        $urls[] = $request->url();
+
+        return Http::response('missing', 404);
+    });
+
+    $result = downloader()->download('http://'.IMAGE_HOST.'/a.png');
+
+    expect($urls)->toBe(['https://'.IMAGE_HOST.'/a.png', 'http://'.IMAGE_HOST.'/a.png'])
+        ->and($result->failure)->toBe('download failed: HTTP 404');
+});

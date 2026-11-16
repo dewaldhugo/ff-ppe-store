@@ -32,6 +32,16 @@ final class ImageSyncResult
      */
     public bool $heroFailed = false;
 
+    /**
+     * The first image in the vendor's list could not be saved, but the product
+     * already has a hero (its URL changed): the existing image is kept and the
+     * product is left as it was. `heroRefreshFailure` is the failed image and
+     * its reason.
+     */
+    public bool $heroKept = false;
+
+    public ?string $heroRefreshFailure = null;
+
     /** Failed images whose download never started because the host's slot lock stayed busy. */
     public int $lockTimeouts = 0;
 

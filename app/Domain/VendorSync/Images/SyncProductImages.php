@@ -97,11 +97,30 @@ final class SyncProductImages implements ShouldQueue
         if ($result->failed !== []) {
             // Some images were saved and others were not. The job succeeds,
             // but the run says so on every run for as long as it stays true.
-            $warning = $this->partialMessage($id, $result);
-            $messages[] = $warning;
-            $counts = $this->counts($result) + ['partial_jobs' => 1, 'hero_failed_jobs' => $result->heroFailed ? 1 : 0];
+            // A hero that could not be refreshed, with the old one kept, has
+            // its own line: the product is unchanged and not held back.
+            $others = array_values(array_diff($result->failed, [(string) $result->heroRefreshFailure]));
+            $warnings = [];
 
-            Log::warning('VendorSync images: '.$warning, ['run_id' => $this->runId]);
+            if ($result->heroKept) {
+                $warnings[] = "Product {$id}: hero refresh failed, kept existing image: {$result->heroRefreshFailure}";
+            }
+
+            if ($others !== []) {
+                $warnings[] = $this->partialMessage($id, $result, $others);
+            }
+
+            foreach ($warnings as $warning) {
+                $messages[] = $warning;
+
+                Log::warning('VendorSync images: '.$warning, ['run_id' => $this->runId]);
+            }
+
+            $counts = $this->counts($result) + [
+                'partial_jobs' => $others !== [] ? 1 : 0,
+                'hero_failed_jobs' => $result->heroFailed ? 1 : 0,
+                'hero_refresh_failed_jobs' => $result->heroKept ? 1 : 0,
+            ];
         }
 
         $this->record($result->changed, count($result->failed), $messages, counts: $counts);
@@ -110,14 +129,16 @@ final class SyncProductImages implements ShouldQueue
     /**
      * What a partial result says in the run report: which kind, how many
      * images were saved, and why the others were not.
+     *
+     * @param  list<string>  $failed  The failed images, each with its reason.
      */
-    private function partialMessage(string $id, ImageSyncResult $result): string
+    private function partialMessage(string $id, ImageSyncResult $result, array $failed): string
     {
         $lead = $result->heroFailed
             ? "Product {$id}: HERO IMAGE FAILED, left draft (no_image) until it downloads. {$result->stored} of {$result->planned} images saved"
             : "Product {$id}: PARTIAL, {$result->stored} of {$result->planned} images saved";
 
-        return $lead.', '.count($result->failed)." failed ({$result->lockTimeouts} lock timeouts, {$result->notAttempted} not attempted): ".implode(' | ', $result->failed);
+        return $lead.', '.count($failed)." failed ({$result->lockTimeouts} lock timeouts, {$result->notAttempted} not attempted): ".implode(' | ', $failed);
     }
 
     /**

@@ -12,6 +12,7 @@ use App\Domain\VendorSync\Models\VendorProduct;
 use App\Domain\VendorSync\Models\VendorRawRecord;
 use Carbon\CarbonInterface;
 use Illuminate\Contracts\Container\Container;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Lunar\Models\Product;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -79,6 +80,7 @@ final readonly class ProductImageSync
             ->keyBy(fn (Media $media): string => $this->key($media->getCustomProperty('source_url'), $media->getCustomProperty('colour')));
 
         $ordered = [];
+        $storedHero = $this->storedHero($managed, $plan[0]);
 
         foreach ($plan as $index => $image) {
             $key = $this->key($image->url, $image->colour);
@@ -99,7 +101,7 @@ final readonly class ProductImageSync
                 if ($existing !== null) {
                     $ordered[$key] = $existing;
                 } elseif ($index === 0) {
-                    $result->heroFailed = true;
+                    $this->holdHero($result, $storedHero, $ordered, "{$image->url}: {$failure}");
                 }
 
                 continue;
@@ -147,7 +149,7 @@ final readonly class ProductImageSync
                 if ($existing !== null) {
                     $ordered[$key] = $existing;
                 } elseif ($index === 0) {
-                    $result->heroFailed = true;
+                    $this->holdHero($result, $storedHero, $ordered, $result->failed[array_key_last($result->failed)]);
                 }
 
                 continue;
@@ -211,6 +213,42 @@ final readonly class ProductImageSync
         }
 
         return $result;
+    }
+
+    /**
+     * The image the product already shows as its hero for the plan's first
+     * colour: a stored image with the same colour and role as the first image
+     * of the list, whatever URL it came from. It is what a hero whose URL
+     * changed was stored as, and it is absent on a product that never had its
+     * hero (the other images of a first run have other roles).
+     *
+     * @param  Collection<string, Media>  $managed
+     */
+    private function storedHero(Collection $managed, NormalisedImage $hero): ?Media
+    {
+        return $managed->first(fn (Media $media): bool => $media->getCustomProperty('colour') === $hero->colour
+            && $media->getCustomProperty('role') === $hero->role);
+    }
+
+    /**
+     * The first image of the list could not be saved and the product has no
+     * image of its own for it. Without a stored hero that holds the product
+     * back. With one (the hero's URL changed and the new one failed) the old
+     * image stays, first and primary, and the product is left as it was.
+     *
+     * @param  array<string, Media>  $ordered
+     */
+    private function holdHero(ImageSyncResult $result, ?Media $storedHero, array &$ordered, string $entry): void
+    {
+        if ($storedHero === null) {
+            $result->heroFailed = true;
+
+            return;
+        }
+
+        $ordered[$this->key($storedHero->getCustomProperty('source_url'), $storedHero->getCustomProperty('colour'))] = $storedHero;
+        $result->heroKept = true;
+        $result->heroRefreshFailure = $entry;
     }
 
     /**
