@@ -21,6 +21,16 @@ final class PricingRules
     public const float MAX_MARKUP = 5.0;
 
     /**
+     * Bump this whenever the pricing rules change in a way that alters
+     * stored prices for an unchanged vendor payload. It is part of the
+     * fingerprint, so the next run reprocesses every product once.
+     *
+     * 1: price capped at the RRP ex VAT.
+     * 2: no cap, GBP only, cost_at_or_above_rrp draft reason.
+     */
+    public const int RULES_VERSION = 2;
+
+    /**
      * The markup for a vendor, as a decimal string. Throws when the global
      * default or the vendor's override is not a number from 1.0 to 5.
      */
@@ -34,6 +44,17 @@ final class PricingRules
         }
 
         return self::validated($override, "vendorsync.vendors.{$vendorCode}.markup (VENDORSYNC_{$vendorCode}_MARKUP)");
+    }
+
+    /**
+     * What the stored prices of a vendor depend on besides its payload: the
+     * rule version and its markup. The importer folds it into each product's
+     * hash, so a change to either reprices existing products on the next run
+     * (the guard still watches cost, so the markup alone never holds anything).
+     */
+    public static function fingerprint(string $vendorCode): string
+    {
+        return hash('sha256', 'pricing-v'.self::RULES_VERSION.'|markup='.self::markup($vendorCode).'|currency=GBP');
     }
 
     /**

@@ -14,6 +14,7 @@ use App\Domain\VendorSync\Exceptions\SourceAborted;
 use App\Domain\VendorSync\Models\SyncRun;
 use App\Domain\VendorSync\Models\Vendor;
 use App\Domain\VendorSync\Models\VendorProduct;
+use App\Domain\VendorSync\Normalisers\PricingRules;
 use App\Domain\VendorSync\Support\RequestTimer;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Database\Eloquent\Collection;
@@ -317,7 +318,9 @@ final class CatalogueImporter
             $report->nonGbpVariants += count(array_filter($result->product->variants, fn (NormalisedVariant $variant): bool => $variant->price === null));
         }
 
-        $hash = $record->hash();
+        // The payload and the pricing rules together: a changed markup or
+        // rule version makes every stored hash stale, so products reprice once.
+        $hash = hash('sha256', $record->hash().'|'.PricingRules::fingerprint($code));
 
         // One small row per product, looked up by ID. No list of links is held.
         $link = $vendor === null ? null : VendorProduct::query()
