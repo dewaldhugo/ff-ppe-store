@@ -61,7 +61,7 @@ it('indexes a draft product with an unpriced variant without a price', function 
 
     expect(Price::query()->count())->toBe(0)
         ->and($document['price_min_ex_vat'])->toBeNull()
-        ->and($document['price_min_inc_vat'])->toBeNull()
+        ->and($document)->toHaveKey('price_min_ex_vat')
         ->and($document['in_stock'])->toBeFalse()
         ->and($product->status)->toBe('draft');
 });

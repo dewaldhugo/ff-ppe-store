@@ -14,8 +14,7 @@ final readonly class ListingQuery
 {
     /**
      * The index field every price is filtered and sorted on. The storefront
-     * shows ex VAT prices only. The index also holds the inc VAT figure for
-     * the admin panel, and the storefront does not read it.
+     * shows ex VAT prices only, and the index holds no inc VAT figure.
      */
     public const string PRICE_FIELD = 'price_min_ex_vat';
 
@@ -35,8 +34,8 @@ final readonly class ListingQuery
 
     /**
      * @param  array<string, list<string>>  $facets  Selected values by facet name.
-     * @param  ?int  $priceMin  Pence, in the customer's VAT display mode.
-     * @param  ?int  $priceMax  Pence, in the customer's VAT display mode.
+     * @param  ?int  $priceMin  Pence, ex VAT.
+     * @param  ?int  $priceMax  Pence, ex VAT.
      */
     public function __construct(
         public ?int $collectionId = null,

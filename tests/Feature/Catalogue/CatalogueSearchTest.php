@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 use App\Domain\Catalogue\Keys\CatalogueKeys;
 use App\Domain\Catalogue\Search\CatalogueSearch;
+use App\Domain\Catalogue\Search\IndexSettings;
 use App\Domain\Catalogue\Search\ListingQuery;
 use App\Domain\Catalogue\Search\ListingResult;
+use App\Domain\Catalogue\Search\StorefrontProductIndexer;
 use Lunar\Models\Product;
+use Meilisearch\Client;
 use Tests\Support\SearchIndex;
 
 /*
@@ -179,6 +182,27 @@ it('applies index settings once and then reports them as current', function (): 
     $this->artisan('catalogue:sync-search-settings')
         ->expectsOutputToContain('already has settings version')
         ->assertSuccessful();
+});
+
+it('has no inc VAT price field in the live index settings or in an indexed document', function (): void {
+    $index = app(Client::class)->index((new Product)->searchableAs());
+    $settings = $index->getSettings();
+    $document = $index->getDocument((string) Product::query()->firstOrFail()->id);
+
+    expect(IndexSettings::filterable())->not->toContain('price_min_inc_vat')
+        ->and(IndexSettings::sortable())->not->toContain('price_min_inc_vat')
+        ->and($settings['filterableAttributes'])->not->toContain('price_min_inc_vat')
+        ->and($settings['sortableAttributes'])->not->toContain('price_min_inc_vat')
+        ->and($settings['filterableAttributes'])->toContain('price_min_ex_vat')
+        ->and($document)->not->toHaveKey('price_min_inc_vat')
+        ->and($document)->toHaveKey('price_min_ex_vat');
+});
+
+it('does not build an inc VAT price into the indexed document', function (): void {
+    $document = app(StorefrontProductIndexer::class)->toSearchableArray(Product::query()->firstOrFail());
+
+    expect($document)->not->toHaveKey('price_min_inc_vat')
+        ->and($document['price_min_ex_vat'])->toBeInt();
 });
 
 it('builds a listing query from a query string, dropping junk', function (): void {

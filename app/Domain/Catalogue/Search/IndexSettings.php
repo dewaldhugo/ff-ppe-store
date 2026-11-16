@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace App\Domain\Catalogue\Search;
 
 /**
- * The product index settings defined under "Search index" in CLAUDE.md.
+ * The product index settings described in docs/search.md.
  *
  * Applied by `php artisan catalogue:sync-search-settings`. Bump VERSION with
  * every change so deploy logs show which settings are live.
  */
 final class IndexSettings
 {
-    public const int VERSION = 1;
+    public const int VERSION = 2;
 
     /**
      * Order matters: Meilisearch ranks matches in earlier attributes higher.
@@ -45,7 +45,6 @@ final class IndexSettings
             'variants_in_stock',
             'in_stock',
             'price_min_ex_vat',
-            'price_min_inc_vat',
             'status',
         ];
     }
@@ -55,7 +54,7 @@ final class IndexSettings
      */
     public static function sortable(): array
     {
-        return ['price_min_inc_vat', 'price_min_ex_vat', 'created_at', 'sort_order'];
+        return ['price_min_ex_vat', 'created_at', 'sort_order'];
     }
 
     /**

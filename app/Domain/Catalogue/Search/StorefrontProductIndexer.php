@@ -12,7 +12,7 @@ use Lunar\Search\ProductIndexer;
 
 /**
  * Extends Lunar's product indexing (mapped in config/lunar/search.php) with
- * the storefront fields from "Search index" in CLAUDE.md.
+ * the storefront fields described in docs/search.md.
  *
  * Lunar's own fields are kept because the admin panel searches this index.
  * One document per product, drafts included: the storefront always filters
@@ -86,8 +86,6 @@ final class StorefrontProductIndexer extends ProductIndexer
             }
         }
 
-        [$minExVat, $minIncVat] = $this->minimumPrices($model);
-
         return [
             ...parent::toSearchableArray($model),
             'name' => $model->translateAttribute('name'),
@@ -105,8 +103,7 @@ final class StorefrontProductIndexer extends ProductIndexer
             'sizes_in_stock' => array_map(strval(...), array_keys($sizes)),
             'variants_in_stock' => array_map(strval(...), array_keys($pairs)),
             'in_stock' => $inStock->isNotEmpty(),
-            'price_min_ex_vat' => $minExVat,
-            'price_min_inc_vat' => $minIncVat,
+            'price_min_ex_vat' => $this->minimumPriceExVat($model),
             // No source in the contract yet. Reserved for merchandising.
             'sort_order' => 0,
         ];
@@ -133,16 +130,12 @@ final class StorefrontProductIndexer extends ProductIndexer
     }
 
     /**
-     * Lowest variant price in pence, ex VAT and inc VAT. The inc VAT figure
-     * comes from Lunar and uses each variant's own tax class in the default
-     * zone, which for zero-protective is the individual-use rate.
-     *
-     * @return array{?int, ?int}
+     * Lowest variant price in pence, ex VAT. Null when no variant has a price
+     * (a draft product with a non-GBP vendor price).
      */
-    private function minimumPrices(Product $product): array
+    private function minimumPriceExVat(Product $product): ?int
     {
         $exVat = null;
-        $incVat = null;
 
         foreach ($product->variants as $variant) {
             foreach ($variant->prices as $price) {
@@ -153,13 +146,11 @@ final class StorefrontProductIndexer extends ProductIndexer
                 $price->setRelation('priceable', $variant);
 
                 $ex = $price->priceExTax()->value;
-                $inc = $price->priceIncTax()->value;
 
                 $exVat = $exVat === null ? $ex : min($exVat, $ex);
-                $incVat = $incVat === null ? $inc : min($incVat, $inc);
             }
         }
 
-        return [$exVat, $incVat];
+        return $exVat;
     }
 }
