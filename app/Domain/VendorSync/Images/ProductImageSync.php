@@ -10,6 +10,7 @@ use App\Domain\VendorSync\Data\RawRecord;
 use App\Domain\VendorSync\Import\CatalogueWriter;
 use App\Domain\VendorSync\Models\VendorProduct;
 use App\Domain\VendorSync\Models\VendorRawRecord;
+use Carbon\CarbonInterface;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Support\Str;
 use Lunar\Models\Product;
@@ -38,8 +39,11 @@ final readonly class ProductImageSync
 
     /**
      * @param  bool  $refresh  Download every image again and replace the ones whose content changed.
+     * @param  CarbonInterface|null  $deadline  The latest moment a download may still start with time to finish
+     *                                          (the job's time budget). An image that cannot be tried in time is
+     *                                          reported as not attempted. Null means no limit.
      */
-    public function sync(VendorProduct $link, bool $refresh = false): ImageSyncResult
+    public function sync(VendorProduct $link, bool $refresh = false, ?CarbonInterface $deadline = null): ImageSyncResult
     {
         $result = new ImageSyncResult;
         $plan = $this->plan($link, $result);
@@ -86,7 +90,7 @@ final readonly class ProductImageSync
                 continue;
             }
 
-            [$content, $downloadedFrom, $failure] = $this->fetch($image, $result);
+            [$content, $downloadedFrom, $failure] = $this->fetch($image, $result, $deadline);
 
             if ($content === null) {
                 $result->failed[] = "{$image->url}: {$failure}";
@@ -207,8 +211,16 @@ final readonly class ProductImageSync
      *
      * @return array{0: ?string, 1: string, 2: ?string} Bytes, the URL they came from, and the reason when there are none.
      */
-    private function fetch(NormalisedImage $image, ImageSyncResult $result): array
+    private function fetch(NormalisedImage $image, ImageSyncResult $result, ?CarbonInterface $deadline): array
     {
+        $shortfall = $this->budgetShortfall($image->url, $deadline);
+
+        if ($shortfall !== null) {
+            $result->notAttempted++;
+
+            return [null, $image->url, $shortfall];
+        }
+
         $download = $this->downloader->download($image->url);
 
         if (! $download->succeeded()) {
@@ -230,6 +242,14 @@ final readonly class ProductImageSync
             return [null, $image->url, "{$tooLarge}, and the vendor lists no smaller rendition"];
         }
 
+        $shortfall = $this->budgetShortfall($image->fallbackUrl, $deadline);
+
+        if ($shortfall !== null) {
+            $result->notAttempted++;
+
+            return [null, $image->url, "{$tooLarge}, and the smaller rendition {$image->fallbackUrl} was {$shortfall}"];
+        }
+
         $fallback = $this->downloader->download($image->fallbackUrl);
 
         if (! $fallback->succeeded()) {
@@ -247,6 +267,25 @@ final readonly class ProductImageSync
         $result->notes[] = basename($image->url).": {$tooLarge}; used ".basename($image->fallbackUrl).' instead';
 
         return [$content, $image->fallbackUrl, null];
+    }
+
+    /**
+     * Why a download must not start, or null when it can. A download starts
+     * only when the time left in the job covers the longest it can take, so
+     * a hanging host cannot push the job past its timeout and lose its report.
+     */
+    private function budgetShortfall(string $url, ?CarbonInterface $deadline): ?string
+    {
+        if ($deadline === null) {
+            return null;
+        }
+
+        $left = max(0, $deadline->getTimestamp() - now()->getTimestamp());
+        $needed = $this->downloader->worstCaseDownloadSeconds($url);
+
+        return $left >= $needed
+            ? null
+            : "not attempted: job time budget exhausted ({$left}s left, a download can take up to {$needed}s)";
     }
 
     /**

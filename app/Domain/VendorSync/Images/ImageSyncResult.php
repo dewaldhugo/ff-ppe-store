@@ -28,6 +28,9 @@ final class ImageSyncResult
     /** Failed images whose download never started because the host's slot lock stayed busy. */
     public int $lockTimeouts = 0;
 
+    /** Failed images that were never tried because the job's time budget ran out. */
+    public int $notAttempted = 0;
+
     /** @var list<string> Things worth knowing that are not failures (a smaller rendition was used). */
     public array $notes = [];
 

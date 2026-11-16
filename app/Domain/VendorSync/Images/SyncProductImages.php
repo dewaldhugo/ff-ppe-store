@@ -59,8 +59,13 @@ final class SyncProductImages implements ShouldQueue
 
         $id = (string) $link->vendor_product_id;
 
+        // The queue kills this job at `$timeout`. No download starts that
+        // could still be running when the margin for saving and reporting
+        // begins, so a hanging host costs images, not the whole report.
+        $deadline = now()->addSeconds(max(0, $this->timeout - (int) config('vendorsync.images.job_margin_seconds', 60)));
+
         try {
-            $result = $sync->sync($link, $this->refresh);
+            $result = $sync->sync($link, $this->refresh, $deadline);
         } catch (Throwable $exception) {
             $this->fail($id, class_basename($exception).': '.$exception->getMessage(), $exception);
         }

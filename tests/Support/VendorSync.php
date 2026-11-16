@@ -9,7 +9,9 @@ use App\Domain\VendorSync\Import\AcceptedPrices;
 use App\Domain\VendorSync\Import\CatalogueImporter;
 use App\Domain\VendorSync\Import\RunReport;
 use App\Domain\VendorSync\Models\VendorProduct;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
@@ -35,6 +37,16 @@ final class VendorSync
     /** @var list<array<mixed>> */
     private static array $responses = [[], [], [], [], []];
 
+    /** @var list<string> Image URL fragments whose request hangs until it times out. */
+    private static array $hanging = [];
+
+    /** @var list<string> Image URL fragments that are served, but only after a delay. */
+    private static array $slow = [];
+
+    private static int $delaySeconds = 0;
+
+    private static int $hangingRequests = 0;
+
     /**
      * Fake credentials, no real sleeping, no stray requests, and an empty
      * catalogue so that imports exercise the create path.
@@ -55,6 +67,10 @@ final class VendorSync
 
         self::$faked = false;
         self::$responses = [[], [], [], [], []];
+        self::$hanging = [];
+        self::$slow = [];
+        self::$delaySeconds = 0;
+        self::$hangingRequests = 0;
 
         Sleep::fake();
         Http::preventStrayRequests();
@@ -158,6 +174,23 @@ final class VendorSync
             }
 
             if (preg_match('#^https?://(ws\.safetyjogger\.com/image|ts-images\.gardinerbros\.co\.uk)/#', $url) === 1) {
+                // Time passes on the test clock only: sleeping must be synced
+                // with Carbon (`Sleep::fake(syncWithCarbon: true)`).
+                foreach (self::$hanging as $fragment) {
+                    if (str_contains($url, $fragment)) {
+                        self::$hangingRequests++;
+                        Carbon::setTestNow(Carbon::now()->addSeconds(self::$delaySeconds));
+
+                        throw new ConnectionException('cURL error 28: Operation timed out after '.(self::$delaySeconds * 1000).' milliseconds');
+                    }
+                }
+
+                foreach (self::$slow as $fragment) {
+                    if (str_contains($url, $fragment)) {
+                        Carbon::setTestNow(Carbon::now()->addSeconds(self::$delaySeconds));
+                    }
+                }
+
                 foreach ($brokenImages as $fragment) {
                     if (str_contains($url, $fragment)) {
                         return Http::response('missing', 404);
@@ -176,6 +209,37 @@ final class VendorSync
 
             return Http::response('unexpected request', 500);
         });
+    }
+
+    /**
+     * Image requests whose URL contains a fragment hang for `$seconds` of
+     * test-clock time and then fail with a connection timeout, as a host that
+     * accepts the connection and never answers does.
+     *
+     * @param  list<string>  $fragments
+     */
+    public static function hangImages(array $fragments, int $seconds = 60): void
+    {
+        self::$hanging = $fragments;
+        self::$delaySeconds = $seconds;
+    }
+
+    /**
+     * Image requests whose URL contains a fragment take `$seconds` of
+     * test-clock time and are then served normally.
+     *
+     * @param  list<string>  $fragments
+     */
+    public static function slowImages(array $fragments, int $seconds): void
+    {
+        self::$slow = $fragments;
+        self::$delaySeconds = $seconds;
+    }
+
+    /** How many image requests hung (a request that throws is not recorded by Http::fake). */
+    public static function hangingRequests(): int
+    {
+        return self::$hangingRequests;
     }
 
     /**

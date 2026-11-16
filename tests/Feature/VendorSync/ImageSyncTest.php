@@ -13,10 +13,12 @@ use App\Domain\VendorSync\Models\VendorProduct;
 use App\Domain\VendorSync\Models\VendorRawRecord;
 use App\Domain\VendorSync\Notifications\SyncRunAlert;
 use Illuminate\Http\Client\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Sleep;
 use Lunar\Models\Product;
 use Tests\Support\VendorSync;
 
@@ -33,6 +35,20 @@ beforeEach(function (): void {
     VendorSync::boot();
     Notification::fake();
 });
+
+afterEach(function (): void {
+    Carbon::setTestNow();
+});
+
+/**
+ * Freeze the clock and make sleeping advance it, so a host that hangs for 60
+ * seconds per attempt costs no real time. Call after the import.
+ */
+function freezeClock(): void
+{
+    Carbon::setTestNow('2026-11-16 12:00:00');
+    Sleep::fake(syncWithCarbon: true);
+}
 
 /**
  * Import BESTBOOT [215754] from its recorded detail. Its catalogue run
@@ -284,4 +300,65 @@ it('records a failed job and carries on with the next product on the sync queue'
         ->and(VendorSync::product('SJ', '279074')->status)->toBe('published');
 
     Log::shouldHaveReceived('error')->once();
+});
+
+it('stops starting downloads once the time budget cannot cover another one, and reports each as not attempted', function (): void {
+    $link = importBestboot();
+    freezeClock();
+    // Every attempt hangs for the full 60 s: 3 x 60 + 2 x 0.5 = 181 s per image.
+    VendorSync::hangImages(['BESTBOOT'], 60);
+
+    $result = app(ProductImageSync::class)->sync($link, false, now()->addSeconds(400));
+
+    // Images 1 and 2 are tried (400 s and 219 s left, 197 s needed); 38 s are left for image 3.
+    expect(VendorSync::hangingRequests())->toBe(6)
+        ->and($result->planned)->toBe(6)
+        ->and($result->failed)->toHaveCount(6)
+        ->and($result->notAttempted)->toBe(4)
+        ->and($result->stored)->toBe(0)
+        ->and($result->failed[0])->toContain('connection failed or timed out')
+        ->and($result->failed[1])->toContain('(after 3 attempts)')
+        ->and($result->failed[2])->toContain('not attempted: job time budget exhausted (38s left, a download can take up to 197s)')
+        ->and($result->failed[5])->toContain('not attempted');
+});
+
+it('reports a job whose host hangs, instead of letting the queue kill it at its timeout', function (): void {
+    $link = importBestboot();
+    freezeClock();
+    VendorSync::hangImages(['BESTBOOT'], 60);
+
+    $run = app(RunRecorder::class)->start($link->vendor, ImageRun::TYPE);
+    $job = new SyncProductImages($link->id, false, $run->id);
+    // 450 s timeout minus the 60 s margin leaves a 390 s budget.
+    $job->timeout = 450;
+    $startedAt = now();
+
+    expect(fn () => $job->handle(app(ProductImageSync::class)))
+        ->toThrow(ImageSyncFailed::class, 'not attempted: job time budget exhausted');
+
+    // Two images were tried (362 s), the other four were not, and the job
+    // finished well inside its 450 s with its failure recorded in the run.
+    expect(VendorSync::hangingRequests())->toBe(6)
+        ->and($startedAt->diffInSeconds(now(), true))->toBeLessThan(450)
+        ->and($run->refresh()->errors)->toBe(1)
+        ->and($run->messages[0])->toContain('none of the 6 images could be saved')
+        ->and($run->messages[0])->toContain('not attempted: job time budget exhausted');
+});
+
+it('does not download the smaller rendition when the original used up the time budget', function (): void {
+    $link = importBestboot(hugeImages: ['BESTBOOT-BLK-HIRES.PNG']);
+    freezeClock();
+    // The oversized original takes 100 s to arrive.
+    VendorSync::slowImages(['BESTBOOT-BLK-HIRES.PNG'], 100);
+
+    $result = app(ProductImageSync::class)->sync($link, false, now()->addSeconds(250));
+
+    // 250 s covers the original (197 s needed), the 150 s left after it do not cover the rendition.
+    expect($result->failed[0])->toContain('BESTBOOT-BLK-HIRES.PNG: the image is 3692 x 3291')
+        ->and($result->failed[0])->toContain('and the smaller rendition')
+        ->and($result->failed[0])->toContain('was not attempted: job time budget exhausted (150s left, a download can take up to 197s)')
+        ->and($result->notAttempted)->toBe(6);
+
+    Http::assertSent(fn (Request $request): bool => str_contains($request->url(), 'BESTBOOT-BLK-HIRES.PNG'));
+    Http::assertNotSent(fn (Request $request): bool => str_contains($request->url(), 'BESTBOOT-BLK-WEB01.JPG'));
 });

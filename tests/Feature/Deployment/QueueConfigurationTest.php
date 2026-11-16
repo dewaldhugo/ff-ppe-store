@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domain\VendorSync\Images\ImageDownloader;
 use App\Domain\VendorSync\Images\SyncProductImages;
 use App\Support\Queues;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -99,6 +100,16 @@ it('sets the image supervisor timeout above the image job timeout', function ():
 
     expect(horizonSupervisors('production')['supervisor-images']['timeout'])->toBeGreaterThan($jobTimeout)
         ->and((new ReflectionClass(SyncProductImages::class))->getProperty('tries')->getDefaultValue())->toBe(1);
+});
+
+it('leaves the image job time for at least one worst-case download after its margin', function (): void {
+    $timeout = (new ReflectionClass(SyncProductImages::class))->getProperty('timeout')->getDefaultValue();
+    $budget = $timeout - (int) config('vendorsync.images.job_margin_seconds');
+    $downloader = app(ImageDownloader::class);
+
+    // Both URL shapes: https (one candidate) and http (https first, then http).
+    expect($budget)->toBeGreaterThan($downloader->worstCaseDownloadSeconds('http://images.example.test/a.jpg'))
+        ->and($budget)->toBeGreaterThan($downloader->worstCaseDownloadSeconds('https://images.example.test/a.jpg'));
 });
 
 it('keeps retry_after above every job and supervisor timeout on each queue connection', function (): void {
