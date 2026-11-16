@@ -43,6 +43,11 @@ return [
 
     'messages_cap' => 200,
 
+    // Products sent to the search index at a time at the end of a catalogue
+    // run. A chunk that fails is reported and the run goes on; after three
+    // failed chunks in a row the rest are not attempted (docs/vendorsync.md).
+    'reindex_chunk' => 100,
+
     // Queue image jobs after a real catalogue run. `--without-images` turns
     // this off for one run; the command then prints the images command to run later.
     'queue_images' => (bool) env('VENDORSYNC_QUEUE_IMAGES', true),

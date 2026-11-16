@@ -42,7 +42,8 @@ final class CatalogueImporter
 {
     public const string TYPE = 'catalogue';
 
-    private const int REINDEX_CHUNK = 100;
+    /** Stop sending products to the search index after this many failed chunks in a row. */
+    private const int REINDEX_MAX_CONSECUTIVE_FAILURES = 3;
 
     private float $startedAt = 0.0;
 
@@ -131,6 +132,11 @@ final class CatalogueImporter
             $report->finish(RunReport::FAILED, class_basename($exception).': '.$exception->getMessage());
         }
 
+        // One batch reindex for everything the run wrote. It comes before the
+        // run is recorded: an indexing failure marks the run failed, which
+        // is what sends the alert.
+        $this->reindex($vendor, $report);
+
         $this->stats($report);
 
         // The full list of held prices is never capped, so it goes to a file
@@ -140,9 +146,6 @@ final class CatalogueImporter
         }
 
         $this->runs->finish($run, $report);
-
-        // One batch reindex for everything the run wrote.
-        $this->reindex($report);
 
         return $report;
     }
@@ -515,21 +518,97 @@ final class CatalogueImporter
     }
 
     /**
-     * The run collected product IDs only. They are loaded and reindexed in
-     * small chunks.
+     * The run collected product IDs only. They are loaded and sent to the
+     * search index in small chunks, after every database write has been
+     * committed (writes run inside withoutSyncingToSearch()).
+     *
+     * A chunk that throws is reported and the next one is tried. After three
+     * failed chunks in a row the rest are not attempted, because the search
+     * engine is most likely down. Every product that was not indexed has its
+     * payload hash cleared, otherwise the next run would see an unchanged
+     * payload, skip the product and never index it. The run is marked failed
+     * (and so alerts), with a message that says the database writes succeeded.
      */
-    private function reindex(RunReport $report): void
+    private function reindex(Vendor $vendor, RunReport $report): void
     {
         $ids = array_values(array_unique($report->productIds));
+        $chunks = array_chunk($ids, max(1, (int) config('vendorsync.reindex_chunk', 100)));
 
-        foreach (array_chunk($ids, self::REINDEX_CHUNK) as $chunk) {
-            $products = Product::query()->whereIn('id', $chunk)->get();
+        /** @var list<int> $indexed */
+        $indexed = [];
+        /** @var list<int> $failed */
+        $failed = [];
+        /** @var list<int> $skipped */
+        $skipped = [];
+        $consecutive = 0;
 
-            Brand::query()->whereIn('id', $products->pluck('brand_id')->filter()->unique())->get()->searchable();
-            $products->searchable();
+        foreach ($chunks as $position => $chunk) {
+            if ($consecutive >= self::REINDEX_MAX_CONSECUTIVE_FAILURES) {
+                $skipped = array_merge(...array_slice($chunks, $position));
+
+                break;
+            }
+
+            try {
+                $products = Product::query()->whereIn('id', $chunk)->get();
+
+                Brand::query()->whereIn('id', $products->pluck('brand_id')->filter()->unique())->get()->searchable();
+                $products->searchable();
+
+                array_push($indexed, ...$chunk);
+                $consecutive = 0;
+            } catch (Throwable $exception) {
+                report($exception);
+
+                $consecutive++;
+                array_push($failed, ...$chunk);
+
+                $report->error(sprintf(
+                    'Search indexing failed for %d products (Lunar product IDs %d to %d, chunk %d of %d): %s: %s',
+                    count($chunk),
+                    min($chunk),
+                    max($chunk),
+                    $position + 1,
+                    count($chunks),
+                    class_basename($exception),
+                    $exception->getMessage(),
+                ));
+            }
         }
 
-        $report->reindexedProductIds = $ids;
+        $report->reindexedProductIds = $indexed;
+
+        $unindexed = [...$failed, ...$skipped];
+
+        if ($unindexed === []) {
+            return;
+        }
+
+        $message = sprintf(
+            'Search indexing failed: %d of %d written products are not in the search index (%d in failed chunks, %d not attempted after %d failed chunks in a row). All database writes succeeded; only indexing failed. Their payload hashes were cleared, so the next run rewrites and reindexes them.',
+            count($unindexed),
+            count($ids),
+            count($failed),
+            count($skipped),
+            self::REINDEX_MAX_CONSECUTIVE_FAILURES,
+        );
+
+        try {
+            foreach (array_chunk($unindexed, 500) as $chunk) {
+                VendorProduct::query()->where('vendor_id', $vendor->id)->whereIn('product_id', $chunk)->update(['payload_hash' => null]);
+            }
+        } catch (Throwable $exception) {
+            report($exception);
+
+            $message .= ' The payload hashes could NOT be cleared ('.class_basename($exception).': '.$exception->getMessage().'): run this vendor again with --force.';
+        }
+
+        // A run that already failed or aborted keeps its status.
+        if ($report->ok()) {
+            $report->finish(RunReport::FAILED, $message);
+        } else {
+            $report->message($message);
+        }
     }
 
     /**
