@@ -7,6 +7,7 @@ namespace App\Domain\VendorSync\Images;
 use App\Domain\VendorSync\Exceptions\ImageSyncFailed;
 use App\Domain\VendorSync\Models\SyncRun;
 use App\Domain\VendorSync\Models\VendorProduct;
+use App\Support\Queues;
 use Illuminate\Bus\Batchable;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -18,7 +19,9 @@ use Throwable;
 
 /**
  * Synchronises the images of one product. Queued after a catalogue run.
- * Downloads have their own retries, so the job itself is tried once.
+ * Downloads have their own retries, so the job itself is tried once. It runs
+ * on the `images` queue, whose Horizon supervisor timeout and the connection's
+ * `retry_after` are both above this job's timeout (see config/horizon.php).
  *
  * The job never finishes silently without work. If the product is missing,
  * there is nothing to download, or no image could be saved, it logs an
@@ -42,7 +45,9 @@ final class SyncProductImages implements ShouldQueue
         public readonly int $vendorProductId,
         public readonly bool $refresh = false,
         public readonly ?int $runId = null,
-    ) {}
+    ) {
+        $this->onQueue(Queues::IMAGES);
+    }
 
     public function handle(ProductImageSync $sync): void
     {

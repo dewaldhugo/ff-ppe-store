@@ -98,6 +98,9 @@ return [
 
     'waits' => [
         'redis:default' => 60,
+        // A catalogue run queues one image job per product: a long wait is normal.
+        'redis:images' => 3600,
+        'redis:conversions' => 300,
     ],
 
     /*
@@ -196,35 +199,62 @@ return [
     |
     */
 
+    // One supervisor per queue (names: App\Support\Queues). Process counts are
+    // fixed (`balance` false). The image supervisor's timeout is above the
+    // image job's own timeout (900), and the connection's `retry_after`
+    // (config/queue.php) is above every timeout here: a test enforces both.
+    // Workers recycle after maxJobs or maxTime. `memory` is the Horizon restart
+    // threshold in MB, not PHP's memory_limit.
     'defaults' => [
-        'supervisor-1' => [
+        'supervisor-default' => [
             'connection' => 'redis',
             'queue' => ['default'],
-            'balance' => 'auto',
-            'autoScalingStrategy' => 'time',
-            'maxProcesses' => 1,
-            'maxTime' => 0,
-            'maxJobs' => 0,
-            'memory' => 128,
+            'balance' => false,
+            'maxProcesses' => 3,
+            'maxTime' => 3600,
+            'maxJobs' => 200,
+            'memory' => 256,
             'tries' => 1,
             'timeout' => 60,
+            'nice' => 0,
+        ],
+        'supervisor-images' => [
+            'connection' => 'redis',
+            'queue' => ['images'],
+            'balance' => false,
+            'maxProcesses' => 2,
+            'maxTime' => 3600,
+            'maxJobs' => 200,
+            'memory' => 512,
+            'tries' => 1,
+            'timeout' => 960,
+            'nice' => 0,
+        ],
+        'supervisor-conversions' => [
+            'connection' => 'redis',
+            'queue' => ['conversions'],
+            'balance' => false,
+            'maxProcesses' => 4,
+            'maxTime' => 3600,
+            'maxJobs' => 200,
+            'memory' => 512,
+            'tries' => 1,
+            'timeout' => 300,
             'nice' => 0,
         ],
     ],
 
     'environments' => [
         'production' => [
-            'supervisor-1' => [
-                'maxProcesses' => 10,
-                'balanceMaxShift' => 1,
-                'balanceCooldown' => 3,
-            ],
+            'supervisor-default' => [],
+            'supervisor-images' => [],
+            'supervisor-conversions' => [],
         ],
 
         'local' => [
-            'supervisor-1' => [
-                'maxProcesses' => 3,
-            ],
+            'supervisor-default' => ['maxProcesses' => 1],
+            'supervisor-images' => ['maxProcesses' => 1],
+            'supervisor-conversions' => ['maxProcesses' => 1],
         ],
     ],
 
