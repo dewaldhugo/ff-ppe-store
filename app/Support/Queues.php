@@ -16,6 +16,6 @@ final class Queues
     /** Vendor image jobs: long downloads (timeout 900). */
     public const string IMAGES = 'images';
 
-    /** Spatie media conversions, when conversions are queued (`MEDIA_QUEUE`). */
+    /** Spatie media conversions, when conversions are queued (`QUEUE_CONVERSIONS_BY_DEFAULT`). */
     public const string CONVERSIONS = 'conversions';
 }

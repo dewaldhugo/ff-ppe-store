@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+use App\Support\Queues;
 
 /**
  * @return array<string, string> Variables set (even to empty) in an env file, commented lines included.
@@ -72,6 +73,14 @@ it('sets the production values in .env.production.example', function (): void {
     expect($production['REDIS_PREFIX'])->not->toBe('')
         ->and(array_keys($production))->toContain(...REQUIRED_ENV_VARIABLES)
         ->and((int) $production['REDIS_QUEUE_RETRY_AFTER'])->toBeGreaterThan(960);
+});
+
+it('does not offer MEDIA_QUEUE: the conversions queue name is fixed in config', function (): void {
+    foreach (['.env.example', '.env.production.example'] as $file) {
+        expect(array_keys(envFileVariables($file, includeCommented: true)))->not->toContain('MEDIA_QUEUE');
+    }
+
+    expect(config('media-library.queue_name'))->toBe(Queues::CONVERSIONS);
 });
 
 it('ships credentials as empty placeholders', function (): void {
