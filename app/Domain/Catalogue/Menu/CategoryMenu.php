@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Catalogue\Menu;
 
+use App\Domain\Catalogue\Urls\CategoryUrl;
 use Illuminate\Support\Facades\Cache;
 use Lunar\Models\Collection;
 use Lunar\Models\CollectionGroup;
@@ -21,6 +22,8 @@ use Lunar\Models\CollectionGroup;
 final class CategoryMenu
 {
     public const string CACHE_KEY = 'storefront.category_menu';
+
+    public function __construct(private readonly CategoryUrl $urls) {}
 
     /**
      * @return list<array{name: string, url: string, children: list<array{name: string, url: string}>}>
@@ -55,17 +58,28 @@ final class CategoryMenu
             ->get()
             ->toTree();
 
-        $item = fn (Collection $collection): array => [
-            'name' => (string) $collection->translateAttribute('name'),
-            'url' => route('category', $collection->defaultUrl?->slug ?? $collection->id),
-        ];
+        // A collection without a default URL has no page, so it is left out.
+        $item = function (Collection $collection): ?array {
+            $url = $this->urls->for($collection);
+
+            return $url === null ? null : [
+                'name' => (string) $collection->translateAttribute('name'),
+                'url' => $url,
+            ];
+        };
 
         $menu = [];
 
         foreach ($tree as $collection) {
+            $entry = $item($collection);
+
+            if ($entry === null) {
+                continue;
+            }
+
             $menu[] = [
-                ...$item($collection),
-                'children' => $collection->children->map($item)->values()->all(),
+                ...$entry,
+                'children' => $collection->children->map($item)->filter()->values()->all(),
             ];
         }
 

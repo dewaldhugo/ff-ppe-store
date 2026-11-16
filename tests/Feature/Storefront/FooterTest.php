@@ -22,7 +22,7 @@ function footer(string $html): string
 }
 
 it('shows the UK trading disclosure from config', function (): void {
-    $footer = footer($this->get('/products')->getContent());
+    $footer = footer($this->get(route('shop'))->getContent());
 
     $expected = 'The Bridge Group Ltd, registered in England and Wales, company number 01234567. Registered office: 1 Example Street, London, EC1A 1AA. VAT number GB123456789.';
 
@@ -36,7 +36,7 @@ it('shows TBC placeholders until the details are known', function (): void {
         config()->set('store.'.$key, 'TBC');
     }
 
-    expect(footer($this->get('/products')->getContent()))
+    expect(footer($this->get(route('shop'))->getContent()))
         ->toContain('TBC, registered in England and Wales, company number TBC. Registered office: TBC. VAT number TBC.');
 });
 
@@ -59,12 +59,12 @@ it('reads every identity value from config, with TBC as the default', function (
 });
 
 it('tells visitors it supplies business customers and that prices exclude VAT', function (): void {
-    expect(footer($this->get('/products')->getContent()))
+    expect(footer($this->get(route('shop'))->getContent()))
         ->toContain('data-business-notice>We supply business customers. All prices exclude VAT.<');
 });
 
 it('has the footer columns with the right links', function (): void {
-    $footer = footer($this->get('/products')->getContent());
+    $footer = footer($this->get(route('shop'))->getContent());
 
     $columns = [
         'Customer service' => ['Contact' => 'contact', 'Delivery Information' => 'delivery', 'Returns and Refunds' => 'returns'],
@@ -88,11 +88,11 @@ it('has the footer columns with the right links', function (): void {
     expect($products[1])->toContain('href="'.route('category', 'safety-footwear').'"')
         ->and($products[1])->toContain('href="'.route('category', 'wellingtons').'"')
         // Children belong in the menu, not the footer.
-        ->and($products[1])->not->toContain('href="'.route('category', 'safety-boots').'"');
+        ->and($products[1])->not->toContain('href="'.route('category', 'safety-footwear/safety-boots').'"');
 });
 
 it('uses the white logo on the brand-blue footer', function (): void {
-    $footer = footer($this->get('/products')->getContent());
+    $footer = footer($this->get(route('shop'))->getContent());
 
     preg_match('#<a href="'.preg_quote(route('home'), '#').'"[^>]*data-footer-logo.*?</a>#s', $footer, $logo);
 

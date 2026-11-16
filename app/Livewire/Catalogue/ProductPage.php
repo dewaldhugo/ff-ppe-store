@@ -21,7 +21,7 @@ use Lunar\Models\Url as LunarUrl;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 /**
- * Product detail page (/p/{slug}). The selection rules themselves live in
+ * Product detail page (/products/{slug}). The selection rules themselves live in
  * VariantSelection; this component only holds the customer's choices.
  */
 final class ProductPage extends Component

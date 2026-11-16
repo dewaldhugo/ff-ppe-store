@@ -27,7 +27,7 @@
                 <p class="mt-4 max-w-xl text-lg text-white/90">S1P, S3 and ESD trainers, shoes and boots in a wide range of sizes. All prices shown exclusive of VAT.</p>
 
                 <div class="mt-8 flex flex-wrap gap-4">
-                    <x-ui.button variant="accent" :href="route('category', 'safety-footwear')">Shop safety footwear</x-ui.button>
+                    <x-ui.button variant="accent" :href="app(\App\Domain\Catalogue\Urls\CategoryUrl::class)->forHandle('safety-footwear')">Shop safety footwear</x-ui.button>
                     <x-ui.button-outline :href="route('contact')" :on-dark="true">Contact us for trade enquiries</x-ui.button-outline>
                 </div>
             </div>

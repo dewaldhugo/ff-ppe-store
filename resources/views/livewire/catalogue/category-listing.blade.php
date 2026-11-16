@@ -1,10 +1,10 @@
 <div>
-    @if ($breadcrumbs->isNotEmpty())
+    @if ($breadcrumbs !== [])
         <nav aria-label="Breadcrumb" class="mb-2 text-sm text-ink-muted">
             <ol class="flex flex-wrap gap-1">
                 @foreach ($breadcrumbs as $ancestor)
                     <li>
-                        <a href="{{ route('category', $ancestor->defaultUrl?->slug ?? $ancestor->id) }}" class="underline">{{ $ancestor->translateAttribute('name') }}</a>
+                        <a href="{{ $ancestor['url'] }}" class="underline">{{ $ancestor['name'] }}</a>
                         <span aria-hidden="true">/</span>
                     </li>
                 @endforeach

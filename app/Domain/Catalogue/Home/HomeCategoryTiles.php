@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\Catalogue\Home;
 
 use App\Domain\Catalogue\Keys\CatalogueKeys;
+use App\Domain\Catalogue\Urls\CategoryUrl;
 use Lunar\Models\Collection;
 use Lunar\Models\Product;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -19,6 +20,8 @@ final class HomeCategoryTiles
 {
     public const string PARENT = 'safety-footwear';
 
+    public function __construct(private readonly CategoryUrl $urls) {}
+
     /**
      * @return list<array{name: string, url: string, image: array{src: string, srcset: string, width: int, height: int}|null}>
      */
@@ -28,13 +31,13 @@ final class HomeCategoryTiles
 
         return $parent->children()
             ->defaultOrder()
-            ->with('defaultUrl')
             ->get()
-            ->map(fn (Collection $collection): array => [
+            ->map(fn (Collection $collection): ?array => ($url = $this->urls->for($collection)) === null ? null : [
                 'name' => (string) $collection->translateAttribute('name'),
-                'url' => route('category', $collection->defaultUrl?->slug ?? $collection->id),
+                'url' => $url,
                 'image' => $this->image($collection),
             ])
+            ->filter()
             ->values()
             ->all();
     }

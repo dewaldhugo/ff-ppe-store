@@ -29,7 +29,7 @@ const PLACEHOLDERS = [
 it('has a named route for every page', function (string $name, string $uri): void {
     expect(route($name, absolute: false))->toBe($uri);
 })->with(array_merge(
-    [['home', '/'], ['products', '/products']],
+    [['home', '/'], ['shop', '/shop']],
     array_map(fn (string $name, array $page): array => [$name, $page[0]], array_keys(PLACEHOLDERS), PLACEHOLDERS),
 ));
 
@@ -49,23 +49,29 @@ it('renders each placeholder page with its heading, the standard layout and noin
 })->with(array_map(fn (string $name, array $page): array => [$name, $page[0], $page[1]], array_keys(PLACEHOLDERS), PLACEHOLDERS));
 
 it('keeps the home page out of search engines while STORE_NOINDEX is true', function (): void {
-    $this->get('/')->assertOk()->assertSee(NOINDEX, false);
+    $this->get(route('home'))->assertOk()->assertSee(NOINDEX, false);
 });
 
-it('keeps every page out of search engines while STORE_NOINDEX is true', function (string $uri): void {
-    $this->get($uri)->assertOk()->assertSee(NOINDEX, false);
-})->with(['/', '/products', '/c/safety-footwear', '/p/safety-jogger-ligero', '/search?q=boots', '/about', '/privacy']);
+it('keeps every page out of search engines while STORE_NOINDEX is true', function (array $route): void {
+    $this->get(route(...$route))->assertOk()->assertSee(NOINDEX, false);
+})->with([
+    [['home']], [['shop']], [['category', 'safety-footwear']], [['product', 'safety-jogger-ligero']],
+    [['search', ['q' => 'boots']]], [['about']], [['privacy']],
+]);
 
-it('lets search engines index the real pages once STORE_NOINDEX is false', function (string $uri): void {
+it('lets search engines index the real pages once STORE_NOINDEX is false', function (array $route): void {
     config()->set('store.noindex', false);
 
-    $this->get($uri)->assertOk()->assertDontSee(NOINDEX, false);
-})->with(['/', '/products', '/c/safety-footwear', '/p/safety-jogger-ligero', '/search?q=boots']);
+    $this->get(route(...$route))->assertOk()->assertDontSee(NOINDEX, false);
+})->with([
+    [['home']], [['shop']], [['category', 'safety-footwear']], [['product', 'safety-jogger-ligero']],
+    [['search', ['q' => 'boots']]],
+]);
 
 it('keeps a placeholder page out of search engines until it has content, even after launch', function (): void {
     config()->set('store.noindex', false);
 
-    $this->get('/privacy')->assertOk()->assertSee(NOINDEX, false);
+    $this->get(route('privacy'))->assertOk()->assertSee(NOINDEX, false);
 });
 
 it('turns noindex on from a single flag that defaults to on', function (): void {
@@ -86,13 +92,13 @@ it('has a Launch checklist in CLAUDE.md with the three launch tasks', function (
 });
 
 it('renders the existing listing and product pages inside the new layout', function (): void {
-    $this->get('/c/safety-footwear')
+    $this->get(route('category', 'safety-footwear'))
         ->assertOk()
         ->assertSee('<nav aria-label="Main"', false)
         ->assertSee('data-business-notice', false)
         ->assertSee('data-testid="product-grid"', false);
 
-    $this->get('/p/safety-jogger-ligero')
+    $this->get(route('product', 'safety-jogger-ligero'))
         ->assertOk()
         ->assertSee('<footer', false)
         ->assertSee('data-gallery-main', false)
@@ -100,12 +106,12 @@ it('renders the existing listing and product pages inside the new layout', funct
 });
 
 it('uses route names for every link in the header and footer', function (): void {
-    $html = $this->get('/products')->getContent();
+    $html = $this->get(route('shop'))->getContent();
 
     preg_match_all('#<(?:header|footer).*?</(?:header|footer)>#s', $html, $shell);
     preg_match_all('~href="([^"#]+)"~', implode('', $shell[0]), $hrefs);
 
-    $known = collect(['home', 'products', 'about', 'contact', 'account', 'cart', 'checkout', 'terms', 'privacy', 'cookies', 'returns', 'delivery', 'accessibility', 'search'])
+    $known = collect(['home', 'shop', 'about', 'contact', 'account', 'cart', 'checkout', 'terms', 'privacy', 'cookies', 'returns', 'delivery', 'accessibility', 'search'])
         ->map(fn (string $name): string => route($name));
 
     $categories = collect(app(CategoryMenu::class)->tree())
