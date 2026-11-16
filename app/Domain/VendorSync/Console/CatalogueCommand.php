@@ -153,6 +153,10 @@ final class CatalogueCommand extends Command
         $this->line(($report->dryRun ? 'DRY RUN, nothing was written. ' : '')."{$report->vendorCode} catalogue: {$report->status}");
         $this->table(array_keys($report->counts()), [array_values($report->counts())]);
 
+        if ($report->indexing !== null) {
+            $this->line($report->indexing);
+        }
+
         foreach ($report->tallies as $group => $tally) {
             ksort($tally);
             $this->line($group.': '.implode(', ', array_map(fn (int|string $key, int $count): string => "{$key} {$count}", array_keys($tally), $tally)));

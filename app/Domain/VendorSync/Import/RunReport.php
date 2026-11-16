@@ -71,8 +71,16 @@ final class RunReport
     /** @var list<int> Lunar product IDs written by the run. IDs only. */
     public array $productIds = [];
 
-    /** @var list<int> Lunar product IDs reindexed by the run. */
+    /**
+     * @var list<int> Lunar product IDs the run sent to the search index.
+     *
+     * Sent, not necessarily searchable: with Scout queueing they are only
+     * queued, and Meilisearch applies documents asynchronously either way.
+     */
     public array $reindexedProductIds = [];
+
+    /** What the run did with the search index, in words (see CatalogueImporter::reindex()). */
+    public ?string $indexing = null;
 
     /** @var array<string, int|float> API request counts and timings for the run. */
     public array $stats = [];
@@ -174,6 +182,7 @@ final class RunReport
             'status' => $this->status,
             'counts' => $this->counts(),
             'stats' => $this->stats,
+            'indexing' => $this->indexing,
             'tallies' => $tallies,
             'samples' => $this->samples,
             'held_prices' => array_map(fn (HeldPrice $held): array => $held->toArray(), $this->held),

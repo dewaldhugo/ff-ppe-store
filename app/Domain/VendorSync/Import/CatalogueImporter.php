@@ -578,6 +578,15 @@ final class CatalogueImporter
 
         $report->reindexedProductIds = $indexed;
 
+        // Never "reindexed": the products were sent, and nothing here knows
+        // that Meilisearch has applied them (with Scout queueing, not even
+        // that they were sent yet).
+        if ($indexed !== []) {
+            $report->indexing = config('scout.queue')
+                ? sprintf('%d products queued for indexing', count($indexed))
+                : sprintf('%d products sent to the search index (applied asynchronously; run catalogue:verify-index)', count($indexed));
+        }
+
         $unindexed = [...$failed, ...$skipped];
 
         if ($unindexed === []) {
