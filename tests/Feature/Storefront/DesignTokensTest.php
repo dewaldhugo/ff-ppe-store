@@ -169,11 +169,19 @@ it('never puts white text on a teal fill or teal text on a light surface', funct
 
 it('loads the font from the application, not a CDN', function (): void {
     $css = (string) file_get_contents(resource_path('css/app.css'));
-    $package = json_decode((string) file_get_contents(base_path('package.json')), true);
 
-    expect($css)->toContain("@import '@fontsource-variable/figtree';")
-        ->and($package['devDependencies'])->toHaveKey('@fontsource-variable/figtree')
-        ->and($css)->not->toContain('fonts.googleapis.com');
+    expect($css)->toContain("font-family: 'Poppins'")
+        ->and($css)->toContain("--font-sans: 'Poppins'")
+        ->and($css)->not->toContain('fonts.googleapis.com')
+        ->and($css)->not->toContain('fonts.gstatic.com');
+
+    preg_match_all("~url\\('([^']+\\.woff2)'\\)~", $css, $matches);
+
+    expect($matches[1])->not->toBeEmpty();
+
+    foreach ($matches[1] as $path) {
+        expect(file_exists(resource_path('css/'.$path)))->toBeTrue("Missing font file {$path}");
+    }
 
     foreach (bladeTemplates() as $file) {
         expect((string) file_get_contents($file))->not->toContain('fonts.googleapis.com')

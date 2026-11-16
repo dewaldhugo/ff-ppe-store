@@ -55,7 +55,6 @@ it('shows the product with its price, description and specification', function (
         ->assertSee('Lightweight ESD Safety Shoes')
         ->assertSee('Ultra-light, flexible safety shoe')
         ->assertSee('£68.90')
-        ->assertSee('£76.50')
         ->assertSee('ex VAT')
         ->assertSee('Slip resistant (SRC)')
         ->assertSee('ESD, electrostatic dissipative')
@@ -190,21 +189,22 @@ it('shows a stock message for the selection', function (string $slug, ?string $s
     ['maxguard-sx310', '8', 'Out of stock'],
 ]);
 
-it('shows a standard rated product ex VAT, with its compare price ex VAT', function (): void {
+it('shows a standard rated product ex VAT, without its RRP', function (): void {
     $this->get(route('product', 'safety-jogger-ligero'))
         ->assertSee('£68.90')
-        ->assertSee('£76.50')
+        ->assertDontSee('£76.50')
         ->assertSee('ex VAT')
         ->assertDontSee('£82.68')
         ->assertDontSee('£91.80')
         ->assertDontSee('inc VAT');
 });
 
-it('shows a zero-protective product ex VAT, with a note about employers', function (): void {
+it('shows a zero-protective product ex VAT, with no VAT note under the price', function (): void {
     $this->get(route('product', 'amblers-safety-fs9'))
         ->assertSee('£52.48')
         ->assertSee('ex VAT')
-        ->assertSee('VAT at 20% applies when buying for employees');
+        ->assertDontSee('Zero rated for VAT')
+        ->assertDontSee('VAT at 20% applies when buying for employees');
 });
 
 it('shows no employer VAT note on a standard rated product', function (): void {
@@ -431,4 +431,13 @@ it('shows a labelled quantity field that starts empty', function (): void {
 it('says out of stock, not select a size, when nothing is in stock', function (): void {
     expect(addButton($this->get(route('product', 'maxguard-sx310'))->getContent()))
         ->toBe(['disabled' => true, 'label' => 'Out of stock']);
+});
+
+it('links to the size guide next to the size selector', function (): void {
+    $html = $this->get(route('product', 'safety-jogger-ligero'))->assertOk()->getContent();
+
+    preg_match('#<fieldset[^>]*data-option="shoe_size".*?</fieldset>#s', $html, $fieldset);
+
+    expect($fieldset[0] ?? '')->toContain('href="'.route('size-guide').'"')
+        ->and($fieldset[0])->toContain('data-size-guide-link');
 });

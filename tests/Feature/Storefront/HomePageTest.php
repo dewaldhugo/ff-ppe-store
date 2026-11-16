@@ -37,30 +37,31 @@ it('has the new hero copy, with one h1 and no placeholder text', function (): vo
     $hero = heroSection($html);
 
     expect(substr_count($html, '<h1'))->toBe(1)
-        ->and($hero)->toContain('Trade supplier')
-        ->and($hero)->toMatch('#<h1[^>]*>Safety footwear for UK businesses</h1>#')
-        ->and($hero)->toContain('S1P, S3 and ESD trainers, shoes and boots in a wide range of sizes. All prices shown exclusive of VAT.')
+        ->and($hero)->toContain('UK TRADE PPE SUPPLIER')
+        ->and($hero)->toMatch('#<h1[^>]*>When safety slips, everyone pays\.<br>Quality safety gear isn&rsquo;t optional, it&rsquo;s essential\.</h1>#')
+        ->and($hero)->toContain('EN-compliant safety footwear, head, eye, and hearing protection ready for immediate dispatch. Bulk trade pricing available.')
         ->and($html)->not->toContain('Content coming soon.')
         ->and($html)->not->toContain('full size runs');
 });
 
-it('links the primary button to safety footwear and the secondary button to contact', function (): void {
+it('links the primary button to the shop and the secondary button to the account page, with the same corner radius', function (): void {
     $hero = heroSection($this->get(route('home'))->getContent());
 
-    expect($hero)->toMatch('#<a href="'.preg_quote(route('category', 'safety-footwear'), '#').'"[^>]*bg-brand-teal[^>]*text-brand-navy[^>]*>Shop safety footwear</a>#')
-        ->and($hero)->toMatch('#<a href="'.preg_quote(route('contact'), '#').'"[^>]*border-brand-teal[^>]*>Contact us for trade enquiries</a>#');
+    expect($hero)->toMatch('#<a href="'.preg_quote(route('shop'), '#').'"[^>]*rounded-md[^>]*bg-brand-teal[^>]*text-brand-navy[^>]*>View all products</a>#')
+        ->and($hero)->toMatch('#<a href="'.preg_quote(route('account'), '#').'"[^>]*rounded-md[^>]*border-brand-teal[^>]*>Open a trade account</a>#')
+        ->and($hero)->not->toContain('rounded-full');
 });
 
-it('uses the site photo as the hero background, cropped from the top under the navy overlay', function (): void {
+it('uses the site photo as the hero background, centred under the navy overlay', function (): void {
     $hero = heroSection($this->get(route('home'))->getContent());
 
     expect(is_file(public_path('images/home-hero.jpg')))->toBeTrue()
         ->and($hero)->toContain('src="'.asset('images/home-hero.jpg').'"')
         ->and($hero)->toContain('alt=""')
-        ->and($hero)->toContain('width="1529"')
-        ->and($hero)->toContain('height="750"')
-        ->and($hero)->toContain('object-cover object-top')
-        ->and($hero)->toMatch('#data-hero-overlay[^>]*-z-10[^>]*from-brand-navy/90#');
+        ->and($hero)->toContain('width="1536"')
+        ->and($hero)->toContain('height="1024"')
+        ->and($hero)->toContain('object-cover object-[center_15%]')
+        ->and($hero)->toMatch('#data-hero-overlay[^>]*-z-10[^>]*from-brand-navy/86#');
 });
 
 it('gives the text the full width when there is no hero image file', function (): void {
@@ -193,4 +194,43 @@ it('skips draft products and products with no image, and falls back to a plain t
     $product->clearMediaCollection(config('lunar.media.collection'));
 
     expect($tile())->not->toContain('<img');
+});
+
+it('shows the industry slider under the hero, with its heading', function (): void {
+    $html = $this->get(route('home'))->assertOk()->getContent();
+
+    $hero = (int) strpos($html, 'data-home-hero');
+    $industries = (int) strpos($html, 'data-home-industries');
+
+    expect($industries)->toBeGreaterThan($hero)
+        ->and($industries)->toBeLessThan((int) strpos($html, 'data-home-trust'))
+        ->and($html)->toContain('Solutions for every workplace')
+        ->and($html)->toContain('aria-label="Industries we supply"')
+        ->and(substr_count($html, '<h1'))->toBe(1);
+});
+
+it('shows the feature products section with two videos, in place of the standards chips', function (): void {
+    $html = $this->get(route('home'))->assertOk()->getContent();
+
+    preg_match('#<section[^>]*data-home-featured.*?</section>#s', $html, $section);
+
+    expect($section[0] ?? '')->toMatch('#<h2[^>]*id="home-featured"[^>]*>Featured products</h2>#')
+        ->and(substr_count($section[0], '<video'))->toBe(2)
+        ->and($section[0])->toContain('md:grid-cols-2')
+        ->and($section[0])->toContain('src="https://frontline-footwear.com/shop/datasheets/CADOR%20Colours%20that%20work.mp4"')
+        ->and($section[0])->toContain('src="https://frontline-footwear.com/shop/datasheets/MODULO_540p.mp4"')
+        ->and($section[0])->toContain('poster="https://frontline-shop.com/v1.jpg"')
+        ->and($section[0])->toContain('poster="https://frontline-shop.com/v2.jpg"')
+        ->and(substr_count($section[0], 'preload="metadata"'))->toBe(2)
+        ->and($html)->not->toContain('data-home-standards');
+});
+
+it('puts an intro h3 under the industries heading and a light grey band above the footer', function (): void {
+    $html = $this->get(route('home'))->assertOk()->getContent();
+
+    preg_match('#<section[^>]*data-home-service[^>]*>#', $html, $service);
+    preg_match('#<section class="[^"]*"[^>]*data-home-service#', $html, $serviceClass);
+
+    expect($html)->toMatch('#Solutions for every workplace</h2>.*?<h3[^>]*data-industries-intro[^>]*>Streamline your site procurement with a single, dependable UK trade supplier\. We stock certified head-to-toe PPE, workwear, and safety footwear ready for rapid nationwide dispatch and competitive bulk pricing\.</h3>#s')
+        ->and($serviceClass[0] ?? '')->toContain('bg-surface-muted');
 });

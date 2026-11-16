@@ -1,5 +1,6 @@
 @php
     $links = [
+        ['route' => 'size-guide', 'label' => 'Size Guide', 'active' => request()->routeIs('size-guide')],
         ['route' => 'about', 'label' => 'About', 'active' => request()->routeIs('about')],
         ['route' => 'contact', 'label' => 'Contact', 'active' => request()->routeIs('contact')],
     ];
@@ -208,6 +209,7 @@
                         </ul>
                     </li>
 
+                    <li><a href="{{ route('size-guide') }}" class="block py-3 font-semibold text-ink">Size Guide</a></li>
                     <li><a href="{{ route('about') }}" class="block py-3 font-semibold text-ink">About</a></li>
                     <li><a href="{{ route('contact') }}" class="block py-3 font-semibold text-ink">Contact</a></li>
                     <li><a href="{{ route('account') }}" class="block py-3 font-semibold text-ink">Account</a></li>
