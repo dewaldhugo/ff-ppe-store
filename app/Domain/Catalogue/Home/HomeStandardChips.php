@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\Catalogue\Home;
 
 use App\Domain\Catalogue\Features\FeatureLabels;
+use App\Domain\Catalogue\Urls\CategoryUrl;
 
 /**
  * The "Shop by standard" chips, from config/homepage.php. Each links to the
@@ -12,6 +13,8 @@ use App\Domain\Catalogue\Features\FeatureLabels;
  */
 final class HomeStandardChips
 {
+    public function __construct(private readonly CategoryUrl $urls) {}
+
     /**
      * @return list<array{label: string, url: string, facet: string, value: string}>
      */
@@ -28,7 +31,7 @@ final class HomeStandardChips
 
             $chips[] = [
                 'label' => (string) $label,
-                'url' => route('category', ['slug' => HomeCategoryTiles::PARENT, $facet => [$value]]),
+                'url' => (string) $this->urls->forHandle(HomeCategoryTiles::PARENT, [$facet => [$value]]),
                 'facet' => $facet,
                 'value' => $value,
             ];

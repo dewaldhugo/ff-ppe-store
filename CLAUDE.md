@@ -74,13 +74,22 @@ Current routes (`routes/web.php`):
 | Route name | URI | Target |
 |---|---|---|
 | `home` | `/` | view `home` |
-| `products` | `/products` | view `pages.products` |
-| `category` | `/c/{slug}` | `CategoryListing` (the collection URL slug, which equals its contract handle) |
+| `shop` | `/shop` | view `pages.shop` (every top-level category) |
+| (none) | `/products` | 301 to `/shop` |
+| `category` | `/shop/{path}` | `CategoryListing`. `{path}` is the URL slugs of the collection's ancestors plus its own, e.g. `/shop/safety-footwear/safety-boots` |
 | `search` | `/search` | `CategoryListing` |
-| `product` | `/p/{slug}` | `ProductPage` |
+| `product` | `/products/{slug}` | `ProductPage` |
 | placeholders | `/about`, `/contact`, `/account`, `/cart`, `/checkout`, `/terms`, `/privacy`, `/cookies`, `/returns`, `/delivery`, `/accessibility` | `pages.placeholder` (noindex) |
 
-Always link with `route()`; the canonical product URL comes from `route('product', $slug)`. Never hard-code paths in views or tests.
+Rules:
+
+- Always link with `route()`; never hard-code paths in views or tests. Product links use `route('product', $slug)`. **Category links go through `App\Domain\Catalogue\Urls\CategoryUrl`** (`for($collection, $params)` or `forHandle($handle, $params)`), which builds the path from the collection's ancestry. `CollectionPath` is the only code that works a path out, and `CollectionPath::PREFIX` (`shop`) is the only definition of the prefix.
+- Only collections in the `categories` group have a `/shop` URL. `ranges` collections (Clearance, Industry ranges) 404 there. They will get their own prefix (for example `/ranges/{slug}`) in a later task.
+- Collection URL slugs equal their contract handles at creation. After that the slug is editable in the admin, and the path follows the slug and the collection's position in the tree.
+- `ResolveCategoryPath` (route middleware) resolves the path before the page mounts: an exact match renders; a retired path, a wrong ancestry or a case-only difference gets a 301 to the correct path; anything else is a 404. Two parents may each have a child with the same slug, so the full path is matched, never the last segment alone. Paths are compared in PHP, never through the database collation. `ResolveProductSlug` does the same case check for products.
+- Trailing slashes 301 to the version without (`RedirectTrailingSlash`, storefront GET and HEAD routes only).
+- Canonical links: a category listing with any query string other than `page` points at the unfiltered category URL; `?page=N` points at itself. `/search` keeps its own query in its canonical.
+- When a category's slug or position changes, the old path is stored in `url_redirects` (`old_path`, `new_path`, `created_at`, unique on `old_path`) and 301s to the new one, for the category and every descendant. Chains collapse (A to B to C resolves A to C) and loops are refused. Detection runs from the Collection and Url model events (`CollectionRedirectObserver`), and `php artisan catalogue:sync-redirects [--dry-run]` is the backstop for raw tree rebuilds. It is scheduled hourly (`routes/console.php`, independent of `VENDORSYNC_SCHEDULE_ENABLED`) and runs after migrations at deploy (docs/launch-checklist.md). `collection_path_snapshots` holds each category's last known path.
 
 ## Storefront
 
@@ -112,3 +121,4 @@ Full list, with details, in [docs/launch-checklist.md](docs/launch-checklist.md)
 - [ ] Confirm the trust strip claims with the client.
 - [ ] Confirm `pcntl` and `posix` exist in the server's PHP CLI before starting Horizon.
 - [ ] Replace every TBC in the store identity (`STORE_*`).
+- [ ] Run `php artisan catalogue:sync-redirects` after migrations on every deploy (first run only takes snapshots), and make sure the server cron runs `schedule:run`.

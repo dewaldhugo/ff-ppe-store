@@ -33,23 +33,25 @@ function productsMenu(string $html): string
 }
 
 it('lists the categories collection tree, with children, in the Products menu', function (): void {
-    $html = $this->get('/products')->getContent();
+    $html = $this->get(route('shop'))->getContent();
     $menu = productsMenu($html);
 
-    foreach (['safety-footwear', 'safety-trainers', 'safety-shoes', 'safety-boots', 'occupational-footwear', 'slippers', 'plimsolls', 'casual-footwear', 'accessories', 'wellingtons'] as $slug) {
-        expect($menu)->toContain('href="'.route('category', $slug).'"');
+    $paths = ['safety-footwear', 'safety-footwear/safety-trainers', 'safety-footwear/safety-shoes', 'safety-footwear/safety-boots', 'occupational-footwear', 'slippers', 'plimsolls', 'casual-footwear', 'accessories', 'wellingtons'];
+
+    foreach ($paths as $path) {
+        expect($menu)->toContain('href="'.route('category', $path).'"');
     }
 
     // Children sit under their parent; ranges are not categories.
     preg_match('#href="'.preg_quote(route('category', 'safety-footwear'), '#').'".*?<ul class="mt-2 space-y-1">(.*?)</ul>#s', $menu, $children);
 
-    expect($children[1])->toContain(route('category', 'safety-boots'))
+    expect($children[1])->toContain(route('category', 'safety-footwear/safety-boots'))
         ->and($children[1])->toContain('Safety Trainers')
         ->and($menu)->not->toContain('href="'.route('category', 'clearance').'"');
 });
 
 it('puts the same categories in the drawer, the footer and the products grid', function (): void {
-    $html = $this->get('/products')->getContent();
+    $html = $this->get(route('shop'))->getContent();
 
     // The drawer's lists are nested, so it runs to the end of its navigation.
     foreach (['data-drawer-categories' => '</nav>', 'data-footer-categories' => '</ul>', 'data-category-grid' => '</ul>'] as $marker => $end) {
@@ -63,39 +65,39 @@ it('puts the same categories in the drawer, the footer and the products grid', f
 
 it('updates when a collection is added, renamed, moved or deleted', function (): void {
     // Warm the cache first, so what follows proves it was cleared.
-    expect(productsMenu($this->get('/products')->getContent()))->not->toContain('Test Hi-Vis');
+    expect(productsMenu($this->get(route('shop'))->getContent()))->not->toContain('Test Hi-Vis');
 
     $added = addCategory('Test Hi-Vis', 'test-hi-vis');
 
-    expect(productsMenu($this->get('/products')->getContent()))->toContain('Test Hi-Vis')
-        ->and($this->get('/')->getContent())->toContain('href="'.route('category', 'test-hi-vis').'"');
+    expect(productsMenu($this->get(route('shop'))->getContent()))->toContain('Test Hi-Vis')
+        ->and($this->get(route('home'))->getContent())->toContain('href="'.route('category', 'test-hi-vis').'"');
 
     // A child appears under its parent.
     $child = addCategory('Test Jackets', 'test-jackets', $added);
 
-    expect(productsMenu($this->get('/products')->getContent()))->toContain('Test Jackets');
+    expect(productsMenu($this->get(route('shop'))->getContent()))->toContain('Test Jackets');
 
     // A rename.
     $added->update(['attribute_data' => ['name' => new TranslatedText(['en' => new Text('Test Visibility')])]]);
 
-    expect(productsMenu($this->get('/products')->getContent()))->toContain('Test Visibility')->not->toContain('Test Hi-Vis');
+    expect(productsMenu($this->get(route('shop'))->getContent()))->toContain('Test Visibility')->not->toContain('Test Hi-Vis');
 
     // A change to the URL slug alone.
     $added->defaultUrl->update(['slug' => 'test-visibility']);
 
-    expect(productsMenu($this->get('/products')->getContent()))->toContain(route('category', 'test-visibility'));
+    expect(productsMenu($this->get(route('shop'))->getContent()))->toContain(route('category', 'test-visibility'));
 
     // A deletion.
     $child->delete();
     $added->delete();
 
-    expect(productsMenu($this->get('/products')->getContent()))->not->toContain('Test Visibility')->not->toContain('Test Jackets');
+    expect(productsMenu($this->get(route('shop'))->getContent()))->not->toContain('Test Visibility')->not->toContain('Test Jackets');
 });
 
 it('does not list a collection from another group', function (): void {
     addCategory('Spring Offers', 'spring-offers', group: 'ranges');
 
-    expect(productsMenu($this->get('/products')->getContent()))->not->toContain('Spring Offers');
+    expect(productsMenu($this->get(route('shop'))->getContent()))->not->toContain('Spring Offers');
 });
 
 it('builds the menu once and then serves it from the cache', function (): void {
@@ -117,7 +119,7 @@ it('builds the menu once and then serves it from the cache', function (): void {
 });
 
 it('gives the mobile drawer the dialog and disclosure attributes screen readers need', function (): void {
-    $html = $this->get('/products')->getContent();
+    $html = $this->get(route('shop'))->getContent();
 
     // The button that opens it.
     preg_match('#<button[^>]*aria-controls="mobile-menu"[^>]*>#s', $html, $open);
@@ -152,7 +154,7 @@ it('gives the mobile drawer the dialog and disclosure attributes screen readers 
 });
 
 it('gives the desktop Products button the same disclosure attributes', function (): void {
-    $html = $this->get('/products')->getContent();
+    $html = $this->get(route('shop'))->getContent();
 
     preg_match('#<button[^>]*data-products-button[^>]*>#s', $html, $button);
 

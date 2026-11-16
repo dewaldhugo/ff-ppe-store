@@ -12,7 +12,7 @@ beforeEach(function (): void {
 });
 
 it('renders a page with the skip link, header, search, main and footer', function (): void {
-    $this->get('/products')
+    $this->get(route('shop'))
         ->assertOk()
         ->assertSee('Skip to main content')
         ->assertSee('<form action="'.route('search').'" method="get" role="search"', false)
@@ -23,7 +23,7 @@ it('renders a page with the skip link, header, search, main and footer', functio
 });
 
 it('has no VAT toggle, route or session state left, and says that prices are ex VAT', function (): void {
-    $html = $this->get('/products')->assertOk()->getContent();
+    $html = $this->get(route('shop'))->assertOk()->getContent();
 
     expect($html)->not->toContain('data-vat-toggle')
         ->and($html)->not->toContain('aria-pressed')
@@ -37,7 +37,7 @@ it('has no VAT toggle, route or session state left, and says that prices are ex 
 });
 
 it('shows the logo in the header, linked to the home page, with the store name as its alt text', function (): void {
-    $html = $this->get('/products')->assertOk()->getContent();
+    $html = $this->get(route('shop'))->assertOk()->getContent();
 
     preg_match('#<a href="'.preg_quote(route('home'), '#').'"[^>]*data-site-logo[^>]*>.*?</a>#s', $html, $link);
 
@@ -49,7 +49,7 @@ it('shows the logo in the header, linked to the home page, with the store name a
 });
 
 it('has a top bar with the trade notice, contact details and an account link', function (): void {
-    $html = $this->get('/products')->getContent();
+    $html = $this->get(route('shop'))->getContent();
 
     preg_match('#<div class="surface-dark bg-brand-navy.*?</ul>#s', $html, $bar);
 
@@ -66,7 +66,7 @@ it('links the phone and email once they are real', function (): void {
     config()->set('store.phone', '020 7946 0000');
     config()->set('store.email', 'trade@example.test');
 
-    $html = $this->get('/products')->getContent();
+    $html = $this->get(route('shop'))->getContent();
 
     expect($html)->toContain('href="tel:02079460000"')
         ->and($html)->toContain('href="mailto:trade@example.test"')
@@ -74,7 +74,7 @@ it('links the phone and email once they are real', function (): void {
 });
 
 it('has a cart link with an item count badge of zero', function (): void {
-    $html = $this->get('/products')->getContent();
+    $html = $this->get(route('shop'))->getContent();
 
     preg_match('#<a\s+href="'.preg_quote(route('cart'), '#').'"[^>]*data-cart-link.*?</a>#s', $html, $cart);
 
@@ -84,7 +84,7 @@ it('has a cart link with an item count badge of zero', function (): void {
 });
 
 it('has the main navigation: Home, Products, About and Contact', function (): void {
-    $html = $this->get('/about')->getContent();
+    $html = $this->get(route('about'))->getContent();
 
     preg_match('#<nav aria-label="Main".*?</nav>#s', $html, $nav);
 
@@ -93,11 +93,11 @@ it('has the main navigation: Home, Products, About and Contact', function (): vo
         ->and($nav[0])->toContain('href="'.route('contact').'"')
         ->and($nav[0])->toContain('data-products-button')
         // The no-JavaScript fallback for the Products button.
-        ->and($nav[0])->toContain('href="'.route('products').'"');
+        ->and($nav[0])->toContain('href="'.route('shop').'"');
 });
 
 it('lets a visitor without JavaScript reach the menus as plain links', function (): void {
-    $html = $this->get('/products')->getContent();
+    $html = $this->get(route('shop'))->getContent();
 
     // The plain Products link is hidden when JavaScript runs. A display utility
     // beside `hidden` would show it next to the Products button.
@@ -111,7 +111,7 @@ it('lets a visitor without JavaScript reach the menus as plain links', function 
 });
 
 it('loads Livewire\'s Alpine once on every page, for the menus', function (): void {
-    foreach (['/', '/products', '/about'] as $uri) {
+    foreach ([route('home'), route('shop'), route('about')] as $uri) {
         expect(substr_count($this->get($uri)->getContent(), '/livewire/livewire.js'))->toBe(1, $uri);
     }
 });

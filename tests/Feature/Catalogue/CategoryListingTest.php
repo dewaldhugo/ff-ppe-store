@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domain\Catalogue\Keys\CatalogueKeys;
 use App\Domain\Catalogue\Search\ListingQuery;
 use App\Livewire\Catalogue\CategoryListing;
 use Livewire\Livewire;
@@ -10,6 +11,12 @@ use Tests\Support\SearchIndex;
 beforeEach(function (): void {
     SearchIndex::use();
 });
+
+/** The id the router passes to the listing once it has resolved /shop/safety-footwear. */
+function footwearId(): int
+{
+    return CatalogueKeys::collection('safety-footwear')->id;
+}
 
 /**
  * Product names in the grid, in order.
@@ -38,36 +45,36 @@ function facetCounts(string $html, string $facet): array
 }
 
 it('lists the collection and its descendants', function (): void {
-    $html = $this->get('/c/safety-footwear')->assertOk()->getContent();
+    $html = $this->get(route('category', 'safety-footwear'))->assertOk()->getContent();
 
     expect(gridNames($html))->toEqualCanonicalizing(['LIGERO', 'SX310', 'FS9', 'FS65', 'FS30C'])
         ->and($html)->toContain('5 products');
 });
 
 it('returns 404 for an unknown category', function (): void {
-    $this->get('/c/not-a-category')->assertNotFound();
+    $this->get(route('category', 'not-a-category'))->assertNotFound();
 });
 
 it('filters Safety Footwear by S1P and SRC down to Ligero and FS65', function (): void {
-    $html = $this->get('/c/safety-footwear?safety_class[0]=S1P&features[0]=SRC')->assertOk()->getContent();
+    $html = $this->get(route('category', 'safety-footwear').'?safety_class[0]=S1P&features[0]=SRC')->assertOk()->getContent();
 
     expect(gridNames($html))->toEqualCanonicalizing(['LIGERO', 'FS65'])
         ->and($html)->toContain('2 products');
 });
 
 it('reads every filter from the query string so filtered URLs can be shared', function (): void {
-    $html = $this->get('/c/safety-footwear?brand[0]=Amblers+Safety&in_stock=1&sort=price-desc')->assertOk()->getContent();
+    $html = $this->get(route('category', 'safety-footwear').'?brand[0]=Amblers+Safety&in_stock=1&sort=price-desc')->assertOk()->getContent();
 
     expect(gridNames($html))->toBe(['FS9', 'FS65']);
 
     Livewire::withQueryParams(['brand' => ['Centek'], 'sort' => 'newest', 'page' => 1])
-        ->test(CategoryListing::class, ['slug' => 'safety-footwear'])
+        ->test(CategoryListing::class, ['collectionId' => footwearId()])
         ->assertSet('brand', ['Centek'])
         ->assertSet('sort', 'newest');
 });
 
 it('shows facet counts from the search index', function (): void {
-    $html = $this->get('/c/safety-footwear')->getContent();
+    $html = $this->get(route('category', 'safety-footwear'))->getContent();
 
     expect(facetCounts($html, 'brand'))->toBe(['Amblers Safety' => 2, 'Centek' => 1, 'Maxguard' => 1, 'Safety Jogger' => 1])
         ->and(facetCounts($html, 'safety_class'))->toBe(['S1P' => 2, 'S3' => 1, 'SBP' => 1])
@@ -75,7 +82,7 @@ it('shows facet counts from the search index', function (): void {
 });
 
 it('keeps a facet\'s own counts when one of its values is selected', function (): void {
-    $html = $this->get('/c/safety-footwear?brand[0]=Centek')->getContent();
+    $html = $this->get(route('category', 'safety-footwear').'?brand[0]=Centek')->getContent();
 
     expect(gridNames($html))->toBe(['FS30C'])
         ->and(facetCounts($html, 'brand'))->toBe(['Amblers Safety' => 2, 'Centek' => 1, 'Maxguard' => 1, 'Safety Jogger' => 1])
@@ -83,19 +90,19 @@ it('keeps a facet\'s own counts when one of its values is selected', function ()
 });
 
 it('labels feature facets from the shared feature labels', function (): void {
-    $this->get('/c/safety-footwear')
+    $this->get(route('category', 'safety-footwear'))
         ->assertSee('Slip resistant (SRC)')
         ->assertSee('ESD, electrostatic dissipative')
         ->assertSee('Metal free');
 });
 
 it('shows an out of stock badge and hides the product when in stock only is ticked', function (): void {
-    $all = $this->get('/c/safety-footwear')->getContent();
+    $all = $this->get(route('category', 'safety-footwear'))->getContent();
 
     expect(gridNames($all))->toContain('SX310')
         ->and($all)->toMatch('#Out of stock</span>.*?SX310#s');
 
-    $inStock = Livewire::test(CategoryListing::class, ['slug' => 'safety-footwear'])
+    $inStock = Livewire::test(CategoryListing::class, ['collectionId' => footwearId()])
         ->set('in_stock', true)
         ->html();
 
@@ -103,7 +110,7 @@ it('shows an out of stock badge and hides the product when in stock only is tick
 });
 
 it('filters by colour and size together as a combination', function (): void {
-    $component = Livewire::test(CategoryListing::class, ['slug' => 'safety-footwear'])
+    $component = Livewire::test(CategoryListing::class, ['collectionId' => footwearId()])
         ->set('colour', ['black'])
         ->set('size', ['10']);
 
@@ -116,12 +123,12 @@ it('filters by colour and size together as a combination', function (): void {
 
 it('filters by price ex VAT', function (): void {
     // LIGERO is 68.90 ex VAT and 82.68 inc VAT.
-    expect(gridNames($this->get('/c/safety-footwear?price_min=65&price_max=70')->getContent()))->toBe(['LIGERO'])
-        ->and(gridNames($this->get('/c/safety-footwear?price_min=80&price_max=85')->getContent()))->toBe([]);
+    expect(gridNames($this->get(route('category', 'safety-footwear').'?price_min=65&price_max=70')->getContent()))->toBe(['LIGERO'])
+        ->and(gridNames($this->get(route('category', 'safety-footwear').'?price_min=80&price_max=85')->getContent()))->toBe([]);
 });
 
 it('sorts by price and by newest', function (): void {
-    $sorted = fn (string $sort): array => gridNames($this->get('/c/safety-footwear?sort='.$sort)->getContent());
+    $sorted = fn (string $sort): array => gridNames($this->get(route('category', 'safety-footwear').'?sort='.$sort)->getContent());
 
     // Ex VAT, FS65 and FS30C are both 40.48, so their order is a tie.
     expect($sorted('price-asc')[0])->toBeIn(['FS30C', 'FS65'])
@@ -131,7 +138,7 @@ it('sorts by price and by newest', function (): void {
 });
 
 it('shows prices ex VAT with the suffix', function (): void {
-    $this->get('/c/safety-footwear')
+    $this->get(route('category', 'safety-footwear'))
         ->assertSee('£68.90')
         ->assertSee('£52.48')
         ->assertSee('ex VAT')
@@ -140,7 +147,7 @@ it('shows prices ex VAT with the suffix', function (): void {
 });
 
 it('goes back to page one when a filter changes and clears filters', function (): void {
-    Livewire::test(CategoryListing::class, ['slug' => 'safety-footwear'])
+    Livewire::test(CategoryListing::class, ['collectionId' => footwearId()])
         ->set('page', 3)
         ->set('brand', ['Centek'])
         ->assertSet('page', 1)
@@ -153,22 +160,34 @@ it('goes back to page one when a filter changes and clears filters', function ()
 it('paginates 24 products per page', function (): void {
     expect(ListingQuery::PER_PAGE)->toBe(24);
 
-    Livewire::test(CategoryListing::class, ['slug' => 'safety-footwear'])
+    Livewire::test(CategoryListing::class, ['collectionId' => footwearId()])
         ->assertViewHas('result', fn ($result): bool => $result->perPage === 24 && $result->lastPage === 1);
 });
 
 it('searches across the catalogue', function (): void {
-    $html = $this->get('/search?q=slipper')->assertOk()->getContent();
+    $html = $this->get(route('search', ['q' => 'slipper']))->assertOk()->getContent();
 
     expect(gridNames($html))->toEqualCanonicalizing(['Eva', 'Exeter Slipper'])
         ->and($html)->toContain('Search results for');
 });
 
-it('has a canonical URL that includes the active filters', function (): void {
-    $this->get('/c/safety-footwear')
+it('points every filtered or sorted listing at the unfiltered category URL', function (string $query): void {
+    $canonical = '<link rel="canonical" href="'.route('category', 'safety-footwear').'">';
+
+    $this->get(route('category', 'safety-footwear').$query)->assertOk()->assertSee($canonical, false);
+})->with(['', '?brand[0]=Centek', '?sort=price-asc', '?brand[0]=Centek&sort=price-desc&in_stock=1', '?utm_source=x']);
+
+it('gives a paginated listing a self-referencing canonical', function (): void {
+    $page2 = route('category', 'safety-footwear').'?page=2';
+
+    $this->get($page2)->assertOk()->assertSee('<link rel="canonical" href="'.e($page2).'">', false);
+
+    // Paging combined with a filter goes back to the unfiltered URL.
+    $this->get($page2.'&brand[0]=Centek')->assertOk()
         ->assertSee('<link rel="canonical" href="'.route('category', 'safety-footwear').'">', false);
+});
 
-    $html = $this->get('/c/safety-footwear?brand[0]=Centek')->getContent();
-
-    expect($html)->toContain('rel="canonical" href="'.e(route('category', ['slug' => 'safety-footwear', 'brand' => ['Centek']])).'"');
+it('keeps the search canonical with its query', function (): void {
+    $this->get(route('search', ['q' => 'boots']))
+        ->assertSee('<link rel="canonical" href="'.e(route('search', ['q' => 'boots'])).'">', false);
 });

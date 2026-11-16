@@ -49,7 +49,7 @@ function enabledSizes(string $html): array
 }
 
 it('shows the product with its price, description and specification', function (): void {
-    $this->get('/p/safety-jogger-ligero')
+    $this->get(route('product', 'safety-jogger-ligero'))
         ->assertOk()
         ->assertSee('LIGERO')
         ->assertSee('Lightweight ESD Safety Shoes')
@@ -67,11 +67,11 @@ it('shows the product with its price, description and specification', function (
 });
 
 it('returns 404 for an unknown or draft product', function (): void {
-    $this->get('/p/does-not-exist')->assertNotFound();
+    $this->get(route('product', 'does-not-exist'))->assertNotFound();
 
     CatalogueFactory::product('Hidden', [['stock' => 1]], status: 'draft');
 
-    $this->get('/p/test-brand-hidden')->assertNotFound();
+    $this->get(route('product', 'test-brand-hidden'))->assertNotFound();
 });
 
 it('pre-selects the first in-stock colour and puts it in the query string', function (): void {
@@ -89,13 +89,13 @@ it('restores the colour from the query string', function (): void {
 });
 
 it('shows only black images and the sizes available in black when Black is selected', function (): void {
-    $html = $this->get('/p/safety-jogger-ligero?colour=black')->assertOk()->getContent();
+    $html = $this->get(route('product', 'safety-jogger-ligero').'?colour=black')->assertOk()->getContent();
 
     expect(galleryColours($html))->toBe(['Black'])
         ->and(enabledSizes($html))->toBe(['3.5', '4', '5', '6', '6.5', '7', '8', '9', '10.5', '11', '12'])
         ->and($html)->toContain('data-value="10"');
 
-    $navy = $this->get('/p/safety-jogger-ligero?colour=navy')->getContent();
+    $navy = $this->get(route('product', 'safety-jogger-ligero').'?colour=navy')->getContent();
 
     expect(galleryColours($navy))->toBe(['Navy'])
         ->and(enabledSizes($navy))->toContain('10');
@@ -137,7 +137,7 @@ it('names the colour when the colour is what is missing', function (): void {
 });
 
 it('shows a single-value option as text instead of a picker', function (): void {
-    $html = $this->get('/p/amblers-safety-fs9')->assertOk()->getContent();
+    $html = $this->get(route('product', 'amblers-safety-fs9'))->assertOk()->getContent();
 
     expect($html)->toMatch('#<p data-option="colour" data-fixed>.*?Black#s')
         ->and($html)->not->toContain('<fieldset data-option="colour"')
@@ -155,7 +155,7 @@ it('adds a product with one variant and no options directly', function (): void 
 });
 
 it('disables sizes without stock but still shows them', function (): void {
-    $html = $this->get('/p/amblers-safety-fs9')->getContent();
+    $html = $this->get(route('product', 'amblers-safety-fs9'))->getContent();
 
     // FS9: 5, 6 and 7 are in stock; 4, 10, 11 and 12 are not.
     expect(enabledSizes($html))->toBe(['5', '6', '7']);
@@ -191,7 +191,7 @@ it('shows a stock message for the selection', function (string $slug, ?string $s
 ]);
 
 it('shows a standard rated product ex VAT, with its compare price ex VAT', function (): void {
-    $this->get('/p/safety-jogger-ligero')
+    $this->get(route('product', 'safety-jogger-ligero'))
         ->assertSee('£68.90')
         ->assertSee('£76.50')
         ->assertSee('ex VAT')
@@ -201,18 +201,18 @@ it('shows a standard rated product ex VAT, with its compare price ex VAT', funct
 });
 
 it('shows a zero-protective product ex VAT, with a note about employers', function (): void {
-    $this->get('/p/amblers-safety-fs9')
+    $this->get(route('product', 'amblers-safety-fs9'))
         ->assertSee('£52.48')
         ->assertSee('ex VAT')
         ->assertSee('VAT at 20% applies when buying for employees');
 });
 
 it('shows no employer VAT note on a standard rated product', function (): void {
-    $this->get('/p/safety-jogger-ligero')->assertDontSee('buying for employees');
+    $this->get(route('product', 'safety-jogger-ligero'))->assertDontSee('buying for employees');
 });
 
 it('outputs Product structured data with an offer per variant', function (): void {
-    $data = structuredData($this->get('/p/safety-jogger-ligero')->getContent());
+    $data = structuredData($this->get(route('product', 'safety-jogger-ligero'))->getContent());
     $offers = collect($data['offers'])->keyBy('sku');
 
     expect($data['@context'])->toBe('https://schema.org')
@@ -238,8 +238,8 @@ it('outputs Product structured data with an offer per variant', function (): voi
 });
 
 it('states every offer price ex VAT, explicitly, in the structured data', function (): void {
-    $ligero = structuredData($this->get('/p/safety-jogger-ligero')->getContent());
-    $fs9 = structuredData($this->get('/p/amblers-safety-fs9')->getContent());
+    $ligero = structuredData($this->get(route('product', 'safety-jogger-ligero'))->getContent());
+    $fs9 = structuredData($this->get(route('product', 'amblers-safety-fs9'))->getContent());
 
     foreach ([$ligero, $fs9] as $data) {
         foreach ($data['offers'] as $offer) {
@@ -257,25 +257,25 @@ it('states every offer price ex VAT, explicitly, in the structured data', functi
 });
 
 it('has a canonical URL without the colour', function (): void {
-    $this->get('/p/safety-jogger-ligero?colour=black')
+    $this->get(route('product', 'safety-jogger-ligero').'?colour=black')
         ->assertSee('<link rel="canonical" href="'.route('product', 'safety-jogger-ligero').'">', false);
 });
 
 it('lists published cross-sell products only', function (): void {
     app(FixtureCatalogueSeeder::class)->run(base_path('tests/Fixtures/related-products.json'));
 
-    $html = $this->get('/p/safety-jogger-duplicate')->assertOk()->getContent();
+    $html = $this->get(route('product', 'safety-jogger-duplicate'))->assertOk()->getContent();
 
     expect($html)->toContain('Related products')
         ->and($html)->toContain(route('product', 'safety-jogger-duplicate-2'));
 
     Url::query()->where('slug', 'safety-jogger-duplicate-2')->sole()->element->update(['status' => 'draft']);
 
-    $this->get('/p/safety-jogger-duplicate')->assertOk()->assertDontSee('Related products');
+    $this->get(route('product', 'safety-jogger-duplicate'))->assertOk()->assertDontSee('Related products');
 });
 
 it('shows no related section when there are no associations', function (): void {
-    $this->get('/p/gbs-eva')->assertOk()->assertDontSee('Related products');
+    $this->get(route('product', 'gbs-eva'))->assertOk()->assertDontSee('Related products');
 });
 
 it('does not embed a video from an unexpected host', function (): void {
@@ -284,7 +284,7 @@ it('does not embed a video from an unexpected host', function (): void {
     $data['video_url'] = new Text('https://evil.example/embed/abc');
     $product->update(['attribute_data' => $data]);
 
-    $this->get('/p/gbs-eva')->assertOk()->assertDontSee('<iframe', false);
+    $this->get(route('product', 'gbs-eva'))->assertOk()->assertDontSee('<iframe', false);
 });
 
 it('lets the customer choose a thumbnail to show in the main frame', function (): void {
@@ -298,7 +298,7 @@ it('lets the customer choose a thumbnail to show in the main frame', function ()
             ->toMediaCollection(config('lunar.media.collection'));
     }
 
-    $html = $this->get('/p/safety-jogger-ligero?colour=navy')->assertOk()->getContent();
+    $html = $this->get(route('product', 'safety-jogger-ligero').'?colour=navy')->assertOk()->getContent();
 
     preg_match('#<section[^>]*data-testid="gallery".*?</section>#s', $html, $gallery);
     preg_match_all('#<button[^>]*data-gallery-thumb="(\d)"[^>]*>#s', $gallery[0], $thumbs);
@@ -322,7 +322,7 @@ it('lets the customer choose a thumbnail to show in the main frame', function ()
 
     // Black has a single image: no thumbnails, and a different gallery key,
     // so choosing a colour starts on that colour's first image.
-    $black = $this->get('/p/safety-jogger-ligero?colour=black')->getContent();
+    $black = $this->get(route('product', 'safety-jogger-ligero').'?colour=black')->getContent();
     preg_match('#<section[^>]*data-testid="gallery"[^>]*>#s', $black, $blackGallery);
     preg_match('#<section[^>]*data-testid="gallery"[^>]*>#s', $html, $navyGallery);
     preg_match('#wire:key="(gallery-\d+)"#', $blackGallery[0], $blackKey);
@@ -417,7 +417,7 @@ it('does not allow more than the stock of the chosen size', function (): void {
 });
 
 it('shows a labelled quantity field that starts empty', function (): void {
-    $html = $this->get('/p/safety-jogger-ligero')->assertOk()->getContent();
+    $html = $this->get(route('product', 'safety-jogger-ligero'))->assertOk()->getContent();
 
     preg_match('#<input[^>]*data-quantity[^>]*>#s', $html, $input);
 
@@ -429,6 +429,6 @@ it('shows a labelled quantity field that starts empty', function (): void {
 });
 
 it('says out of stock, not select a size, when nothing is in stock', function (): void {
-    expect(addButton($this->get('/p/maxguard-sx310')->getContent()))
+    expect(addButton($this->get(route('product', 'maxguard-sx310'))->getContent()))
         ->toBe(['disabled' => true, 'label' => 'Out of stock']);
 });

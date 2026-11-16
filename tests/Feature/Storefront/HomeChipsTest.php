@@ -26,7 +26,7 @@ function standardsSection(string $html): string
 }
 
 it('shows the five standard chips with their labels', function (): void {
-    $section = standardsSection($this->get('/')->assertOk()->getContent());
+    $section = standardsSection($this->get(route('home'))->assertOk()->getContent());
 
     preg_match_all('#<a\s+href="[^"]*"[^>]*data-standard-chip\s*>(.*?)</a>#s', $section, $labels);
 
@@ -35,14 +35,14 @@ it('shows the five standard chips with their labels', function (): void {
 });
 
 it('builds chip links from route() with the facet in the query string', function (): void {
-    $section = standardsSection($this->get('/')->getContent());
+    $section = standardsSection($this->get(route('home'))->getContent());
 
     $expected = [
-        route('category', ['slug' => 'safety-footwear', 'safety_class' => ['S1P']]),
-        route('category', ['slug' => 'safety-footwear', 'safety_class' => ['S3']]),
-        route('category', ['slug' => 'safety-footwear', 'features' => ['ESD']]),
-        route('category', ['slug' => 'safety-footwear', 'features' => ['METAL_FREE']]),
-        route('category', ['slug' => 'safety-footwear', 'features' => ['WR']]),
+        route('category', ['path' => 'safety-footwear', 'safety_class' => ['S1P']]),
+        route('category', ['path' => 'safety-footwear', 'safety_class' => ['S3']]),
+        route('category', ['path' => 'safety-footwear', 'features' => ['ESD']]),
+        route('category', ['path' => 'safety-footwear', 'features' => ['METAL_FREE']]),
+        route('category', ['path' => 'safety-footwear', 'features' => ['WR']]),
     ];
 
     foreach ($expected as $url) {
@@ -55,7 +55,7 @@ it('reads its chips from config/homepage.php', function (): void {
         ['facet' => 'features', 'value' => 'HRO', 'label' => 'Heat resistant'],
     ]);
 
-    $section = standardsSection($this->get('/')->getContent());
+    $section = standardsSection($this->get(route('home'))->getContent());
 
     expect($section)->toContain('>Heat resistant</a>')
         ->and($section)->not->toContain('>S1P<')
@@ -65,7 +65,7 @@ it('reads its chips from config/homepage.php', function (): void {
 it('hides the section when no chips are configured', function (): void {
     config()->set('homepage.standards', []);
 
-    expect(standardsSection($this->get('/')->getContent()))->toBe('');
+    expect(standardsSection($this->get(route('home'))->getContent()))->toBe('');
 });
 
 it('returns products for every chip target', function (): void {
@@ -82,7 +82,7 @@ it('returns products for every chip target', function (): void {
 
 it('returns the expected fixture products for the S1P and Waterproof chips', function (): void {
     $names = fn (string $facet, string $value): array => chipGridNames(
-        $this->get(route('category', ['slug' => 'safety-footwear', $facet => [$value]]))->getContent(),
+        $this->get(route('category', ['path' => 'safety-footwear', $facet => [$value]]))->getContent(),
     );
 
     expect($names('safety_class', 'S1P'))->toContain('LIGERO')

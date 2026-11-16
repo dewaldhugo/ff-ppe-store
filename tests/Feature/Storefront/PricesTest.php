@@ -26,8 +26,8 @@ function priceElements(string $html): array
     return [$prices[0], $rrps[0], $rest];
 }
 
-it('shows every price ex VAT and labels it', function (string $uri): void {
-    [$prices, $rrps, $rest] = priceElements($this->get($uri)->assertOk()->getContent());
+it('shows every price ex VAT and labels it', function (array $route): void {
+    [$prices, $rrps, $rest] = priceElements($this->get(route(...$route))->assertOk()->getContent());
 
     expect($prices)->not->toBeEmpty();
 
@@ -41,10 +41,15 @@ it('shows every price ex VAT and labels it', function (string $uri): void {
 
     // No price is shown anywhere else on the page, unlabelled.
     expect($rest)->not->toMatch('/£\s?\d/');
-})->with(['/c/safety-footwear', '/search?q=boots', '/p/safety-jogger-ligero', '/p/amblers-safety-fs9']);
+})->with([
+    [['category', 'safety-footwear']],
+    [['search', ['q' => 'boots']]],
+    [['product', 'safety-jogger-ligero']],
+    [['product', 'amblers-safety-fs9']],
+]);
 
 it('labels the compare price as the manufacturer\'s RRP, never as a bare struck-through amount', function (): void {
-    $html = $this->get('/p/safety-jogger-ligero')->assertOk()->getContent();
+    $html = $this->get(route('product', 'safety-jogger-ligero'))->assertOk()->getContent();
 
     preg_match('#<span[^>]*data-rrp[^>]*>.*?</span>#s', $html, $rrp);
 
@@ -55,7 +60,7 @@ it('labels the compare price as the manufacturer\'s RRP, never as a bare struck-
         ->and($html)->not->toContain('Was ');
 
     // The same on a listing.
-    $listing = $this->get('/c/safety-footwear')->getContent();
+    $listing = $this->get(route('category', 'safety-footwear'))->getContent();
 
     expect($listing)->toContain('data-rrp')
         ->and($listing)->not->toContain('<s ')
@@ -63,7 +68,7 @@ it('labels the compare price as the manufacturer\'s RRP, never as a bare struck-
 });
 
 it('shows the price ex VAT, not the VAT inclusive figure', function (): void {
-    $this->get('/p/safety-jogger-ligero')
+    $this->get(route('product', 'safety-jogger-ligero'))
         ->assertSee('£68.90')
         ->assertDontSee('£82.68')
         ->assertDontSee('£91.80');

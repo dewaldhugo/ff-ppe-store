@@ -8,6 +8,7 @@ use App\Domain\Catalogue\Urls\Redirects\RedirectRecorder;
 use App\Domain\Catalogue\Urls\Redirects\RedirectResolver;
 use App\Models\CollectionPathSnapshot;
 use App\Models\UrlRedirect;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Lunar\FieldTypes\Text;
@@ -262,4 +263,15 @@ describe('catalogue:sync-redirects', function (): void {
             '/shop/rt-raw-parent/rt-raw-child' => '/shop/rt-raw-home/rt-raw-parent/rt-raw-child',
         ]);
     });
+});
+
+it('schedules the redirect sync hourly without overlap, whatever VENDORSYNC_SCHEDULE_ENABLED says', function (): void {
+    config()->set('vendorsync.schedule_enabled', false);
+
+    $event = collect(app(Schedule::class)->events())
+        ->first(fn ($event): bool => str_contains((string) $event->command, 'catalogue:sync-redirects'));
+
+    expect($event)->not->toBeNull()
+        ->and($event->expression)->toBe('0 * * * *')
+        ->and($event->withoutOverlapping)->toBeTrue();
 });

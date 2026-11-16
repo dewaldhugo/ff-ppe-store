@@ -98,7 +98,7 @@ Every safety-footwear variant has exactly one `colour` value and one `shoe_size`
 - Collection group `categories`: the customer-facing category tree, e.g. Safety Footwear > Safety Trainers, Safety Boots, Safety Shoes; Occupational Footwear; Slippers; Plimsolls; Casual Footwear; Accessories; Wellingtons. Products belong to one or more leaf collections.
 - Contract handles in `categories`: `safety-footwear` (parent of `safety-trainers`, `safety-shoes`, `safety-boots`), `occupational-footwear`, `slippers`, `plimsolls`, `casual-footwear`, `accessories`, `wellingtons`. In `ranges`: `clearance`.
 - Collection group `ranges`: marketing collections (New in, Clearance, Industry ranges). Managed in the admin.
-- Collections the contract names (the category tree and `clearance`) are resolved by handle through the key registry. Each also has a Lunar URL whose slug equals its handle.
+- Collections the contract names (the category tree and `clearance`) are resolved by handle through the key registry. Each also has a Lunar URL whose slug equals its handle at creation. The slug may be edited later in the admin; the storefront then records a 301 from the old path (see CLAUDE.md, URLs). Only `categories` collections have a `/shop/...` page.
 
 ## Media
 - Spatie Media Library, disk `products`, collection `images`, attached to the product.

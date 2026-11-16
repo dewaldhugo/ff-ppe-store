@@ -9,6 +9,7 @@ use App\Domain\Catalogue\Search\CatalogueSearch;
 use App\Domain\Catalogue\Search\FacetValue;
 use App\Domain\Catalogue\Search\ListingQuery;
 use App\Domain\Catalogue\Search\ListingSort;
+use App\Domain\Catalogue\Urls\CategoryUrl;
 use App\Domain\Pricing\PriceDisplay;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Str;
@@ -18,10 +19,9 @@ use Livewire\Component;
 use Lunar\Models\Collection;
 use Lunar\Models\Product;
 use Lunar\Models\ProductOptionValue;
-use Lunar\Models\Url as LunarUrl;
 
 /**
- * Category listing (/c/{slug}) and search results (/search).
+ * Category listing (/shop/{path}) and search results (/search).
  *
  * All filter state lives in the query string, so a filtered listing can be
  * shared, bookmarked and indexed. Products and facet counts come from
@@ -30,9 +30,6 @@ use Lunar\Models\Url as LunarUrl;
  */
 final class CategoryListing extends Component
 {
-    #[Locked]
-    public ?string $slug = null;
-
     #[Locked]
     public ?int $collectionId = null;
 
@@ -78,21 +75,14 @@ final class CategoryListing extends Component
     #[Url(except: 1)]
     public int $page = 1;
 
-    public function mount(?string $slug = null): void
+    /**
+     * The ResolveCategoryPath middleware has already matched the URL path to a
+     * collection (or redirected, or answered 404) and passes its id in. The
+     * search page has none.
+     */
+    public function mount(?int $collectionId = null): void
     {
-        if ($slug === null) {
-            return;
-        }
-
-        $url = LunarUrl::query()
-            ->where('element_type', Collection::morphName())
-            ->where('slug', $slug)
-            ->first();
-
-        abort_if($url === null, 404);
-
-        $this->slug = $slug;
-        $this->collectionId = (int) $url->element_id;
+        $this->collectionId = $collectionId;
     }
 
     /**
@@ -115,7 +105,7 @@ final class CategoryListing extends Component
         $this->page = max(1, $page);
     }
 
-    public function render(CatalogueSearch $search, PriceDisplay $priceDisplay): View
+    public function render(CatalogueSearch $search, PriceDisplay $priceDisplay, CategoryUrl $categoryUrl): View
     {
         $query = ListingQuery::fromArray($this->state(), $this->collectionId);
         $result = $search->search($query);
@@ -130,7 +120,7 @@ final class CategoryListing extends Component
 
         return view('livewire.catalogue.category-listing', [
             'heading' => $heading,
-            'breadcrumbs' => $collection?->ancestors ?? collect(),
+            'breadcrumbs' => $this->breadcrumbs($collection, $categoryUrl),
             'result' => $result,
             'products' => $this->products($result->productIds),
             'priceDisplay' => $priceDisplay,
@@ -139,8 +129,26 @@ final class CategoryListing extends Component
             'hasFilters' => $query->facets !== [] || $query->hasPriceRange() || $query->inStockOnly,
         ])->layout('components.layouts.storefront', [
             'title' => $heading,
-            'canonical' => $this->canonical(),
+            'canonical' => $this->canonical($collection, $categoryUrl),
         ]);
+    }
+
+    /**
+     * @return list<array{name: string, url: string}>
+     */
+    private function breadcrumbs(?Collection $collection, CategoryUrl $categoryUrl): array
+    {
+        $crumbs = [];
+
+        foreach ($collection?->ancestors ?? [] as $ancestor) {
+            $url = $categoryUrl->for($ancestor);
+
+            if ($url !== null) {
+                $crumbs[] = ['name' => (string) $ancestor->translateAttribute('name'), 'url' => $url];
+            }
+        }
+
+        return $crumbs;
     }
 
     /**
@@ -165,10 +173,22 @@ final class CategoryListing extends Component
     }
 
     /**
-     * The page URL with its active filters, in a stable order.
+     * A category's canonical is always the unfiltered category URL: filters and
+     * sorting never create a new canonical page. Only paging does, so page 2
+     * points at itself. Search keeps its filters in the canonical.
      */
-    private function canonical(): string
+    private function canonical(?Collection $collection, CategoryUrl $categoryUrl): string
     {
+        if ($collection !== null) {
+            $url = $categoryUrl->for($collection);
+
+            if ($url !== null) {
+                $paged = $this->page > 1 && $this->onlyPaging();
+
+                return $paged ? $url.'?page='.$this->page : $url;
+            }
+        }
+
         $params = array_filter(
             $this->state(),
             fn (mixed $value): bool => $value !== '' && $value !== [] && $value !== false && $value !== 'relevance' && $value !== 1,
@@ -185,9 +205,23 @@ final class CategoryListing extends Component
             $params['in_stock'] = 1;
         }
 
-        return $this->slug === null
-            ? route('search', $params)
-            : route('category', ['slug' => $this->slug, ...$params]);
+        return route('search', $params);
+    }
+
+    /**
+     * Whether the page is a plain page of the category: nothing in the query
+     * string except `page`, and no filter or sort state.
+     */
+    private function onlyPaging(): bool
+    {
+        $other = array_diff_key(request()->query(), ['page' => true]);
+
+        $filtered = $this->brand !== [] || $this->safety_class !== [] || $this->features !== []
+            || $this->size !== [] || $this->colour !== [] || $this->gender !== []
+            || $this->price_min !== '' || $this->price_max !== '' || $this->in_stock
+            || $this->sort !== 'relevance' || $this->q !== '';
+
+        return $other === [] && ! $filtered;
     }
 
     /**

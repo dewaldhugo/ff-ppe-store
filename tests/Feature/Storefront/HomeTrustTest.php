@@ -10,7 +10,7 @@ function trustStrip(string $html): string
 }
 
 it('shows the three confirmed claims and no delivery claim', function (): void {
-    $html = $this->get('/')->assertOk()->getContent();
+    $html = $this->get(route('home'))->assertOk()->getContent();
     $strip = trustStrip($html);
 
     preg_match_all('#<li[^>]*>\s*<span[^>]*></span>\s*(.*?)\s*</li>#s', $strip, $claims);
@@ -21,7 +21,7 @@ it('shows the three confirmed claims and no delivery claim', function (): void {
 });
 
 it('sits directly under the hero, before the category tiles', function (): void {
-    $html = $this->get('/')->getContent();
+    $html = $this->get(route('home'))->getContent();
 
     expect(strpos($html, 'data-home-hero'))->toBeLessThan(strpos($html, 'data-home-trust'))
         ->and(strpos($html, 'data-home-trust'))->toBeLessThan(strpos($html, 'data-home-categories'));
@@ -30,7 +30,7 @@ it('sits directly under the hero, before the category tiles', function (): void 
 it('reads its claims from config and skips empty slots', function (): void {
     config()->set('homepage.trust', ['One claim', '', '  ', 'Another claim']);
 
-    preg_match_all('#<li[^>]*>\s*<span[^>]*></span>\s*(.*?)\s*</li>#s', trustStrip($this->get('/')->getContent()), $claims);
+    preg_match_all('#<li[^>]*>\s*<span[^>]*></span>\s*(.*?)\s*</li>#s', trustStrip($this->get(route('home'))->getContent()), $claims);
 
     expect($claims[1])->toBe(['One claim', 'Another claim']);
 });
@@ -38,13 +38,13 @@ it('reads its claims from config and skips empty slots', function (): void {
 it('renders a delivery claim once the client confirms it', function (): void {
     config()->set('homepage.trust', ['A', 'B', 'C', 'Delivery claim']);
 
-    expect(trustStrip($this->get('/')->getContent()))->toContain('Delivery claim');
+    expect(trustStrip($this->get(route('home'))->getContent()))->toContain('Delivery claim');
 });
 
 it('renders nothing when every slot is empty', function (): void {
     config()->set('homepage.trust', ['', '']);
 
-    expect(trustStrip($this->get('/')->getContent()))->toBe('');
+    expect(trustStrip($this->get(route('home'))->getContent()))->toBe('');
 });
 
 it('ships the fourth slot empty', function (): void {
@@ -54,7 +54,7 @@ it('ships the fourth slot empty', function (): void {
 });
 
 it('is semantic: one h1, a heading for every section, and lazy images below the fold', function (): void {
-    $html = $this->get('/')->assertOk()->getContent();
+    $html = $this->get(route('home'))->assertOk()->getContent();
 
     expect(substr_count($html, '<h1'))->toBe(1);
 

@@ -106,7 +106,7 @@
                         <svg aria-hidden="true" class="h-4 w-4 transition-transform" x-bind:class="mega && 'rotate-180'" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6"/></svg>
                     </button>
                     {{-- Only without JavaScript. It must not share $linkClass: its inline-block would override hidden. --}}
-                    <a href="{{ route('products') }}" class="hidden no-js:inline-block py-3 font-semibold text-ink hover:text-brand-blue" data-products-link>Products</a>
+                    <a href="{{ route('shop') }}" class="hidden no-js:inline-block py-3 font-semibold text-ink hover:text-brand-blue" data-products-link>Products</a>
                 </li>
 
                 @foreach ($links as $link)
@@ -126,7 +126,7 @@
             class="absolute inset-x-0 top-full border-t-2 border-brand-teal bg-white shadow-lg"
         >
             <x-ui.container class="py-8">
-                <p class="mb-6"><a href="{{ route('products') }}" class="font-semibold text-brand-blue hover:underline">All products</a></p>
+                <p class="mb-6"><a href="{{ route('shop') }}" class="font-semibold text-brand-blue hover:underline">All products</a></p>
 
                 <ul class="grid gap-x-8 gap-y-6 sm:grid-cols-2 lg:grid-cols-4" data-menu-categories>
                     @foreach ($categories as $category)
@@ -176,7 +176,7 @@
                     <li><a href="{{ route('home') }}" class="block py-3 font-semibold text-ink">Home</a></li>
 
                     <li>
-                        <a href="{{ route('products') }}" class="block py-3 font-semibold text-ink">Products</a>
+                        <a href="{{ route('shop') }}" class="block py-3 font-semibold text-ink">Products</a>
 
                         <ul class="mb-3 space-y-1 border-l-2 border-brand-teal pl-4 text-base" data-drawer-categories>
                             @foreach ($categories as $category)
