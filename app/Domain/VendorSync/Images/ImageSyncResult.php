@@ -25,6 +25,9 @@ final class ImageSyncResult
     /** @var list<string> Images that could not be saved, each with its reason. */
     public array $failed = [];
 
+    /** Failed images whose download never started because the host's slot lock stayed busy. */
+    public int $lockTimeouts = 0;
+
     /** @var list<string> Things worth knowing that are not failures (a smaller rendition was used). */
     public array $notes = [];
 

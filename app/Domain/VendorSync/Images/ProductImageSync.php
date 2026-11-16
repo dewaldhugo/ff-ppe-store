@@ -209,12 +209,15 @@ final readonly class ProductImageSync
      */
     private function fetch(NormalisedImage $image, ImageSyncResult $result): array
     {
-        $content = $this->downloader->download($image->url);
+        $download = $this->downloader->download($image->url);
 
-        if ($content === null) {
-            return [null, $image->url, 'download failed'];
+        if (! $download->succeeded()) {
+            $result->lockTimeouts += $download->lockTimedOut ? 1 : 0;
+
+            return [null, $image->url, $download->failure];
         }
 
+        $content = (string) $download->body;
         $tooLarge = $this->tooLarge($content);
 
         if ($tooLarge === null) {
@@ -227,11 +230,15 @@ final readonly class ProductImageSync
             return [null, $image->url, "{$tooLarge}, and the vendor lists no smaller rendition"];
         }
 
-        $content = $this->downloader->download($image->fallbackUrl);
+        $fallback = $this->downloader->download($image->fallbackUrl);
 
-        if ($content === null) {
-            return [null, $image->url, "{$tooLarge}, and the smaller rendition {$image->fallbackUrl} could not be downloaded"];
+        if (! $fallback->succeeded()) {
+            $result->lockTimeouts += $fallback->lockTimedOut ? 1 : 0;
+
+            return [null, $image->url, "{$tooLarge}, and the smaller rendition {$image->fallbackUrl} could not be downloaded ({$fallback->failure})"];
         }
+
+        $content = (string) $fallback->body;
 
         if ($this->tooLarge($content) !== null) {
             return [null, $image->url, "{$tooLarge}, and so is the smaller rendition {$image->fallbackUrl}"];

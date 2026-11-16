@@ -250,10 +250,33 @@ return [
     ],
 
     'images' => [
+        // Total attempts per URL. Only connection errors, HTTP 5xx and 429
+        // are retried; a 404 or 403 fails at once.
         'retries' => 3,
+
+        // Seconds for one request in total, connect included. A host that
+        // accepts the connection and then stalls runs to this limit.
         'timeout' => 60,
-        // Minimum milliseconds between downloads from one host.
+
+        // Seconds to wait for the connection alone (an unreachable host).
+        'connect_timeout' => 10,
+
+        // Pause between attempts, in milliseconds.
+        'retry_backoff_ms' => 500,
+
+        // Minimum milliseconds between the starts of two requests to one
+        // host, across all workers. Every HTTP attempt takes its own slot.
         'throttle_ms' => 250,
+
+        // Seconds the short lock that hands out those slots may be held, and
+        // that a worker waits for it. The lock is never held during a request.
+        'slot_lock_seconds' => 5,
+
+        // Seconds kept back at the end of an image job (its timeout minus
+        // this is the deadline for starting another download), for saving
+        // media and writing the run report.
+        'job_margin_seconds' => 60,
+
         'refresh_days' => 7,
 
         // Largest image, in megapixels, that is stored and converted. With
