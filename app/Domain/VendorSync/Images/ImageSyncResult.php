@@ -25,6 +25,13 @@ final class ImageSyncResult
     /** @var list<string> Images that could not be saved, each with its reason. */
     public array $failed = [];
 
+    /**
+     * The first image in the vendor's list (the product's hero) is not stored
+     * and could not be saved this time. The product is not published while
+     * this is true.
+     */
+    public bool $heroFailed = false;
+
     /** Failed images whose download never started because the host's slot lock stayed busy. */
     public int $lockTimeouts = 0;
 

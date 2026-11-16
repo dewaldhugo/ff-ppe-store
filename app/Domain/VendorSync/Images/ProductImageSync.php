@@ -98,6 +98,8 @@ final readonly class ProductImageSync
                 // The product keeps its other images, and this one if it had it.
                 if ($existing !== null) {
                     $ordered[$key] = $existing;
+                } elseif ($index === 0) {
+                    $result->heroFailed = true;
                 }
 
                 continue;
@@ -144,6 +146,8 @@ final readonly class ProductImageSync
 
                 if ($existing !== null) {
                     $ordered[$key] = $existing;
+                } elseif ($index === 0) {
+                    $result->heroFailed = true;
                 }
 
                 continue;
@@ -193,8 +197,12 @@ final readonly class ProductImageSync
         ]);
 
         // With at least one image, `no_image` is removed and the product
-        // is published when no other draft reason remains.
-        if ($this->writer->refreshStatus($link->refresh())) {
+        // is published when no other draft reason remains. Not while the
+        // first image of the vendor's list is missing: that image is the
+        // product's hero, and another image must not take its place on the
+        // storefront. The product stays draft with `no_image`, and the next
+        // run fetches only what is missing.
+        if (! $result->heroFailed && $this->writer->refreshStatus($link->refresh())) {
             $result->changed = true;
         }
 

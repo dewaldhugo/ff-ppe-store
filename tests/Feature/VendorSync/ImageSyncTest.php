@@ -362,3 +362,70 @@ it('does not download the smaller rendition when the original used up the time b
     Http::assertSent(fn (Request $request): bool => str_contains($request->url(), 'BESTBOOT-BLK-HIRES.PNG'));
     Http::assertNotSent(fn (Request $request): bool => str_contains($request->url(), 'BESTBOOT-BLK-WEB01.JPG'));
 });
+
+/** Image requests recorded so far in this test. */
+function imageRequestCount(): int
+{
+    return count(Http::recorded(fn (Request $request): bool => str_contains($request->url(), '/image/')));
+}
+
+it('keeps a product draft when its first image fails, and a later run completes it in the right order', function (): void {
+    // The hero (position 0) is BESTBOOT-BLK-HIRES.PNG; the other five download.
+    $link = importBestboot(brokenImages: ['BESTBOOT-BLK-HIRES']);
+
+    $first = app(ProductImageSync::class)->sync($link);
+    $link->refresh();
+    $firstHash = $link->image_urls_hash;
+
+    // Five images are stored, but another image does not stand in for the hero.
+    expect($first->heroFailed)->toBeTrue()
+        ->and($first->stored)->toBe(5)
+        ->and($first->failed)->toHaveCount(1)
+        ->and($first->failed[0])->toContain('BESTBOOT-BLK-HIRES.PNG: download failed: HTTP 404')
+        ->and(VendorSync::product('SJ', '215754')->status)->toBe('draft')
+        ->and($link->draft_reasons)->toBe([DraftReason::NO_IMAGE])
+        ->and(VendorSync::product('SJ', '215754')->getMedia('images'))->toHaveCount(5)
+        // The incomplete hash makes the next run look at this product again.
+        ->and($firstHash)->toHaveLength(64);
+
+    // The host recovers. Only the missing hero is fetched.
+    VendorSync::fakeHttp();
+    $requestsBefore = imageRequestCount();
+
+    $second = app(ProductImageSync::class)->sync($link->refresh());
+    $link->refresh();
+    $product = VendorSync::product('SJ', '215754');
+    $media = $product->getMedia('images');
+    $variantPrimary = $product->variants->first()->images()->wherePivot('primary', true)->get();
+
+    expect($second->heroFailed)->toBeFalse()
+        ->and($second->downloaded)->toBe(1)
+        ->and(imageRequestCount() - $requestsBefore)->toBe(1)
+        ->and($second->stored)->toBe(6)
+        // Final order: the hero first, then the details, then the outsole.
+        ->and($media->map(fn ($image): string => $image->getCustomProperty('role'))->all())->toBe(['main', 'detail', 'detail', 'detail', 'detail', 'outsole'])
+        ->and($media[0]->getCustomProperty('source_url'))->toEndWith('BESTBOOT-BLK-HIRES.PNG')
+        // Only the hero is primary, on the product and on the variant.
+        ->and($media->map(fn ($image): bool => (bool) $image->getCustomProperty('primary'))->all())->toBe([true, false, false, false, false, false])
+        ->and($variantPrimary)->toHaveCount(1)
+        ->and($variantPrimary->first()->getCustomProperty('source_url'))->toEndWith('BESTBOOT-BLK-HIRES.PNG')
+        // no_image is cleared and the product is published.
+        ->and($link->draft_reasons)->toBe([])
+        ->and($product->status)->toBe('published')
+        ->and($link->image_urls_hash)->not->toBe($firstHash);
+});
+
+it('does not touch a published product when a refresh of its first image fails', function (): void {
+    $link = importBestboot();
+    app(ProductImageSync::class)->sync($link);
+    expect(VendorSync::product('SJ', '215754')->status)->toBe('published');
+
+    // A full refresh, with the hero's host down: the stored hero stays.
+    VendorSync::fakeHttp(brokenImages: ['BESTBOOT-BLK-HIRES']);
+    $result = app(ProductImageSync::class)->sync($link->refresh(), refresh: true);
+
+    expect($result->heroFailed)->toBeFalse()
+        ->and($result->failed)->toHaveCount(1)
+        ->and(VendorSync::product('SJ', '215754')->status)->toBe('published')
+        ->and(VendorSync::product('SJ', '215754')->getMedia('images'))->toHaveCount(6);
+});
