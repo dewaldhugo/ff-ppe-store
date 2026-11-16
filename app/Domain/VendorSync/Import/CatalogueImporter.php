@@ -299,6 +299,13 @@ final class CatalogueImporter
             return true;
         }
 
+        // Counted for every product seen, changed or not, so each run's
+        // report shows how many variants still wait for a GBP price.
+        if (in_array(DraftReason::NON_GBP_PRICE, $result->product->draftReasons, true)) {
+            $report->nonGbpProducts++;
+            $report->nonGbpVariants += count(array_filter($result->product->variants, fn (NormalisedVariant $variant): bool => $variant->price === null));
+        }
+
         $hash = $record->hash();
 
         // One small row per product, looked up by ID. No list of links is held.
@@ -437,10 +444,11 @@ final class CatalogueImporter
             return;
         }
 
-        $prices = array_map(fn (NormalisedVariant $variant): int => $variant->price, $product->variants);
+        $prices = array_values(array_filter(array_map(fn (NormalisedVariant $variant): ?int => $variant->price, $product->variants), fn (?int $price): bool => $price !== null));
+        $range = $prices === [] ? 'unpriced' : sprintf('%s to %s ex VAT', number_format(min($prices) / 100, 2), number_format(max($prices) / 100, 2));
 
         $report->sample(sprintf(
-            '%s %s %s [%s]: %s, %s, %d variants, %s to %s ex VAT, %s%s',
+            '%s %s %s [%s]: %s, %s, %d variants, %s, %s%s',
             $created ? 'create' : 'update',
             $product->brand ?? '(no brand)',
             $product->name,
@@ -448,8 +456,7 @@ final class CatalogueImporter
             $status.($draftReasons === [] ? '' : ' ('.implode(', ', $draftReasons).')'),
             $product->collections === [] ? 'no collection' : implode(', ', $product->collections),
             count($product->variants),
-            number_format(min($prices) / 100, 2),
-            number_format(max($prices) / 100, 2),
+            $range,
             $product->variants[0]->taxClass,
             $product->safetyClass === null ? '' : ', '.$product->safetyClass,
         ));

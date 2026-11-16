@@ -27,7 +27,10 @@ final readonly class NormalisedVariant
         public int $vendorStock,
         // False when a rule forces the variant to stock 0.
         public bool $sellable,
-        public int $price,
+        // Null only when the vendor priced the SKU in a currency other than
+        // GBP: the variant is then unpriced (no price row, no cost), never
+        // sellable, and its product is drafted `non_gbp_price`.
+        public ?int $price,
         public ?int $comparePrice,
         public ?int $costPrice,
         // Contract tax class handle.

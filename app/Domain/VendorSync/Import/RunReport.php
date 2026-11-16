@@ -44,6 +44,12 @@ final class RunReport
 
     public int $outOfScope = 0;
 
+    /** Variants priced by the vendor in a currency other than GBP: imported unpriced. */
+    public int $nonGbpVariants = 0;
+
+    /** Products drafted `non_gbp_price`. */
+    public int $nonGbpProducts = 0;
+
     /** @var list<string> */
     public array $messages = [];
 
@@ -135,6 +141,8 @@ final class RunReport
             'drafted' => $this->drafted,
             'errors' => $this->errors,
             'out_of_scope' => $this->outOfScope,
+            'non_gbp_variants' => $this->nonGbpVariants,
+            'non_gbp_products' => $this->nonGbpProducts,
         ];
     }
 

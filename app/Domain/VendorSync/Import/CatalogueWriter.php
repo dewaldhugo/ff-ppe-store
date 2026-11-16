@@ -325,15 +325,18 @@ final class CatalogueWriter
 
         $variant->values()->attach($this->optionValueIds($data));
 
-        Price::query()->create([
-            'priceable_type' => $variant->getMorphClass(),
-            'priceable_id' => $variant->id,
-            'currency_id' => $this->currency()->id,
-            'customer_group_id' => $this->customerGroup()->id,
-            'price' => $data->price,
-            'compare_price' => $data->comparePrice,
-            'min_quantity' => 1,
-        ]);
+        // An unpriced variant (non-GBP vendor price) gets no price row at all.
+        if ($data->price !== null) {
+            Price::query()->create([
+                'priceable_type' => $variant->getMorphClass(),
+                'priceable_id' => $variant->id,
+                'currency_id' => $this->currency()->id,
+                'customer_group_id' => $this->customerGroup()->id,
+                'price' => $data->price,
+                'compare_price' => $data->comparePrice,
+                'min_quantity' => 1,
+            ]);
+        }
 
         VendorOffer::query()->create([
             'product_variant_id' => $variant->id,
@@ -381,7 +384,11 @@ final class CatalogueWriter
             ->where('min_quantity', 1)
             ->first();
 
-        if ($price === null) {
+        if ($data->price === null) {
+            // Unpriced: a price stored earlier (for example from a EUR amount
+            // read as GBP) must not survive.
+            $price?->delete();
+        } elseif ($price === null) {
             Price::query()->create([
                 'priceable_type' => $variant->getMorphClass(),
                 'priceable_id' => $variant->id,
