@@ -14,6 +14,7 @@ use App\Domain\VendorSync\Notifications\SyncRunAlert;
 use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Sleep;
 use Lunar\Models\Price;
 use Lunar\Models\ProductVariant;
 use Tests\Support\VendorSync;
@@ -291,4 +292,266 @@ it('records the held count and the report path on the run, and mails both', func
                 && str_contains($lines, $run->report_path);
         },
     );
+});
+
+// ---------------------------------------------------------------------------
+// Re-fetching and diagnostics
+// ---------------------------------------------------------------------------
+
+/**
+ * Import with the product answering successive requests with successive answers.
+ *
+ * @param  list<mixed>  $answers  Details, or VendorSync::reply() answers.
+ */
+function importSequence(array $answers, bool $dryRun = false): mixed
+{
+    VendorSync::fakeHttp([['id' => 700100]], []);
+    VendorSync::sequence(700100, $answers);
+
+    return VendorSync::import('SJ', $dryRun);
+}
+
+function sleptSeconds(int $seconds, int $times = 1): void
+{
+    Sleep::assertSlept(fn ($duration): bool => (int) $duration->totalSeconds === $seconds && $duration->totalSeconds >= 1, $times);
+}
+
+it('re-fetches a EUR product twice, then keeps the stored GBP price, reports the flip and leaves the hash alone', function (): void {
+    importCurrency(['42' => [20.0, 'GBP']]);
+    VendorSync::syncImages(['700100']);
+
+    $hash = VendorProduct::query()->sole()->payload_hash;
+    $report = importSequence([currencyProduct(['42' => [20.0, 'EUR']])]);
+    $run = SyncRun::query()->latest('id')->first();
+
+    expect(VendorSync::productRequests(700100))->toBe(3)
+        ->and($report->currencyRefetches)->toBe(2)
+        ->and($report->currencyRecovered)->toBe(0)
+        ->and($report->heldCurrency)->toHaveCount(1)
+        ->and($run->stats)->toMatchArray(['currency_refetches' => 2, 'currency_recovered' => 0, 'response_retries' => 0, 'response_recovered' => 0])
+        ->and(storedSku('42'))->toMatchArray(['cost' => 2000, 'price' => 3000, 'compare' => 5000])
+        ->and(VendorSync::product('SJ', '700100')->status)->toBe('published')
+        ->and(VendorProduct::query()->sole()->payload_hash)->toBe($hash);
+
+    // The first re-fetch waits 2 seconds, the second 10.
+    sleptSeconds(2);
+    sleptSeconds(10);
+});
+
+it('uses the first fully GBP response of a re-fetch and prices the product normally', function (): void {
+    importCurrency(['42' => [20.0, 'GBP']]);
+    VendorSync::syncImages(['700100']);
+
+    $hash = VendorProduct::query()->sole()->payload_hash;
+    $report = importSequence([currencyProduct(['42' => [20.0, 'EUR']]), currencyProduct(['42' => [22.0, 'GBP']]), currencyProduct(['42' => [99.0, 'GBP']])]);
+
+    expect(VendorSync::productRequests(700100))->toBe(2)
+        ->and($report->currencyRefetches)->toBe(1)
+        ->and($report->currencyRecovered)->toBe(1)
+        ->and($report->heldCurrency)->toBe([])
+        ->and($report->currencyDiagnostics)->toBe([])
+        ->and(storedSku('42'))->toMatchArray(['cost' => 2200, 'price' => 3300])
+        ->and(VendorSync::product('SJ', '700100')->status)->toBe('published')
+        ->and(VendorProduct::query()->sole()->payload_hash)->not->toBe($hash);
+
+    sleptSeconds(2);
+    sleptSeconds(10, 0);
+});
+
+it('drafts non_gbp_price when a product never answers in GBP and nothing is stored, and records diagnostics', function (): void {
+    $report = importSequence([currencyProduct(['42' => [20.0, 'EUR']])]);
+
+    expect(VendorSync::productRequests(700100))->toBe(3)
+        ->and(Price::query()->count())->toBe(0)
+        ->and(VendorProduct::query()->sole()->draft_reasons)->toContain(DraftReason::NON_GBP_PRICE)
+        ->and($report->heldCurrency)->toBe([])
+        ->and($report->currencyDiagnostics)->toHaveCount(1)
+        ->and($report->currencyDiagnostics[0])->toMatchArray(['vendor_product_id' => '700100', 'outcome' => 'unpriced_non_gbp_price', 'held_skus' => 0, 'unpriced_skus' => 1])
+        ->and($report->currencyDiagnostics[0]['attempts'])->toHaveCount(3);
+});
+
+it('retries an unexpected response and uses the recovered one', function (): void {
+    $report = importSequence([VendorSync::reply('<html>Bad gateway page</html>'), VendorSync::reply(['unexpected', 'list']), currencyProduct(['42' => [20.0, 'GBP']])]);
+
+    expect(VendorSync::productRequests(700100))->toBe(3)
+        ->and($report->responseRetries)->toBe(2)
+        ->and($report->responseRecovered)->toBe(1)
+        ->and($report->errors)->toBe(0)
+        ->and(storedSku('42'))->toMatchArray(['cost' => 2000, 'price' => 3000]);
+
+    sleptSeconds(2);
+    sleptSeconds(10);
+});
+
+it('reports an unexpected response that persists, and does not lose the stored product', function (): void {
+    importCurrency(['42' => [20.0, 'GBP']]);
+    VendorSync::syncImages(['700100']);
+
+    $report = importSequence([VendorSync::reply('<html>Bad gateway page</html>')]);
+
+    expect(VendorSync::productRequests(700100))->toBe(3)
+        ->and($report->responseRetries)->toBe(2)
+        ->and($report->responseRecovered)->toBe(0)
+        ->and($report->errors)->toBe(1)
+        ->and(implode("\n", $report->messages))->toContain('Safety Jogger API GET /product/700100 returned an unexpected response. (after 3 attempts)')
+        ->and(VendorProduct::query()->sole()->missed_runs)->toBe(0)
+        ->and(VendorProduct::query()->sole()->draft_reasons)->toBe([])
+        ->and(storedSku('42'))->toMatchArray(['cost' => 2000, 'price' => 3000]);
+});
+
+it('does not retry a status error, which the API client handles itself', function (): void {
+    $report = importSequence([VendorSync::reply(['error' => 'gone'], 404)]);
+
+    expect(VendorSync::productRequests(700100))->toBe(1)
+        ->and($report->errors)->toBe(1)
+        ->and($report->responseRetries)->toBe(0);
+});
+
+it('records the currency fields of every attempt and only allow-listed response headers, never credentials', function (): void {
+    importCurrency(['42' => [20.0, 'GBP']]);
+
+    $headers = [
+        'Date' => 'Mon, 16 Nov 2026 02:15:01 GMT',
+        'Server' => 'nginx',
+        'Via' => '1.1 varnish',
+        'Age' => '12',
+        'X-Cache' => 'HIT',
+        'X-Request-Id' => 'req-abc-1',
+        'X-Region' => 'eu-west-1',
+        'Content-Type' => 'application/json',
+        'Set-Cookie' => 'session=cookie-value-1',
+        'X-Auth-Secret' => 'secret-value-2',
+        'Authorization' => 'Bearer bearer-value-3',
+        'X-Api-Key' => 'key-value-4',
+    ];
+
+    $usd = currencyProduct(['42' => [20.0, 'USD']]);
+    $blank = currencyProduct(['42' => [20.0, '']]);
+
+    importSequence([
+        VendorSync::reply(currencyProduct(['42' => [20.0, 'EUR']]), 200, $headers),
+        VendorSync::reply($usd, 200, [...$headers, 'X-Request-Id' => 'req-abc-2']),
+        VendorSync::reply($blank, 200, [...$headers, 'X-Request-Id' => 'req-abc-3']),
+    ]);
+
+    $run = SyncRun::query()->latest('id')->first();
+    $raw = (string) File::get($run->report_path);
+    $file = json_decode($raw, true);
+    $attempts = $file['currency_diagnostics'][0]['attempts'];
+
+    expect($attempts)->toHaveCount(3)
+        ->and(array_column($attempts, 'result'))->toBe(['non_gbp', 'non_gbp', 'non_gbp'])
+        ->and($attempts[0]['currencies_seen'])->toBe(['cost' => ['EUR' => 1], 'rrp' => ['EUR' => 1]])
+        ->and($attempts[1]['currencies_seen'])->toBe(['cost' => ['USD' => 1], 'rrp' => ['USD' => 1]])
+        ->and($attempts[2]['currencies_seen'])->toBe(['cost' => ['(blank)' => 1], 'rrp' => ['(blank)' => 1]])
+        ->and($attempts[0]['non_gbp_skus'][0])->toBe(['sku' => '700042', 'issue' => 'EUR', 'cost_currency' => 'EUR', 'rrp_currency' => 'EUR'])
+        ->and($attempts[0]['status'])->toBe(200)
+        ->and(array_keys($attempts[0]['response_headers']))->toBe(['age', 'date', 'server', 'via', 'x-cache', 'x-region', 'x-request-id'])
+        ->and(array_column(array_column($attempts, 'response_headers'), 'x-request-id'))->toBe(['req-abc-1', 'req-abc-2', 'req-abc-3']);
+
+    foreach (['cookie-value-1', 'secret-value-2', 'bearer-value-3', 'key-value-4', 'test-hash', 'test-password', 'tester@example.test'] as $forbidden) {
+        expect($raw)->not->toContain($forbidden);
+    }
+});
+
+it('does not store the headers of a request, whatever they carry', function (): void {
+    // The client sends `username` and `secret` headers on every request.
+    importSequence([currencyProduct(['42' => [20.0, 'EUR']])]);
+
+    $file = (string) File::get(SyncRun::query()->latest('id')->first()->report_path);
+
+    expect($file)->not->toContain('"username"')
+        ->and($file)->not->toContain('"secret"')
+        ->and($file)->not->toContain('test-hash');
+});
+
+it('waits for the configured delays and never re-fetches more than twice', function (): void {
+    config()->set('vendorsync.safety_jogger.refetch_delay_seconds', 5);
+    config()->set('vendorsync.safety_jogger.refetch_second_delay_seconds', 20);
+
+    importSequence([currencyProduct(['42' => [20.0, 'EUR']])]);
+
+    expect(VendorSync::productRequests(700100))->toBe(3);
+
+    sleptSeconds(5);
+    sleptSeconds(20);
+
+    // Asking for more than 2 is clamped to 2; asking for 1 is honoured.
+    config()->set('vendorsync.safety_jogger.refetches', 9);
+    importSequence([currencyProduct(['42' => [20.0, 'EUR']])]);
+
+    expect(VendorSync::productRequests(700100))->toBe(3);
+
+    config()->set('vendorsync.safety_jogger.refetches', 1);
+    importSequence([currencyProduct(['42' => [20.0, 'EUR']])]);
+
+    expect(VendorSync::productRequests(700100))->toBe(2);
+});
+
+it('does not re-fetch a product that is out of scope', function (): void {
+    $detail = currencyProduct(['42' => [20.0, 'EUR']]);
+    $detail['articletype'] = [['name' => 'workwear', 'value' => 'Workwear']];
+
+    $report = importSequence([$detail]);
+
+    expect(VendorSync::productRequests(700100))->toBe(1)
+        ->and($report->currencyRefetches)->toBe(0)
+        ->and($report->outOfScope)->toBe(1);
+});
+
+it('retries a held flip on the next run, in full, and reports it again', function (): void {
+    importCurrency(['42' => [20.0, 'GBP']]);
+
+    $hash = VendorProduct::query()->sole()->payload_hash;
+    $first = importSequence([currencyProduct(['42' => [20.0, 'EUR']])]);
+    $second = importSequence([currencyProduct(['42' => [20.0, 'EUR']])]);
+
+    expect(VendorSync::productRequests(700100))->toBe(3)
+        ->and($first->heldCurrency)->toHaveCount(1)
+        ->and($second->heldCurrency)->toHaveCount(1)
+        ->and($second->unchanged)->toBe(0)
+        ->and(VendorProduct::query()->sole()->payload_hash)->toBe($hash);
+
+    $third = importSequence([currencyProduct(['42' => [20.0, 'EUR']]), currencyProduct(['42' => [23.0, 'GBP']])]);
+
+    expect($third->currencyRecovered)->toBe(1)
+        ->and($third->heldCurrency)->toBe([])
+        ->and(storedSku('42'))->toMatchArray(['cost' => 2300, 'price' => 3450])
+        ->and(VendorProduct::query()->sole()->payload_hash)->not->toBe($hash);
+});
+
+it('shows recoveries and held flips in a dry run without writing', function (): void {
+    importCurrency(['42' => [20.0, 'GBP'], '43' => [20.0, 'GBP']]);
+
+    $hash = VendorProduct::query()->sole()->payload_hash;
+    $runs = SyncRun::query()->count();
+
+    $recovered = importSequence([currencyProduct(['42' => [20.0, 'EUR'], '43' => [20.0, 'GBP']]), currencyProduct(['42' => [24.0, 'GBP'], '43' => [20.0, 'GBP']])], dryRun: true);
+
+    expect($recovered->dryRun)->toBeTrue()
+        ->and($recovered->currencyRecovered)->toBe(1)
+        ->and($recovered->heldCurrency)->toBe([]);
+
+    $held = importSequence([currencyProduct(['42' => [20.0, 'EUR'], '43' => [20.0, 'GBP']])], dryRun: true);
+    $file = json_decode((string) File::get($held->reportPath), true);
+
+    expect($held->heldCurrency)->toHaveCount(1)
+        ->and($held->currencyDiagnostics)->toHaveCount(1)
+        ->and($held->currencyDiagnostics[0]['outcome'])->toBe('held')
+        ->and($file['held_currency'])->toHaveCount(1)
+        ->and($file['currency']['currency_refetches'])->toBe(2)
+        ->and($file['currency_diagnostics'])->toHaveCount(1)
+        ->and(storedSku('42'))->toMatchArray(['cost' => 2000, 'price' => 3000])
+        ->and(VendorProduct::query()->sole()->payload_hash)->toBe($hash)
+        ->and(SyncRun::query()->count())->toBe($runs);
+});
+
+it('prints the currency summary and the still non-GBP products from the command', function (): void {
+    VendorSync::fakeHttp([['id' => 700100]], []);
+    VendorSync::sequence(700100, [currencyProduct(['42' => [20.0, 'EUR']])]);
+
+    $this->artisan('vendorsync:catalogue', ['vendor' => 'SJ', '--dry-run' => true])
+        ->expectsOutputToContain('Currency: 2 re-fetches, 0 products recovered (a re-fetch returned GBP), 1 still not in GBP.')
+        ->expectsOutputToContain('FLIPBOOT [700100]: unpriced non gbp price, 3 attempts')
+        ->assertExitCode(0);
 });

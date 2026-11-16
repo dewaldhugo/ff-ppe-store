@@ -58,13 +58,25 @@ final class ApiClient
      */
     public function product(int $id): array
     {
-        $data = $this->decode($this->authenticated(Endpoint::ProductDetail, $id));
+        return $this->fetchProduct($id)->detail;
+    }
+
+    /**
+     * GET /product/{id} with the status and the allow-listed response headers,
+     * for diagnostics. Request headers are never read.
+     */
+    public function fetchProduct(int $id): ProductResponse
+    {
+        $response = $this->authenticated(Endpoint::ProductDetail, $id);
+        $status = $response->status();
+        $headers = ResponseHeaders::allowed($response->headers());
+        $data = $this->decode($response);
 
         if (! is_array($data) || array_is_list($data)) {
             throw SafetyJoggerApiException::malformed('GET', Endpoint::ProductDetail->path($id));
         }
 
-        return $data;
+        return new ProductResponse($data, $status, $headers);
     }
 
     /**

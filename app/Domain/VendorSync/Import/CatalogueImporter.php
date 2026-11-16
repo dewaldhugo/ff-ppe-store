@@ -142,7 +142,7 @@ final class CatalogueImporter
 
         // The full lists of held prices and held currency flips are never
         // capped, so they go to a file that the run record points to.
-        if ($report->held !== [] || $report->heldCurrency !== []) {
+        if ($report->held !== [] || $report->heldCurrency !== [] || $report->currencyDiagnostics !== []) {
             $this->saveReport($report, 'held');
         }
 
@@ -200,6 +200,7 @@ final class CatalogueImporter
             'processing_seconds' => round(max(0.0, $elapsed - $api['response_seconds'] - $api['wait_seconds']), 3),
             'elapsed_seconds' => round($elapsed, 3),
             'peak_memory_mb' => round(memory_get_peak_usage(true) / 1048576, 1),
+            ...$report->fetchCounts(),
         ];
     }
 
@@ -270,6 +271,12 @@ final class CatalogueImporter
     ): bool {
         $code = $report->vendorCode;
 
+        // Re-fetches and recoveries are counted for every record, including
+        // one that could not be fetched at all.
+        if ($record->fetch !== null) {
+            $report->addFetch($record->fetch);
+        }
+
         if ($record->error !== null) {
             // Could not be fetched: not proof that the product is gone.
             $report->error("{$code} product {$record->externalId}: {$record->error}");
@@ -338,7 +345,7 @@ final class CatalogueImporter
 
         if ($link !== null && ! $force && ! $wasMissing && $link->payload_hash === $hash) {
             $report->unchanged++;
-            $this->countNonGbp($report, $result->product, []);
+            $this->countNonGbp($report, $record, $result->product, []);
 
             if ($writer !== null && $link->missed_runs > 0) {
                 $link->update(['missed_runs' => 0]);
@@ -353,7 +360,7 @@ final class CatalogueImporter
             $current = $this->currency->reasons($result->product, $flips);
             $reasons = [...$current, ...($link === null ? [DraftReason::NO_IMAGE] : [])];
             $this->count($report, $result->product, $link === null, $reasons === [] ? 'published' : 'draft', $reasons);
-            $this->countNonGbp($report, $result->product, $flips);
+            $this->countNonGbp($report, $record, $result->product, $flips);
 
             if ($link !== null && $vendor !== null) {
                 $this->hold($report, $result->product, $this->guard->evaluate($vendor, $result->product, $link->draft_reasons ?? [], $link->product_id, $this->accepted, $current), dryRun: true);
@@ -378,7 +385,7 @@ final class CatalogueImporter
         }
 
         $this->count($report, $result->product, $written->created, $written->status, $written->draftReasons);
-        $this->countNonGbp($report, $result->product, $written->heldCurrency);
+        $this->countNonGbp($report, $record, $result->product, $written->heldCurrency);
         $this->hold($report, $result->product, $written->held, dryRun: false);
         $this->holdCurrency($report, $result->product, $written->heldCurrency, dryRun: false);
 
@@ -392,7 +399,7 @@ final class CatalogueImporter
      *
      * @param  array<string, HeldCurrency>|list<HeldCurrency>  $held
      */
-    private function countNonGbp(RunReport $report, NormalisedProduct $product, array $held): void
+    private function countNonGbp(RunReport $report, RawRecord $record, NormalisedProduct $product, array $held): void
     {
         $heldSkus = [];
 
@@ -409,6 +416,27 @@ final class CatalogueImporter
             $report->nonGbpProducts++;
             $report->nonGbpVariants += count($open);
         }
+
+        // A product that is still not in GBP after its re-fetches goes to the
+        // vendor with the currency fields and response headers of every attempt.
+        // Only when the mapper agrees it has a non-GBP variant, so a SKU the
+        // mapper would drop anyway never produces an entry.
+        if ($record->fetch?->diagnostics === null || ($open === [] && $heldSkus === [])) {
+            return;
+        }
+
+        $report->currencyDiagnostics[] = [
+            'vendor_product_id' => $product->vendorProductId,
+            'product' => $product->name,
+            'outcome' => match (true) {
+                $heldSkus !== [] && $open !== [] => 'held_and_unpriced',
+                $heldSkus !== [] => 'held',
+                default => 'unpriced_non_gbp_price',
+            },
+            'held_skus' => count($heldSkus),
+            'unpriced_skus' => count($open),
+            'attempts' => $record->fetch->diagnostics,
+        ];
     }
 
     /**

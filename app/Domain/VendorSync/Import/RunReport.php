@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domain\VendorSync\Import;
 
+use App\Domain\VendorSync\Data\FetchOutcome;
+
 /**
  * Counts and report entries collected during one run.
  *
@@ -64,6 +66,27 @@ final class RunReport
      */
     public array $heldCurrency = [];
 
+    /** Extra product requests made because a price came back non-GBP. */
+    public int $currencyRefetches = 0;
+
+    /** Products whose re-fetch returned a fully GBP response (used instead of the non-GBP one). */
+    public int $currencyRecovered = 0;
+
+    /** Extra product requests made because the response was unexpected. */
+    public int $responseRetries = 0;
+
+    /** Products whose retry returned a usable response after an unexpected one. */
+    public int $responseRecovered = 0;
+
+    /**
+     * @var list<array<string, mixed>> One entry per product still non-GBP after
+     *                                 its re-fetches: the currency fields seen and
+     *                                 the allow-listed response headers of each
+     *                                 attempt, for the vendor. Never request
+     *                                 headers, never credentials.
+     */
+    public array $currencyDiagnostics = [];
+
     /** @var list<string> */
     public array $messages = [];
 
@@ -100,6 +123,27 @@ final class RunReport
         public readonly string $type,
         public readonly bool $dryRun = false,
     ) {}
+
+    public function addFetch(FetchOutcome $fetch): void
+    {
+        $this->currencyRefetches += $fetch->currencyRefetches;
+        $this->currencyRecovered += $fetch->currencyRecovered ? 1 : 0;
+        $this->responseRetries += $fetch->responseRetries;
+        $this->responseRecovered += $fetch->responseRecovered ? 1 : 0;
+    }
+
+    /**
+     * @return array<string, int>
+     */
+    public function fetchCounts(): array
+    {
+        return [
+            'currency_refetches' => $this->currencyRefetches,
+            'currency_recovered' => $this->currencyRecovered,
+            'response_retries' => $this->responseRetries,
+            'response_recovered' => $this->responseRecovered,
+        ];
+    }
 
     public function message(string $message): void
     {
@@ -195,6 +239,8 @@ final class RunReport
             'samples' => $this->samples,
             'held_prices' => array_map(fn (HeldPrice $held): array => $held->toArray(), $this->held),
             'held_currency' => array_map(fn (HeldCurrency $held): array => $held->toArray(), $this->heldCurrency),
+            'currency' => $this->fetchCounts(),
+            'currency_diagnostics' => $this->currencyDiagnostics,
             'messages' => $this->messages,
             'messages_not_shown' => $this->messagesDropped,
         ];

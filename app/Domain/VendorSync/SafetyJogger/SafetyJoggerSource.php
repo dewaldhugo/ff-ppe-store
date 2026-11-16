@@ -27,13 +27,19 @@ final readonly class SafetyJoggerSource implements VendorSource
     /** Document types kept in English only. */
     private const array ENGLISH_ONLY_DOCUMENTS = ['DeclarationofConformity', 'PRODUCT_SHEET'];
 
+    private ProductFetcher $fetcher;
+
     /**
      * @param  array<string, mixed>  $config  The `vendorsync.safety_jogger` config.
+     * @param  ProductFetcher|null  $fetcher  Fetches each detail, asking again when the answer cannot be used.
      */
     public function __construct(
         private ApiClient $client,
         private array $config,
-    ) {}
+        ?ProductFetcher $fetcher = null,
+    ) {
+        $this->fetcher = $fetcher ?? new ProductFetcher($client, $config);
+    }
 
     public function fetch(): SourceBatch
     {
@@ -151,15 +157,17 @@ final readonly class SafetyJoggerSource implements VendorSource
                 continue;
             }
 
-            try {
-                $detail = self::trim($this->client->product($id));
-            } catch (SafetyJoggerApiException $exception) {
-                yield new RawRecord((string) $id, error: $exception->getMessage());
+            $fetched = $this->fetcher->fetch($id);
+
+            if ($fetched['detail'] === null) {
+                yield new RawRecord((string) $id, error: $fetched['error'], fetch: $fetched['outcome']);
 
                 continue;
             }
 
-            $record = new RawRecord((string) $id, $detail, self::hashable($detail));
+            $detail = self::trim($fetched['detail']);
+            $record = new RawRecord((string) $id, $detail, self::hashable($detail), fetch: $fetched['outcome']);
+            unset($fetched);
             unset($detail);
 
             yield $record;

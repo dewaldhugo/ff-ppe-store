@@ -105,6 +105,18 @@ return [
         'requests_per_second' => 2,
         'retries' => 3,
 
+        // The vendor's answers are not stable: the same account has returned
+        // EUR prices for different products on different runs, and a product
+        // detail has answered "an unexpected response". A product whose
+        // response is not usable is fetched again, at most `refetches` more
+        // times (never more than 2). The first re-fetch waits the first delay,
+        // the second the second one (seconds). The first fully GBP response is
+        // used; a product that never gets one keeps its stored GBP price
+        // (docs/vendorsync.md, Currency instability).
+        'refetches' => 2,
+        'refetch_delay_seconds' => (int) env('VENDORSYNC_SJ_REFETCH_DELAY', 2),
+        'refetch_second_delay_seconds' => (int) env('VENDORSYNC_SJ_REFETCH_DELAY_SECOND', 10),
+
         // Catalogue scope: article type in this list AND an EN ISO 20345 or
         // EN ISO 20347 norm. Everything else is out of scope.
         'article_types' => ['shoes'],

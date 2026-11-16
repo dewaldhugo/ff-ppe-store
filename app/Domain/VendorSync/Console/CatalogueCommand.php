@@ -138,6 +138,19 @@ final class CatalogueCommand extends Command
             $this->line(sprintf('No API requests. Own processing %.1fs.', $stats['processing_seconds']));
         }
 
+        $fetch = $report->fetchCounts();
+
+        if (array_sum($fetch) > 0) {
+            $this->line(sprintf(
+                'Currency: %d re-fetches, %d products recovered (a re-fetch returned GBP), %d still not in GBP. Unexpected responses: %d retries, %d products recovered.',
+                $fetch['currency_refetches'],
+                $fetch['currency_recovered'],
+                count($report->currencyDiagnostics),
+                $fetch['response_retries'],
+                $fetch['response_recovered'],
+            ));
+        }
+
         $seconds = (int) round(microtime(true) - $started);
 
         $this->line(sprintf(
@@ -200,6 +213,30 @@ final class CatalogueCommand extends Command
 
             if (count($report->heldCurrency) > 30) {
                 $this->line('  ... '.(count($report->heldCurrency) - 30).' more in the full report.');
+            }
+        }
+
+        if ($report->currencyDiagnostics !== []) {
+            $this->newLine();
+            $this->warn(sprintf(
+                '%s %d %s still not in GBP after re-fetching. The currency fields and response headers of every attempt are in the full report.',
+                $report->vendorCode,
+                count($report->currencyDiagnostics),
+                count($report->currencyDiagnostics) === 1 ? 'product was' : 'products were',
+            ));
+
+            foreach (array_slice($report->currencyDiagnostics, 0, 30) as $entry) {
+                $this->line(sprintf(
+                    '  %s [%s]: %s, %d attempts',
+                    $entry['product'],
+                    $entry['vendor_product_id'],
+                    str_replace('_', ' ', (string) $entry['outcome']),
+                    count($entry['attempts']),
+                ));
+            }
+
+            if (count($report->currencyDiagnostics) > 30) {
+                $this->line('  ... '.(count($report->currencyDiagnostics) - 30).' more in the full report.');
             }
         }
 

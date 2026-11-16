@@ -14,6 +14,7 @@ use App\Domain\VendorSync\Images\ImageDownloader;
 use App\Domain\VendorSync\Normalisers\Features;
 use App\Domain\VendorSync\Normalisers\PricingRules;
 use App\Domain\VendorSync\SafetyJogger\ApiClient;
+use App\Domain\VendorSync\SafetyJogger\ProductFetcher;
 use App\Domain\VendorSync\SafetyJogger\SafetyJoggerMapper;
 use App\Domain\VendorSync\SafetyJogger\SafetyJoggerSource;
 use App\Domain\VendorSync\SafetyJogger\SafetyJoggerStockFeed;
@@ -55,10 +56,18 @@ final class VendorSyncServiceProvider extends ServiceProvider
         ));
 
         // Safety Jogger
-        $this->app->bind('vendorsync.source.SJ', fn (Application $app): SafetyJoggerSource => new SafetyJoggerSource(
-            $app->make(ApiClient::class),
-            config('vendorsync.safety_jogger'),
-        ));
+        $this->app->bind('vendorsync.source.SJ', function (Application $app): SafetyJoggerSource {
+            // One client for the list, the details and the re-fetches, so its
+            // throttle sees every request.
+            $client = $app->make(ApiClient::class);
+            $config = config('vendorsync.safety_jogger');
+
+            return new SafetyJoggerSource(
+                $client,
+                $config,
+                new ProductFetcher($client, $config, $app->make(RequestTimer::class)),
+            );
+        });
         $this->app->bind('vendorsync.mapper.SJ', fn (Application $app): SafetyJoggerMapper => new SafetyJoggerMapper(
             config('vendorsync.safety_jogger'),
             config('vendorsync.size_charts.SJ'),

@@ -47,6 +47,12 @@ final class VendorSync
 
     private static int $hangingRequests = 0;
 
+    /** @var array<int, list<mixed>> Per product id: the answers to its successive GET requests. */
+    private static array $sequences = [];
+
+    /** @var array<int, int> Product detail GET requests seen, by product id. */
+    private static array $productRequests = [];
+
     /**
      * Fake credentials, no real sleeping, no stray requests, and an empty
      * catalogue so that imports exercise the create path.
@@ -71,6 +77,8 @@ final class VendorSync
         self::$slow = [];
         self::$delaySeconds = 0;
         self::$hangingRequests = 0;
+        self::$sequences = [];
+        self::$productRequests = [];
 
         Sleep::fake();
         Http::preventStrayRequests();
@@ -166,9 +174,7 @@ final class VendorSync
                     ]),
                     $path === 'product' && $request->method() === 'GET' => Http::response($list),
                     $path === 'stock' && $request->method() === 'GET' => Http::response($stock),
-                    preg_match('#^product/(\d+)$#', $path, $match) === 1 && $request->method() === 'GET' => isset($details[(int) $match[1]])
-                        ? Http::response($details[(int) $match[1]])
-                        : Http::response(['error' => 'not found'], 404),
+                    preg_match('#^product/(\d+)$#', $path, $match) === 1 && $request->method() === 'GET' => self::productReply((int) $match[1], $details),
                     default => Http::response(['error' => 'not allowed'], 405),
                 };
             }
@@ -209,6 +215,60 @@ final class VendorSync
 
             return Http::response('unexpected request', 500);
         });
+    }
+
+    /**
+     * Answer successive `GET /product/{id}` requests with successive answers
+     * (the last one repeats). An answer is a detail array, or a `reply()` to
+     * control the body, status and response headers.
+     *
+     * @param  list<mixed>  $answers
+     */
+    public static function sequence(int $id, array $answers): void
+    {
+        self::$sequences[$id] = $answers;
+        // The request count starts again, so a test can run an import twice.
+        self::$productRequests[$id] = 0;
+    }
+
+    /**
+     * A product detail answer with its own body (an array is sent as JSON, a
+     * string as it is), status and response headers.
+     *
+     * @param  array<string, string>  $headers
+     * @return array{__reply: array{body: mixed, status: int, headers: array<string, string>}}
+     */
+    public static function reply(mixed $body, int $status = 200, array $headers = []): array
+    {
+        return ['__reply' => ['body' => $body, 'status' => $status, 'headers' => $headers]];
+    }
+
+    /** How many `GET /product/{id}` requests the fake has answered for a product. */
+    public static function productRequests(int $id): int
+    {
+        return self::$productRequests[$id] ?? 0;
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $details
+     */
+    private static function productReply(int $id, array $details): mixed
+    {
+        $hits = self::$productRequests[$id] = (self::$productRequests[$id] ?? 0) + 1;
+
+        $answer = isset(self::$sequences[$id])
+            ? self::$sequences[$id][min($hits, count(self::$sequences[$id])) - 1]
+            : ($details[$id] ?? null);
+
+        if ($answer === null) {
+            return Http::response(['error' => 'not found'], 404);
+        }
+
+        if (is_array($answer) && isset($answer['__reply'])) {
+            return Http::response($answer['__reply']['body'], $answer['__reply']['status'], $answer['__reply']['headers']);
+        }
+
+        return Http::response($answer);
     }
 
     /**

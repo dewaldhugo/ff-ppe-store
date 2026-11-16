@@ -12,6 +12,14 @@ use RuntimeException;
  */
 final class SafetyJoggerApiException extends RuntimeException
 {
+    private bool $malformed = false;
+
+    /** True for "returned an unexpected response": the request worked, the body was not what the endpoint promises. */
+    public function isMalformed(): bool
+    {
+        return $this->malformed;
+    }
+
     public static function status(string $method, string $path, int $status): self
     {
         return new self("Safety Jogger API {$method} /{$path} failed with status {$status}.", $status);
@@ -29,6 +37,9 @@ final class SafetyJoggerApiException extends RuntimeException
 
     public static function malformed(string $method, string $path): self
     {
-        return new self("Safety Jogger API {$method} /{$path} returned an unexpected response.");
+        $exception = new self("Safety Jogger API {$method} /{$path} returned an unexpected response.");
+        $exception->malformed = true;
+
+        return $exception;
     }
 }

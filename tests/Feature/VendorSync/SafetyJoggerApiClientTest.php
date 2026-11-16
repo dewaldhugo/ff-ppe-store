@@ -128,8 +128,9 @@ it('cannot reach any endpoint outside the allowlist', function (): void {
     expect(array_map(fn (Endpoint $endpoint): string => $endpoint->method().' '.$endpoint->value, Endpoint::cases()))
         ->toBe(['POST login', 'GET product', 'GET product/{id}', 'GET stock']);
 
-    // The only public methods are the three read calls: there is no generic
-    // request method to aim at another path.
+    // The only public methods are the read calls (`fetchProduct` is `product`
+    // with the status and allow-listed response headers, for diagnostics):
+    // there is no generic request method to aim at another path.
     $public = collect((new ReflectionClass(ApiClient::class))->getMethods(ReflectionMethod::IS_PUBLIC))
         ->reject(fn (ReflectionMethod $method): bool => $method->isConstructor())
         ->map(fn (ReflectionMethod $method): string => $method->getName().'('.implode(',', array_map(
@@ -138,7 +139,7 @@ it('cannot reach any endpoint outside the allowlist', function (): void {
         )).')')
         ->sort()->values()->all();
 
-    expect($public)->toBe(['product(int)', 'products()', 'stock()']);
+    expect($public)->toBe(['fetchProduct(int)', 'product(int)', 'products()', 'stock()']);
 
     // A product id cannot steer the path anywhere else.
     expect(fn () => Endpoint::ProductDetail->path(0))->toThrow(InvalidArgumentException::class)

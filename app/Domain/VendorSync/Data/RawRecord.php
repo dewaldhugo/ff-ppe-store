@@ -25,6 +25,8 @@ final readonly class RawRecord
         public ?string $outOfScope = null,
         // Set when the record could not be fetched.
         public ?string $error = null,
+        // Set by a source that had to ask again (retries, recoveries, diagnostics).
+        public ?FetchOutcome $fetch = null,
     ) {}
 
     public function hash(): string

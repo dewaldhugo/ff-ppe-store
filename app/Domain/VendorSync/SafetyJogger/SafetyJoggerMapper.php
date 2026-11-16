@@ -31,9 +31,7 @@ final readonly class SafetyJoggerMapper implements VendorMapper
     /** Reported for a price that has a value but no currency. */
     public const string BLANK_CURRENCY = PriceCurrency::BLANK;
 
-    private const string SAFETY_NORM = 'EN ISO 20345';
-
-    private const string OCCUPATIONAL_NORM = 'EN ISO 20347';
+    private SafetyJoggerScope $scope;
 
     /**
      * @param  array<string, mixed>  $config  The `vendorsync.safety_jogger` config.
@@ -44,7 +42,9 @@ final readonly class SafetyJoggerMapper implements VendorMapper
         private array $sizeChart,
         private Features $features,
         private PriceCalculator $prices,
-    ) {}
+    ) {
+        $this->scope = new SafetyJoggerScope($config);
+    }
 
     public function map(RawRecord $record): MappingResult
     {
@@ -59,14 +59,14 @@ final readonly class SafetyJoggerMapper implements VendorMapper
         foreach ($articleTypes === [] ? ['(none)'] : $articleTypes as $type) {
             $facts[] = ['article_type', $type];
         }
-        $articleType = collect($articleTypes)->first(fn (string $type): bool => in_array($type, $this->config['article_types'] ?? [], true));
+        $articleType = $this->scope->articleType($data);
 
         if ($articleType === null) {
             return MappingResult::outOfScope('article_type', $facts);
         }
 
         $norms = $this->values($data['norms'] ?? []);
-        $family = $this->normFamily($norms);
+        $family = $this->scope->family($norms);
 
         if ($family === null) {
             return MappingResult::outOfScope('no_en_iso_norm', $facts);
@@ -391,20 +391,6 @@ final readonly class SafetyJoggerMapper implements VendorMapper
     }
 
     /**
-     * @param  list<string>  $norms
-     */
-    private function normFamily(array $norms): ?string
-    {
-        $contains = fn (string $norm): bool => collect($norms)->contains(fn (string $value): bool => str_contains($value, $norm));
-
-        return match (true) {
-            $contains(self::SAFETY_NORM) => 'safety',
-            $contains(self::OCCUPATIONAL_NORM) => 'occupational',
-            default => null,
-        };
-    }
-
-    /**
      * The vendor's commercial name exactly as supplied (`LIGERO`,
      * `BESTBOOT2`, `SX310`): trimmed, repeated whitespace collapsed, and no
      * change of case. Names are model codes, so any casing rule gets some
@@ -440,17 +426,7 @@ final readonly class SafetyJoggerMapper implements VendorMapper
      */
     private function values(mixed $properties): array
     {
-        $values = [];
-
-        foreach (is_array($properties) ? $properties : [] as $property) {
-            $value = trim((string) ($property['value'] ?? ''));
-
-            if ($value !== '') {
-                $values[] = $value;
-            }
-        }
-
-        return $values;
+        return SafetyJoggerScope::values($properties);
     }
 
     /**
@@ -460,17 +436,7 @@ final readonly class SafetyJoggerMapper implements VendorMapper
      */
     private function names(mixed $properties, bool $lower = true): array
     {
-        $names = [];
-
-        foreach (is_array($properties) ? $properties : [] as $property) {
-            $name = trim((string) ($property['name'] ?? ''));
-
-            if ($name !== '') {
-                $names[] = $lower ? Str::lower($name) : $name;
-            }
-        }
-
-        return $names;
+        return SafetyJoggerScope::names($properties, $lower);
     }
 
     private function first(mixed $properties): ?string

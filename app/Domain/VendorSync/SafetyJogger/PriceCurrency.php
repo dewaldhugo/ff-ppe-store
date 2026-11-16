@@ -20,6 +20,88 @@ final class PriceCurrency
     public const string BLANK = '(blank)';
 
     /**
+     * Every SKU of a product detail that is not priced in GBP, with the
+     * currency field of its cost and of its RRP exactly as the vendor sent
+     * them (null when absent).
+     *
+     * @param  array<string, mixed>  $detail
+     * @return list<array{sku: string, issue: string, cost_currency: ?string, rrp_currency: ?string}>
+     */
+    public static function skus(array $detail): array
+    {
+        $found = [];
+
+        foreach (self::allSkus($detail) as $sku) {
+            $issue = self::issue($sku);
+
+            if ($issue === null) {
+                continue;
+            }
+
+            $found[] = [
+                'sku' => (string) ($sku['id'] ?? ''),
+                'issue' => $issue,
+                'cost_currency' => self::raw($sku['customerPrice']['currency'] ?? null),
+                'rrp_currency' => self::raw($sku['rrpPrice']['currency'] ?? null),
+            ];
+        }
+
+        return $found;
+    }
+
+    /**
+     * How many SKU costs and RRPs carry each currency (`(blank)` for none).
+     * An RRP of zero or no value is not counted, as in issue().
+     *
+     * @param  array<string, mixed>  $detail
+     * @return array{cost: array<string, int>, rrp: array<string, int>}
+     */
+    public static function tally(array $detail): array
+    {
+        $tally = ['cost' => [], 'rrp' => []];
+
+        foreach (self::allSkus($detail) as $sku) {
+            foreach (['cost' => 'customerPrice', 'rrp' => 'rrpPrice'] as $kind => $field) {
+                $pence = Money::toPence($sku[$field]['value'] ?? null);
+
+                if ($pence === null || $pence <= 0) {
+                    continue;
+                }
+
+                $currency = strtoupper(trim((string) ($sku[$field]['currency'] ?? '')));
+                $currency = $currency === '' ? self::BLANK : $currency;
+                $tally[$kind][$currency] = ($tally[$kind][$currency] ?? 0) + 1;
+            }
+        }
+
+        return $tally;
+    }
+
+    /**
+     * @param  array<string, mixed>  $detail
+     * @return list<array<string, mixed>>
+     */
+    private static function allSkus(array $detail): array
+    {
+        $skus = [];
+
+        foreach ($detail['colors'] ?? [] as $colour) {
+            foreach (is_array($colour) ? ($colour['skus'] ?? []) : [] as $sku) {
+                if (is_array($sku)) {
+                    $skus[] = $sku;
+                }
+            }
+        }
+
+        return $skus;
+    }
+
+    private static function raw(mixed $currency): ?string
+    {
+        return $currency === null ? null : (string) $currency;
+    }
+
+    /**
      * The currency that stops this SKU from being priced, or null when its
      * prices are in GBP (or it has no cost).
      *
