@@ -112,7 +112,9 @@ final class CatalogueSearch
      */
     private function filters(ListingQuery $query, ?string $except = null): array
     {
-        $filters = ['status = "published"'];
+        // scout.soft_delete keeps a deleted product in the index, flagged
+        // __soft_deleted = 1 with its old status, so both conditions are needed.
+        $filters = ['status = "published"', '__soft_deleted = 0'];
 
         if ($query->collectionId !== null) {
             $filters[] = 'collection_ids = '.$query->collectionId;

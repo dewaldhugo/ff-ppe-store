@@ -1,6 +1,6 @@
 # Search index
 
-One Meilisearch document per product, written by Lunar's product indexing through the storefront's custom indexer (`config/lunar/search.php`, `indexers`). Drafts are indexed too because the admin panel searches the same index; the storefront always filters on `status = published`.
+One Meilisearch document per product, written by Lunar's product indexing through the storefront's custom indexer (`config/lunar/search.php`, `indexers`). Drafts are indexed too because the admin panel searches the same index; the storefront always filters on `status = published` and `__soft_deleted = 0`. `scout.soft_delete` is true, so a soft-deleted product stays in the index with `__soft_deleted = 1` and its old status; `CatalogueSearch::filters()` is the only place that builds the filter, and the main query and every facet count query use it. A document written without `__soft_deleted` would not match, which Scout never does while `scout.soft_delete` is true.
 
 - Searchable: `name`, `title`, `brand`, `key_points`, `safety_class`, `standards`, `skus` (so the admin panel finds products by SKU).
 - Filterable: `collection_ids` (the product's collections and all their ancestors), `brand`, `safety_class`, `features`, `gender`, `standards`, `cut`, `toecap`, `colours_in_stock`, `sizes_in_stock`, `variants_in_stock` (colour and size pairs, e.g. `navy|9`), `in_stock` (bool), `price_min_ex_vat`, `status`. Prices are in pence, ex VAT.

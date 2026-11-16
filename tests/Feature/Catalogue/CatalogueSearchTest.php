@@ -178,6 +178,39 @@ it('never returns draft products', function (): void {
     expect(names(listing()))->toContain('FS30C');
 });
 
+it('never returns soft-deleted products, in the hits, the total or the facets', function (): void {
+    $product = Product::query()->whereHas('urls', fn ($query) => $query->where('slug', 'centek-fs30c'))->sole();
+    $before = listing();
+    $brandCounts = fn (ListingResult $result): array => collect($result->facets['brand'])->mapWithKeys(fn ($facet): array => [$facet->value => $facet->count])->all();
+
+    // FS30C is the only Centek product in the fixture.
+    expect($brandCounts($before))->toHaveKey('Centek');
+
+    try {
+        // scout.soft_delete is true: the document stays in the index, flagged __soft_deleted.
+        $product->delete();
+        SearchIndex::settle();
+
+        $after = listing();
+        $search = listing(['q' => 'FS30C']);
+        $selected = listing(['brand' => ['Centek']]);
+
+        expect(names($after))->not->toContain('FS30C')
+            ->and($after->total)->toBe($before->total - 1)
+            ->and($brandCounts($after))->not->toHaveKey('Centek')
+            ->and(array_sum($brandCounts($after)))->toBe(array_sum($brandCounts($before)) - 1)
+            ->and($search->productIds)->not->toContain($product->id)
+            ->and($selected->total)->toBe(0)
+            ->and($selected->productIds)->toBe([]);
+    } finally {
+        // The database rolls back after the test; the index does not.
+        $product->restore();
+        SearchIndex::settle();
+    }
+
+    expect(names(listing()))->toContain('FS30C');
+});
+
 it('applies index settings once and then reports them as current', function (): void {
     $this->artisan('catalogue:sync-search-settings')
         ->expectsOutputToContain('already has settings version')
