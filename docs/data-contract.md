@@ -11,7 +11,9 @@ The ingestion module writes data in exactly this shape. The storefront depends o
   - `standard`: 20%.
   - `zero-protective`: protective **boots** (not shoes) and helmets for industrial use. 0% when sold to an individual for their own use, 20% when sold to an employer for use by employees (HMRC VAT Notice 701/23).
   - `zero-childrens`: children's footwear, 0%.
-- Listing price (ex VAT) = vendor cost x 1.5, capped at the vendor RRP (ex VAT). Calculated by the ingestion module. The storefront never recalculates it.
+- Listing price (ex VAT) = vendor cost x the vendor's markup (default 1.5, overridable per vendor), rounded to the penny. It is not capped at the RRP, so a variant can sell above the manufacturer's RRP; it then has no compare price. Calculated by the ingestion module. The storefront never recalculates it.
+- Prices are GBP only. A vendor price in any other currency (or with no currency) is never converted: the variant is imported with no price row, no cost and stock 0, and its product is draft (`non_gbp_price`) until a GBP price exists. A product whose every variant has a cost at or above its RRP ex VAT is draft (`cost_at_or_above_rrp`), a data-review flag. A variant can therefore lack a price only on a draft product.
+- A vendor cost that moves by more than 40% (configurable) in one run is held: cost, price and compare price keep their old values until a person accepts the change (see docs/vendorsync.md).
 
 ## VAT
 

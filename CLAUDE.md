@@ -35,13 +35,15 @@ Rules:
 
 When the current phase prompt is an ingestion phase (prompts/phase-2-vendorsync.md or a later vendorsync prompt), the scope is inverted: the ingestion area (app/Domain/VendorSync, config/vendorsync.php, *_vendorsync_* migrations, tests/*/VendorSync, tests/Fixtures/VendorSync, tests/Support/VendorSync.php) is in scope and may be created and changed, and the storefront is out of scope except for the touchpoints the phase prompt lists (for Phase 2: `database/fixtures/catalogue.json`, `DatabaseSeeder`, the `bootstrap/providers.php` line). Existing vendorsync migrations remain unchanged; new tables and columns go in new migrations. The data contract still applies in full, and the importer must write exactly the shape the fixture seeder writes.
 
-Ingestion rules for Safety Jogger and Footsure, the run safety limits, image handling, commands and the vendor table definitions are in [docs/vendorsync.md](docs/vendorsync.md).
+Ingestion rules for Safety Jogger and Footsure, the run safety limits, image handling, commands and the vendor table definitions are in [docs/vendorsync.md](docs/vendorsync.md). The current pricing-rules phase is [prompts/vendorsync-pricing-rules.md](prompts/vendorsync-pricing-rules.md); `docs/search.md` applies to it, because repricing is a bulk write that affects products.
+
+Pricing rules (summary, details in docs/vendorsync.md): price = vendor cost x markup (default 1.5, per-vendor override, 1.0 to 5), never capped at the RRP; vendor prices that are not GBP are never converted or stored (product drafted `non_gbp_price`); a product whose every variant has cost at or above its RRP is drafted `cost_at_or_above_rrp`; a vendor cost change above 40% is held for review (`--accept-price-changes=SKU,..`, `--accept-product=ID`, or bare with `--all`). Known gap: a product published by hand in the admin while a variant has no price breaks the storefront product page (Lunar `MissingCurrencyPriceException`); the importer keeps such products draft.
 
 ## Data contract
 
 The data contract in [docs/data-contract.md](docs/data-contract.md) is binding. The ingestion module writes data in exactly that shape and the storefront depends on it. Changing it requires updating both sides, so treat it as fixed. Highlights that apply everywhere:
 
-- Prices are integers in pence, stored ex VAT and shown ex VAT with an `ex VAT` suffix. There is no inc/ex VAT toggle (business buyers).
+- Prices are integers in pence, stored ex VAT and shown ex VAT with an `ex VAT` suffix. There is no inc/ex VAT toggle (business buyers). A variant of a draft product may have no price row (non-GBP vendor price); a published product never does.
 - Contract records without a native Lunar handle (tax classes, product types, tax zones, collections) are resolved by handle through `App\Domain\Catalogue\Keys\CatalogueKeys`. Never match on name.
 - Product slugs come from `App\Domain\Catalogue\Urls\GenerateProductSlug` and never change once set.
 - Listings and facets query Meilisearch only, through `App\Domain\Catalogue\Search\CatalogueSearch`.
