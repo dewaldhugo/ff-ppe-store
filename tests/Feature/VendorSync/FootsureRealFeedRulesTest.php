@@ -239,7 +239,7 @@ it('drafts a product whose rows all have a cost at or above the RRP, in one line
         fsRow($t, ['Product Reference' => 'J-2', 'UK Size' => '4', 'EU Size' => '37', 'VAT' => '0.2000', 'Trade Price' => '14.00', 'SRP' => '6.25']),
     ]);
 
-    expect(VendorProduct::query()->sole()->draft_reasons)->toContain(DraftReason::NO_SELLABLE_PRICE)
+    expect(VendorProduct::query()->sole()->draft_reasons)->toContain(DraftReason::COST_AT_OR_ABOVE_RRP)
         ->and($report->messages)->toContain('Mirak Test Plimsoll [900001]: 2 SKUs with cost at or above RRP; stock set to 0 (SKUs: J-1, J-2)')
         ->and(VendorSync::product('FS', '900001')->status)->toBe('draft')
         ->and(VendorSync::product('FS', '900001')->variants->sum('stock'))->toBe(0);

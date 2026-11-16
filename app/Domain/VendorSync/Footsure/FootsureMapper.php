@@ -166,16 +166,18 @@ final readonly class FootsureMapper implements VendorMapper
         $costAboveRrp = SkuIssues::count($messages, SkuIssues::COST_ABOVE_RRP);
         $messages = SkuIssues::collapse($label, $messages);
 
-        // Nothing to sell at a price: either no variant can be imported at
-        // all, or every one is held at stock 0 because its cost is at or
-        // above its RRP. Draft it rather than publish it as permanently out
-        // of stock.
-        $noSellablePrice = ($variants === [] && ! $noUsableSize)
-            || ($variants !== [] && $costAboveRrp === count($variants));
-
-        if ($noSellablePrice) {
+        // No variant can be imported at all: nothing to sell at a price.
+        if ($variants === [] && ! $noUsableSize) {
             $draftReasons[] = DraftReason::NO_SELLABLE_PRICE;
             $messages[] = "{$label}: nothing can be sold at a price; product drafted.";
+        }
+
+        // Every variant is held at stock 0 because its cost is at or above
+        // its RRP. Draft it for review rather than publish it as permanently
+        // out of stock. One such variant among others does not draft it.
+        if ($variants !== [] && $costAboveRrp === count($variants)) {
+            $draftReasons[] = DraftReason::COST_AT_OR_ABOVE_RRP;
+            $messages[] = "{$label}: every variant has a cost at or above its RRP; product drafted for data review.";
         }
 
         $brand = array_key_exists($first['Brand'], $this->config['brand_map'] ?? [])

@@ -15,8 +15,20 @@ final class DraftReason
 
     public const string NO_COLOUR = 'no_colour';
 
-    /** No variant can be imported, or every variant has a cost at or above its RRP. */
+    /** No variant can be imported (no cost, unknown size and so on). */
     public const string NO_SELLABLE_PRICE = 'no_sellable_price';
+
+    /**
+     * Every variant has a cost at or above its RRP. A data-review flag: the
+     * vendor data probably mixes a pack price with a single-unit RRP.
+     */
+    public const string COST_AT_OR_ABOVE_RRP = 'cost_at_or_above_rrp';
+
+    /**
+     * A price came in a currency other than GBP. Never converted: the
+     * variants stay unpriced and the product draft until a GBP price exists.
+     */
+    public const string NON_GBP_PRICE = 'non_gbp_price';
 
     public const string VENDOR_DISCONTINUED = 'vendor_discontinued';
 
