@@ -6,6 +6,7 @@ namespace App\Domain\VendorSync\Console;
 
 use App\Domain\VendorSync\Exceptions\RunAlreadyRunning;
 use App\Domain\VendorSync\Images\ImageRun;
+use App\Domain\VendorSync\Import\AcceptedPrices;
 use App\Domain\VendorSync\Import\CatalogueImporter;
 use App\Domain\VendorSync\Import\RunReport;
 use Illuminate\Console\Command;
@@ -16,7 +17,10 @@ final class CatalogueCommand extends Command
         {vendor : Vendor code (SJ or FS)}
         {--dry-run : Run everything except the writes and print the counts and a sample}
         {--force : Reprocess products whose payload is unchanged}
-        {--without-images : Do not queue image jobs after the run}';
+        {--without-images : Do not queue image jobs after the run}
+        {--accept-price-changes= : Apply held price changes for these vendor SKUs (comma separated). Without a value it needs --all}
+        {--accept-product= : Apply held price changes for these vendor product IDs (comma separated), as printed in brackets in the report}
+        {--all : With a bare --accept-price-changes, apply every held price change}';
 
     protected $description = 'Import a vendor catalogue into Lunar and the vendor tables';
 
@@ -30,9 +34,15 @@ final class CatalogueCommand extends Command
             return self::FAILURE;
         }
 
+        $accepted = $this->accepted();
+
+        if ($accepted === null) {
+            return self::FAILURE;
+        }
+
         $started = microtime(true);
         $dryRun = (bool) $this->option('dry-run');
-        $report = $importer->run($vendor, $dryRun, (bool) $this->option('force'));
+        $report = $importer->run($vendor, $dryRun, (bool) $this->option('force'), accepted: $accepted);
 
         $this->render($report);
 
@@ -43,6 +53,47 @@ final class CatalogueCommand extends Command
         $this->footer($started, $report);
 
         return $report->ok() ? self::SUCCESS : self::FAILURE;
+    }
+
+    /**
+     * Accepting is always explicit: named SKUs, named product IDs, or
+     * `--accept-price-changes --all`. Anything else is refused before the
+     * run starts. Null means the options were refused.
+     */
+    private function accepted(): ?AcceptedPrices
+    {
+        $flag = $this->input->hasParameterOption('--accept-price-changes');
+        $skus = $this->list($this->option('accept-price-changes'));
+        $products = $this->list($this->option('accept-product'));
+        $all = (bool) $this->option('all');
+
+        if ($this->input->hasParameterOption('--accept-product') && $products === []) {
+            $this->error('--accept-product needs a vendor product ID, for example --accept-product=273934.');
+
+            return null;
+        }
+
+        if ($flag && $skus === [] && ! $all) {
+            $this->error('A bare --accept-price-changes is refused. Name the SKUs (--accept-price-changes=SKU1,SKU2), name products (--accept-product=ID), or pass --all to accept every held change.');
+
+            return null;
+        }
+
+        if ($all && (! $flag || $skus !== [] || $products !== [])) {
+            $this->error('--all only works with a bare --accept-price-changes, and not together with named SKUs or products.');
+
+            return null;
+        }
+
+        return new AcceptedPrices($skus, $products, $all);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function list(mixed $value): array
+    {
+        return array_values(array_filter(array_map('trim', explode(',', (string) $value)), fn (string $item): bool => $item !== ''));
     }
 
     /**
@@ -105,6 +156,28 @@ final class CatalogueCommand extends Command
         foreach ($report->tallies as $group => $tally) {
             ksort($tally);
             $this->line($group.': '.implode(', ', array_map(fn (int|string $key, int $count): string => "{$key} {$count}", array_keys($tally), $tally)));
+        }
+
+        if ($report->held !== []) {
+            $this->newLine();
+            $this->warn(sprintf(
+                '%s %d price %s held for review%s. Cost, price and compare price were %s.',
+                $report->vendorCode,
+                count($report->held),
+                count($report->held) === 1 ? 'change' : 'changes',
+                $report->dryRun ? ' (dry run: they would be)' : '',
+                $report->dryRun ? 'left as they are' : 'kept at their old values',
+            ));
+
+            foreach (array_slice($report->held, 0, 30) as $held) {
+                $this->line('  '.$held->line($report->vendorCode));
+            }
+
+            if (count($report->held) > 30) {
+                $this->line('  ... '.(count($report->held) - 30).' more in the full report.');
+            }
+
+            $this->line('Accept with --accept-price-changes=SKU1,SKU2 or --accept-product=ID.');
         }
 
         if ($report->reportPath !== null) {

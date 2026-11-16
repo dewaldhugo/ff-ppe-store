@@ -9,6 +9,7 @@ final readonly class WriteResult
     /**
      * @param  list<string>  $draftReasons
      * @param  list<string>  $messages
+     * @param  list<HeldPrice>  $held  Variants whose cost, price and compare price were kept.
      */
     public function __construct(
         public int $productId,
@@ -16,6 +17,7 @@ final readonly class WriteResult
         public string $status,
         public array $draftReasons,
         public array $messages,
+        public array $held = [],
     ) {}
 
     /**

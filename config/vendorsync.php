@@ -26,6 +26,13 @@ return [
     // run when the mapper is resolved.
     'markup' => env('VENDORSYNC_MARKUP', '1.5'),
 
+    // Price-change guard. When a variant's new vendor COST differs from its
+    // stored cost by more than this percentage in one run, cost, price and
+    // compare price are all kept and the change is held for review (listed
+    // in the run report and the alert). Exactly this percentage passes.
+    // 0 switches the guard off. A markup change never triggers it.
+    'price_change_guard_percent' => (int) env('VENDORSYNC_PRICE_CHANGE_GUARD_PERCENT', 40),
+
     // Abort a catalogue run that sees fewer than this share of the products
     // seen by the previous successful run.
     'safety_threshold_percent' => 70,

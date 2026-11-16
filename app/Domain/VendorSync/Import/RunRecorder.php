@@ -108,10 +108,13 @@ final class RunRecorder
             'finished_at' => now(),
             'messages' => $messages,
             'stats' => $report->stats === [] ? null : $report->stats,
+            'report_path' => $report->reportPath,
             ...$report->counts(),
         ]);
 
-        if (! $report->ok()) {
+        // A run that held price changes needs a person's decision, so it is
+        // mailed too, even though it succeeded.
+        if (! $report->ok() || $run->held_prices > 0) {
             $this->alert($run);
         }
     }
@@ -133,10 +136,16 @@ final class RunRecorder
     {
         $run->loadMissing('vendor');
 
-        Log::error("VendorSync {$run->type} run {$run->id} for {$run->vendor->code} {$run->status}.", [
-            'counts' => $run->only(['seen', 'created', 'updated', 'unchanged', 'drafted', 'errors', 'out_of_scope']),
+        $context = [
+            'counts' => $run->only(['seen', 'created', 'updated', 'unchanged', 'drafted', 'errors', 'out_of_scope', 'held_prices']),
             'messages' => array_slice($run->messages ?? [], 0, 10),
-        ]);
+        ];
+
+        if ($run->status === RunReport::SUCCEEDED) {
+            Log::warning("VendorSync {$run->type} run {$run->id} for {$run->vendor->code} held {$run->held_prices} price changes for review.", $context);
+        } else {
+            Log::error("VendorSync {$run->type} run {$run->id} for {$run->vendor->code} {$run->status}.", $context);
+        }
 
         $email = config('vendorsync.alert_email');
 
