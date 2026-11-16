@@ -58,11 +58,12 @@ final class CatalogueWriter
         private readonly GenerateProductSlug $generateSlug,
         private readonly SharedOptionValues $optionValues,
         private readonly FieldLocks $locks,
+        private readonly PriceChangeGuard $guard,
     ) {}
 
-    public function write(Vendor $vendor, NormalisedProduct $data, string $payloadHash): WriteResult
+    public function write(Vendor $vendor, NormalisedProduct $data, string $payloadHash, AcceptedPrices $accepted = new AcceptedPrices): WriteResult
     {
-        return DB::transaction(function () use ($vendor, $data, $payloadHash): WriteResult {
+        return DB::transaction(function () use ($vendor, $data, $payloadHash, $accepted): WriteResult {
             $link = VendorProduct::query()
                 ->where('vendor_id', $vendor->id)
                 ->where('vendor_product_id', $data->vendorProductId)
@@ -70,7 +71,7 @@ final class CatalogueWriter
 
             return $link === null
                 ? $this->create($vendor, $data, $payloadHash)
-                : $this->update($vendor, $link, $data, $payloadHash);
+                : $this->update($vendor, $link, $data, $payloadHash, $accepted);
         });
     }
 
@@ -225,7 +226,7 @@ final class CatalogueWriter
         return new WriteResult($product->id, true, 'draft', $reasons, $messages);
     }
 
-    private function update(Vendor $vendor, VendorProduct $link, NormalisedProduct $data, string $payloadHash): WriteResult
+    private function update(Vendor $vendor, VendorProduct $link, NormalisedProduct $data, string $payloadHash, AcceptedPrices $accepted): WriteResult
     {
         $messages = [];
 
@@ -266,6 +267,9 @@ final class CatalogueWriter
             ->get()
             ->keyBy('vendor_sku');
 
+        // Cost, price and compare price stay as they were for these SKUs.
+        $held = $this->guard->evaluate($vendor, $data, $link->draft_reasons ?? [], $link->product_id, $accepted);
+
         $seen = [];
 
         foreach ($data->variants as $variant) {
@@ -273,7 +277,7 @@ final class CatalogueWriter
             $offer = $offers->get($variant->vendorSku);
 
             if ($offer !== null) {
-                $this->updateVariant($vendor, $variant, $offer);
+                $this->updateVariant($vendor, $variant, $offer, isset($held[$variant->vendorSku]));
 
                 continue;
             }
@@ -300,14 +304,16 @@ final class CatalogueWriter
 
         $link->update([
             'commodity_code' => $data->commodityCode,
-            'payload_hash' => $payloadHash,
+            // A product with a held price keeps its old hash, so the next run
+            // looks at it again instead of treating it as unchanged.
+            'payload_hash' => $held === [] ? $payloadHash : $link->payload_hash,
             'content_hashes' => $contentHashes,
             'draft_reasons' => $reasons,
             'related_ids' => $data->relatedVendorProductIds,
             'missed_runs' => 0,
         ]);
 
-        return new WriteResult($product->id, false, $status, $reasons, $messages);
+        return new WriteResult($product->id, false, $status, $reasons, $messages, array_values($held));
     }
 
     private function createVariant(Product $product, Vendor $vendor, NormalisedVariant $data): void
@@ -325,15 +331,18 @@ final class CatalogueWriter
 
         $variant->values()->attach($this->optionValueIds($data));
 
-        Price::query()->create([
-            'priceable_type' => $variant->getMorphClass(),
-            'priceable_id' => $variant->id,
-            'currency_id' => $this->currency()->id,
-            'customer_group_id' => $this->customerGroup()->id,
-            'price' => $data->price,
-            'compare_price' => $data->comparePrice,
-            'min_quantity' => 1,
-        ]);
+        // An unpriced variant (non-GBP vendor price) gets no price row at all.
+        if ($data->price !== null) {
+            Price::query()->create([
+                'priceable_type' => $variant->getMorphClass(),
+                'priceable_id' => $variant->id,
+                'currency_id' => $this->currency()->id,
+                'customer_group_id' => $this->customerGroup()->id,
+                'price' => $data->price,
+                'compare_price' => $data->comparePrice,
+                'min_quantity' => 1,
+            ]);
+        }
 
         VendorOffer::query()->create([
             'product_variant_id' => $variant->id,
@@ -345,7 +354,7 @@ final class CatalogueWriter
         ]);
     }
 
-    private function updateVariant(Vendor $vendor, NormalisedVariant $data, VendorOffer $offer): void
+    private function updateVariant(Vendor $vendor, NormalisedVariant $data, VendorOffer $offer, bool $priceHeld = false): void
     {
         /** @var ProductVariant $variant */
         $variant = ProductVariant::query()->findOrFail($offer->product_variant_id);
@@ -381,7 +390,13 @@ final class CatalogueWriter
             ->where('min_quantity', 1)
             ->first();
 
-        if ($price === null) {
+        if ($priceHeld) {
+            // Held for review: the old price and compare price stay.
+        } elseif ($data->price === null) {
+            // Unpriced: a price stored earlier (for example from a EUR amount
+            // read as GBP) must not survive.
+            $price?->delete();
+        } elseif ($price === null) {
             Price::query()->create([
                 'priceable_type' => $variant->getMorphClass(),
                 'priceable_id' => $variant->id,
@@ -395,9 +410,16 @@ final class CatalogueWriter
             $price->update(['price' => $data->price, 'compare_price' => $data->comparePrice]);
         }
 
+        $offerColumns = $this->offerColumns($data);
+
+        if ($priceHeld) {
+            // Cost, price and compare price are one unit: keep the old cost too.
+            unset($offerColumns['cost_price']);
+        }
+
         $offer->fill([
             'last_seen_at' => now(),
-            ...$this->offerColumns($data),
+            ...$offerColumns,
         ]);
 
         if ($catalogueOwnsStock) {

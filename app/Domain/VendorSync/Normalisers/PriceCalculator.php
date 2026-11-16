@@ -6,10 +6,15 @@ namespace App\Domain\VendorSync\Normalisers;
 
 /**
  * The listing price rule of the data contract:
- * price ex VAT = cost x markup, capped at the RRP ex VAT.
+ * price ex VAT = cost x markup, rounded to the penny.
  *
- * A missing or zero RRP means no cap and no compare price. A variant with
- * no cost, or with a cost at or above a non-zero RRP, is not sellable.
+ * The price is never capped at the RRP. The RRP only decides two things:
+ * the compare price (the RRP, when it is above the price) and whether the
+ * variant is sellable. A variant with a cost at or above a non-zero RRP is
+ * not sellable: that is a sign of bad data (a pack priced against a single
+ * unit, say), so it is held at stock 0 and its product is drafted for review.
+ * A missing or zero RRP means no compare price and no such check. A variant
+ * with no cost is not sellable and has no price.
  */
 final readonly class PriceCalculator
 {
@@ -34,7 +39,6 @@ final readonly class PriceCalculator
             return ['price' => $price, 'compare' => null, 'sellable' => true, 'reason' => null];
         }
 
-        $price = min($price, $rrpExVatPence);
         $belowCost = $costPence >= $rrpExVatPence;
 
         return [

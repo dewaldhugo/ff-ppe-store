@@ -44,6 +44,19 @@ final class RunReport
 
     public int $outOfScope = 0;
 
+    /** Variants priced by the vendor in a currency other than GBP: imported unpriced. */
+    public int $nonGbpVariants = 0;
+
+    /** Products drafted `non_gbp_price`. */
+    public int $nonGbpProducts = 0;
+
+    /**
+     * @var list<HeldPrice> Variants whose cost, price and compare price were
+     *                      kept (or, in a dry run, would be). Never capped: the
+     *                      full list goes to the stored report.
+     */
+    public array $held = [];
+
     /** @var list<string> */
     public array $messages = [];
 
@@ -135,6 +148,9 @@ final class RunReport
             'drafted' => $this->drafted,
             'errors' => $this->errors,
             'out_of_scope' => $this->outOfScope,
+            'non_gbp_variants' => $this->nonGbpVariants,
+            'non_gbp_products' => $this->nonGbpProducts,
+            'held_prices' => count($this->held),
         ];
     }
 
@@ -160,6 +176,7 @@ final class RunReport
             'stats' => $this->stats,
             'tallies' => $tallies,
             'samples' => $this->samples,
+            'held_prices' => array_map(fn (HeldPrice $held): array => $held->toArray(), $this->held),
             'messages' => $this->messages,
             'messages_not_shown' => $this->messagesDropped,
         ];

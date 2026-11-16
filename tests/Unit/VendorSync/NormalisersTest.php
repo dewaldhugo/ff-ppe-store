@@ -111,9 +111,21 @@ describe('price', function (): void {
             ->toBe(['price' => 6890, 'compare' => 7650, 'sellable' => true, 'reason' => null]);
     });
 
-    it('caps the price at the RRP and then has no compare price', function () use ($prices): void {
+    it('does not cap the price at the RRP, and then has no compare price', function () use ($prices): void {
+        // 1.5 x 40.00 = 60.00, above an RRP of 50.00.
         expect($prices->calculate(4000, 5000))
-            ->toBe(['price' => 5000, 'compare' => null, 'sellable' => true, 'reason' => null]);
+            ->toBe(['price' => 6000, 'compare' => null, 'sellable' => true, 'reason' => null])
+            // Equal to the RRP: still no compare price, the RRP is not higher.
+            ->and($prices->calculate(4000, 6000))
+            ->toBe(['price' => 6000, 'compare' => null, 'sellable' => true, 'reason' => null])
+            // One penny of room: the RRP shows as the compare price.
+            ->and($prices->calculate(4000, 6001))
+            ->toBe(['price' => 6000, 'compare' => 6001, 'sellable' => true, 'reason' => null]);
+    });
+
+    it('uses the markup it was given', function (): void {
+        expect((new PriceCalculator('1.6'))->calculate(1000, null)['price'])->toBe(1600)
+            ->and((new PriceCalculator('1.0'))->calculate(1000, null)['price'])->toBe(1000);
     });
 
     it('has no cap and no compare price without an RRP', function (?int $rrp) use ($prices): void {
@@ -121,9 +133,9 @@ describe('price', function (): void {
             ->toBe(['price' => 43590, 'compare' => null, 'sellable' => true, 'reason' => null]);
     })->with([null, 0]);
 
-    it('is not sellable when the cost is at or above the RRP', function () use ($prices): void {
+    it('is not sellable when the cost is at or above the RRP, and keeps the marked-up price', function () use ($prices): void {
         expect($prices->calculate(1400, 521))
-            ->toMatchArray(['sellable' => false, 'reason' => PriceCalculator::COST_AT_OR_ABOVE_RRP])
+            ->toBe(['price' => 2100, 'compare' => null, 'sellable' => false, 'reason' => PriceCalculator::COST_AT_OR_ABOVE_RRP])
             ->and($prices->calculate(500, 500)['sellable'])->toBeFalse();
     });
 

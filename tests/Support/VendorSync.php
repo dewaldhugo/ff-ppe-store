@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Support;
 
 use App\Domain\VendorSync\Images\ProductImageSync;
+use App\Domain\VendorSync\Import\AcceptedPrices;
 use App\Domain\VendorSync\Import\CatalogueImporter;
 use App\Domain\VendorSync\Import\RunReport;
 use App\Domain\VendorSync\Models\VendorProduct;
@@ -250,9 +251,9 @@ final class VendorSync
         return $target;
     }
 
-    public static function import(string $vendor, bool $dryRun = false, bool $force = false): RunReport
+    public static function import(string $vendor, bool $dryRun = false, bool $force = false, ?AcceptedPrices $accepted = null): RunReport
     {
-        return app(CatalogueImporter::class)->run($vendor, $dryRun, $force);
+        return app(CatalogueImporter::class)->run($vendor, $dryRun, $force, accepted: $accepted ?? AcceptedPrices::none());
     }
 
     /**

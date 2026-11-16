@@ -28,6 +28,9 @@ final readonly class SafetyJoggerMapper implements VendorMapper
 {
     public const string VENDOR_CODE = 'SJ';
 
+    /** Reported for a price that has a value but no currency. */
+    public const string BLANK_CURRENCY = '(blank)';
+
     private const string SAFETY_NORM = 'EN ISO 20345';
 
     private const string OCCUPATIONAL_NORM = 'EN ISO 20347';
@@ -167,18 +170,27 @@ final readonly class SafetyJoggerMapper implements VendorMapper
 
         // One report line per product and reason, not one per SKU.
         $costAboveRrp = SkuIssues::count($messages, SkuIssues::COST_ABOVE_RRP);
+        $nonGbp = SkuIssues::count($messages, SkuIssues::NON_GBP);
         $messages = SkuIssues::collapse($label, $messages);
 
-        // Nothing to sell at a price: either no variant can be imported at
-        // all, or every one is held at stock 0 because its cost is at or
-        // above its RRP. Draft it rather than publish it as permanently out
-        // of stock.
-        $noSellablePrice = ($variants === [] && ! $noUsableSize)
-            || ($variants !== [] && $costAboveRrp === count($variants));
+        // Any SKU priced in another currency drafts the whole product until
+        // the vendor supplies a GBP price. Nothing is converted.
+        if ($nonGbp > 0) {
+            $draftReasons[] = DraftReason::NON_GBP_PRICE;
+        }
 
-        if ($noSellablePrice) {
+        // No variant can be imported at all: nothing to sell at a price.
+        if ($variants === [] && ! $noUsableSize) {
             $draftReasons[] = DraftReason::NO_SELLABLE_PRICE;
             $messages[] = "{$label}: nothing can be sold at a price; product drafted.";
+        }
+
+        // Every variant is held at stock 0 because its cost is at or above
+        // its RRP. Draft it for review rather than publish it as permanently
+        // out of stock. One such variant among others does not draft it.
+        if ($variants !== [] && $costAboveRrp === count($variants)) {
+            $draftReasons[] = DraftReason::COST_AT_OR_ABOVE_RRP;
+            $messages[] = "{$label}: every variant has a cost at or above its RRP; product drafted for data review.";
         }
 
         return MappingResult::product(new NormalisedProduct(
@@ -276,6 +288,18 @@ final readonly class SafetyJoggerMapper implements VendorMapper
             return null;
         }
 
+        // A price in any currency other than GBP is never converted and
+        // never stored: the variant is imported unpriced and unsellable.
+        // A price with no currency at all is treated the same (fail closed).
+        $currency = $this->nonGbpCurrency($sku, $rrp !== null && $rrp > 0);
+
+        if ($currency !== null) {
+            $facts[] = ['non_gbp_currency', $currency];
+            $messages[] = [SkuIssues::NON_GBP, $skuId, $currency];
+            $cost = null;
+            $price = ['price' => null, 'compare' => null, 'sellable' => false, 'reason' => null];
+        }
+
         if ($price['reason'] === PriceCalculator::COST_AT_OR_ABOVE_RRP) {
             $messages[] = [SkuIssues::COST_ABOVE_RRP, $skuId];
         }
@@ -305,6 +329,32 @@ final readonly class SafetyJoggerMapper implements VendorMapper
             vendorColour: $vendorColour,
             vendorSize: $eu,
         );
+    }
+
+    /**
+     * The currency that stops this SKU from being priced, or null when its
+     * prices are in GBP. The cost is always checked; the RRP only when the
+     * SKU has one. A missing or empty currency is reported as `(blank)`.
+     *
+     * @param  array<string, mixed>  $sku
+     */
+    private function nonGbpCurrency(array $sku, bool $hasRrp): ?string
+    {
+        $currencies = [$sku['customerPrice']['currency'] ?? null];
+
+        if ($hasRrp) {
+            $currencies[] = $sku['rrpPrice']['currency'] ?? null;
+        }
+
+        foreach ($currencies as $currency) {
+            $currency = strtoupper(trim((string) $currency));
+
+            if ($currency !== 'GBP') {
+                return $currency === '' ? self::BLANK_CURRENCY : $currency;
+            }
+        }
+
+        return null;
     }
 
     /**

@@ -34,6 +34,8 @@ final class SkuIssues
 
     public const string NO_EU_SIZE = 'no_eu_size';
 
+    public const string NON_GBP = 'non_gbp';
+
     /** SKUs listed per line before the list is cut short. */
     private const int LISTED = 40;
 
@@ -85,6 +87,7 @@ final class SkuIssues
                 self::UNKNOWN_VAT => "{$skus} with a VAT rate that is not 0 or 20% ({$details}); not imported",
                 self::GHOST => "{$count} placeholder ".($count === 1 ? 'row' : 'rows').' (no barcode, no EU size, placeholder measurements); not imported',
                 self::NO_EU_SIZE => "{$skus} at a zero VAT rate with no EU size, so the size scale is unknown; not imported",
+                self::NON_GBP => "{$skus} priced in {$details}, not GBP; left unpriced and not converted, product drafted",
                 default => "{$skus}: {$reason}",
             };
 

@@ -14,6 +14,7 @@ use App\Domain\VendorSync\Exceptions\SourceAborted;
 use App\Domain\VendorSync\Models\SyncRun;
 use App\Domain\VendorSync\Models\Vendor;
 use App\Domain\VendorSync\Models\VendorProduct;
+use App\Domain\VendorSync\Normalisers\PricingRules;
 use App\Domain\VendorSync\Support\RequestTimer;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Database\Eloquent\Collection;
@@ -45,24 +46,28 @@ final class CatalogueImporter
 
     private float $startedAt = 0.0;
 
+    private AcceptedPrices $accepted;
+
     public function __construct(
         private readonly Container $container,
         private readonly RunRecorder $runs,
         private readonly RawStore $rawStore,
         private readonly RequestTimer $timer,
+        private readonly PriceChangeGuard $guard,
     ) {}
 
     /**
      * @param  bool  $dryRun  Run everything except the writes: the database is not touched and no file is archived.
      * @param  bool  $force  Reprocess products whose payload is unchanged.
      */
-    public function run(string $vendorCode, bool $dryRun = false, bool $force = false, ?VendorSource $source = null): RunReport
+    public function run(string $vendorCode, bool $dryRun = false, bool $force = false, ?VendorSource $source = null, AcceptedPrices $accepted = new AcceptedPrices): RunReport
     {
         $code = strtoupper($vendorCode);
         $source ??= $this->container->make("vendorsync.source.{$code}");
         /** @var VendorMapper $mapper */
         $mapper = $this->container->make("vendorsync.mapper.{$code}");
 
+        $this->accepted = $accepted;
         $this->timer->reset();
         $this->startedAt = microtime(true);
 
@@ -127,6 +132,13 @@ final class CatalogueImporter
         }
 
         $this->stats($report);
+
+        // The full list of held prices is never capped, so it goes to a file
+        // that the run record points to.
+        if ($report->held !== []) {
+            $this->saveReport($report, 'held');
+        }
+
         $this->runs->finish($run, $report);
 
         // One batch reindex for everything the run wrote.
@@ -299,7 +311,16 @@ final class CatalogueImporter
             return true;
         }
 
-        $hash = $record->hash();
+        // Counted for every product seen, changed or not, so each run's
+        // report shows how many variants still wait for a GBP price.
+        if (in_array(DraftReason::NON_GBP_PRICE, $result->product->draftReasons, true)) {
+            $report->nonGbpProducts++;
+            $report->nonGbpVariants += count(array_filter($result->product->variants, fn (NormalisedVariant $variant): bool => $variant->price === null));
+        }
+
+        // The payload and the pricing rules together: a changed markup or
+        // rule version makes every stored hash stale, so products reprice once.
+        $hash = hash('sha256', $record->hash().'|'.PricingRules::fingerprint($code));
 
         // One small row per product, looked up by ID. No list of links is held.
         $link = $vendor === null ? null : VendorProduct::query()
@@ -333,11 +354,15 @@ final class CatalogueImporter
             $reasons = [...$result->product->draftReasons, ...($link === null ? [DraftReason::NO_IMAGE] : [])];
             $this->count($report, $result->product, $link === null, $reasons === [] ? 'published' : 'draft', $reasons);
 
+            if ($link !== null && $vendor !== null) {
+                $this->hold($report, $result->product, $this->guard->evaluate($vendor, $result->product, $link->draft_reasons ?? [], $link->product_id, $this->accepted), dryRun: true);
+            }
+
             return true;
         }
 
         try {
-            $written = $writer->write($vendor, $result->product, $hash);
+            $written = $writer->write($vendor, $result->product, $hash, $this->accepted);
         } catch (Throwable $exception) {
             $report->error("{$code} product {$record->externalId}: ".$exception->getMessage());
 
@@ -351,8 +376,42 @@ final class CatalogueImporter
         }
 
         $this->count($report, $result->product, $written->created, $written->status, $written->draftReasons);
+        $this->hold($report, $result->product, $written->held, dryRun: false);
 
         return true;
+    }
+
+    /**
+     * One report line per product, and every held variant in the full list.
+     *
+     * @param  array<string, HeldPrice>|list<HeldPrice>  $held
+     */
+    private function hold(RunReport $report, NormalisedProduct $product, array $held, bool $dryRun): void
+    {
+        if ($held === []) {
+            return;
+        }
+
+        $held = array_values($held);
+        array_push($report->held, ...$held);
+
+        $threshold = rtrim(rtrim(number_format(PriceChangeGuard::threshold(), 2, '.', ''), '0'), '.');
+        $skus = implode(', ', array_slice(array_map(fn (HeldPrice $price): string => $price->vendorSku, $held), 0, 10));
+        $more = count($held) > 10 ? ', ...' : '';
+
+        $report->message(sprintf(
+            '%s %s [%s]: %d %s with a cost change of more than %s%%; cost, price and compare price %s (SKUs: %s%s). Accept with --accept-product=%s.',
+            $report->vendorCode,
+            $product->name,
+            $product->vendorProductId,
+            count($held),
+            count($held) === 1 ? 'SKU' : 'SKUs',
+            $threshold,
+            $dryRun ? 'would be kept' : 'kept',
+            $skus,
+            $more,
+            $product->vendorProductId,
+        ));
     }
 
     /**
@@ -437,10 +496,11 @@ final class CatalogueImporter
             return;
         }
 
-        $prices = array_map(fn (NormalisedVariant $variant): int => $variant->price, $product->variants);
+        $prices = array_values(array_filter(array_map(fn (NormalisedVariant $variant): ?int => $variant->price, $product->variants), fn (?int $price): bool => $price !== null));
+        $range = $prices === [] ? 'unpriced' : sprintf('%s to %s ex VAT', number_format(min($prices) / 100, 2), number_format(max($prices) / 100, 2));
 
         $report->sample(sprintf(
-            '%s %s %s [%s]: %s, %s, %d variants, %s to %s ex VAT, %s%s',
+            '%s %s %s [%s]: %s, %s, %d variants, %s, %s%s',
             $created ? 'create' : 'update',
             $product->brand ?? '(no brand)',
             $product->name,
@@ -448,8 +508,7 @@ final class CatalogueImporter
             $status.($draftReasons === [] ? '' : ' ('.implode(', ', $draftReasons).')'),
             $product->collections === [] ? 'no collection' : implode(', ', $product->collections),
             count($product->variants),
-            number_format(min($prices) / 100, 2),
-            number_format(max($prices) / 100, 2),
+            $range,
             $product->variants[0]->taxClass,
             $product->safetyClass === null ? '' : ', '.$product->safetyClass,
         ));
@@ -477,12 +536,12 @@ final class CatalogueImporter
      * A dry run leaves a full report on disk (a file, not a database
      * write). Credentials never appear in it.
      */
-    private function saveReport(RunReport $report): RunReport
+    private function saveReport(RunReport $report, string $kind = 'dry-run'): RunReport
     {
         $directory = (string) config('vendorsync.reports_path');
         File::ensureDirectoryExists($directory);
 
-        $path = $directory.DIRECTORY_SEPARATOR.sprintf('%s-catalogue-dry-run-%s.json', strtolower($report->vendorCode), now()->format('Ymd-His'));
+        $path = $directory.DIRECTORY_SEPARATOR.sprintf('%s-catalogue-%s-%s.json', strtolower($report->vendorCode), $kind, now()->format('Ymd-His'));
 
         File::put($path, json_encode($report->toArray(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
 

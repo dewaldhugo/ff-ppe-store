@@ -273,10 +273,10 @@ it('drafts a product whose every variant has a cost at or above its RRP', functi
     expect($report->created)->toBe(1)
         ->and($report->drafted)->toBe(1)
         ->and($report->errors)->toBe(0)
-        ->and($report->tallies['draft_reason'])->toHaveKey(DraftReason::NO_SELLABLE_PRICE)
+        ->and($report->tallies['draft_reason'])->toHaveKey(DraftReason::COST_AT_OR_ABOVE_RRP)
         ->and($product->status)->toBe('draft')
         ->and($product->getMedia('images'))->not->toBeEmpty()
-        ->and($link->draft_reasons)->toBe([DraftReason::NO_SELLABLE_PRICE])
+        ->and($link->draft_reasons)->toBe([DraftReason::COST_AT_OR_ABOVE_RRP])
         ->and($product->variants)->toHaveCount(20)
         ->and($product->variants->sum('stock'))->toBe(0);
 
@@ -286,7 +286,7 @@ it('drafts a product whose every variant has a cost at or above its RRP', functi
     expect($lines)->toHaveCount(1)
         ->and($lines[0])->toStartWith('OLIVE [273934]: 20 SKUs with cost at or above RRP; stock set to 0 (SKUs: 1349550, 1349551, ')
         ->and($lines[0])->toEndWith('1349569)')
-        ->and($report->messages)->toContain('OLIVE [273934]: nothing can be sold at a price; product drafted.');
+        ->and($report->messages)->toContain('OLIVE [273934]: every variant has a cost at or above its RRP; product drafted for data review.');
 });
 
 it('publishes a product when at least one variant has a sellable price', function (): void {
@@ -303,6 +303,25 @@ it('publishes a product when at least one variant has a sellable price', functio
         ->and($product->status)->toBe('published')
         ->and($product->variants->where('stock', '>', 0))->toHaveCount(1)
         ->and(implode("\n", $report->messages))->toContain('OLIVE [273934]: 19 SKUs with cost at or above RRP; stock set to 0 (SKUs: ');
+});
+
+it('does not cap the price at the RRP: it sells above it with no compare price', function (): void {
+    // Cost 40.00, RRP 60.00 inc VAT (50.00 ex VAT): 1.5 x cost is 60.00, 10.00 above the RRP.
+    VendorSync::fakeHttp([['id' => 273934]], [273934 => sjWithPrices(273934, 'OLIVE', [[40.0, 60.0], [40.0, 90.0]])]);
+
+    $report = VendorSync::import('SJ');
+    VendorSync::syncImages(['273934']);
+
+    $prices = VendorSync::product('SJ', '273934')->variants
+        ->mapWithKeys(fn ($variant): array => [$variant->sku => [
+            $variant->prices->first()->getRawOriginal('price'),
+            $variant->prices->first()->getRawOriginal('compare_price'),
+        ]]);
+
+    // The second variant's RRP is 75.00 ex VAT, above the 60.00 price: it shows as the compare price.
+    expect($report->drafted)->toBe(0)
+        ->and($prices->all())->toBe(['SJ-1349550' => [6000, null], 'SJ-1349551' => [6000, 7500]])
+        ->and(VendorSync::product('SJ', '273934')->status)->toBe('published');
 });
 
 it('drafts a published product when its prices become unsellable, and republishes it when they recover', function (): void {
