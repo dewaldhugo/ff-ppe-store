@@ -56,6 +56,66 @@ function appJobTimeouts(): array
     return $timeouts;
 }
 
+/**
+ * Every class under app/ that can be queued.
+ *
+ * @return list<class-string>
+ */
+function appQueueableClasses(): array
+{
+    $classes = [];
+    $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(app_path(), FilesystemIterator::SKIP_DOTS));
+
+    foreach ($files as $file) {
+        if ($file->getExtension() !== 'php') {
+            continue;
+        }
+
+        $relative = substr($file->getPathname(), strlen(app_path()) + 1, -4);
+        $class = 'App'.chr(92).str_replace(DIRECTORY_SEPARATOR, chr(92), $relative);
+
+        if (class_exists($class) && is_subclass_of($class, ShouldQueue::class)) {
+            $classes[] = $class;
+        }
+    }
+
+    return $classes;
+}
+
+/**
+ * Whether a queueable class takes its queue from App\Support\Queues: it calls
+ * onQueue() or allOnQueue() with a Queues constant, or declares a $queue
+ * default that is one of the Queues values.
+ */
+function setsQueueFromQueues(string $class): bool
+{
+    $reflection = new ReflectionClass($class);
+
+    if (preg_match('/->(?:onQueue|allOnQueue)\(\s*Queues::[A-Z_]+\s*\)/', (string) file_get_contents((string) $reflection->getFileName())) === 1) {
+        return true;
+    }
+
+    return $reflection->hasProperty('queue')
+        && in_array($reflection->getProperty('queue')->getDefaultValue(), array_values((new ReflectionClass(Queues::class))->getConstants()), true);
+}
+
+it('sets the queue of every queueable class from App\Support\Queues', function (): void {
+    // A class that deliberately runs on the connection default queue goes
+    // here, with the reason. Empty on purpose: a new job needs a decision.
+    $allowed = [];
+
+    $classes = appQueueableClasses();
+
+    expect($classes)->toContain(SyncProductImages::class);
+
+    $unrouted = array_values(array_filter(
+        $classes,
+        fn (string $class): bool => ! in_array($class, $allowed, true) && ! setsQueueFromQueues($class),
+    ));
+
+    expect($unrouted)->toBe([], 'These queueable classes do not set their queue from App\Support\Queues, so they would land on default: '.implode(', ', $unrouted));
+});
+
 it('puts the image job on the images queue', function (): void {
     expect((new SyncProductImages(1))->queue)->toBe(Queues::IMAGES)
         ->and(Queues::IMAGES)->toBe('images');
