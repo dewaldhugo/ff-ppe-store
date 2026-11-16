@@ -12,7 +12,7 @@ Stack: PHP 8.4, Laravel 13, Lunar 1.5 (headless commerce, with its Filament 4 ad
 - MySQL 8.4 LTS runs natively (same major version as production): databases `ppe_store` and `ppe_store_testing`, user `ppe`.
 - Meilisearch 1.56.2 runs natively at http://localhost:7700 with a master key (same version as production).
 - No Redis locally. Use `QUEUE_CONNECTION=database`, `CACHE_STORE=database` and `SESSION_DRIVER=database` in `.env`. Production uses Redis and Horizon, so code must work with both drivers: never call Redis directly.
-- Horizon cannot run on Windows (no pcntl). Install it, configure it for production, and use `php artisan queue:work --queue=default,images,conversions` locally (`composer dev` does). Queue names are in `App\Support\Queues`; each has its own Horizon supervisor in production. `composer.json` fakes `ext-pcntl` and `ext-posix` under `config.platform` so Horizon installs on Windows: do not remove it.
+- Horizon cannot run on Windows (no pcntl). Install it, configure it for production, and use `php artisan queue:work --queue=default,images,conversions` locally (`composer dev` does). Queue names are in `App\Support\Queues` (the one definition; configs and jobs use the constants); each has its own Horizon supervisor in production. A batch ignores its jobs' own `onQueue()`, so name the queue on the batch (`ImageRun` does); a test fails when a queueable class does not set its queue from `Queues`. `composer.json` fakes `ext-pcntl` and `ext-posix` under `config.platform` so Horizon installs on Windows: do not remove it.
 - MySQL, Meilisearch, Redis and the server OS are operator-maintained: the repository cannot verify their versions.
 - Shell commands run in Git Bash on Windows. Avoid Unix-only tooling in scripts and composer hooks.
 
