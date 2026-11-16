@@ -12,7 +12,7 @@ use App\Domain\VendorSync\Footsure\FootsureMapper;
 use App\Domain\VendorSync\Footsure\FootsureSource;
 use App\Domain\VendorSync\Images\ImageDownloader;
 use App\Domain\VendorSync\Normalisers\Features;
-use App\Domain\VendorSync\Normalisers\PriceCalculator;
+use App\Domain\VendorSync\Normalisers\PricingRules;
 use App\Domain\VendorSync\SafetyJogger\ApiClient;
 use App\Domain\VendorSync\SafetyJogger\SafetyJoggerMapper;
 use App\Domain\VendorSync\SafetyJogger\SafetyJoggerSource;
@@ -40,7 +40,6 @@ final class VendorSyncServiceProvider extends ServiceProvider
         $this->app->singleton(RequestTimer::class);
 
         $this->app->bind(Features::class, fn (): Features => new Features(config('vendorsync.features')));
-        $this->app->bind(PriceCalculator::class, fn (): PriceCalculator => new PriceCalculator((string) config('vendorsync.markup')));
 
         $this->app->bind(ApiClient::class, fn (Application $app): ApiClient => new ApiClient(
             $app->make(Http::class),
@@ -64,7 +63,7 @@ final class VendorSyncServiceProvider extends ServiceProvider
             config('vendorsync.safety_jogger'),
             config('vendorsync.size_charts.SJ'),
             $app->make(Features::class),
-            $app->make(PriceCalculator::class),
+            PricingRules::calculator('SJ'),
         ));
         $this->app->bind('vendorsync.stock.SJ', fn (Application $app): SafetyJoggerStockFeed => new SafetyJoggerStockFeed(
             $app->make(ApiClient::class),
@@ -75,7 +74,7 @@ final class VendorSyncServiceProvider extends ServiceProvider
         $this->app->bind('vendorsync.mapper.FS', fn (Application $app): FootsureMapper => new FootsureMapper(
             config('vendorsync.footsure'),
             $app->make(Features::class),
-            $app->make(PriceCalculator::class),
+            PricingRules::calculator('FS'),
         ));
     }
 

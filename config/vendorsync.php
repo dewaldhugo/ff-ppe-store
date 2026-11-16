@@ -20,9 +20,11 @@ return [
     // the real pipeline instead of running the fixture seeder.
     'seed_from_fixtures' => (bool) env('VENDORSYNC_SEED_FROM_FIXTURES', false),
 
-    // Listing price ex VAT = cost x markup, capped at the RRP ex VAT.
-    // A decimal string, never a float.
-    'markup' => '1.5',
+    // Listing price ex VAT = vendor cost x markup, rounded to the penny.
+    // This is the default; a vendor overrides it with `vendors.{CODE}.markup`.
+    // A decimal string from 1.0 to 5, never a float. Anything else stops the
+    // run when the mapper is resolved.
+    'markup' => env('VENDORSYNC_MARKUP', '1.5'),
 
     // Abort a catalogue run that sees fewer than this share of the products
     // seen by the previous successful run.
@@ -47,12 +49,15 @@ return [
     'vendors' => [
         'SJ' => [
             'name' => 'Safety Jogger',
+            // Null uses the default `markup` above.
+            'markup' => env('VENDORSYNC_SJ_MARKUP'),
             'stock_buffer' => 0,
             // The 15 minute stock feed is fresher than the catalogue.
             'stock_authority' => 'feed',
         ],
         'FS' => [
             'name' => 'Footsure',
+            'markup' => env('VENDORSYNC_FS_MARKUP'),
             'stock_buffer' => 1,
             'stock_authority' => 'catalogue',
         ],
