@@ -12,7 +12,7 @@ Stack: PHP 8.4, Laravel 13, Lunar 1.5 (headless commerce, with its Filament 4 ad
 - MySQL 8.4 LTS runs natively (same major version as production): databases `ppe_store` and `ppe_store_testing`, user `ppe`.
 - Meilisearch 1.56.2 runs natively at http://localhost:7700 with a master key (same version as production).
 - No Redis locally. Use `QUEUE_CONNECTION=database`, `CACHE_STORE=database` and `SESSION_DRIVER=database` in `.env`. Production uses Redis and Horizon, so code must work with both drivers: never call Redis directly.
-- Horizon cannot run on Windows (no pcntl). Install it, configure it for production, and use `php artisan queue:work` locally. `composer.json` fakes `ext-pcntl` and `ext-posix` under `config.platform` so Horizon installs on Windows: do not remove it.
+- Horizon cannot run on Windows (no pcntl). Install it, configure it for production, and use `php artisan queue:work --queue=default,images,conversions` locally (`composer dev` does). Queue names are in `App\Support\Queues`; each has its own Horizon supervisor in production. `composer.json` fakes `ext-pcntl` and `ext-posix` under `config.platform` so Horizon installs on Windows: do not remove it.
 - MySQL, Meilisearch, Redis and the server OS are operator-maintained: the repository cannot verify their versions.
 - Shell commands run in Git Bash on Windows. Avoid Unix-only tooling in scripts and composer hooks.
 
@@ -62,7 +62,7 @@ Read the matching file before you start the work it covers.
 - Domain code under `app/Domain/{Area}`, Livewire components under `app/Livewire/{Area}`. Small cross-cutting helpers live in `app/Support`; Blade components under `resources/views/components/{ui,home,storefront,layouts}`.
 - Money is never a float. Use Lunar's `Price` and `Money` objects or integers in pence.
 - Use Lunar's models, actions, pipelines and events. Do not duplicate cart, pricing, tax or order logic that Lunar already provides. If Lunar cannot do something, explain why before writing custom logic.
-- Pest for tests, in `tests/Feature/{Catalogue,Pricing,Storefront,VendorSync}` and `tests/Unit`. Every feature ships with feature tests. Use the fixture seeder, never live vendor data.
+- Pest for tests, in `tests/Feature/{Catalogue,Deployment,Pricing,Storefront,VendorSync}` and `tests/Unit`. Every feature ships with feature tests. Use the fixture seeder, never live vendor data.
 - Run `./vendor/bin/pint` and `./vendor/bin/pest` before declaring a task done.
 - No new composer or npm packages without stating why and asking first.
 - UK English in all customer-facing copy (colour, catalogue, favourite). Never use em dashes in copy, comments or docs.
@@ -95,7 +95,8 @@ Rules:
 
 - **Design tokens.** Colours are tokens in the `@theme` block of `resources/css/app.css` (`brand-blue`, `brand-teal`, `brand-navy`, `ink`, `ink-muted`, `surface-muted`, `white`, `border`, `danger`, `success` and the disabled pair). Templates use only these tokens. `tests/Feature/Storefront/DesignTokensTest.php` reads the CSS and requires WCAG AA contrast (4.5:1) for every text and background pair used.
 - **Buttons.** `x-ui.button` has two variants: primary (`brand-blue` fill, white text) and `accent` (`brand-teal` fill, `brand-navy` text), which is only for navy surfaces. `x-ui.button-outline` is the secondary button (`on-dark` for navy surfaces).
-- **Noindex.** One flag, `STORE_NOINDEX` (`config/store.php`, default true), puts `<meta name="robots" content="noindex">` on every page. Placeholder pages also carry their own noindex. See docs/launch-checklist.md.
+- **Noindex.** One flag, `STORE_NOINDEX` (`config/store.php`, default true), puts `<meta name="robots" content="noindex">` on every page. Placeholder pages also carry their own noindex. See docs/launch-checklist.md. Noindex works through the meta tag only.
+- **robots.txt.** `public/robots.txt` exists and disallows `/lunar`, `/horizon`, `/cart`, `/checkout` and `/account`. It is a static file: `STORE_NOINDEX` does not change it, and it does not keep the store out of search engines (a crawler must be able to fetch a page to see its noindex tag, so never Disallow the catalogue there).
 - **Config-driven home page.** `config/homepage.php` holds the "Shop by standard" chips (`standards`) and the trust strip claims (`trust`; an empty slot is not rendered).
 - **Store identity.** `STORE_*` values in `.env` feed `config/store.php` and `App\Support\Store`; each reads `TBC` until it is known.
 
@@ -121,4 +122,6 @@ Full list, with details, in [docs/launch-checklist.md](docs/launch-checklist.md)
 - [ ] Confirm the trust strip claims with the client.
 - [ ] Confirm `pcntl` and `posix` exist in the server's PHP CLI before starting Horizon.
 - [ ] Replace every TBC in the store identity (`STORE_*`).
+- [ ] Run `php artisan app:preflight` first on every deploy, and `php artisan catalogue:verify-media` after any import.
+- [ ] Run `CatalogueFoundationSeeder` on the first deploy only, and use `storage:link --force`.
 - [ ] Run `php artisan catalogue:sync-redirects` after migrations on every deploy (first run only takes snapshots), and make sure the server cron runs `schedule:run`.

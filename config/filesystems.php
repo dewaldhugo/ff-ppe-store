@@ -33,7 +33,8 @@ return [
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
-            'serve' => true,
+            // Private files are never served over HTTP in production.
+            'serve' => env('APP_ENV', 'production') !== 'production',
             'throw' => false,
             'report' => false,
         ],
