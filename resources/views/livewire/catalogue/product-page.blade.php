@@ -1,5 +1,5 @@
 <article>
-    <div class="grid gap-8 lg:grid-cols-2">
+    <div class="grid gap-8 lg:grid-cols-[calc((100%_-_2rem)*0.4)_1fr]">
         {{-- Gallery: the selected colour's images. --}}
         {{--
             Choosing a thumbnail shows that image in the main frame. The key
@@ -71,16 +71,7 @@
                     @endif
                     <span class="text-2xl font-bold">{{ $price->formatted() }}</span>
                     <span class="text-sm text-ink-muted">{{ $price->suffix() }}</span>
-                    @if ($price->rrpFormatted())
-                        <span class="ml-2 text-sm text-ink-muted" data-rrp><abbr title="Manufacturer's recommended retail price">RRP</abbr> {{ $price->rrpFormatted() }} {{ $price->suffix() }}</span>
-                    @endif
                 </p>
-
-                @if ($price->vatAppliesForEmployers)
-                    <p class="mt-1 text-sm text-ink-muted" data-testid="vat-note">
-                        Zero rated for VAT when bought for your own use. VAT at 20% applies when buying for employees.
-                    </p>
-                @endif
             @endif
 
             <p class="mt-2 text-sm font-semibold" data-testid="stock" aria-live="polite">{{ $stockMessage }}</p>
@@ -97,6 +88,9 @@
                             @if ($option['handle'] === 'shoe_size' && isset($euSizes[$option['values'][0]['key']]))
                                 <span class="text-sm text-ink-muted">(EU {{ $euSizes[$option['values'][0]['key']] }})</span>
                             @endif
+                            @if (str_ends_with($option['handle'], '_size'))
+                                <a href="{{ route('size-guide') }}" class="ml-3 inline-flex items-center rounded border border-border bg-surface-muted px-2.5 py-1 align-middle text-xs font-semibold text-ink-muted hover:bg-border" data-size-guide-link>Size guide</a>
+                            @endif
                         </p>
                     @else
                         <fieldset
@@ -106,6 +100,9 @@
                         >
                             <legend class="font-semibold">
                                 {{ $option['name'] }}@if ($selection->selectedName($option['handle'])): <span class="font-normal">{{ $selection->selectedName($option['handle']) }}</span>@endif
+                                @if (str_ends_with($option['handle'], '_size'))
+                                    <a href="{{ route('size-guide') }}" class="ml-3 inline-flex items-center rounded border border-border bg-surface-muted px-2.5 py-1 align-middle text-xs font-semibold text-ink-muted hover:bg-border" data-size-guide-link>Size guide</a>
+                                @endif
                             </legend>
 
                             <div class="mt-2 flex flex-wrap gap-2">

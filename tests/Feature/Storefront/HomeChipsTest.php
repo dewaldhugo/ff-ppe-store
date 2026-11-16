@@ -18,15 +18,18 @@ function chipGridNames(string $html): array
     return array_map(trim(...), $matches[1]);
 }
 
-function standardsSection(string $html): string
+/** The chips component is not on the home page any more: render it on its own. */
+function standardsSection(string $html = ''): string
 {
+    $html = (string) test()->blade('<x-home.standard-chips />');
+
     preg_match('#<section[^>]*data-home-standards.*?</section>#s', $html, $section);
 
     return $section[0] ?? '';
 }
 
 it('shows the five standard chips with their labels', function (): void {
-    $section = standardsSection($this->get(route('home'))->assertOk()->getContent());
+    $section = standardsSection();
 
     preg_match_all('#<a\s+href="[^"]*"[^>]*data-standard-chip\s*>(.*?)</a>#s', $section, $labels);
 
@@ -35,7 +38,7 @@ it('shows the five standard chips with their labels', function (): void {
 });
 
 it('builds chip links from route() with the facet in the query string', function (): void {
-    $section = standardsSection($this->get(route('home'))->getContent());
+    $section = standardsSection();
 
     $expected = [
         route('category', ['path' => 'safety-footwear', 'safety_class' => ['S1P']]),
@@ -55,7 +58,7 @@ it('reads its chips from config/homepage.php', function (): void {
         ['facet' => 'features', 'value' => 'HRO', 'label' => 'Heat resistant'],
     ]);
 
-    $section = standardsSection($this->get(route('home'))->getContent());
+    $section = standardsSection();
 
     expect($section)->toContain('>Heat resistant</a>')
         ->and($section)->not->toContain('>S1P<')
@@ -65,7 +68,7 @@ it('reads its chips from config/homepage.php', function (): void {
 it('hides the section when no chips are configured', function (): void {
     config()->set('homepage.standards', []);
 
-    expect(standardsSection($this->get(route('home'))->getContent()))->toBe('');
+    expect(standardsSection())->toBe('');
 });
 
 it('returns products for every chip target', function (): void {

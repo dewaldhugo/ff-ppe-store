@@ -41,6 +41,7 @@
             <h2 id="footer-service" class="{{ $heading }}">Customer service</h2>
             <ul class="mt-4 space-y-2 text-sm">
                 <li><a href="{{ route('contact') }}" class="{{ $link }}">Contact</a></li>
+                <li><a href="{{ route('size-guide') }}" class="{{ $link }}">Size Guide</a></li>
                 <li><a href="{{ route('delivery') }}" class="{{ $link }}">Delivery Information</a></li>
                 <li><a href="{{ route('returns') }}" class="{{ $link }}">Returns and Refunds</a></li>
             </ul>

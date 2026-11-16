@@ -22,7 +22,7 @@ return [
     ],
 
     /*
-     * The trust strip under the hero. Each slot is one short claim. An empty
+     * The trust strip under the industries slider. Each slot is one short claim. An empty
      * slot is not rendered. The fourth slot is for a delivery claim that the
      * client has not confirmed yet: leave it empty until they do (see the
      * Launch checklist in CLAUDE.md).

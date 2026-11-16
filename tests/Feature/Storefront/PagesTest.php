@@ -111,7 +111,7 @@ it('uses route names for every link in the header and footer', function (): void
     preg_match_all('#<(?:header|footer).*?</(?:header|footer)>#s', $html, $shell);
     preg_match_all('~href="([^"#]+)"~', implode('', $shell[0]), $hrefs);
 
-    $known = collect(['home', 'shop', 'about', 'contact', 'account', 'cart', 'checkout', 'terms', 'privacy', 'cookies', 'returns', 'delivery', 'accessibility', 'search'])
+    $known = collect(['home', 'shop', 'about', 'contact', 'account', 'cart', 'checkout', 'terms', 'privacy', 'cookies', 'returns', 'delivery', 'accessibility', 'search', 'size-guide'])
         ->map(fn (string $name): string => route($name));
 
     $categories = collect(app(CategoryMenu::class)->tree())
@@ -120,4 +120,46 @@ it('uses route names for every link in the header and footer', function (): void
     foreach (array_unique($hrefs[1]) as $href) {
         expect($known->merge($categories)->contains($href))->toBeTrue("Unexpected link in the shell: {$href}");
     }
+});
+
+it('serves the size guide at /size-guide in the standard layout', function (): void {
+    expect(route('size-guide', [], false))->toBe('/size-guide');
+
+    $html = $this->get(route('size-guide'))->assertOk()->getContent();
+
+    expect($html)->toContain('Size Guide')
+        ->and($html)->toContain('<title>Size Guide | ')
+        ->and($html)->toContain('id="main"');
+});
+
+it('links to the size guide from the menus and the footer', function (): void {
+    $html = $this->get(route('about'))->assertOk()->getContent();
+
+    preg_match('#<nav aria-label="Main".*?</nav>#s', $html, $nav);
+    preg_match('#<footer.*?</footer>#s', $html, $footer);
+
+    expect($nav[0])->toContain('href="'.route('size-guide').'"')
+        ->and($footer[0])->toContain('href="'.route('size-guide').'"')
+        ->and($html)->toContain('>Size Guide<');
+});
+
+it('gives every table on the footwear and workwear tabs the same column widths', function (): void {
+    $html = $this->get(route('size-guide'))->assertOk()->getContent();
+
+    foreach (['panel-shoes' => 'panel-workwear', 'panel-workwear' => 'panel-gloves'] as $from => $to) {
+        $panel = substr($html, (int) strpos($html, 'id="'.$from.'"'), (int) strpos($html, 'id="'.$to.'"') - (int) strpos($html, 'id="'.$from.'"'));
+
+        preg_match_all('#<colgroup><col style="width: ([\d.]+)rem"><col span="\d+" style="width: ([\d.]+)rem"></colgroup>#', $panel, $groups, PREG_SET_ORDER);
+
+        expect($groups)->toHaveCount(substr_count($panel, '<table'))
+            ->and(array_unique(array_column($groups, 1)))->toHaveCount(1)
+            ->and(array_unique(array_column($groups, 2)))->toHaveCount(1);
+    }
+});
+
+it('shows the glove diagram beside the glove table', function (): void {
+    $html = $this->get(route('size-guide'))->assertOk()->getContent();
+
+    expect($html)->toContain('alt="Glove diagram:')
+        ->and($html)->toContain('lg:items-end');
 });

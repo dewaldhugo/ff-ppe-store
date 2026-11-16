@@ -77,6 +77,22 @@
                                 @endunless
                             </div>
 
+                            @php($swatches = $this->swatches($product))
+                            @if ($swatches !== [])
+                                {{-- Display only: not links, and no colour is marked as selected. --}}
+                                <p class="mt-3 flex flex-wrap justify-center gap-1.5" data-swatches>
+                                    <span class="sr-only">Colours: {{ implode(', ', array_column($swatches, 'name')) }}</span>
+                                    @foreach ($swatches as $swatch)
+                                        <span
+                                            data-swatch
+                                            aria-hidden="true"
+                                            class="inline-block h-4 w-4 rounded-full border border-border-strong bg-disabled-surface"
+                                            @if ($swatch['hex']) style="background-color: #{{ $swatch['hex'] }}" @endif
+                                        ></span>
+                                    @endforeach
+                                </p>
+                            @endif
+
                             <p class="mt-3 text-xs uppercase tracking-wide text-ink-muted">{{ $product->brand?->name }}</p>
                             <h3 class="font-semibold">
                                 <a href="{{ route('product', $product->defaultUrl?->slug ?? $product->id) }}" class="after:absolute after:inset-0 hover:underline">
@@ -92,9 +108,6 @@
                                     @endif
                                     <span class="font-bold">{{ $price->formatted() }}</span>
                                     <span class="text-xs text-ink-muted">{{ $price->suffix() }}</span>
-                                    @if ($price->rrpFormatted())
-                                        <span class="mt-0.5 block text-xs text-ink-muted" data-rrp><abbr title="Manufacturer's recommended retail price">RRP</abbr> {{ $price->rrpFormatted() }} {{ $price->suffix() }}</span>
-                                    @endif
                                 </p>
                             @endif
                         </li>

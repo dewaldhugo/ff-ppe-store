@@ -7,28 +7,28 @@
     column from md up, and only exists while resources/images/hero/hero.webp does.
     Without it the text spans the full width, with no placeholder.
 --}}
-<section class="surface-dark relative isolate overflow-hidden bg-brand-navy text-white" aria-labelledby="home-hero-title" data-home-hero>
-    {{-- Decorative site photo, cropped from the top, under a brand-navy overlay that keeps white text readable. --}}
+<section class="surface-dark relative isolate flex items-center overflow-hidden bg-brand-navy text-white sm:min-h-[33rem]" aria-labelledby="home-hero-title" data-home-hero>
+    {{-- Decorative site photo, shifted down from centre (position 15%), under a brand-navy overlay that keeps white text readable. --}}
     <img
         src="{{ asset('images/home-hero.jpg') }}"
         alt=""
-        width="1529"
-        height="750"
+        width="1536"
+        height="1024"
         fetchpriority="high"
-        class="absolute inset-0 -z-20 h-full w-full object-cover object-top"
+        class="absolute inset-0 -z-20 h-full w-full object-cover object-[center_15%]"
     >
-    <div aria-hidden="true" data-hero-overlay class="absolute inset-0 -z-10 bg-linear-to-r from-brand-navy/90 via-brand-navy/80 to-brand-navy/65"></div>
+    <div aria-hidden="true" data-hero-overlay class="absolute inset-0 -z-10 bg-linear-to-r from-brand-navy/86 via-brand-navy/77 to-brand-navy/62"></div>
 
-    <x-ui.container class="py-12 sm:py-20">
+    <x-ui.container class="w-full py-14 sm:py-20">
         <div @class(['items-center gap-12', 'md:grid md:grid-cols-2' => $image])>
-            <div data-hero-text>
-                <x-ui.eyebrow class="text-brand-teal">Trade supplier</x-ui.eyebrow>
-                <h1 id="home-hero-title" class="mt-3 max-w-3xl text-4xl text-white sm:text-5xl">Safety footwear for UK businesses</h1>
-                <p class="mt-4 max-w-xl text-lg text-white/90">S1P, S3 and ESD trainers, shoes and boots in a wide range of sizes. All prices shown exclusive of VAT.</p>
+            <div data-hero-text class="sm:translate-y-[3.3rem]">
+                <x-ui.eyebrow class="text-brand-teal">UK TRADE PPE SUPPLIER</x-ui.eyebrow>
+                <h1 id="home-hero-title" class="mt-3 text-[2.0625rem] text-white sm:text-[2.475rem] lg:text-[2.75rem]">When safety slips, everyone pays.<br>Quality safety gear isn&rsquo;t optional, it&rsquo;s essential.</h1>
+                <p class="mt-4 max-w-2xl text-[1.2375rem] text-white/90">EN-compliant safety footwear, head, eye, and hearing protection ready for immediate dispatch. Bulk trade pricing available.</p>
 
                 <div class="mt-8 flex flex-wrap gap-4">
-                    <x-ui.button variant="accent" :href="app(\App\Domain\Catalogue\Urls\CategoryUrl::class)->forHandle('safety-footwear')">Shop safety footwear</x-ui.button>
-                    <x-ui.button-outline :href="route('contact')" :on-dark="true">Contact us for trade enquiries</x-ui.button-outline>
+                    <x-ui.button variant="accent" :href="route('shop')">View all products</x-ui.button>
+                    <x-ui.button-outline :href="route('account')" :on-dark="true" shape="md">Open a trade account</x-ui.button-outline>
                 </div>
             </div>
 

@@ -6,6 +6,7 @@ use App\Domain\Catalogue\Keys\CatalogueKeys;
 use App\Domain\Catalogue\Search\ListingQuery;
 use App\Livewire\Catalogue\CategoryListing;
 use Livewire\Livewire;
+use Lunar\Models\Product;
 use Tests\Support\SearchIndex;
 
 beforeEach(function (): void {
@@ -190,4 +191,33 @@ it('gives a paginated listing a self-referencing canonical', function (): void {
 it('keeps the search canonical with its query', function (): void {
     $this->get(route('search', ['q' => 'boots']))
         ->assertSee('<link rel="canonical" href="'.e(route('search', ['q' => 'boots'])).'">', false);
+});
+
+it('shows one non-interactive colour swatch per colour under each product', function (): void {
+    $html = $this->get(route('category', 'safety-footwear'))->assertOk()->getContent();
+
+    preg_match_all('#<li wire:key="product-(\d+)".*?</li>\s*(?=<li wire:key|</ul>)#s', $html, $cards, PREG_SET_ORDER);
+
+    expect($cards)->not->toBeEmpty();
+
+    foreach ($cards as [$card, $id]) {
+        $expected = Product::query()
+            ->with('variants.values.option')
+            ->findOrFail((int) $id)
+            ->variants
+            ->map(fn ($variant) => $variant->values->first(fn ($value) => $value->option->handle === 'colour')?->translate('name'))
+            ->filter()
+            ->unique()
+            ->count();
+
+        expect(preg_match_all('/\bdata-swatch(?![\w-])/', $card))->toBe($expected);
+
+        preg_match('#<p[^>]*data-swatches.*?</p>#s', $card, $swatches);
+
+        // Not clickable, and nothing marks a colour as selected.
+        expect($swatches[0] ?? '')->not->toMatch('#<(a|button|input)\b#')
+            ->and($swatches[0] ?? '')->not->toContain('aria-pressed')
+            ->and($swatches[0] ?? '')->not->toContain('aria-current')
+            ->and($swatches[0] ?? '')->not->toContain('ring');
+    }
 });

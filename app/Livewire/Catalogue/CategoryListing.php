@@ -232,7 +232,7 @@ final class CategoryListing extends Component
     {
         $products = Product::query()
             ->whereIn('id', $ids)
-            ->with(['brand', 'defaultUrl', 'thumbnail', 'variants.prices'])
+            ->with(['brand', 'defaultUrl', 'thumbnail', 'variants.prices', 'variants.values.option'])
             ->get()
             ->keyBy('id');
 
@@ -245,6 +245,35 @@ final class CategoryListing extends Component
         }
 
         return $ordered;
+    }
+
+    /**
+     * The distinct colours a product comes in, for the swatches on its card.
+     * Display only: the swatches are not links and show no selection.
+     *
+     * @return list<array{name: string, hex: ?string}>
+     */
+    public function swatches(Product $product): array
+    {
+        $swatches = [];
+
+        foreach ($product->variants as $variant) {
+            $value = $variant->values->first(fn ($value): bool => $value->option?->handle === 'colour');
+
+            if ($value === null) {
+                continue;
+            }
+
+            $name = (string) $value->translate('name');
+            $hex = $value->meta['hex'] ?? null;
+
+            $swatches[$name] ??= [
+                'name' => $name,
+                'hex' => is_string($hex) && preg_match('/^[0-9a-fA-F]{3,8}$/', $hex) === 1 ? $hex : null,
+            ];
+        }
+
+        return array_values($swatches);
     }
 
     /**

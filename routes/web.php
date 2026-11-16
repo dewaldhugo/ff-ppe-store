@@ -48,6 +48,8 @@ Route::middleware(RedirectTrailingSlash::class)->group(function () use ($placeho
 
     Route::get('/search', CategoryListing::class)->name('search');
 
+    Route::view('/size-guide', 'pages.size-guide')->name('size-guide');
+
     foreach ($placeholders as $name => [$uri, $heading]) {
         Route::view($uri, 'pages.placeholder', ['heading' => $heading])->name($name);
     }

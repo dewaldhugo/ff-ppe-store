@@ -4,7 +4,7 @@
         <x-ui.container>
             <x-ui.section-heading id="home-categories" eyebrow="Safety footwear" title="Shop by type" />
 
-            <ul class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <ul class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-5">
                 @foreach ($tiles as $tile)
                     <li>
                         <a
@@ -17,7 +17,7 @@
                                 <img
                                     src="{{ $tile['image']['src'] }}"
                                     srcset="{{ $tile['image']['srcset'] }}"
-                                    sizes="(min-width: 1024px) 384px, (min-width: 640px) 50vw, 100vw"
+                                    sizes="(min-width: 1024px) 224px, (min-width: 640px) 50vw, 100vw"
                                     width="{{ $tile['image']['width'] }}"
                                     height="{{ $tile['image']['height'] }}"
                                     alt=""
@@ -26,7 +26,7 @@
                                     class="aspect-square w-full bg-surface-muted object-contain"
                                 >
                             @endif
-                            <span class="p-6 text-lg font-semibold text-brand-blue group-hover:underline">{{ $tile['name'] }}</span>
+                            <span class="p-4 text-base font-semibold text-brand-blue group-hover:underline">{{ $tile['name'] }}</span>
                         </a>
                     </li>
                 @endforeach

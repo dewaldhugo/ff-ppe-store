@@ -48,23 +48,15 @@ it('shows every price ex VAT and labels it', function (array $route): void {
     [['product', 'amblers-safety-fs9']],
 ]);
 
-it('labels the compare price as the manufacturer\'s RRP, never as a bare struck-through amount', function (): void {
-    $html = $this->get(route('product', 'safety-jogger-ligero'))->assertOk()->getContent();
+it('shows no RRP next to the price, on a listing or a product page', function (): void {
+    $product = $this->get(route('product', 'safety-jogger-ligero'))->assertOk()->getContent();
+    $listing = $this->get(route('category', 'safety-footwear'))->assertOk()->getContent();
 
-    preg_match('#<span[^>]*data-rrp[^>]*>.*?</span>#s', $html, $rrp);
-
-    expect($rrp[0])->toContain("<abbr title=\"Manufacturer's recommended retail price\">RRP</abbr>")
-        ->and(strip_tags($rrp[0]))->toContain('RRP £76.50 ex VAT')
-        ->and($html)->not->toContain('<s ')
-        ->and($html)->not->toContain('<s>')
-        ->and($html)->not->toContain('Was ');
-
-    // The same on a listing.
-    $listing = $this->get(route('category', 'safety-footwear'))->getContent();
-
-    expect($listing)->toContain('data-rrp')
-        ->and($listing)->not->toContain('<s ')
-        ->and(strip_tags($listing))->toContain('RRP £76.50 ex VAT');
+    foreach ([$product, $listing] as $html) {
+        expect($html)->not->toContain('data-rrp')
+            ->and(strip_tags($html))->not->toContain('RRP')
+            ->and($html)->not->toContain('<s ');
+    }
 });
 
 it('shows the price ex VAT, not the VAT inclusive figure', function (): void {
