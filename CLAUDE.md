@@ -124,6 +124,6 @@ Full list, with details, in [docs/launch-checklist.md](docs/launch-checklist.md)
 - [ ] Confirm the trust strip claims with the client.
 - [ ] Confirm `pcntl` and `posix` exist in the server's PHP CLI before starting Horizon.
 - [ ] Replace every TBC in the store identity (`STORE_*`).
-- [ ] Run `php artisan app:preflight` first on every deploy, and `php artisan catalogue:verify-media` after any import.
+- [ ] Run `php artisan app:preflight` first on every deploy, and `php artisan catalogue:verify-media` and `php artisan catalogue:verify-index` after any import.
 - [ ] Run `CatalogueFoundationSeeder` on the first deploy only, and use `storage:link --force`.
 - [ ] Run `php artisan catalogue:sync-redirects` after migrations on every deploy (first run only takes snapshots), and make sure the server cron runs `schedule:run`.
