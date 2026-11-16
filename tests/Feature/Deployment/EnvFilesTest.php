@@ -65,7 +65,7 @@ it('sets the production values in .env.production.example', function (): void {
         'VENDORSYNC_SCHEDULE_ENABLED' => 'false',
         'MAIL_MAILER' => 'log',
         'QUEUE_CONVERSIONS_BY_DEFAULT' => 'false',
-        'SCOUT_QUEUE' => 'true',
+        'SCOUT_QUEUE' => 'false',
     ]);
 
     expect($production['REDIS_PREFIX'])->not->toBe('')
