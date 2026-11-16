@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+use App\Support\Queues;
 
 /**
  * @return array<string, string> Variables set (even to empty) in an env file, commented lines included.
@@ -22,7 +23,7 @@ function envFileVariables(string $file, bool $includeCommented = false): array
 
 const REQUIRED_ENV_VARIABLES = [
     'REDIS_PREFIX', 'REDIS_DB', 'REDIS_CACHE_DB', 'REDIS_QUEUE', 'HORIZON_PATH', 'HORIZON_DOMAIN',
-    'HORIZON_PREFIX', 'PRODUCTS_DISK_PATH', 'MEDIA_DISK', 'IMAGE_DRIVER', 'QUEUE_CONVERSIONS_BY_DEFAULT',
+    'HORIZON_PREFIX', 'HORIZON_IMAGES_PROCESSES', 'PRODUCTS_DISK_PATH', 'MEDIA_DISK', 'IMAGE_DRIVER', 'QUEUE_CONVERSIONS_BY_DEFAULT',
     'VENDORSYNC_FS_ARCHIVE_PATH', 'VENDORSYNC_IMAGE_MAX_MEGAPIXELS', 'SESSION_SECURE_COOKIE',
     'SESSION_SAME_SITE', 'LOG_DAILY_DAYS', 'SCOUT_PREFIX', 'MEILISEARCH_HOST', 'MEILISEARCH_KEY',
     'STORE_NAME', 'STORE_LEGAL_NAME', 'STORE_COMPANY_NUMBER', 'STORE_REGISTERED_OFFICE',
@@ -66,11 +67,20 @@ it('sets the production values in .env.production.example', function (): void {
         'MAIL_MAILER' => 'log',
         'QUEUE_CONVERSIONS_BY_DEFAULT' => 'false',
         'SCOUT_QUEUE' => 'false',
+        'HORIZON_IMAGES_PROCESSES' => '2',
     ]);
 
     expect($production['REDIS_PREFIX'])->not->toBe('')
         ->and(array_keys($production))->toContain(...REQUIRED_ENV_VARIABLES)
         ->and((int) $production['REDIS_QUEUE_RETRY_AFTER'])->toBeGreaterThan(960);
+});
+
+it('does not offer MEDIA_QUEUE: the conversions queue name is fixed in config', function (): void {
+    foreach (['.env.example', '.env.production.example'] as $file) {
+        expect(array_keys(envFileVariables($file, includeCommented: true)))->not->toContain('MEDIA_QUEUE');
+    }
+
+    expect(config('media-library.queue_name'))->toBe(Queues::CONVERSIONS);
 });
 
 it('ships credentials as empty placeholders', function (): void {

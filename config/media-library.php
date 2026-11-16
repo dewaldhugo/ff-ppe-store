@@ -1,5 +1,6 @@
 <?php
 
+use App\Support\Queues;
 use Spatie\ImageOptimizer\Optimizers\Avifenc;
 use Spatie\ImageOptimizer\Optimizers\Cwebp;
 use Spatie\ImageOptimizer\Optimizers\Gifsicle;
@@ -82,9 +83,11 @@ return [
 
     /*
      * This queue will be used to generate derived and responsive images.
-     * Leave empty to use the default queue.
+     * Fixed to the name of the Horizon conversions supervisor
+     * (App\Support\Queues), not an env value: a different name would send
+     * conversions to a queue no supervisor works.
      */
-    'queue_name' => env('MEDIA_QUEUE', 'conversions'),
+    'queue_name' => Queues::CONVERSIONS,
 
     /*
      * By default all conversions will be performed on a queue.

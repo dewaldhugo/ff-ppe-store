@@ -6,6 +6,7 @@ use App\Domain\VendorSync\Images\ImageDownloader;
 use App\Domain\VendorSync\Images\SyncProductImages;
 use App\Support\Queues;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Support\Env;
 
 /**
  * Horizon supervisors for one environment, defaults merged in.
@@ -56,6 +57,66 @@ function appJobTimeouts(): array
     return $timeouts;
 }
 
+/**
+ * Every class under app/ that can be queued.
+ *
+ * @return list<class-string>
+ */
+function appQueueableClasses(): array
+{
+    $classes = [];
+    $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(app_path(), FilesystemIterator::SKIP_DOTS));
+
+    foreach ($files as $file) {
+        if ($file->getExtension() !== 'php') {
+            continue;
+        }
+
+        $relative = substr($file->getPathname(), strlen(app_path()) + 1, -4);
+        $class = 'App'.chr(92).str_replace(DIRECTORY_SEPARATOR, chr(92), $relative);
+
+        if (class_exists($class) && is_subclass_of($class, ShouldQueue::class)) {
+            $classes[] = $class;
+        }
+    }
+
+    return $classes;
+}
+
+/**
+ * Whether a queueable class takes its queue from App\Support\Queues: it calls
+ * onQueue() or allOnQueue() with a Queues constant, or declares a $queue
+ * default that is one of the Queues values.
+ */
+function setsQueueFromQueues(string $class): bool
+{
+    $reflection = new ReflectionClass($class);
+
+    if (preg_match('/->(?:onQueue|allOnQueue)\(\s*Queues::[A-Z_]+\s*\)/', (string) file_get_contents((string) $reflection->getFileName())) === 1) {
+        return true;
+    }
+
+    return $reflection->hasProperty('queue')
+        && in_array($reflection->getProperty('queue')->getDefaultValue(), array_values((new ReflectionClass(Queues::class))->getConstants()), true);
+}
+
+it('sets the queue of every queueable class from App\Support\Queues', function (): void {
+    // A class that deliberately runs on the connection default queue goes
+    // here, with the reason. Empty on purpose: a new job needs a decision.
+    $allowed = [];
+
+    $classes = appQueueableClasses();
+
+    expect($classes)->toContain(SyncProductImages::class);
+
+    $unrouted = array_values(array_filter(
+        $classes,
+        fn (string $class): bool => ! in_array($class, $allowed, true) && ! setsQueueFromQueues($class),
+    ));
+
+    expect($unrouted)->toBe([], 'These queueable classes do not set their queue from App\Support\Queues, so they would land on default: '.implode(', ', $unrouted));
+});
+
 it('puts the image job on the images queue', function (): void {
     expect((new SyncProductImages(1))->queue)->toBe(Queues::IMAGES)
         ->and(Queues::IMAGES)->toBe('images');
@@ -71,7 +132,7 @@ it('runs one Horizon supervisor per queue with the agreed processes, timeouts an
 
     $expected = [
         'supervisor-default' => ['queue' => ['default'], 'maxProcesses' => 3, 'timeout' => 60, 'memory' => 256],
-        'supervisor-images' => ['queue' => ['images'], 'maxProcesses' => 2, 'timeout' => 960, 'memory' => 512],
+        'supervisor-images' => ['queue' => ['images'], 'maxProcesses' => 2, 'timeout' => 960, 'memory' => 192, 'maxJobs' => 100],
         'supervisor-conversions' => ['queue' => ['conversions'], 'maxProcesses' => 4, 'timeout' => 300, 'memory' => 512],
     ];
 
@@ -95,6 +156,44 @@ it('has a long-wait threshold for every queue', function (): void {
     }
 });
 
+it('waits hours before calling an image backlog a long wait', function (): void {
+    // A first import queues thousands of image jobs: it takes hours to clear.
+    expect(config('horizon.waits')['redis:'.Queues::IMAGES])->toBeGreaterThanOrEqual(10800);
+});
+
+it('takes the image worker count from HORIZON_IMAGES_PROCESSES, defaulting to 2', function (): void {
+    $processes = function (?string $value): int {
+        $repository = Env::getRepository();
+        $previous = $repository->get('HORIZON_IMAGES_PROCESSES');
+
+        $value === null ? $repository->clear('HORIZON_IMAGES_PROCESSES') : $repository->set('HORIZON_IMAGES_PROCESSES', $value);
+
+        try {
+            return (require config_path('horizon.php'))['defaults']['supervisor-images']['maxProcesses'];
+        } finally {
+            $previous === null ? $repository->clear('HORIZON_IMAGES_PROCESSES') : $repository->set('HORIZON_IMAGES_PROCESSES', $previous);
+        }
+    };
+
+    expect($processes(null))->toBe(2)
+        ->and($processes('3'))->toBe(3)
+        ->and($processes('4'))->toBe(4)
+        // Never below one worker, whatever the value.
+        ->and($processes('0'))->toBe(1)
+        ->and($processes('nonsense'))->toBe(1);
+});
+
+it('lets no production override hide an env-driven or agreed supervisor setting', function (): void {
+    // `horizon.environments.production` is merged over `defaults`. A value
+    // set there would silently win over HORIZON_IMAGES_PROCESSES.
+    foreach (config('horizon.environments.production') as $name => $overrides) {
+        expect($overrides)->toBe([], "{$name} must not override its defaults in production");
+    }
+
+    // The environment name must be the one the server runs under.
+    expect(config('horizon.environments'))->toHaveKey('production');
+});
+
 it('sets the image supervisor timeout above the image job timeout', function (): void {
     $jobTimeout = (new ReflectionClass(SyncProductImages::class))->getProperty('timeout')->getDefaultValue();
 
@@ -110,6 +209,44 @@ it('leaves the image job time for at least one worst-case download after its mar
     // Both URL shapes: https (one candidate) and http (https first, then http).
     expect($budget)->toBeGreaterThan($downloader->worstCaseDownloadSeconds('http://images.example.test/a.jpg'))
         ->and($budget)->toBeGreaterThan($downloader->worstCaseDownloadSeconds('https://images.example.test/a.jpg'));
+});
+
+it('serves every queue name with exactly one production supervisor', function (): void {
+    $supervisors = horizonSupervisors('production');
+
+    foreach ([Queues::DEFAULT, Queues::IMAGES, Queues::CONVERSIONS] as $queue) {
+        $serving = array_keys(array_filter($supervisors, fn (array $supervisor): bool => in_array($queue, $supervisor['queue'], true)));
+
+        expect($serving)->toHaveCount(1, "queue {$queue} must be served by exactly one supervisor");
+    }
+
+    foreach ($supervisors as $name => $supervisor) {
+        expect($supervisor['queue'])->toHaveCount(1, "{$name} serves one queue");
+    }
+});
+
+it('ties the image job to the supervisor that serves its queue, and that supervisor to retry_after', function (): void {
+    $job = new SyncProductImages(1);
+    $jobTimeout = (new ReflectionClass(SyncProductImages::class))->getProperty('timeout')->getDefaultValue();
+
+    // The queue the job asks for is served by a supervisor whose timeout is
+    // above the job's own, and the connection's retry_after is above that.
+    $serving = array_filter(horizonSupervisors('production'), fn (array $supervisor): bool => in_array($job->queue, $supervisor['queue'], true));
+
+    expect($serving)->toHaveCount(1);
+
+    $supervisor = array_values($serving)[0];
+
+    expect($job->queue)->toBe(Queues::IMAGES)
+        ->and($supervisor['timeout'])->toBeGreaterThan($jobTimeout);
+
+    foreach (['redis', 'database'] as $connection) {
+        expect(config("queue.connections.{$connection}.retry_after"))
+            ->toBeGreaterThan($supervisor['timeout'], "{$connection} retry_after must exceed the {$job->queue} supervisor timeout");
+    }
+
+    // The supervisor works the connection the production queue runs on.
+    expect($supervisor['connection'])->toBe('redis');
 });
 
 it('keeps retry_after above every job and supervisor timeout on each queue connection', function (): void {
