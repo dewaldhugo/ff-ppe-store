@@ -6,6 +6,8 @@ namespace App\Providers;
 
 use App\Domain\Catalogue\Keys\CatalogueKeys;
 use App\Domain\Catalogue\Menu\CategoryMenu;
+use App\Domain\Catalogue\Urls\CollectionPath;
+use App\Domain\Catalogue\Urls\Redirects\CollectionRedirectObserver;
 use Illuminate\Support\ServiceProvider;
 use Lunar\Admin\Support\Facades\LunarPanel;
 use Lunar\Facades\Telemetry;
@@ -20,6 +22,8 @@ final class AppServiceProvider extends ServiceProvider
         LunarPanel::register();
 
         $this->app->scoped(CatalogueKeys::class);
+        $this->app->scoped(CollectionPath::class);
+        $this->app->scoped(CollectionRedirectObserver::class);
     }
 
     public function boot(): void
@@ -32,6 +36,13 @@ final class AppServiceProvider extends ServiceProvider
             foreach (['saved', 'deleted'] as $event) {
                 $model::{$event}(fn () => CategoryMenu::forget());
             }
+        }
+
+        // A category URL change (rename, move, new parent) records a redirect
+        // from the old path. See CollectionRedirectObserver.
+        foreach (['saved', 'deleted'] as $event) {
+            Collection::{$event}(fn (Collection $collection) => app(CollectionRedirectObserver::class)->collectionChanged($collection));
+            Url::{$event}(fn (Url $url) => app(CollectionRedirectObserver::class)->urlChanged($url));
         }
     }
 }
