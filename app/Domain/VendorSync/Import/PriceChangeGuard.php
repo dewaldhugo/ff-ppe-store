@@ -6,8 +6,6 @@ namespace App\Domain\VendorSync\Import;
 
 use App\Domain\VendorSync\Data\NormalisedProduct;
 use App\Domain\VendorSync\Models\Vendor;
-use Illuminate\Support\Facades\DB;
-use Lunar\Models\ProductVariant;
 
 /**
  * Holds a variant's vendor cost, price and compare price at their old values
@@ -34,15 +32,20 @@ final class PriceChangeGuard
         return (float) config('vendorsync.price_change_guard_percent', 40);
     }
 
+    public function __construct(private readonly StoredPrices $stored) {}
+
     /**
      * @param  list<string>  $storedDraftReasons  The product's draft reasons from the previous write.
+     * @param  list<string>|null  $currentDraftReasons  The product's draft reasons for this write, after currency holds
+     *                                                  (CurrencyGuard::reasons()). Defaults to the mapper's reasons. A held
+     *                                                  EUR SKU must not switch the guard off for the product's other SKUs.
      * @return array<string, HeldPrice> By vendor SKU.
      */
-    public function evaluate(Vendor $vendor, NormalisedProduct $product, array $storedDraftReasons, ?int $productId, AcceptedPrices $accepted): array
+    public function evaluate(Vendor $vendor, NormalisedProduct $product, array $storedDraftReasons, ?int $productId, AcceptedPrices $accepted, ?array $currentDraftReasons = null): array
     {
         $threshold = self::threshold();
 
-        if ($threshold <= 0 || array_intersect(self::EXEMPT_REASONS, [...$product->draftReasons, ...$storedDraftReasons]) !== []) {
+        if ($threshold <= 0 || array_intersect(self::EXEMPT_REASONS, [...($currentDraftReasons ?? $product->draftReasons), ...$storedDraftReasons]) !== []) {
             return [];
         }
 
@@ -52,16 +55,7 @@ final class PriceChangeGuard
             return [];
         }
 
-        $stored = DB::table('vendor_offers as o')
-            ->leftJoin('lunar_prices as p', function ($join): void {
-                $join->on('p.priceable_id', '=', 'o.product_variant_id')
-                    ->where('p.priceable_type', (new ProductVariant)->getMorphClass())
-                    ->where('p.min_quantity', 1);
-            })
-            ->where('o.vendor_id', $vendor->id)
-            ->whereIn('o.vendor_sku', $skus)
-            ->get(['o.vendor_sku', 'o.cost_price', 'p.price', 'p.compare_price'])
-            ->keyBy('vendor_sku');
+        $stored = $this->stored->forSkus($vendor, $skus);
 
         $held = [];
 

@@ -55,6 +55,7 @@ final class CatalogueImporter
         private readonly RawStore $rawStore,
         private readonly RequestTimer $timer,
         private readonly PriceChangeGuard $guard,
+        private readonly CurrencyGuard $currency,
     ) {}
 
     /**
@@ -139,9 +140,9 @@ final class CatalogueImporter
 
         $this->stats($report);
 
-        // The full list of held prices is never capped, so it goes to a file
-        // that the run record points to.
-        if ($report->held !== []) {
+        // The full lists of held prices and held currency flips are never
+        // capped, so they go to a file that the run record points to.
+        if ($report->held !== [] || $report->heldCurrency !== []) {
             $this->saveReport($report, 'held');
         }
 
@@ -314,13 +315,6 @@ final class CatalogueImporter
             return true;
         }
 
-        // Counted for every product seen, changed or not, so each run's
-        // report shows how many variants still wait for a GBP price.
-        if (in_array(DraftReason::NON_GBP_PRICE, $result->product->draftReasons, true)) {
-            $report->nonGbpProducts++;
-            $report->nonGbpVariants += count(array_filter($result->product->variants, fn (NormalisedVariant $variant): bool => $variant->price === null));
-        }
-
         // The payload and the pricing rules together: a changed markup or
         // rule version makes every stored hash stale, so products reprice once.
         $hash = hash('sha256', $record->hash().'|'.PricingRules::fingerprint($code));
@@ -344,6 +338,7 @@ final class CatalogueImporter
 
         if ($link !== null && ! $force && ! $wasMissing && $link->payload_hash === $hash) {
             $report->unchanged++;
+            $this->countNonGbp($report, $result->product, []);
 
             if ($writer !== null && $link->missed_runs > 0) {
                 $link->update(['missed_runs' => 0]);
@@ -354,11 +349,15 @@ final class CatalogueImporter
 
         if ($writer === null || $vendor === null) {
             // Dry run: record what a real run would do.
-            $reasons = [...$result->product->draftReasons, ...($link === null ? [DraftReason::NO_IMAGE] : [])];
+            $flips = $link !== null && $vendor !== null ? $this->currency->evaluate($vendor, $result->product, $link->product_id) : [];
+            $current = $this->currency->reasons($result->product, $flips);
+            $reasons = [...$current, ...($link === null ? [DraftReason::NO_IMAGE] : [])];
             $this->count($report, $result->product, $link === null, $reasons === [] ? 'published' : 'draft', $reasons);
+            $this->countNonGbp($report, $result->product, $flips);
 
             if ($link !== null && $vendor !== null) {
-                $this->hold($report, $result->product, $this->guard->evaluate($vendor, $result->product, $link->draft_reasons ?? [], $link->product_id, $this->accepted), dryRun: true);
+                $this->hold($report, $result->product, $this->guard->evaluate($vendor, $result->product, $link->draft_reasons ?? [], $link->product_id, $this->accepted, $current), dryRun: true);
+                $this->holdCurrency($report, $result->product, array_values($flips), dryRun: true);
             }
 
             return true;
@@ -379,9 +378,71 @@ final class CatalogueImporter
         }
 
         $this->count($report, $result->product, $written->created, $written->status, $written->draftReasons);
+        $this->countNonGbp($report, $result->product, $written->heldCurrency);
         $this->hold($report, $result->product, $written->held, dryRun: false);
+        $this->holdCurrency($report, $result->product, $written->heldCurrency, dryRun: false);
 
         return true;
+    }
+
+    /**
+     * Counted for every product seen, changed or not, so each run's report shows
+     * how many variants still wait for a GBP price. A variant held at its stored
+     * GBP price is not waiting for one: it is counted as held currency instead.
+     *
+     * @param  array<string, HeldCurrency>|list<HeldCurrency>  $held
+     */
+    private function countNonGbp(RunReport $report, NormalisedProduct $product, array $held): void
+    {
+        $heldSkus = [];
+
+        foreach ($held as $entry) {
+            $heldSkus[$entry->vendorSku] = true;
+        }
+
+        $open = array_filter(
+            $product->variants,
+            fn (NormalisedVariant $variant): bool => $variant->nonGbpCurrency !== null && ! isset($heldSkus[$variant->vendorSku]),
+        );
+
+        if ($open !== []) {
+            $report->nonGbpProducts++;
+            $report->nonGbpVariants += count($open);
+        }
+    }
+
+    /**
+     * One report line per product, and every held variant in the full list.
+     *
+     * @param  list<HeldCurrency>  $held
+     */
+    private function holdCurrency(RunReport $report, NormalisedProduct $product, array $held, bool $dryRun): void
+    {
+        if ($held === []) {
+            return;
+        }
+
+        array_push($report->heldCurrency, ...$held);
+
+        foreach ($held as $entry) {
+            $report->tally('held_currency', $entry->currency);
+        }
+
+        $skus = implode(', ', array_slice(array_map(fn (HeldCurrency $entry): string => $entry->vendorSku, $held), 0, 10));
+        $currencies = implode(', ', array_unique(array_map(fn (HeldCurrency $entry): string => $entry->currency, $held)));
+
+        $report->message(sprintf(
+            '%s %s [%s]: %d %s came back priced in %s, not GBP; the stored GBP cost, price, compare price and availability %s, nothing converted, no price removed (SKUs: %s%s). It is looked at again on the next run.',
+            $report->vendorCode,
+            $product->name,
+            $product->vendorProductId,
+            count($held),
+            count($held) === 1 ? 'SKU' : 'SKUs',
+            $currencies,
+            $dryRun ? 'would be kept' : 'were kept',
+            $skus,
+            count($held) > 10 ? ', ...' : '',
+        ));
     }
 
     /**

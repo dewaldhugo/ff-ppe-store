@@ -184,6 +184,25 @@ final class CatalogueCommand extends Command
             $this->line('Accept with --accept-price-changes=SKU1,SKU2 or --accept-product=ID.');
         }
 
+        if ($report->heldCurrency !== []) {
+            $this->newLine();
+            $this->warn(sprintf(
+                '%s %d %s kept at the stored GBP values because the vendor answered in another currency%s. Nothing was converted, no price was removed, and each is looked at again on the next run.',
+                $report->vendorCode,
+                count($report->heldCurrency),
+                count($report->heldCurrency) === 1 ? 'variant' : 'variants',
+                $report->dryRun ? ' (dry run: they would be)' : '',
+            ));
+
+            foreach (array_slice($report->heldCurrency, 0, 30) as $held) {
+                $this->line('  '.$held->line($report->vendorCode));
+            }
+
+            if (count($report->heldCurrency) > 30) {
+                $this->line('  ... '.(count($report->heldCurrency) - 30).' more in the full report.');
+            }
+        }
+
         if ($report->reportPath !== null) {
             $this->line('Full report: '.$report->reportPath);
         }

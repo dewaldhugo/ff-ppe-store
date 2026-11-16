@@ -43,5 +43,10 @@ final readonly class NormalisedVariant
         public string $vendorProductName,
         public ?string $vendorColour,
         public ?string $vendorSize,
+        // The currency the vendor priced this SKU in when it was not GBP
+        // (`(blank)` for a price with no currency). Set together with the
+        // null price and cost above. The writer keeps a stored GBP price
+        // instead of applying such a response (see CurrencyGuard).
+        public ?string $nonGbpCurrency = null,
     ) {}
 }

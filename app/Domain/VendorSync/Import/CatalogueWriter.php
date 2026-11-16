@@ -59,6 +59,7 @@ final class CatalogueWriter
         private readonly SharedOptionValues $optionValues,
         private readonly FieldLocks $locks,
         private readonly PriceChangeGuard $guard,
+        private readonly CurrencyGuard $currencyGuard,
     ) {}
 
     public function write(Vendor $vendor, NormalisedProduct $data, string $payloadHash, AcceptedPrices $accepted = new AcceptedPrices): WriteResult
@@ -236,7 +237,10 @@ final class CatalogueWriter
 
         [$attributeData, $contentHashes] = $this->mergedAttributeData($product, $link, $data, $locked);
 
-        $reasons = $data->draftReasons;
+        // A non-GBP response never replaces a stored GBP price: those variants
+        // are held, and their product is not drafted `non_gbp_price` for them.
+        $flips = $this->currencyGuard->evaluate($vendor, $data, $product->id);
+        $reasons = $this->currencyGuard->reasons($data, $flips);
 
         if (! $product->media()->exists()) {
             $reasons[] = DraftReason::NO_IMAGE;
@@ -268,7 +272,7 @@ final class CatalogueWriter
             ->keyBy('vendor_sku');
 
         // Cost, price and compare price stay as they were for these SKUs.
-        $held = $this->guard->evaluate($vendor, $data, $link->draft_reasons ?? [], $link->product_id, $accepted);
+        $held = $this->guard->evaluate($vendor, $data, $link->draft_reasons ?? [], $link->product_id, $accepted, $this->currencyGuard->reasons($data, $flips));
 
         $seen = [];
 
@@ -277,7 +281,7 @@ final class CatalogueWriter
             $offer = $offers->get($variant->vendorSku);
 
             if ($offer !== null) {
-                $this->updateVariant($vendor, $variant, $offer, isset($held[$variant->vendorSku]));
+                $this->updateVariant($vendor, $variant, $offer, isset($held[$variant->vendorSku]), isset($flips[$variant->vendorSku]));
 
                 continue;
             }
@@ -304,16 +308,17 @@ final class CatalogueWriter
 
         $link->update([
             'commodity_code' => $data->commodityCode,
-            // A product with a held price keeps its old hash, so the next run
-            // looks at it again instead of treating it as unchanged.
-            'payload_hash' => $held === [] ? $payloadHash : $link->payload_hash,
+            // A product with a held price or a held currency flip keeps its old
+            // hash, so the next run looks at it again instead of treating it as
+            // unchanged.
+            'payload_hash' => $held === [] && $flips === [] ? $payloadHash : $link->payload_hash,
             'content_hashes' => $contentHashes,
             'draft_reasons' => $reasons,
             'related_ids' => $data->relatedVendorProductIds,
             'missed_runs' => 0,
         ]);
 
-        return new WriteResult($product->id, false, $status, $reasons, $messages, array_values($held));
+        return new WriteResult($product->id, false, $status, $reasons, $messages, array_values($held), array_values($flips));
     }
 
     private function createVariant(Product $product, Vendor $vendor, NormalisedVariant $data): void
@@ -354,17 +359,27 @@ final class CatalogueWriter
         ]);
     }
 
-    private function updateVariant(Vendor $vendor, NormalisedVariant $data, VendorOffer $offer, bool $priceHeld = false): void
+    /**
+     * @param  bool  $priceHeld  Cost change held by the price-change guard: the old cost, price and compare price stay.
+     * @param  bool  $currencyHeld  The response was not in GBP and a GBP price is stored: the old cost, price, compare
+     *                              price and availability stay. Everything else (stock quantity, EAN, size, weight)
+     *                              is applied from the response as for any other variant.
+     */
+    private function updateVariant(Vendor $vendor, NormalisedVariant $data, VendorOffer $offer, bool $priceHeld = false, bool $currencyHeld = false): void
     {
         /** @var ProductVariant $variant */
         $variant = ProductVariant::query()->findOrFail($offer->product_variant_id);
         $catalogueOwnsStock = $this->catalogueOwnsStock($vendor);
 
+        // A non-GBP response marks the variant unsellable only because it has no
+        // price in it. Availability is not a price fact, so the stored one stays.
+        $sellable = $currencyHeld ? (bool) $offer->sellable : $data->sellable;
+
         $variant->fill($this->variantColumns($data, $variant));
 
         if ($catalogueOwnsStock) {
-            $variant->stock = $this->sellableStock($vendor, $data->vendorStock, $data->sellable);
-        } elseif (! $data->sellable) {
+            $variant->stock = $this->sellableStock($vendor, $data->vendorStock, $sellable);
+        } elseif (! $sellable) {
             $variant->stock = 0;
         } elseif (! $offer->sellable) {
             // Back on sale: restore from the last figure the stock feed gave.
@@ -390,7 +405,7 @@ final class CatalogueWriter
             ->where('min_quantity', 1)
             ->first();
 
-        if ($priceHeld) {
+        if ($priceHeld || $currencyHeld) {
             // Held for review: the old price and compare price stay.
         } elseif ($data->price === null) {
             // Unpriced: a price stored earlier (for example from a EUR amount
@@ -411,8 +426,9 @@ final class CatalogueWriter
         }
 
         $offerColumns = $this->offerColumns($data);
+        $offerColumns['sellable'] = $sellable;
 
-        if ($priceHeld) {
+        if ($priceHeld || $currencyHeld) {
             // Cost, price and compare price are one unit: keep the old cost too.
             unset($offerColumns['cost_price']);
         }

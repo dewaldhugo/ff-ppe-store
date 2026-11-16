@@ -108,7 +108,7 @@ it('keeps a non-GBP product draft when its images arrive', function (): void {
         ->and(VendorProduct::query()->sole()->draft_reasons)->toBe([DraftReason::NON_GBP_PRICE]);
 });
 
-it('prices and publishes the product once the vendor supplies GBP, and unprices it again if EUR returns', function (): void {
+it('prices and publishes the product once the vendor supplies GBP, and keeps that price if EUR returns', function (): void {
     importEur(eurProduct([['42', 20.0, 'EUR', 60.0, 'EUR']]));
     VendorSync::syncImages(['500100']);
 
@@ -124,10 +124,14 @@ it('prices and publishes the product once the vendor supplies GBP, and unprices 
         ->and($price->getRawOriginal('compare_price'))->toBe(5000)
         ->and(VendorOffer::query()->sole()->cost_price)->toBe(2000);
 
-    // A price stored earlier must not survive a EUR payload.
-    importEur(eurProduct([['42', 20.0, 'EUR', 60.0, 'EUR']]));
+    // The vendor's currency is not stable, so a EUR payload never replaces a
+    // stored GBP price: the price stays, the product stays published, and the
+    // flip is reported (see CurrencyStabilityTest).
+    $report = importEur(eurProduct([['42', 20.0, 'EUR', 60.0, 'EUR']]));
 
-    expect(Price::query()->count())->toBe(0)
-        ->and(VendorSync::product('SJ', '500100')->status)->toBe('draft')
-        ->and(VendorOffer::query()->sole()->cost_price)->toBeNull();
+    expect(Price::query()->sole()->getRawOriginal('price'))->toBe(3000)
+        ->and(VendorSync::product('SJ', '500100')->status)->toBe('published')
+        ->and(VendorOffer::query()->sole()->cost_price)->toBe(2000)
+        ->and($report->heldCurrency)->toHaveCount(1)
+        ->and($report->nonGbpVariants)->toBe(0);
 });

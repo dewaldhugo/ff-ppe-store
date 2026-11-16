@@ -28,12 +28,18 @@ final class SyncRunAlert extends Notification
         $run = $this->run->loadMissing('vendor');
 
         $held = (int) $run->held_prices;
-        $heldOnly = $run->status === 'succeeded' && $held > 0;
+        $heldCurrency = (int) $run->held_currency;
+        $heldOnly = $run->status === 'succeeded' && ($held > 0 || $heldCurrency > 0);
+
+        $what = array_filter([
+            $held > 0 ? "{$held} price ".($held === 1 ? 'change' : 'changes') : null,
+            $heldCurrency > 0 ? "{$heldCurrency} currency ".($heldCurrency === 1 ? 'flip' : 'flips') : null,
+        ]);
 
         $mail = (new MailMessage)
             ->error()
             ->subject($heldOnly
-                ? "Vendor sync held {$held} price ".($held === 1 ? 'change' : 'changes').": {$run->vendor->name} {$run->type}"
+                ? 'Vendor sync held '.implode(' and ', $what).": {$run->vendor->name} {$run->type}"
                 : "Vendor sync {$run->status}: {$run->vendor->name} {$run->type}")
             ->line("The {$run->type} run for {$run->vendor->name} ({$run->vendor->code}) {$run->status}.")
             ->line("Run {$run->id}, started {$run->started_at?->timezone('Europe/London')->format('d/m/Y H:i')}.")
@@ -41,6 +47,10 @@ final class SyncRunAlert extends Notification
 
         if ($held > 0) {
             $mail->line("Held price changes: {$held}. Their cost, price and compare price were kept. The full list is in {$run->report_path}.");
+        }
+
+        if ($heldCurrency > 0) {
+            $mail->line("Held currency flips: {$heldCurrency}. The vendor answered in a currency other than GBP, so the stored GBP cost, price, compare price and availability were kept. Nothing was converted. The full list, with when the stored values were last written, is in {$run->report_path}.");
         }
 
         foreach (array_slice($run->messages ?? [], 0, 10) as $message) {

@@ -112,9 +112,9 @@ final class RunRecorder
             ...$report->counts(),
         ]);
 
-        // A run that held price changes needs a person's decision, so it is
-        // mailed too, even though it succeeded.
-        if (! $report->ok() || $run->held_prices > 0) {
+        // A run that held price changes or currency flips needs a person's
+        // attention, so it is mailed too, even though it succeeded.
+        if (! $report->ok() || $run->held_prices > 0 || $run->held_currency > 0) {
             $this->alert($run);
         }
     }
@@ -137,12 +137,12 @@ final class RunRecorder
         $run->loadMissing('vendor');
 
         $context = [
-            'counts' => $run->only(['seen', 'created', 'updated', 'unchanged', 'drafted', 'errors', 'out_of_scope', 'held_prices']),
+            'counts' => $run->only(['seen', 'created', 'updated', 'unchanged', 'drafted', 'errors', 'out_of_scope', 'held_prices', 'held_currency']),
             'messages' => array_slice($run->messages ?? [], 0, 10),
         ];
 
         if ($run->status === RunReport::SUCCEEDED) {
-            Log::warning("VendorSync {$run->type} run {$run->id} for {$run->vendor->code} held {$run->held_prices} price changes for review.", $context);
+            Log::warning("VendorSync {$run->type} run {$run->id} for {$run->vendor->code} held {$run->held_prices} price changes and {$run->held_currency} currency flips for review.", $context);
         } else {
             Log::error("VendorSync {$run->type} run {$run->id} for {$run->vendor->code} {$run->status}.", $context);
         }

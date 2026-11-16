@@ -57,6 +57,13 @@ final class RunReport
      */
     public array $held = [];
 
+    /**
+     * @var list<HeldCurrency> Variants kept at their stored GBP values because the
+     *                         response was not in GBP (or, in a dry run, would be).
+     *                         Never capped: the full list goes to the stored report.
+     */
+    public array $heldCurrency = [];
+
     /** @var list<string> */
     public array $messages = [];
 
@@ -159,6 +166,7 @@ final class RunReport
             'non_gbp_variants' => $this->nonGbpVariants,
             'non_gbp_products' => $this->nonGbpProducts,
             'held_prices' => count($this->held),
+            'held_currency' => count($this->heldCurrency),
         ];
     }
 
@@ -186,6 +194,7 @@ final class RunReport
             'tallies' => $tallies,
             'samples' => $this->samples,
             'held_prices' => array_map(fn (HeldPrice $held): array => $held->toArray(), $this->held),
+            'held_currency' => array_map(fn (HeldCurrency $held): array => $held->toArray(), $this->heldCurrency),
             'messages' => $this->messages,
             'messages_not_shown' => $this->messagesDropped,
         ];

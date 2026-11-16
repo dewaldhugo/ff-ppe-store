@@ -29,7 +29,7 @@ final readonly class SafetyJoggerMapper implements VendorMapper
     public const string VENDOR_CODE = 'SJ';
 
     /** Reported for a price that has a value but no currency. */
-    public const string BLANK_CURRENCY = '(blank)';
+    public const string BLANK_CURRENCY = PriceCurrency::BLANK;
 
     private const string SAFETY_NORM = 'EN ISO 20345';
 
@@ -291,7 +291,7 @@ final readonly class SafetyJoggerMapper implements VendorMapper
         // A price in any currency other than GBP is never converted and
         // never stored: the variant is imported unpriced and unsellable.
         // A price with no currency at all is treated the same (fail closed).
-        $currency = $this->nonGbpCurrency($sku, $rrp !== null && $rrp > 0);
+        $currency = PriceCurrency::issue($sku);
 
         if ($currency !== null) {
             $facts[] = ['non_gbp_currency', $currency];
@@ -328,33 +328,8 @@ final readonly class SafetyJoggerMapper implements VendorMapper
             vendorProductName: $vendorName,
             vendorColour: $vendorColour,
             vendorSize: $eu,
+            nonGbpCurrency: $currency,
         );
-    }
-
-    /**
-     * The currency that stops this SKU from being priced, or null when its
-     * prices are in GBP. The cost is always checked; the RRP only when the
-     * SKU has one. A missing or empty currency is reported as `(blank)`.
-     *
-     * @param  array<string, mixed>  $sku
-     */
-    private function nonGbpCurrency(array $sku, bool $hasRrp): ?string
-    {
-        $currencies = [$sku['customerPrice']['currency'] ?? null];
-
-        if ($hasRrp) {
-            $currencies[] = $sku['rrpPrice']['currency'] ?? null;
-        }
-
-        foreach ($currencies as $currency) {
-            $currency = strtoupper(trim((string) $currency));
-
-            if ($currency !== 'GBP') {
-                return $currency === '' ? self::BLANK_CURRENCY : $currency;
-            }
-        }
-
-        return null;
     }
 
     /**
