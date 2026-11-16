@@ -13,3 +13,6 @@ Artisan::command('inspire', function () {
 // Backstop for category URL changes that fire no model event. Independent of
 // VENDORSYNC_SCHEDULE_ENABLED: redirects matter whether or not ingestion runs.
 Schedule::command('catalogue:sync-redirects')->hourly()->withoutOverlapping();
+
+// Horizon needs Redis, which only production has.
+Schedule::command('horizon:snapshot')->everyFiveMinutes()->environments(['production']);
