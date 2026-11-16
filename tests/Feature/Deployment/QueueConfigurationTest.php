@@ -6,6 +6,7 @@ use App\Domain\VendorSync\Images\ImageDownloader;
 use App\Domain\VendorSync\Images\SyncProductImages;
 use App\Support\Queues;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Support\Env;
 
 /**
  * Horizon supervisors for one environment, defaults merged in.
@@ -131,7 +132,7 @@ it('runs one Horizon supervisor per queue with the agreed processes, timeouts an
 
     $expected = [
         'supervisor-default' => ['queue' => ['default'], 'maxProcesses' => 3, 'timeout' => 60, 'memory' => 256],
-        'supervisor-images' => ['queue' => ['images'], 'maxProcesses' => 2, 'timeout' => 960, 'memory' => 512],
+        'supervisor-images' => ['queue' => ['images'], 'maxProcesses' => 2, 'timeout' => 960, 'memory' => 192, 'maxJobs' => 100],
         'supervisor-conversions' => ['queue' => ['conversions'], 'maxProcesses' => 4, 'timeout' => 300, 'memory' => 512],
     ];
 
@@ -153,6 +154,44 @@ it('has a long-wait threshold for every queue', function (): void {
     foreach (['default', 'images', 'conversions'] as $queue) {
         expect(config('horizon.waits'))->toHaveKey("redis:{$queue}");
     }
+});
+
+it('waits hours before calling an image backlog a long wait', function (): void {
+    // A first import queues thousands of image jobs: it takes hours to clear.
+    expect(config('horizon.waits')['redis:'.Queues::IMAGES])->toBeGreaterThanOrEqual(10800);
+});
+
+it('takes the image worker count from HORIZON_IMAGES_PROCESSES, defaulting to 2', function (): void {
+    $processes = function (?string $value): int {
+        $repository = Env::getRepository();
+        $previous = $repository->get('HORIZON_IMAGES_PROCESSES');
+
+        $value === null ? $repository->clear('HORIZON_IMAGES_PROCESSES') : $repository->set('HORIZON_IMAGES_PROCESSES', $value);
+
+        try {
+            return (require config_path('horizon.php'))['defaults']['supervisor-images']['maxProcesses'];
+        } finally {
+            $previous === null ? $repository->clear('HORIZON_IMAGES_PROCESSES') : $repository->set('HORIZON_IMAGES_PROCESSES', $previous);
+        }
+    };
+
+    expect($processes(null))->toBe(2)
+        ->and($processes('3'))->toBe(3)
+        ->and($processes('4'))->toBe(4)
+        // Never below one worker, whatever the value.
+        ->and($processes('0'))->toBe(1)
+        ->and($processes('nonsense'))->toBe(1);
+});
+
+it('lets no production override hide an env-driven or agreed supervisor setting', function (): void {
+    // `horizon.environments.production` is merged over `defaults`. A value
+    // set there would silently win over HORIZON_IMAGES_PROCESSES.
+    foreach (config('horizon.environments.production') as $name => $overrides) {
+        expect($overrides)->toBe([], "{$name} must not override its defaults in production");
+    }
+
+    // The environment name must be the one the server runs under.
+    expect(config('horizon.environments'))->toHaveKey('production');
 });
 
 it('sets the image supervisor timeout above the image job timeout', function (): void {

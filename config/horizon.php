@@ -1,5 +1,6 @@
 <?php
 
+use App\Support\Queues;
 use Illuminate\Support\Str;
 
 return [
@@ -97,10 +98,12 @@ return [
     */
 
     'waits' => [
-        'redis:default' => 60,
-        // A catalogue run queues one image job per product: a long wait is normal.
-        'redis:images' => 3600,
-        'redis:conversions' => 300,
+        'redis:'.Queues::DEFAULT => 60,
+        // A catalogue run queues one image job per product, so a backlog of
+        // thousands of jobs takes hours to clear (10800 s = 3 h). A shorter
+        // threshold would fire LongWaitDetected on every big import.
+        'redis:'.Queues::IMAGES => 10800,
+        'redis:'.Queues::CONVERSIONS => 300,
     ],
 
     /*
@@ -199,16 +202,23 @@ return [
     |
     */
 
-    // One supervisor per queue (names: App\Support\Queues). Process counts are
-    // fixed (`balance` false). The image supervisor's timeout is above the
-    // image job's own timeout (900), and the connection's `retry_after`
-    // (config/queue.php) is above every timeout here: a test enforces both.
-    // Workers recycle after maxJobs or maxTime. `memory` is the Horizon restart
-    // threshold in MB, not PHP's memory_limit.
+    // One supervisor per queue. The names come from App\Support\Queues, the
+    // one place they are defined (a config file cannot read another config
+    // file while loading, so the constants are the shared source). Process
+    // counts are fixed (`balance` false). The image supervisor's timeout is
+    // above the image job's own timeout (900), and the connection's
+    // `retry_after` (config/queue.php) is above every timeout here: a test
+    // enforces both. Workers recycle after maxJobs or maxTime. `memory` is the
+    // Horizon restart threshold in MB, not PHP's memory_limit.
+    //
+    // Image workers: HORIZON_IMAGES_PROCESSES (default 2). Each is one
+    // concurrent request to the vendor image host, and about 100 to 200 MB of
+    // RAM while converting an image (docs/vendorsync.md, Sizing). Changing it
+    // needs `php artisan horizon:terminate` to take effect.
     'defaults' => [
         'supervisor-default' => [
             'connection' => 'redis',
-            'queue' => ['default'],
+            'queue' => [Queues::DEFAULT],
             'balance' => false,
             'maxProcesses' => 3,
             'maxTime' => 3600,
@@ -220,19 +230,19 @@ return [
         ],
         'supervisor-images' => [
             'connection' => 'redis',
-            'queue' => ['images'],
+            'queue' => [Queues::IMAGES],
             'balance' => false,
-            'maxProcesses' => 2,
+            'maxProcesses' => max(1, (int) env('HORIZON_IMAGES_PROCESSES', 2)),
             'maxTime' => 3600,
-            'maxJobs' => 200,
-            'memory' => 512,
+            'maxJobs' => 100,
+            'memory' => 192,
             'tries' => 1,
             'timeout' => 960,
             'nice' => 0,
         ],
         'supervisor-conversions' => [
             'connection' => 'redis',
-            'queue' => ['conversions'],
+            'queue' => [Queues::CONVERSIONS],
             'balance' => false,
             'maxProcesses' => 4,
             'maxTime' => 3600,
