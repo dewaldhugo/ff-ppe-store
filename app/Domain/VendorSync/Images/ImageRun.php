@@ -9,6 +9,7 @@ use App\Domain\VendorSync\Import\RunRecorder;
 use App\Domain\VendorSync\Models\SyncRun;
 use App\Domain\VendorSync\Models\Vendor;
 use App\Domain\VendorSync\Models\VendorProduct;
+use App\Support\Queues;
 use Illuminate\Support\Facades\Bus;
 use Throwable;
 
@@ -92,8 +93,12 @@ final readonly class ImageRun
             return $ids->count();
         }
 
+        // A batch pushes its jobs with the queue named on the batch itself and
+        // ignores each job's own `onQueue()`, so without this line every job
+        // lands on the connection default, away from the images supervisor.
         Bus::batch($ids->map(fn (int $id): SyncProductImages => new SyncProductImages($id, $refresh, $runId))->all())
             ->name("vendorsync images {$vendor->code}")
+            ->onQueue(Queues::IMAGES)
             ->allowFailures()
             ->finally(function () use ($runId): void {
                 ImageRun::finish($runId);

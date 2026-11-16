@@ -205,7 +205,8 @@ it('fails loudly when every download fails, and the job lands in failed_jobs', f
 
     expect(DB::table('jobs')->count())->toBe(1);
 
-    $this->artisan('queue:work', ['--stop-when-empty' => true, '--tries' => 1]);
+    // Image jobs sit on the images queue, as the images supervisor works it.
+    $this->artisan('queue:work', ['--stop-when-empty' => true, '--tries' => 1, '--queue' => 'images']);
 
     $run = imageRun();
     $link->refresh();

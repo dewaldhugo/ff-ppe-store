@@ -112,6 +112,44 @@ it('leaves the image job time for at least one worst-case download after its mar
         ->and($budget)->toBeGreaterThan($downloader->worstCaseDownloadSeconds('https://images.example.test/a.jpg'));
 });
 
+it('serves every queue name with exactly one production supervisor', function (): void {
+    $supervisors = horizonSupervisors('production');
+
+    foreach ([Queues::DEFAULT, Queues::IMAGES, Queues::CONVERSIONS] as $queue) {
+        $serving = array_keys(array_filter($supervisors, fn (array $supervisor): bool => in_array($queue, $supervisor['queue'], true)));
+
+        expect($serving)->toHaveCount(1, "queue {$queue} must be served by exactly one supervisor");
+    }
+
+    foreach ($supervisors as $name => $supervisor) {
+        expect($supervisor['queue'])->toHaveCount(1, "{$name} serves one queue");
+    }
+});
+
+it('ties the image job to the supervisor that serves its queue, and that supervisor to retry_after', function (): void {
+    $job = new SyncProductImages(1);
+    $jobTimeout = (new ReflectionClass(SyncProductImages::class))->getProperty('timeout')->getDefaultValue();
+
+    // The queue the job asks for is served by a supervisor whose timeout is
+    // above the job's own, and the connection's retry_after is above that.
+    $serving = array_filter(horizonSupervisors('production'), fn (array $supervisor): bool => in_array($job->queue, $supervisor['queue'], true));
+
+    expect($serving)->toHaveCount(1);
+
+    $supervisor = array_values($serving)[0];
+
+    expect($job->queue)->toBe(Queues::IMAGES)
+        ->and($supervisor['timeout'])->toBeGreaterThan($jobTimeout);
+
+    foreach (['redis', 'database'] as $connection) {
+        expect(config("queue.connections.{$connection}.retry_after"))
+            ->toBeGreaterThan($supervisor['timeout'], "{$connection} retry_after must exceed the {$job->queue} supervisor timeout");
+    }
+
+    // The supervisor works the connection the production queue runs on.
+    expect($supervisor['connection'])->toBe('redis');
+});
+
 it('keeps retry_after above every job and supervisor timeout on each queue connection', function (): void {
     $longest = max(
         [...array_values(appJobTimeouts()), ...array_column(horizonSupervisors('production'), 'timeout')],
