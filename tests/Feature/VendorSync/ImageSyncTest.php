@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Domain\VendorSync\Exceptions\ImageSyncFailed;
+use App\Domain\VendorSync\Images\ImageDownloader;
 use App\Domain\VendorSync\Images\ImageRun;
 use App\Domain\VendorSync\Images\ProductImageSync;
 use App\Domain\VendorSync\Images\SyncProductImages;
@@ -14,6 +15,7 @@ use App\Domain\VendorSync\Models\VendorRawRecord;
 use App\Domain\VendorSync\Notifications\SyncRunAlert;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -243,14 +245,17 @@ it('treats a partial success as a success with a warning', function (): void {
         ->and($run->status)->toBe('succeeded')
         ->and($run->updated)->toBe(1)
         ->and($run->errors)->toBe(2)
-        ->and(implode("\n", $run->messages))->toContain('Product 215754: 2 of 6 images could not be saved')
+        ->and(implode("\n", $run->messages))->toContain('Product 215754: PARTIAL, 4 of 6 images saved, 2 failed (0 lock timeouts, 0 not attempted)')
+        ->and($run->stats['partial_jobs'])->toBe(1)
+        ->and($run->stats['hero_failed_jobs'])->toBe(0)
+        ->and($run->stats['images_failed'])->toBe(2)
         ->and(VendorSync::product('SJ', '215754')->getMedia('images'))->toHaveCount(4)
         ->and(VendorSync::product('SJ', '215754')->status)->toBe('published')
         ->and($link->draft_reasons)->toBe([])
         ->and($link->images_synced_at)->not->toBeNull()
         ->and($link->image_urls_hash)->toHaveLength(64);
 
-    Log::shouldHaveReceived('warning')->withArgs(fn (string $message): bool => str_contains($message, 'Product 215754: 2 of 6 images'))->once();
+    Log::shouldHaveReceived('warning')->withArgs(fn (string $message): bool => str_contains($message, 'Product 215754: PARTIAL, 4 of 6 images saved'))->once();
     Log::shouldNotHaveReceived('error');
 });
 
@@ -428,4 +433,117 @@ it('does not touch a published product when a refresh of its first image fails',
         ->and($result->failed)->toHaveCount(1)
         ->and(VendorSync::product('SJ', '215754')->status)->toBe('published')
         ->and(VendorSync::product('SJ', '215754')->getMedia('images'))->toHaveCount(6);
+});
+
+it('reports a missing first image on every run for as long as it is missing', function (): void {
+    Log::spy();
+    $link = importBestboot(brokenImages: ['BESTBOOT-BLK-HIRES']);
+    $hero = 'Product 215754: HERO IMAGE FAILED, left draft (no_image) until it downloads. 5 of 6 images saved, 1 failed (0 lock timeouts, 0 not attempted): ';
+
+    // The first run and a second run with the host still broken say the same.
+    foreach ([1, 2] as $attempt) {
+        $this->artisan('vendorsync:images', ['vendor' => 'SJ', '--product' => '215754'])->assertSuccessful();
+
+        $run = imageRun();
+
+        expect($run->status)->toBe('succeeded')
+            ->and(implode("\n", $run->messages))->toContain($hero.'https://ws.safetyjogger.com/image/')
+            ->and(implode("\n", $run->messages))->toContain('BESTBOOT-BLK-HIRES.PNG: download failed: HTTP 404')
+            ->and($run->errors)->toBe(1)
+            ->and($run->stats['partial_jobs'])->toBe(1)
+            ->and($run->stats['hero_failed_jobs'])->toBe(1)
+            ->and($run->stats['images_failed'])->toBe(1)
+            ->and(VendorSync::product('SJ', '215754')->status)->toBe('draft')
+            ->and($link->refresh()->draft_reasons)->toBe([DraftReason::NO_IMAGE])
+            ->and(VendorSync::product('SJ', '215754')->getMedia('images'))->toHaveCount(5)
+            ->and(SyncRun::query()->where('type', 'images')->count())->toBe($attempt);
+    }
+
+    Log::shouldHaveReceived('warning')->withArgs(fn (string $message): bool => str_contains($message, 'HERO IMAGE FAILED'))->twice();
+
+    // The status command states it too, as the message list is cut short.
+    $this->artisan('vendorsync:status')
+        ->expectsOutputToContain('1 partial, 1 with the first image missing (left draft); 1 images failed (0 lock timeouts, 0 not attempted); 0 failed jobs')
+        ->assertSuccessful();
+
+    // The host recovers: the third run completes the product and the line is gone.
+    VendorSync::fakeHttp();
+    $this->artisan('vendorsync:images', ['vendor' => 'SJ', '--product' => '215754'])->assertSuccessful();
+
+    expect(imageRun()->messages ?? [])->toBe([])
+        ->and(VendorSync::product('SJ', '215754')->status)->toBe('published')
+        ->and(VendorSync::product('SJ', '215754')->getMedia('images'))->toHaveCount(6);
+});
+
+it('fails the job and counts every lock timeout when the host throttle lock stays busy', function (): void {
+    $link = importBestboot();
+    freezeClock();
+
+    // Another worker (or a stuck process) holds the host's slot lock.
+    $held = Cache::lock(app(ImageDownloader::class)->lockKey('ws.safetyjogger.com'), 600);
+    expect($held->get())->toBeTrue();
+
+    $this->artisan('vendorsync:images', ['vendor' => 'SJ', '--product' => '215754'])->assertSuccessful();
+
+    $run = imageRun();
+
+    // No request was made, nothing was saved, and the report says why.
+    expect($run->status)->toBe('failed')
+        ->and($run->errors)->toBe(1)
+        ->and($run->stats['failed_jobs'])->toBe(1)
+        ->and($run->stats['lock_timeouts'])->toBe(6)
+        ->and($run->stats['images_failed'])->toBe(6)
+        ->and($run->messages[0])->toContain('none of the 6 images could be saved')
+        ->and($run->messages[0])->toContain('download failed: could not reserve a request slot on ws.safetyjogger.com within 5s (host throttle lock busy)')
+        ->and(VendorSync::product('SJ', '215754')->getMedia('images'))->toHaveCount(0)
+        ->and($link->refresh()->images_synced_at)->toBeNull();
+
+    Http::assertNotSent(fn (Request $request): bool => str_contains($request->url(), '/image/'));
+});
+
+it('counts a lock timeout on the first image as a failed hero, and the product stays draft', function (): void {
+    $link = importBestboot();
+    freezeClock();
+    config(['vendorsync.images.slot_lock_seconds' => 2]);
+
+    // The lock is held for 3 s: the first image gives up after 2 s, the second finds it free.
+    $held = Cache::lock(app(ImageDownloader::class)->lockKey('ws.safetyjogger.com'), 3);
+    expect($held->get())->toBeTrue();
+
+    $this->artisan('vendorsync:images', ['vendor' => 'SJ', '--product' => '215754'])->assertSuccessful();
+
+    $run = imageRun();
+
+    expect($run->status)->toBe('succeeded')
+        ->and($run->messages[0])->toContain('Product 215754: HERO IMAGE FAILED, left draft (no_image) until it downloads. 5 of 6 images saved, 1 failed (1 lock timeouts, 0 not attempted)')
+        ->and($run->messages[0])->toContain('could not reserve a request slot on ws.safetyjogger.com within 2s')
+        ->and($run->stats['lock_timeouts'])->toBe(1)
+        ->and($run->stats['hero_failed_jobs'])->toBe(1)
+        ->and(VendorSync::product('SJ', '215754')->status)->toBe('draft')
+        ->and(DB::table('failed_jobs')->count())->toBe(0);
+});
+
+it('reports a partial result, with the rest not attempted, when the time budget runs out', function (): void {
+    $link = importBestboot();
+    freezeClock();
+    // Every image takes 100 s to arrive.
+    VendorSync::slowImages(['BESTBOOT'], 100);
+
+    $run = app(RunRecorder::class)->start($link->vendor, ImageRun::TYPE);
+    $job = new SyncProductImages($link->id, false, $run->id);
+    // A 400 s timeout minus the 60 s margin leaves 340 s: the second image
+    // starts with 240 s left, the third with 140 s (197 s are needed).
+    $job->timeout = 400;
+    $job->handle(app(ProductImageSync::class));
+
+    $run->refresh();
+
+    expect($run->messages[0])->toContain('Product 215754: PARTIAL, 2 of 6 images saved, 4 failed (0 lock timeouts, 4 not attempted)')
+        ->and($run->messages[0])->toContain('not attempted: job time budget exhausted (140s left, a download can take up to 197s)')
+        ->and($run->stats['not_attempted'])->toBe(4)
+        ->and($run->stats['partial_jobs'])->toBe(1)
+        ->and($run->stats['hero_failed_jobs'])->toBe(0)
+        // The hero was saved, so the product is published with what it has.
+        ->and(VendorSync::product('SJ', '215754')->status)->toBe('published')
+        ->and(VendorSync::product('SJ', '215754')->getMedia('images'))->toHaveCount(2);
 });
