@@ -111,7 +111,7 @@ it('uses route names for every link in the header and footer', function (): void
     preg_match_all('#<(?:header|footer).*?</(?:header|footer)>#s', $html, $shell);
     preg_match_all('~href="([^"#]+)"~', implode('', $shell[0]), $hrefs);
 
-    $known = collect(['home', 'shop', 'about', 'contact', 'account', 'cart', 'checkout', 'terms', 'privacy', 'cookies', 'returns', 'delivery', 'accessibility', 'search', 'size-guide'])
+    $known = collect(['home', 'shop', 'about', 'contact', 'account', 'cart', 'checkout', 'terms', 'privacy', 'cookies', 'returns', 'delivery', 'accessibility', 'search', 'size-guide', 'technical-features'])
         ->map(fn (string $name): string => route($name));
 
     $categories = collect(app(CategoryMenu::class)->tree())
@@ -130,6 +130,32 @@ it('serves the size guide at /size-guide in the standard layout', function (): v
     expect($html)->toContain('Size Guide')
         ->and($html)->toContain('<title>Size Guide | ')
         ->and($html)->toContain('id="main"');
+});
+
+it('serves the technical features page at /technical-features in the standard layout', function (): void {
+    expect(route('technical-features', [], false))->toBe('/technical-features');
+
+    $html = $this->get(route('technical-features'))->assertOk()->getContent();
+
+    expect($html)->toContain('<title>Technical Features | ')
+        ->and($html)->toContain('id="main"')
+        ->and($html)->toContain('Technical features</h1>');
+});
+
+it('links to technical features straight after the size guide in the desktop and mobile menus', function (): void {
+    $html = $this->get(route('about'))->assertOk()->getContent();
+
+    preg_match('#<header.*?</header>#s', $html, $header);
+    preg_match_all('#<a href="([^"]+)"[^>]*>\s*(Size Guide|Technical Features)\s*</a>#', $header[0], $links, PREG_SET_ORDER);
+
+    $hrefs = array_column($links, 1);
+
+    // Desktop nav, then the mobile menu: each lists the size guide first.
+    expect($hrefs)->toBe([route('size-guide'), route('technical-features'), route('size-guide'), route('technical-features')]);
+
+    preg_match('#<footer.*?</footer>#s', $html, $footer);
+
+    expect($footer[0])->toMatch('#href="'.preg_quote(route('size-guide'), '#').'"[^>]*>Size Guide</a></li>\s*<li><a href="'.preg_quote(route('technical-features'), '#').'"[^>]*>Technical Features</a>#');
 });
 
 it('links to the size guide from the menus and the footer', function (): void {
