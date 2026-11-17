@@ -86,9 +86,10 @@ it('has the footer columns with the right links', function (): void {
     preg_match('#<h2[^>]*>Products</h2>(.*?)</nav>#s', $footer, $products);
 
     expect($products[1])->toContain('href="'.route('category', 'safety-footwear').'"')
-        ->and($products[1])->toContain('href="'.route('category', 'wellingtons').'"')
+        ->and($products[1])->toContain('href="'.route('category', 'non-safety-footwear').'"')
         // Children belong in the menu, not the footer.
-        ->and($products[1])->not->toContain('href="'.route('category', 'safety-footwear/safety-boots').'"');
+        ->and($products[1])->not->toContain('href="'.route('category', 'safety-footwear/safety-boots').'"')
+        ->and($products[1])->not->toContain('href="'.route('category', 'non-safety-footwear/wellingtons').'"');
 });
 
 it('uses the white logo on the brand-blue footer', function (): void {

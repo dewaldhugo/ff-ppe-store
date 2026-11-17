@@ -48,8 +48,9 @@ function facetCounts(string $html, string $facet): array
 it('lists the collection and its descendants', function (): void {
     $html = $this->get(route('category', 'safety-footwear'))->assertOk()->getContent();
 
-    expect(gridNames($html))->toEqualCanonicalizing(['LIGERO', 'SX310', 'FS9', 'FS65', 'FS30C'])
-        ->and($html)->toContain('5 products');
+    // Classic (occupational-footwear) is now a descendant of safety-footwear.
+    expect(gridNames($html))->toEqualCanonicalizing(['Classic', 'LIGERO', 'SX310', 'FS9', 'FS65', 'FS30C'])
+        ->and($html)->toContain('6 products');
 });
 
 it('returns 404 for an unknown category', function (): void {
@@ -77,16 +78,16 @@ it('reads every filter from the query string so filtered URLs can be shared', fu
 it('shows facet counts from the search index', function (): void {
     $html = $this->get(route('category', 'safety-footwear'))->getContent();
 
-    expect(facetCounts($html, 'brand'))->toBe(['Amblers Safety' => 2, 'Centek' => 1, 'Maxguard' => 1, 'Safety Jogger' => 1])
-        ->and(facetCounts($html, 'safety_class'))->toBe(['S1P' => 2, 'S3' => 1, 'SBP' => 1])
-        ->and(facetCounts($html, 'gender'))->toBe(['Men' => 3, 'Unisex' => 2]);
+    expect(facetCounts($html, 'brand'))->toBe(['Amblers Safety' => 2, 'Centek' => 1, 'Magnum' => 1, 'Maxguard' => 1, 'Safety Jogger' => 1])
+        ->and(facetCounts($html, 'safety_class'))->toBe(['OB' => 1, 'S1P' => 2, 'S3' => 1, 'SBP' => 1])
+        ->and(facetCounts($html, 'gender'))->toBe(['Men' => 4, 'Unisex' => 2]);
 });
 
 it('keeps a facet\'s own counts when one of its values is selected', function (): void {
     $html = $this->get(route('category', 'safety-footwear').'?brand[0]=Centek')->getContent();
 
     expect(gridNames($html))->toBe(['FS30C'])
-        ->and(facetCounts($html, 'brand'))->toBe(['Amblers Safety' => 2, 'Centek' => 1, 'Maxguard' => 1, 'Safety Jogger' => 1])
+        ->and(facetCounts($html, 'brand'))->toBe(['Amblers Safety' => 2, 'Centek' => 1, 'Magnum' => 1, 'Maxguard' => 1, 'Safety Jogger' => 1])
         ->and(facetCounts($html, 'gender'))->toBe(['Men' => 1]);
 });
 
@@ -107,7 +108,7 @@ it('shows an out of stock badge and hides the product when in stock only is tick
         ->set('in_stock', true)
         ->html();
 
-    expect(gridNames($inStock))->toEqualCanonicalizing(['LIGERO', 'FS9', 'FS65', 'FS30C']);
+    expect(gridNames($inStock))->toEqualCanonicalizing(['Classic', 'LIGERO', 'FS9', 'FS65', 'FS30C']);
 });
 
 it('filters by colour and size together as a combination', function (): void {
@@ -131,11 +132,12 @@ it('filters by price ex VAT', function (): void {
 it('sorts by price and by newest', function (): void {
     $sorted = fn (string $sort): array => gridNames($this->get(route('category', 'safety-footwear').'?sort='.$sort)->getContent());
 
-    // Ex VAT, FS65 and FS30C are both 40.48, so their order is a tie.
+    // Ex VAT, FS65 and FS30C are both 40.48, so their order is a tie. Classic
+    // (87.74, occupational-footwear) is the highest-priced descendant.
     expect($sorted('price-asc')[0])->toBeIn(['FS30C', 'FS65'])
-        ->and(array_slice($sorted('price-desc'), 0, 3))->toBe(['LIGERO', 'SX310', 'FS9'])
-        ->and(array_slice($sorted('price-desc'), 3))->toEqualCanonicalizing(['FS65', 'FS30C'])
-        ->and($sorted('newest'))->toHaveCount(5);
+        ->and(array_slice($sorted('price-desc'), 0, 3))->toBe(['Classic', 'LIGERO', 'SX310'])
+        ->and(array_slice($sorted('price-desc'), 3))->toEqualCanonicalizing(['FS9', 'FS65', 'FS30C'])
+        ->and($sorted('newest'))->toHaveCount(6);
 });
 
 it('shows prices ex VAT with the suffix', function (): void {

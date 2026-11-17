@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domain\Catalogue\Urls\CategoryUrl;
 use App\Http\Middleware\RedirectTrailingSlash;
 use App\Models\UrlRedirect;
 use Illuminate\Contracts\Http\Kernel;
@@ -217,11 +218,17 @@ describe('redirects after a category changes', function (): void {
     });
 
     it('keeps the menu links in step with the rename', function (): void {
+        $before = app(CategoryUrl::class)->forHandle('wellingtons');
+
         $category = Url::query()->where('slug', 'wellingtons')->sole();
         $category->update(['slug' => 'wellies']);
 
+        $after = app(CategoryUrl::class)->forHandle('wellingtons');
+
+        expect($after)->toEndWith('/wellies')->not->toBe($before);
+
         $this->get(route('shop'))
-            ->assertSee(route('category', 'wellies'), false)
-            ->assertDontSee('href="'.route('category', 'wellingtons').'"', false);
+            ->assertSee($after, false)
+            ->assertDontSee('href="'.$before.'"', false);
     });
 });

@@ -94,7 +94,7 @@ it('makes standard the default tax class', function (): void {
 
 it('resolves every product type handle in the contract', function (string $handle): void {
     expect(CatalogueKeys::productType($handle))->toBeInstanceOf(ProductType::class);
-})->with(['safety-footwear', 'workwear', 'gloves', 'head-protection']);
+})->with(['safety-footwear', 'workwear', 'gloves', 'head-protection', 'ppe', 'accessories']);
 
 it('resolves every collection handle in the contract', function (string $handle, string $group, ?string $parent): void {
     $collection = CatalogueKeys::collection($handle);
@@ -105,17 +105,63 @@ it('resolves every collection handle in the contract', function (string $handle,
         ->and($collection->parent_id)->toBe($parent === null ? null : CatalogueKeys::collection($parent)->id);
 })->with([
     ['safety-footwear', 'categories', null],
-    ['safety-trainers', 'categories', 'safety-footwear'],
-    ['safety-shoes', 'categories', 'safety-footwear'],
     ['safety-boots', 'categories', 'safety-footwear'],
-    ['occupational-footwear', 'categories', null],
-    ['slippers', 'categories', null],
-    ['plimsolls', 'categories', null],
-    ['casual-footwear', 'categories', null],
+    ['safety-shoes', 'categories', 'safety-footwear'],
+    ['safety-trainers', 'categories', 'safety-footwear'],
+    ['safety-wellingtons', 'categories', 'safety-footwear'],
+    ['occupational-footwear', 'categories', 'safety-footwear'],
+    ['metal-free-metatarsal', 'categories', 'safety-footwear'],
+    ['non-safety-footwear', 'categories', null],
+    ['casual-footwear', 'categories', 'non-safety-footwear'],
+    ['boots', 'categories', 'non-safety-footwear'],
+    ['sandals-summer-shoes', 'categories', 'non-safety-footwear'],
+    ['sports-trainers', 'categories', 'non-safety-footwear'],
+    ['hiking-outdoor', 'categories', 'non-safety-footwear'],
+    ['wellingtons', 'categories', 'non-safety-footwear'],
+    ['slippers', 'categories', 'non-safety-footwear'],
+    ['plimsolls', 'categories', 'non-safety-footwear'],
+    ['apparel', 'categories', null],
+    ['jackets-fleeces', 'categories', 'apparel'],
+    ['trousers-shorts', 'categories', 'apparel'],
+    ['tshirts-polos-shirts', 'categories', 'apparel'],
+    ['sweatshirts-hoodies', 'categories', 'apparel'],
+    ['activewear-loungewear', 'categories', 'apparel'],
+    ['base-layers', 'categories', 'apparel'],
+    ['coveralls', 'categories', 'apparel'],
+    ['ppe-gear', 'categories', null],
+    ['gloves', 'categories', 'ppe-gear'],
+    ['eye-face-protection', 'categories', 'ppe-gear'],
+    ['fall-protection', 'categories', 'ppe-gear'],
+    ['overshoes', 'categories', 'ppe-gear'],
+    ['hard-hats-helmets', 'categories', 'ppe-gear'],
+    ['hearing-protection', 'categories', 'ppe-gear'],
+    ['respiratory-protection', 'categories', 'ppe-gear'],
+    ['other-ppe', 'categories', 'ppe-gear'],
     ['accessories', 'categories', null],
-    ['wellingtons', 'categories', null],
+    ['socks', 'categories', 'accessories'],
+    ['hats-beanies-scarves', 'categories', 'accessories'],
+    ['insoles-laces-shoe-care', 'categories', 'accessories'],
+    ['bags-wallets', 'categories', 'accessories'],
+    ['sunglasses', 'categories', 'accessories'],
+    ['other-accessories', 'categories', 'accessories'],
     ['clearance', 'ranges', null],
 ]);
+
+it('seeds the five top-level categories and 35 leaves in menu order', function (): void {
+    $tree = Collection::query()
+        ->where('collection_group_id', CollectionGroup::query()->where('handle', 'categories')->sole()->id)
+        ->defaultOrder()
+        ->get()
+        ->toTree();
+
+    $handle = fn (Collection $collection): string => (string) CatalogueKeys::handleFor(KeyType::Collection, $collection);
+
+    expect($tree->map($handle)->all())->toBe(['safety-footwear', 'non-safety-footwear', 'apparel', 'ppe-gear', 'accessories'])
+        ->and($tree->first()->children->map($handle)->all())->toBe([
+            'safety-boots', 'safety-shoes', 'safety-trainers', 'safety-wellingtons', 'occupational-footwear', 'metal-free-metatarsal',
+        ])
+        ->and($tree->sum(fn (Collection $top): int => $top->children->count()))->toBe(35);
+});
 
 it('creates both collection groups', function (): void {
     expect(CollectionGroup::query()->pluck('handle')->sort()->values()->all())->toBe(['categories', 'ranges']);
@@ -131,7 +177,9 @@ it('creates every product attribute with its contract type', function (string $h
         ->and($mappedTo('safety-footwear'))->toBeTrue()
         ->and($mappedTo('workwear'))->toBe(! $footwearOnly)
         ->and($mappedTo('gloves'))->toBe(! $footwearOnly)
-        ->and($mappedTo('head-protection'))->toBe(! $footwearOnly);
+        ->and($mappedTo('head-protection'))->toBe(! $footwearOnly)
+        ->and($mappedTo('ppe'))->toBe(! $footwearOnly)
+        ->and($mappedTo('accessories'))->toBe(! $footwearOnly);
 })->with([
     ['name', TranslatedText::class, false],
     ['title', TranslatedText::class, false],

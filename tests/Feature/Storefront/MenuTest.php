@@ -36,7 +36,12 @@ it('lists the categories collection tree, with children, in the Products menu', 
     $html = $this->get(route('shop'))->getContent();
     $menu = productsMenu($html);
 
-    $paths = ['safety-footwear', 'safety-footwear/safety-trainers', 'safety-footwear/safety-shoes', 'safety-footwear/safety-boots', 'occupational-footwear', 'slippers', 'plimsolls', 'casual-footwear', 'accessories', 'wellingtons'];
+    $paths = [
+        'safety-footwear', 'safety-footwear/safety-boots', 'safety-footwear/safety-shoes', 'safety-footwear/safety-trainers',
+        'safety-footwear/safety-wellingtons', 'safety-footwear/occupational-footwear', 'safety-footwear/metal-free-metatarsal',
+        'non-safety-footwear', 'non-safety-footwear/slippers', 'non-safety-footwear/plimsolls', 'non-safety-footwear/casual-footwear', 'non-safety-footwear/wellingtons',
+        'apparel', 'ppe-gear', 'accessories',
+    ];
 
     foreach ($paths as $path) {
         expect($menu)->toContain('href="'.route('category', $path).'"');

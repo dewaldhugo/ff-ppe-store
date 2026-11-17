@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Domain\Catalogue\Collections\CategoryTree;
 use App\Domain\Catalogue\Keys\CatalogueKeys;
 use App\Domain\Catalogue\Keys\KeyType;
 use Illuminate\Database\Eloquent\Model;
@@ -45,6 +46,8 @@ final class CatalogueFoundationSeeder extends Seeder
         'workwear' => 'Workwear',
         'gloves' => 'Gloves',
         'head-protection' => 'Head protection',
+        'ppe' => 'PPE',
+        'accessories' => 'Accessories',
     ];
 
     /** Handle => [name, VAT percentage in the uk zone, default]. */
@@ -98,24 +101,7 @@ final class CatalogueFoundationSeeder extends Seeder
     ];
 
     /** Collection group handle => [group name, tree of handle => [name, children]]. */
-    private const array COLLECTIONS = [
-        'categories' => ['Categories', [
-            'safety-footwear' => ['Safety Footwear', [
-                'safety-trainers' => ['Safety Trainers', []],
-                'safety-shoes' => ['Safety Shoes', []],
-                'safety-boots' => ['Safety Boots', []],
-            ]],
-            'occupational-footwear' => ['Occupational Footwear', []],
-            'slippers' => ['Slippers', []],
-            'plimsolls' => ['Plimsolls', []],
-            'casual-footwear' => ['Casual Footwear', []],
-            'accessories' => ['Accessories', []],
-            'wellingtons' => ['Wellingtons', []],
-        ]],
-        'ranges' => ['Ranges', [
-            'clearance' => ['Clearance', []],
-        ]],
-    ];
+    private const array COLLECTIONS = CategoryTree::GROUPS;
 
     /** @var list<int> */
     private array $createdCollectionIds = [];

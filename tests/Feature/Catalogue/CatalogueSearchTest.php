@@ -15,8 +15,10 @@ use Tests\Support\SearchIndex;
 /*
  * Runs against the local Meilisearch instance, in the `testing_` index.
  *
- * The seeded fixture has five products under Safety Footwear:
+ * The seeded fixture has six products under Safety Footwear, now that
+ * occupational-footwear is a descendant of it in the contract tree:
  *
+ *   Classic  Magnum          OB   E FO SRA                ex 87.74  inc 105.29 (occupational-footwear)
  *   Ligero   Safety Jogger   S1P  SRC CI ESD METAL_FREE   ex 68.90  inc 82.68
  *   SX310    Maxguard        S3   SRC HI HRO WR CI ...    ex 59.99  inc 71.99  (no stock)
  *   FS9      Amblers Safety  SBP  P SRA                   ex 52.48  inc 52.48  (zero rated)
@@ -51,8 +53,8 @@ function names(ListingResult $result): array
 it('lists a collection together with its descendants', function (): void {
     $result = listing();
 
-    expect($result->total)->toBe(5)
-        ->and(names($result))->toEqualCanonicalizing(['LIGERO', 'SX310', 'FS9', 'FS65', 'FS30C']);
+    expect($result->total)->toBe(6)
+        ->and(names($result))->toEqualCanonicalizing(['Classic', 'LIGERO', 'SX310', 'FS9', 'FS65', 'FS30C']);
 });
 
 it('lists a leaf collection and a range', function (string $collection, array $expected): void {
@@ -78,7 +80,7 @@ it('counts a facet without its own selection, and other facets with it', functio
     $result = listing(['safety_class' => ['S1P']]);
 
     // Own facet: every class is still on offer.
-    expect($result->counts('safety_class'))->toBe(['S1P' => 2, 'S3' => 1, 'SBP' => 1])
+    expect($result->counts('safety_class'))->toBe(['OB' => 1, 'S1P' => 2, 'S3' => 1, 'SBP' => 1])
         // Other facets: narrowed to the S1P products.
         ->and($result->counts('brand'))->toBe(['Amblers Safety' => 1, 'Safety Jogger' => 1])
         ->and($result->counts('features'))->toBe(['CI' => 1, 'ESD' => 1, 'METAL_FREE' => 1, 'P' => 1, 'SRC' => 2]);
@@ -110,7 +112,7 @@ it('filters by price range ex VAT', function (): void {
 it('reports the price bounds ignoring the price filter', function (): void {
     $result = listing(['price_min' => 65]);
 
-    expect([$result->priceFloor, $result->priceCeiling])->toBe([4048, 6890]);
+    expect([$result->priceFloor, $result->priceCeiling])->toBe([4048, 8774]);
 });
 
 it('requires the colour and size combination to be in stock', function (): void {
@@ -125,7 +127,7 @@ it('requires the colour and size combination to be in stock', function (): void 
 
 it('excludes out of stock products when in stock only is selected', function (): void {
     expect(names(listing()))->toContain('SX310')
-        ->and(names(listing(['in_stock' => '1'])))->toEqualCanonicalizing(['LIGERO', 'FS9', 'FS65', 'FS30C']);
+        ->and(names(listing(['in_stock' => '1'])))->toEqualCanonicalizing(['Classic', 'LIGERO', 'FS9', 'FS65', 'FS30C']);
 });
 
 it('only offers sizes and colours that are in stock, sizes in numeric order', function (): void {
@@ -137,9 +139,11 @@ it('only offers sizes and colours that are in stock, sizes in numeric order', fu
 });
 
 it('sorts by the ex VAT price', function (): void {
-    // FS65 and FS30C are both 40.48 ex VAT, so their order is a tie.
+    // FS65 and FS30C are both 40.48 ex VAT, so their order is a tie. Classic
+    // (87.74, occupational-footwear) is now a descendant of Safety Footwear
+    // and is the highest-priced product, so it sorts first descending.
     expect(names(listing(['sort' => 'price-asc']))[0])->toBeIn(['FS30C', 'FS65'])
-        ->and(array_slice(names(listing(['sort' => 'price-desc'])), 0, 3))->toBe(['LIGERO', 'SX310', 'FS9']);
+        ->and(array_slice(names(listing(['sort' => 'price-desc'])), 0, 3))->toBe(['Classic', 'LIGERO', 'SX310']);
 });
 
 it('searches by term', function (string $term, string $expected): void {
