@@ -48,6 +48,28 @@ function enabledSizes(string $html): array
     return $matches[1];
 }
 
+it('shows a breadcrumb: Products, the category path, then the product as the current page, with no Home', function (): void {
+    $html = $this->get(route('product', 'safety-jogger-ligero'))->assertOk()->getContent();
+
+    preg_match('#<nav aria-label="Breadcrumb".*?</nav>#s', $html, $nav);
+    // Livewire adds <!--[if BLOCK]--> markers around @if blocks, so skip comments between the tags.
+    preg_match_all('#<li([^>]*)>\s*(?:<!--.*?-->\s*)*(?:<a href="([^"]+)"[^>]*>([^<]+)</a>|<span[^>]*>([^<]+)</span>)#s', $nav[0], $items, PREG_SET_ORDER);
+
+    $trail = array_map(fn (array $item): array => [$item[3] !== '' ? $item[3] : $item[4], $item[2] ?: null], $items);
+
+    expect($trail)->toBe([
+        ['Products', route('shop')],
+        ['Safety Footwear', route('category', 'safety-footwear')],
+        ['Safety Shoes', route('category', 'safety-footwear/safety-shoes')],
+        ['LIGERO', null],
+    ])
+        // The current page is text, marked aria-current, and it is the last item.
+        ->and(substr_count($nav[0], 'aria-current="page"'))->toBe(1)
+        ->and($items[3][1])->toContain('aria-current="page"')
+        // The breadcrumb sits above the product heading.
+        ->and(strpos($html, 'aria-label="Breadcrumb"'))->toBeLessThan(strpos($html, 'id="product-heading"'));
+});
+
 it('shows the product with its price, description and specification', function (): void {
     $this->get(route('product', 'safety-jogger-ligero'))
         ->assertOk()
