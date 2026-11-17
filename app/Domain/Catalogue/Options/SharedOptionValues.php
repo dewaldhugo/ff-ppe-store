@@ -51,9 +51,10 @@ final class SharedOptionValues
                 'meta' => $meta,
             ]);
 
-        // A size's sort is canonical (see ShoeSizes), so a value created before
-        // the canonical scale existed is brought up to date when it is used.
-        if ($option === 'shoe_size' && isset($meta['sort']) && (float) ($value->meta['sort'] ?? -1) !== (float) $meta['sort']) {
+        // A size's sort is canonical (see ShoeSizes and GarmentSizes), so a
+        // value created before the canonical scale existed is brought up to
+        // date when it is used.
+        if (in_array($option, ['shoe_size', 'garment_size'], true) && isset($meta['sort']) && (float) ($value->meta['sort'] ?? -1) !== (float) $meta['sort']) {
             $value->update(['meta' => [...($value->meta?->toArray() ?? []), 'sort' => $meta['sort']]]);
         }
 

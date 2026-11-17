@@ -225,6 +225,7 @@ final class FootsureSource implements VendorSource
                         fn (array $row): array => array_diff_key($row, [CsvColumns::FILE_DATE => true]),
                         $rows,
                     )],
+                    name: $rows[0]['Short Product Name'] ?? null,
                 );
 
                 unset($rows);

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domain\VendorSync\SafetyJogger;
 
+use App\Domain\Catalogue\Collections\CategoryTree;
+use App\Domain\Catalogue\Options\GarmentSizes;
 use App\Domain\Catalogue\Options\ShoeSizes;
 use App\Domain\VendorSync\Contracts\VendorMapper;
 use App\Domain\VendorSync\Data\MappingResult;
@@ -46,13 +48,29 @@ final readonly class SafetyJoggerMapper implements VendorMapper
         $this->scope = new SafetyJoggerScope($config);
     }
 
+    /**
+     * Article types that need no norm to be in scope, and the Lunar product
+     * type their collection leaf does not otherwise decide (an unmapped
+     * sub-category still needs a product type to be written at all).
+     */
+    private const array NON_FOOTWEAR_PRODUCT_TYPE = [
+        'workwear' => 'workwear',
+        'gloves' => 'gloves',
+        'head_protection' => 'head-protection',
+        'fall_protection' => 'ppe',
+        'overshoes' => 'ppe',
+        'accessories' => 'accessories',
+    ];
+
     public function map(RawRecord $record): MappingResult
     {
         $data = $record->payload;
         $vendorName = (string) ($data['name'] ?? '');
         $label = "{$vendorName} [{$record->externalId}]";
 
-        // Scope: an article type on the list AND an EN ISO 20345 or 20347 norm.
+        // Scope: an article type on the list. `shoes` additionally needs an
+        // EN ISO 20345 or 20347 norm (SafetyJoggerScope); every other listed
+        // article type is in scope on its own.
         $articleTypes = $this->names($data['articletype'] ?? []);
         $facts = [];
 
@@ -65,17 +83,21 @@ final readonly class SafetyJoggerMapper implements VendorMapper
             return MappingResult::outOfScope('article_type', $facts);
         }
 
+        $brand = (string) ($data['brandDescription'] ?? '');
+
+        if (collect($this->config['excluded_brands'] ?? [])->contains(fn (string $excluded): bool => Str::lower($excluded) === Str::lower($brand))) {
+            return MappingResult::outOfScope('excluded_brand');
+        }
+
+        if ($articleType !== SafetyJoggerScope::FOOTWEAR_ARTICLE_TYPE) {
+            return $this->mapNonFootwear($record, $data, $articleType, $brand, $label, $facts);
+        }
+
         $norms = $this->values($data['norms'] ?? []);
         $family = $this->scope->family($norms);
 
         if ($family === null) {
             return MappingResult::outOfScope('no_en_iso_norm', $facts);
-        }
-
-        $brand = (string) ($data['brandDescription'] ?? '');
-
-        if (collect($this->config['excluded_brands'] ?? [])->contains(fn (string $excluded): bool => Str::lower($excluded) === Str::lower($brand))) {
-            return MappingResult::outOfScope('excluded_brand');
         }
 
         $messages = [];
@@ -91,6 +113,14 @@ final readonly class SafetyJoggerMapper implements VendorMapper
         if ($collection === null) {
             $draftReasons[] = DraftReason::UNMAPPED_CATEGORY;
             $messages[] = "{$label}: article type '{$articleType}' with model '".($model ?? 'none')."' ({$family}) is not mapped to a collection (draft reason unmapped_category).";
+        }
+
+        // A "Winterbox" bundle (a boot plus socks, gloves and a beanie under
+        // one SKU): the vendor's own name starts with PROMO. Drafted for
+        // review rather than published as a single boot.
+        if (Str::startsWith(Str::upper($vendorName), 'PROMO')) {
+            $draftReasons[] = DraftReason::BUNDLE;
+            $messages[] = "{$label}: the vendor's name starts with PROMO, which looks like a bundle, not a single product (draft reason bundle).";
         }
 
         $cut = $model === null ? null : ($this->config['cut_map'][$model] ?? null);
@@ -233,6 +263,187 @@ final readonly class SafetyJoggerMapper implements VendorMapper
     }
 
     /**
+     * Workwear, gloves, head protection, fall protection, overshoes and
+     * accessories: none of it is sized on the shoe scale, none of it carries
+     * an EN ISO 20345/20347 norm, and none of the footwear-only attributes
+     * (safety class, toecap, cut, ...) apply.
+     *
+     * @param  array<string, mixed>  $data
+     * @param  list<array{0: string, 1: string}>  $facts
+     */
+    private function mapNonFootwear(RawRecord $record, array $data, string $articleType, string $brand, string $label, array $facts): MappingResult
+    {
+        $messages = [];
+        $draftReasons = [];
+
+        [$collection, $categoryFact] = $this->nonFootwearCollection($data, $articleType);
+        $facts[] = ['category', $categoryFact];
+
+        if ($collection === null) {
+            $draftReasons[] = DraftReason::UNMAPPED_CATEGORY;
+            $messages[] = "{$label}: {$categoryFact} is not mapped to a collection (draft reason unmapped_category).";
+        }
+
+        $codes = $this->values($data['features'] ?? []);
+
+        foreach ($this->names($data['benefits'] ?? [], lower: false) as $benefit) {
+            if (isset($this->config['benefit_map'][$benefit])) {
+                $codes[] = $this->config['benefit_map'][$benefit];
+            }
+        }
+
+        [$features, $unknownFeatures] = $this->features->normalise($codes);
+
+        foreach ($unknownFeatures as $code) {
+            $facts[] = ['unknown_feature', $code];
+        }
+
+        if ($unknownFeatures !== []) {
+            $messages[] = "{$label}: unknown feature codes dropped: ".implode(', ', $unknownFeatures).'.';
+        }
+
+        $weight = $this->weight($data['sample-weight'] ?? []);
+        $variants = [];
+        $images = [];
+        $related = [];
+
+        foreach ($data['colors'] ?? [] as $colourData) {
+            $vendorColour = trim((string) ($colourData['description'] ?? ''));
+            $colour = $vendorColour === '' ? null : Str::title(Str::lower($vendorColour));
+
+            if ($colour === null) {
+                $messages[] = "{$label}: a colour has no description; its SKUs were skipped.";
+
+                continue;
+            }
+
+            foreach ($colourData['alternatives'] ?? [] as $alternative) {
+                if (filled($alternative['productId'] ?? null)) {
+                    $related[(string) $alternative['productId']] = true;
+                }
+            }
+
+            $hex = $this->hex($colourData['hexValue'] ?? null);
+            $created = 0;
+
+            foreach ($colourData['skus'] ?? [] as $sku) {
+                $variant = $this->garmentVariant($sku, (string) ($data['name'] ?? ''), $vendorColour, $colour, $hex, $weight, $label, $messages, $facts);
+
+                if ($variant !== null) {
+                    $variants[] = $variant;
+                    $created++;
+                }
+            }
+
+            if ($created > 0) {
+                array_push($images, ...$this->images($colourData['images'] ?? [], $colour));
+            }
+        }
+
+        $noUsableSize = $variants === [] && collect($facts)->contains(fn (array $fact): bool => $fact[0] === 'unknown_size');
+
+        if ($noUsableSize) {
+            $draftReasons[] = DraftReason::UNKNOWN_SIZE;
+        }
+
+        $costAboveRrp = SkuIssues::count($messages, SkuIssues::COST_ABOVE_RRP);
+        $nonGbp = SkuIssues::count($messages, SkuIssues::NON_GBP);
+        $messages = SkuIssues::collapse($label, $messages);
+
+        if ($nonGbp > 0) {
+            $draftReasons[] = DraftReason::NON_GBP_PRICE;
+        }
+
+        if ($variants === [] && ! $noUsableSize) {
+            $draftReasons[] = DraftReason::NO_SELLABLE_PRICE;
+            $messages[] = "{$label}: nothing can be sold at a price (draft reason no_sellable_price).";
+        }
+
+        if ($variants !== [] && $costAboveRrp === count($variants)) {
+            $draftReasons[] = DraftReason::COST_AT_OR_ABOVE_RRP;
+            $messages[] = "{$label}: every variant has a cost at or above its RRP; product drafted for data review.";
+        }
+
+        $vendorName = (string) ($data['name'] ?? '');
+
+        return MappingResult::product(new NormalisedProduct(
+            vendorCode: self::VENDOR_CODE,
+            vendorProductId: $record->externalId,
+            label: $label,
+            productType: $collection === null ? (self::NON_FOOTWEAR_PRODUCT_TYPE[$articleType] ?? 'accessories') : CategoryTree::productType($collection),
+            brand: $brand === '' ? null : $brand,
+            name: $this->productName((string) ($data['commercialName'] ?? $vendorName) ?: $vendorName),
+            title: $this->first($data['productTitles'] ?? []),
+            shortDescription: $this->first($data['shortDescriptions'] ?? []),
+            description: $this->first($data['product-long-description'] ?? []),
+            keyPoints: $this->keyPoints($data['keyFeatures'] ?? []),
+            safetyClass: null,
+            features: $features,
+            standards: [],
+            toecap: null,
+            midsole: null,
+            outsole: null,
+            upper: null,
+            lining: null,
+            cut: null,
+            fastening: null,
+            industries: $this->values($data['industries'] ?? []),
+            gender: 'Unisex',
+            countryOfOrigin: $this->country($data['countryOfOrigin'] ?? null),
+            videoUrl: $this->video($data['productVideos'] ?? []),
+            certificates: [],
+            collections: $collection === null ? [] : [$collection],
+            clearance: false,
+            draftReasons: array_values(array_unique($draftReasons)),
+            commodityCode: $this->commodityCode($data['taricCodes'] ?? []),
+            relatedVendorProductIds: array_map(strval(...), array_keys($related)),
+            variants: $variants,
+            images: $images,
+        ), $messages, $facts);
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array{0: ?string, 1: string} Collection handle (null when
+     *                                      unmapped) and the fact line that
+     *                                      names what was looked up.
+     */
+    private function nonFootwearCollection(array $data, string $articleType): array
+    {
+        if ($articleType === 'workwear') {
+            $code = $this->names($data['workwear_product_category'] ?? [])[0] ?? null;
+            $collection = $code === null ? null : ($this->config['workwear_categories'][$code] ?? null);
+
+            return [$collection, "workwear category '".($code ?? 'none')."' => ".($collection ?? 'UNMAPPED')];
+        }
+
+        if ($articleType === 'head_protection') {
+            $code = $this->names($data['headprotection_product_subcategory'] ?? [])[0] ?? null;
+            $collection = $code === null ? null : ($this->config['head_protection_categories'][$code] ?? null);
+
+            return [$collection, "head protection subcategory '".($code ?? 'none')."' => ".($collection ?? 'UNMAPPED')];
+        }
+
+        if ($articleType === 'accessories') {
+            $name = Str::upper((string) ($data['name'] ?? ''));
+            $collection = match (true) {
+                str_contains($name, 'FIT'), str_contains($name, 'FOAM') => 'insoles-laces-shoe-care',
+                str_contains($name, 'WATCH'), str_contains($name, 'BEANIE') => 'hats-beanies-scarves',
+                default => 'other-accessories',
+            };
+
+            // Always resolves: a name-based rule, not a lookup table, because
+            // the vendor gives this article type no categorisation field.
+            return [$collection, "accessories (by name) => {$collection}"];
+        }
+
+        // gloves, fall_protection, overshoes: exactly one destination each.
+        $collection = $this->config['simple_categories'][$articleType] ?? null;
+
+        return [$collection, "article type '{$articleType}' => ".($collection ?? 'UNMAPPED')];
+    }
+
+    /**
      * @param  array<string, mixed>  $sku
      * @param  list<string>  $messages
      * @param  list<string>  $draftReasons
@@ -329,6 +540,97 @@ final readonly class SafetyJoggerMapper implements VendorMapper
             vendorProductName: $vendorName,
             vendorColour: $vendorColour,
             vendorSize: $eu,
+            nonGbpCurrency: $currency,
+        );
+    }
+
+    /**
+     * A variant for everything that is not sized on the shoe scale: garment
+     * sizing, always standard rate, no EU size. Multi-unit SKUs (a pack or a
+     * box, `pieces` or `buyPer` not 1) are skipped and reported exactly as a
+     * footwear SKU of the same shape is, pending the vendor confirming
+     * whether such a price is for one unit or the whole pack.
+     *
+     * @param  list<string>  $messages
+     * @param  list<array{0: string, 1: string}>  $facts
+     */
+    private function garmentVariant(
+        array $sku,
+        string $vendorName,
+        string $vendorColour,
+        string $colour,
+        ?string $hex,
+        ?float $weight,
+        string $label,
+        array &$messages,
+        array &$facts,
+    ): ?NormalisedVariant {
+        $skuId = (string) ($sku['id'] ?? '');
+
+        if ($skuId === '') {
+            return null;
+        }
+
+        if ((int) ($sku['pieces'] ?? 1) !== 1 || (int) ($sku['buyPer'] ?? 1) !== 1) {
+            $messages[] = [SkuIssues::NOT_PER_PAIR, $skuId];
+
+            return null;
+        }
+
+        $raw = trim((string) ($sku['sizeRange'] ?? ''));
+        $size = GarmentSizes::name($raw) ?? GarmentSizes::ONE_SIZE_LABEL;
+
+        $cost = Money::toPence($sku['customerPrice']['value'] ?? null);
+        $rrp = Money::toPence($sku['rrpPrice']['value'] ?? null);
+        $price = $this->prices->calculate(
+            $cost,
+            $rrp === null ? null : Money::exVat($rrp, (int) ($this->config['rrp_vat_basis_points'] ?? 2000)),
+        );
+
+        if ($price['price'] === null) {
+            $messages[] = [SkuIssues::NO_COST, $skuId];
+
+            return null;
+        }
+
+        $currency = PriceCurrency::issue($sku);
+
+        if ($currency !== null) {
+            $facts[] = ['non_gbp_currency', $currency];
+            $messages[] = [SkuIssues::NON_GBP, $skuId, $currency];
+            $cost = null;
+            $price = ['price' => null, 'compare' => null, 'sellable' => false, 'reason' => null];
+        }
+
+        if ($price['reason'] === PriceCalculator::COST_AT_OR_ABOVE_RRP) {
+            $messages[] = [SkuIssues::COST_ABOVE_RRP, $skuId];
+        }
+
+        $ean = trim((string) ($sku['eanCode'] ?? ''));
+
+        return new NormalisedVariant(
+            vendorSku: $skuId,
+            sku: self::VENDOR_CODE.'-'.$skuId,
+            ean: $ean === '' ? null : $ean,
+            colour: $colour,
+            colourHex: $hex,
+            shoeSize: $size,
+            sizeSort: GarmentSizes::sort($size),
+            euSize: null,
+            vendorStock: max(0, (int) ($sku['stock'] ?? 0)),
+            sellable: $price['sellable'],
+            price: $price['price'],
+            comparePrice: $price['compare'],
+            costPrice: $cost,
+            taxClass: 'standard',
+            weightKg: $weight,
+            lengthMm: null,
+            widthMm: null,
+            heightMm: null,
+            vendorProductName: $vendorName,
+            vendorColour: $vendorColour,
+            vendorSize: $raw === '' ? null : $raw,
+            sizeOptionHandle: 'garment_size',
             nonGbpCurrency: $currency,
         );
     }

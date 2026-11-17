@@ -68,7 +68,9 @@ final class StorefrontProductIndexer extends ProductIndexer
 
         foreach ($inStock as $variant) {
             $colour = $variant->values->firstWhere('option.handle', 'colour');
-            $size = $variant->values->firstWhere('option.handle', 'shoe_size');
+            // Every product is sized by exactly one of these two options.
+            $size = $variant->values->firstWhere('option.handle', 'shoe_size')
+                ?? $variant->values->firstWhere('option.handle', 'garment_size');
 
             $colourSlug = $colour === null ? null : Str::slug($colour->translate('name'));
             $sizeName = $size?->translate('name');

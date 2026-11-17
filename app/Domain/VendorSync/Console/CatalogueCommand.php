@@ -42,7 +42,9 @@ final class CatalogueCommand extends Command
 
         $started = microtime(true);
         $dryRun = (bool) $this->option('dry-run');
-        $report = $importer->run($vendor, $dryRun, (bool) $this->option('force'), accepted: $accepted);
+        $report = $importer->run($vendor, $dryRun, (bool) $this->option('force'), accepted: $accepted, onProduct: function (string $name, int $seen, int $total): void {
+            $this->line("{$name} ({$seen} of {$total})");
+        });
 
         $this->render($report);
 

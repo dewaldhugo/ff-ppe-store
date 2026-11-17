@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Catalogue\Search;
 
+use App\Domain\Catalogue\Options\GarmentSizes;
 use Lunar\Models\Product;
 use Meilisearch\Client;
 use Meilisearch\Contracts\SearchQuery;
@@ -194,7 +195,13 @@ final class CatalogueSearch
         $values = array_map(strval(...), array_keys($distribution));
 
         if ($facet === 'size') {
-            usort($values, fn (string $a, string $b): int => (float) $a <=> (float) $b);
+            // Shoe sizes are plain numbers (`10`, `3.5`); garment sizes mix
+            // the alphabetic scale, waist and chest measurements, and
+            // vendor wording GarmentSizes does not recognise. A value that
+            // is not a number sorts by GarmentSizes::sort() instead, so a
+            // listing with both kinds still orders sensibly.
+            $rank = fn (string $value): float => is_numeric($value) ? (float) $value : GarmentSizes::sort($value);
+            usort($values, fn (string $a, string $b): int => $rank($a) <=> $rank($b));
         } else {
             sort($values, SORT_NATURAL | SORT_FLAG_CASE);
         }

@@ -35,4 +35,12 @@ final class DraftReason
     public const string MISSING_FROM_FEED = 'missing_from_feed';
 
     public const string NO_IMAGE = 'no_image';
+
+    /**
+     * Looks like several physical items sold under one SKU (a vendor
+     * "Winterbox" bundle: a boot, socks, gloves and a beanie), not a single
+     * product. Drafted for review rather than published under a single
+     * category and a single image set.
+     */
+    public const string BUNDLE = 'bundle';
 }

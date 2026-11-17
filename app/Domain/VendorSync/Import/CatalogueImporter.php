@@ -16,6 +16,7 @@ use App\Domain\VendorSync\Models\Vendor;
 use App\Domain\VendorSync\Models\VendorProduct;
 use App\Domain\VendorSync\Normalisers\PricingRules;
 use App\Domain\VendorSync\Support\RequestTimer;
+use Closure;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\File;
@@ -61,8 +62,12 @@ final class CatalogueImporter
     /**
      * @param  bool  $dryRun  Run everything except the writes: the database is not touched and no file is archived.
      * @param  bool  $force  Reprocess products whose payload is unchanged.
+     * @param  (Closure(string, int, int): void)|null  $onProduct  Called once per record the source yields, with its
+     *                                                             display name, how many have been seen so far
+     *                                                             (1-based) and the total the source reported. Pure
+     *                                                             progress output: never affects what is imported.
      */
-    public function run(string $vendorCode, bool $dryRun = false, bool $force = false, ?VendorSource $source = null, AcceptedPrices $accepted = new AcceptedPrices): RunReport
+    public function run(string $vendorCode, bool $dryRun = false, bool $force = false, ?VendorSource $source = null, AcceptedPrices $accepted = new AcceptedPrices, ?Closure $onProduct = null): RunReport
     {
         $code = strtoupper($vendorCode);
         $source ??= $this->container->make("vendorsync.source.{$code}");
@@ -74,8 +79,8 @@ final class CatalogueImporter
         $this->startedAt = microtime(true);
 
         return $dryRun
-            ? $this->dryRun($code, $source, $mapper, $force)
-            : $this->realRun($code, $source, $mapper, $force);
+            ? $this->dryRun($code, $source, $mapper, $force, $onProduct)
+            : $this->realRun($code, $source, $mapper, $force, $onProduct);
     }
 
     /**
@@ -84,7 +89,7 @@ final class CatalogueImporter
      * leaves no record. Taking the lock also fails any earlier run of this
      * vendor that is still marked running: the lock proves nothing else is.
      */
-    private function realRun(string $code, VendorSource $source, VendorMapper $mapper, bool $force): RunReport
+    private function realRun(string $code, VendorSource $source, VendorMapper $mapper, bool $force, ?Closure $onProduct): RunReport
     {
         $vendor = $this->runs->vendor($code);
         $lock = $this->runs->lock($vendor, self::TYPE);
@@ -97,13 +102,13 @@ final class CatalogueImporter
         }
 
         try {
-            return $this->performRealRun($code, $vendor, $source, $mapper, $force);
+            return $this->performRealRun($code, $vendor, $source, $mapper, $force, $onProduct);
         } finally {
             $lock->release();
         }
     }
 
-    private function performRealRun(string $code, Vendor $vendor, VendorSource $source, VendorMapper $mapper, bool $force): RunReport
+    private function performRealRun(string $code, Vendor $vendor, VendorSource $source, VendorMapper $mapper, bool $force, ?Closure $onProduct): RunReport
     {
         $report = new RunReport($code, self::TYPE);
         $run = $this->runs->start($vendor, self::TYPE);
@@ -118,9 +123,9 @@ final class CatalogueImporter
             $writer = $this->container->make(CatalogueWriter::class);
 
             // Bulk writers must not sync to search row by row (see CLAUDE.md).
-            Product::withoutSyncingToSearch(function () use ($vendor, $batch, $mapper, $writer, $report, $force, $run): void {
-                Brand::withoutSyncingToSearch(function () use ($vendor, $batch, $mapper, $writer, $report, $force, $run): void {
-                    $this->process($vendor, $batch, $mapper, $writer, $report, $force, $run);
+            Product::withoutSyncingToSearch(function () use ($vendor, $batch, $mapper, $writer, $report, $force, $run, $onProduct): void {
+                Brand::withoutSyncingToSearch(function () use ($vendor, $batch, $mapper, $writer, $report, $force, $run, $onProduct): void {
+                    $this->process($vendor, $batch, $mapper, $writer, $report, $force, $run, $onProduct);
                 });
             });
 
@@ -157,7 +162,7 @@ final class CatalogueImporter
      * database is read, never written. Rules that only the writer applies
      * (a cross-vendor EAN duplicate) are not evaluated.
      */
-    private function dryRun(string $code, VendorSource $source, VendorMapper $mapper, bool $force): RunReport
+    private function dryRun(string $code, VendorSource $source, VendorMapper $mapper, bool $force, ?Closure $onProduct): RunReport
     {
         $report = new RunReport($code, self::TYPE, dryRun: true);
 
@@ -169,7 +174,7 @@ final class CatalogueImporter
                 $this->assertEnoughProducts($vendor, $batch);
             }
 
-            $this->process($vendor, $batch, $mapper, null, $report, $force, null);
+            $this->process($vendor, $batch, $mapper, null, $report, $force, null, $onProduct);
             $report->finish(RunReport::SUCCEEDED);
         } catch (SourceAborted $exception) {
             $report->finish(RunReport::ABORTED, $exception->getMessage());
@@ -228,13 +233,17 @@ final class CatalogueImporter
     /**
      * @param  CatalogueWriter|null  $writer  Null in a dry run.
      */
-    private function process(?Vendor $vendor, SourceBatch $batch, VendorMapper $mapper, ?CatalogueWriter $writer, RunReport $report, bool $force, ?SyncRun $run): void
+    private function process(?Vendor $vendor, SourceBatch $batch, VendorMapper $mapper, ?CatalogueWriter $writer, RunReport $report, bool $force, ?SyncRun $run, ?Closure $onProduct): void
     {
         // Vendor product IDs still in the feed and in scope. Strings only.
         $present = [];
 
         foreach ($batch->records as $record) {
             $report->seen++;
+
+            if ($onProduct !== null) {
+                $onProduct($record->name ?? $record->externalId, $report->seen, $batch->total);
+            }
 
             if ($this->record($vendor, $record, $mapper, $writer, $report, $force, $run)) {
                 $present[$record->externalId] = true;

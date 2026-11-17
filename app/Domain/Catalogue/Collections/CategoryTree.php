@@ -112,4 +112,45 @@ final class CategoryTree
     {
         return array_keys(array_filter(self::parents(), fn (?string $parent): bool => $parent !== null));
     }
+
+    /** The two top-level categories whose products are sized in UK shoe sizes. */
+    public const array FOOTWEAR_TOPS = ['safety-footwear', 'non-safety-footwear'];
+
+    public static function isFootwear(string $leafHandle): bool
+    {
+        return in_array(self::parents()[$leafHandle] ?? null, self::FOOTWEAR_TOPS, true);
+    }
+
+    /**
+     * Contract product type handle for a leaf. Every footwear leaf is
+     * `safety-footwear`; every other leaf is listed here.
+     */
+    public const array LEAF_PRODUCT_TYPE = [
+        'jackets-fleeces' => 'workwear',
+        'trousers-shorts' => 'workwear',
+        'tshirts-polos-shirts' => 'workwear',
+        'sweatshirts-hoodies' => 'workwear',
+        'activewear-loungewear' => 'workwear',
+        'base-layers' => 'workwear',
+        'coveralls' => 'workwear',
+        'gloves' => 'gloves',
+        'eye-face-protection' => 'head-protection',
+        'hard-hats-helmets' => 'head-protection',
+        'hearing-protection' => 'head-protection',
+        'respiratory-protection' => 'head-protection',
+        'fall-protection' => 'ppe',
+        'overshoes' => 'ppe',
+        'other-ppe' => 'ppe',
+        'socks' => 'accessories',
+        'hats-beanies-scarves' => 'accessories',
+        'insoles-laces-shoe-care' => 'accessories',
+        'bags-wallets' => 'accessories',
+        'sunglasses' => 'accessories',
+        'other-accessories' => 'accessories',
+    ];
+
+    public static function productType(string $leafHandle): string
+    {
+        return self::isFootwear($leafHandle) ? 'safety-footwear' : (self::LEAF_PRODUCT_TYPE[$leafHandle] ?? 'accessories');
+    }
 }

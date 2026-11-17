@@ -215,7 +215,7 @@ final class CatalogueWriter
 
         $product->productOptions()->attach([
             $this->optionValues->option('colour')->id => ['position' => 1],
-            $this->optionValues->option('shoe_size')->id => ['position' => 2],
+            $this->optionValues->option($this->sizeOption($data))->id => ['position' => 2],
         ]);
 
         $this->colourValues($data);
@@ -466,8 +466,13 @@ final class CatalogueWriter
             'height_unit' => 'mm',
         ];
 
-        if ($existing === null || (string) $existing->attr('eu_size') !== (string) $data->euSize) {
-            $columns['attribute_data'] = filled($data->euSize) ? ['eu_size' => new Text($data->euSize)] : [];
+        // No EU size exists outside shoe_size; a product switching option
+        // (should never happen in practice, but the check costs nothing)
+        // never leaves a stale eu_size behind.
+        $euSize = $data->sizeOptionHandle === 'shoe_size' ? $data->euSize : null;
+
+        if ($existing === null || (string) $existing->attr('eu_size') !== (string) $euSize) {
+            $columns['attribute_data'] = filled($euSize) ? ['eu_size' => new Text($euSize)] : [];
         }
 
         return $columns;
@@ -497,12 +502,21 @@ final class CatalogueWriter
         return [
             $this->optionValues->value('colour', $data->colour, ['hex' => $data->colourHex])->id,
             $this->optionValues->value(
-                'shoe_size',
+                $data->sizeOptionHandle,
                 $data->shoeSize,
                 ['sort' => $data->sizeSort],
                 max(0, (int) round($data->sizeSort * 10)),
             )->id,
         ];
+    }
+
+    /**
+     * The size option a product is sold by: every variant of one product
+     * shares the same size kind, so the first variant decides it.
+     */
+    private function sizeOption(NormalisedProduct $data): string
+    {
+        return $data->variants[0]->sizeOptionHandle ?? 'shoe_size';
     }
 
     /**

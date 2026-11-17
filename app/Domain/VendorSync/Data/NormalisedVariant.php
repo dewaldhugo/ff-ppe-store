@@ -19,9 +19,13 @@ final readonly class NormalisedVariant
         // Customer-facing colour name, title case.
         public string $colour,
         public ?string $colourHex,
-        // UK size as the option value, e.g. `10`, `10.5`, `Kids 10`.
+        // The size option value, e.g. `10`, `10.5`, `Kids 10` (shoe_size), or
+        // `M`, `34"`, `One Size` (garment_size). Despite the name, this is
+        // used for every size kind: see $sizeOptionHandle.
         public string $shoeSize,
         public float $sizeSort,
+        // Set only for a shoe_size variant; null for garment_size (no EU
+        // size exists for clothing, gloves or PPE).
         public ?string $euSize,
         // The vendor's stock figure, before the safety buffer.
         public int $vendorStock,
@@ -43,6 +47,9 @@ final readonly class NormalisedVariant
         public string $vendorProductName,
         public ?string $vendorColour,
         public ?string $vendorSize,
+        // The contract product option this variant is sized by: `shoe_size`
+        // for footwear, `garment_size` for everything else.
+        public string $sizeOptionHandle = 'shoe_size',
         // The currency the vendor priced this SKU in when it was not GBP
         // (`(blank)` for a price with no currency). Set together with the
         // null price and cost above. The writer keeps a stored GBP price

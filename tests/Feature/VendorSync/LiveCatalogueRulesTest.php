@@ -145,6 +145,23 @@ it('maps the models seen in the live catalogue', function (string $model, string
     ['high_boot', 'safety-boots', 'High', 'zero-protective'],
 ]);
 
+it('drafts a PROMO bundle (a boot plus socks, gloves and a beanie under one SKU) rather than publishing it as a boot', function (): void {
+    $detail = sjWithSizes(1, 'PROMOALASK', ['42']);
+    VendorSync::fakeHttp([['id' => 1]], [1 => $detail]);
+
+    $report = VendorSync::import('SJ');
+    VendorSync::syncImages(['1']);
+
+    $product = VendorSync::product('SJ', '1');
+
+    expect($report->drafted)->toBe(1)
+        ->and($product->status)->toBe('draft')
+        ->and(VendorProduct::query()->sole()->draft_reasons)->toContain(DraftReason::BUNDLE)
+        // Still in its collection and still sellable once accepted: not an error.
+        ->and($product->collections)->not->toBeEmpty()
+        ->and($product->variants->sum('stock'))->toBeGreaterThan(0);
+});
+
 it('maps occupational pumps and sets their cut', function (): void {
     $detail = VendorSync::detail(1, 'PUMPY', 'Oxypas', 'Shoes', ['EN ISO 20347:2022'], model: 'pump');
     VendorSync::fakeHttp([['id' => 1]], [1 => $detail]);
@@ -205,6 +222,23 @@ it('records API request counts and timings for the run and prints them', functio
     $this->artisan('vendorsync:catalogue', ['vendor' => 'SJ', '--dry-run' => true])
         ->expectsOutputToContain('API: 3 requests')
         ->expectsOutputToContain('Peak memory')
+        ->assertSuccessful();
+});
+
+it('prints one progress line per product, name and counter, in a real run and a dry run', function (): void {
+    VendorSync::fakeHttp(
+        [['id' => 1, 'name' => 'ONE'], ['id' => 2, 'name' => 'TWO']],
+        [1 => sjWithSizes(1, 'ONE', ['42']), 2 => sjWithSizes(2, 'TWO', ['42'])],
+    );
+
+    $this->artisan('vendorsync:catalogue', ['vendor' => 'SJ'])
+        ->expectsOutputToContain('ONE (1 of 2)')
+        ->expectsOutputToContain('TWO (2 of 2)')
+        ->assertSuccessful();
+
+    $this->artisan('vendorsync:catalogue', ['vendor' => 'SJ', '--dry-run' => true])
+        ->expectsOutputToContain('ONE (1 of 2)')
+        ->expectsOutputToContain('TWO (2 of 2)')
         ->assertSuccessful();
 });
 

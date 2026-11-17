@@ -34,8 +34,14 @@ Lunar has no handle column on tax classes, product types, tax zones or collectio
 - The storefront, the fixture seeder and the ingestion module all resolve contract handles through this service only. Never match on name.
 
 ## Product types (attribute sets)
-- `safety-footwear` (launch category)
-- `workwear`, `gloves`, `head-protection` (created now, unused until later)
+- `safety-footwear`: every footwear leaf, safety and non-safety alike (see Collections).
+- `workwear`: clothing (jackets, trousers, T-shirts, sweatshirts, activewear, base layers, coveralls).
+- `gloves`.
+- `head-protection`: eye and face protection, hard hats and helmets, hearing protection, respiratory protection.
+- `ppe`: fall protection, overshoes, other PPE.
+- `accessories`: socks, headwear, insoles and shoe care, bags, sunglasses, other accessories.
+
+`App\Domain\Catalogue\Collections\CategoryTree::productType()` maps a leaf collection handle to its product type (every footwear leaf to `safety-footwear`; every other leaf by `LEAF_PRODUCT_TYPE`). The ingestion module calls this; it never hard-codes a product type outside the footwear path.
 
 ## Product attributes (handles are fixed)
 
@@ -45,9 +51,9 @@ Lunar has no handle column on tax classes, product types, tax zones or collectio
 | `title` | TranslatedText | all | Descriptive title, e.g. "Lightweight ESD Safety Shoes" |
 | `short_description` | TranslatedText | all | One or two sentences |
 | `description` | TranslatedText | all | Long description, plain text with paragraphs |
-| `safety_class` | Text | safety-footwear | Normalised, no spaces: `SB`, `SBP`, `S1`, `S1P`, `S2`, `S3`, `S7`, `OB`, `O1`, `O2`... The EN ISO 20345:2022 classes `S1PS`, `S3S` and `S7S`, the occupational class `O6`, and the EN ISO 20346 protective class `PB` are valid values. |
-| `features` | ListField | safety-footwear | Normalised codes: `SRA`, `SRB`, `SRC`, `SR`, `ESD`, `CI`, `HI`, `HRO`, `WR`, `FO`, `M`, `AN`, `E`, `A`, `P`, `LG` (ladder grip), `SC` (scuff cap), `WRU` (water resistant upper), `METAL_FREE` |
-| `standards` | ListField | all | e.g. `EN ISO 20345:2011`, `EN ISO 20345:2022`, `ASTM F2413:2024` |
+| `safety_class` | Text | safety-footwear | Normalised, no spaces: `SB`, `SBP`, `S1`, `S1P`, `S2`, `S3`, `S7`, `OB`, `O1`, `O2`... The EN ISO 20345:2022 classes `S1PS`, `S3S` and `S7S`, the occupational class `O6`, and the EN ISO 20346 protective class `PB` are valid values. Null on a non-footwear product. |
+| `features` | ListField | safety-footwear | Normalised codes: `SRA`, `SRB`, `SRC`, `SR`, `ESD`, `CI`, `HI`, `HRO`, `WR`, `FO`, `M`, `AN`, `E`, `A`, `P`, `LG` (ladder grip), `SC` (scuff cap), `WRU` (water resistant upper), `METAL_FREE`. Empty on a non-footwear product: neither vendor's feed gives features for clothing, gloves or PPE. |
+| `standards` | ListField | all | e.g. `EN ISO 20345:2011`, `EN ISO 20345:2022`, `ASTM F2413:2024`. Empty outside footwear, for the same reason. |
 | `toecap` | Text | safety-footwear | e.g. `Nano Carbon`, `Steel`, `Composite`, `None` |
 | `midsole` | Text | safety-footwear | |
 | `outsole` | Text | safety-footwear | |
@@ -55,7 +61,7 @@ Lunar has no handle column on tax classes, product types, tax zones or collectio
 | `lining` | Text | safety-footwear | |
 | `cut` | Text | safety-footwear | `Low`, `Mid`, `High` |
 | `industries` | ListField | all | e.g. `Automotive`, `Logistics`, `Construction` |
-| `gender` | Text | all | `Men`, `Women`, `Unisex` |
+| `gender` | Text | all | `Men`, `Women`, `Unisex`. Neither vendor gives a real gender outside footwear in the data imported so far; `Unisex` until one does. |
 | `key_points` | ListField | all | Short benefit bullets, 3 to 10 items |
 | `fastening` | Text | safety-footwear | e.g. `Laces`, `Slip On`, `Touch Fastening`, `Zip` |
 | `country_of_origin` | Text | all | ISO 3166-1 alpha-2, e.g. `RO`, `ES` |
@@ -68,16 +74,16 @@ Waterproofing is the `WR` feature, not a separate attribute. Which attributes ar
 
 | Handle | Type | On product types | Notes |
 |---|---|---|---|
-| `eu_size` | Text | safety-footwear | EU size shown as secondary text next to the UK size, e.g. `42` |
+| `eu_size` | Text | safety-footwear | EU size shown as secondary text next to the UK size, e.g. `42`. Set only on a `shoe_size` variant (see Product options): never on a `garment_size` one, because no EU size exists for clothing, gloves or PPE. |
 
 ## Product options
 - `colour`: values are customer-facing colour names, title case (`Navy`, `Black`). Each value has meta `hex` (e.g. `394656`, may be null).
-- `shoe_size`: values are **UK sizes** as strings (`3`, `3.5`, ... `13.5`), with meta `sort` (numeric) for ordering. The EU size is the variant attribute `eu_size`.
+- `shoe_size`: every footwear product (safety and non-safety alike), including insoles. Values are **UK sizes** as strings (`3`, `3.5`, ... `13.5`), with meta `sort` (numeric) for ordering. The EU size is the variant attribute `eu_size`.
   - Size labels follow the size scale, never the VAT rate. A row whose EU size is below 33 is on the infant scale and its value is `Kids {UK size}` (e.g. `Kids 6`). Every other row uses the plain UK size (`1`, `2`, `6`), whether zero rated or not: junior and adult sizes from UK 1 upward are one physical scale. A zero rated row with no EU size is skipped as a variant and reported.
   - `sort` is the EU size, for both vendors, so the options order correctly (`Kids 6` = 23, `1` = 33, `6` = 39). A size with no EU size sorts by the vendor's chart for that UK size.
-- `garment_size`: reserved for workwear (`XS` ... `4XL`). Unused at launch.
+- `garment_size`: every non-footwear product (clothing, gloves, head protection, PPE, accessories other than insoles). Normalised by `App\Domain\Catalogue\Options\GarmentSizes`: a known vendor spelling (`Sml`, `Med`, `Lge`, `Xsl`, `XL`...) becomes its short form (`S`, `M`, `L`, `XS`, `XL`...); a size with no real value at all (`Itm`, `OS`, blank) becomes `One Size`; anything else (a waist or chest measurement, a glove size, wording the list does not know) is kept exactly as the vendor gives it. `sort` orders `One Size` first, then the alphabetic scale, then every numeric value ascending, then anything unrecognised, in the order first seen.
 
-Every safety-footwear variant has exactly one `colour` value and one `shoe_size` value.
+Every variant has exactly one `colour` value and exactly one of `shoe_size` or `garment_size`, never both: which one a product uses is fixed for that product (`NormalisedVariant::sizeOptionHandle`), not chosen per variant.
 
 ## Variants
 - `sku` = `{VENDOR_CODE}-{vendor_sku}`, e.g. `SJ-1492552`, `FS-00052-00095-09`.
@@ -97,10 +103,17 @@ Every safety-footwear variant has exactly one `colour` value and one `shoe_size`
 - URLs: Lunar URL records, default language `en`. The product slug is `Str::slug(brand . ' ' . name)`, e.g. `safety-jogger-ligero`. On collision a numeric suffix is appended (`-2`, `-3`, ...) in order of creation. This rule is implemented once, in the action `App\Domain\Catalogue\Urls\GenerateProductSlug`, which the fixture seeder and the ingestion module both call. Lunar's automatic URL generator is disabled. A product's slug is set once when the product is created and is never changed afterwards, including by the ingestion module when a vendor renames a product. Renamed products keep their original URL.
 
 ## Collections
-- Collection group `categories`: the customer-facing category tree, e.g. Safety Footwear > Safety Trainers, Safety Boots, Safety Shoes; Occupational Footwear; Slippers; Plimsolls; Casual Footwear; Accessories; Wellingtons. Products belong to one or more leaf collections.
-- Contract handles in `categories`: `safety-footwear` (parent of `safety-trainers`, `safety-shoes`, `safety-boots`), `occupational-footwear`, `slippers`, `plimsolls`, `casual-footwear`, `accessories`, `wellingtons`. In `ranges`: `clearance`.
-- Collection group `ranges`: marketing collections (New in, Clearance, Industry ranges). Managed in the admin.
-- Collections the contract names (the category tree and `clearance`) are resolved by handle through the key registry. Each also has a Lunar URL whose slug equals its handle at creation. The slug may be edited later in the admin; the storefront then records a 301 from the old path (see CLAUDE.md, URLs). Only `categories` collections have a `/shop/...` page.
+- Collection group `categories`: the customer-facing category tree, five top levels and 35 leaves. A product belongs to exactly one leaf collection (never a top level directly, never more than one leaf). The whole tree, in menu order, is the one definition `App\Domain\Catalogue\Collections\CategoryTree::GROUPS`; the foundation seeder creates it and `catalogue:restructure-categories` moves an existing database into it (CLAUDE.md, Launch checklist).
+  - **Safety Footwear**: Safety Boots, Safety Shoes, Safety Trainers, Safety Wellingtons, Occupational Footwear, Metal-Free & Metatarsal.
+  - **Non-Safety Footwear**: Casual, Formal & Work Shoes; Boots; Sandals & Summer Shoes; Sports & Trainers; Hiking & Outdoor; Wellingtons & Waders; Slippers; Plimsolls.
+  - **Apparel**: Jackets, Body Warmers & Fleeces; Trousers & Shorts; T-shirts, Polos & Shirts; Sweatshirts & Hoodies; Activewear & Loungewear; Base Layers; Coveralls.
+  - **PPE & Gear**: Gloves, Eye & Face Protection, Fall Protection, Overshoes, Hard Hats & Helmets, Hearing Protection, Respiratory Protection, Other PPE.
+  - **Accessories**: Socks; Hats, Beanies & Scarves; Insoles, Laces & Shoe Care; Bags & Wallets; Sunglasses; Other Accessories.
+  - `CategoryTree::isFootwear($leafHandle)` is true for every leaf under Safety Footwear or Non-Safety Footwear (`FOOTWEAR_TOPS`): these are the only leaves sized on the shoe scale and typed `safety-footwear` (Product types above), with one exception: Insoles (`insoles-laces-shoe-care`, an Accessories leaf) is also shoe-sized, because insole sizes genuinely are shoe sizes; it is still product type `accessories`.
+  - A Footsure product's own EN ISO rating can move it between a Safety Footwear and a Non-Safety Footwear leaf even when its vendor Group Class disagrees (`FootsureMapper::footwearLeaf()`): a certified product filed under a non-safety Group Class becomes safety footwear (a certified wellington becomes `safety-wellingtons`, anything else becomes `safety-boots` or `occupational-footwear` by which norm it carries), and an uncertified product filed under a safety Group Class becomes `casual-footwear`. A product whose Group Class already agrees with its rating is untouched. Safety Jogger has no such mismatch: its own category field is trusted as given.
+- Collection group `ranges`: marketing collections (New in, Clearance, Industry ranges). Managed in the admin. Contract handle: `clearance`.
+- Every leaf collection and `clearance` are resolved by handle through the key registry. Each also has a Lunar URL whose slug equals its handle at creation. The slug may be edited later in the admin; the storefront then records a 301 from the old path (see CLAUDE.md, URLs). Only `categories` collections have a `/shop/...` page.
+- **Out of scope, not a collection rule**: a children's, boys' or girls' product (Group Class starting with `Childrens`, `Boys` or `Girls`, or, outside those, a product whose own name says `Junior`, `Jnr`, `Kids` or `Childrens`) is out of scope entirely (`FootsureMapper::isChildrens()`, out-of-scope reason `children`), never given a collection. A small adult size in an ordinary product is not affected: only the Group Class or the product's own name decides this, never its size range.
 
 ## Media
 - Spatie Media Library, disk `products`, collection `images`, attached to the product.

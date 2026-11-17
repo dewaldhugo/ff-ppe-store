@@ -246,25 +246,36 @@ it('drafts a product whose rows all have a cost at or above the RRP, in one line
 });
 
 it('maps every Group Class seen in the real feed to its collection, and still drafts an unknown one', function (): void {
+    // Childrens Wellingtons and Boys BTS are children's Group Classes: out of
+    // scope entirely, checked separately below, not in this collection map.
     $classes = [
         'Mule Ladies Slippers' => 'slippers', 'Mens Mule Slippers' => 'slippers', 'Touch Fastening Mens Slippers' => 'slippers',
         'Trainers Safety' => 'safety-trainers', 'Ladies Safety Shoes' => 'safety-shoes', 'Waterproof Safety Footwear' => 'safety-boots',
-        'Mens Classic Lace Shoes' => 'occupational-footwear', 'Plain PVC Wellingtons' => 'wellingtons',
-        'Plain Rubber Wellingtons' => 'wellingtons', 'Childrens Wellingtons' => 'wellingtons', 'Waders' => 'wellingtons',
-        'Canvas Ladies Summer' => 'casual-footwear', 'Garden Shoes' => 'casual-footwear', 'Boys BTS' => 'casual-footwear',
+        // A non-safety Group Class, but genuinely uncertified: no override.
+        'Mens Classic Lace Shoes' => 'casual-footwear',
+        'Plain PVC Wellingtons' => 'wellingtons', 'Plain Rubber Wellingtons' => 'wellingtons', 'Waders' => 'wellingtons',
+        'Canvas Ladies Summer' => 'sandals-summer-shoes', 'Garden Shoes' => 'wellingtons',
         'A Class Nobody Mapped' => null,
     ];
 
-    $report = importRows(function (array $t) use ($classes): array {
+    $childrensClasses = ['Childrens Wellingtons', 'Boys BTS'];
+
+    // The three genuinely safety Group Classes need a real EN ISO 20345
+    // rating, or the safety-rating check would move them to casual-footwear
+    // (the template default is "Non Safety").
+    $safetyRated = ['Trainers Safety', 'Ladies Safety Shoes', 'Waterproof Safety Footwear'];
+
+    $report = importRows(function (array $t) use ($classes, $childrensClasses, $safetyRated): array {
         $rows = [];
         $n = 0;
 
-        foreach (array_keys($classes) as $class) {
+        foreach ([...array_keys($classes), ...$childrensClasses] as $class) {
             $n++;
             $rows[] = fsRow($t, [
                 'ProductID' => (string) (910000 + $n), 'Family Product Reference' => (910000 + $n).'-1',
                 'Product Reference' => "K-{$n}", 'Short Product Name' => "Class {$n}", 'Group Class' => $class,
                 'UK Size' => '5', 'EU Size' => '38', 'VAT' => '0.2000',
+                ...(in_array($class, $safetyRated, true) ? ['Safety Standard' => 'EN ISO 20345:2011', 'Safety Cat' => 'SRC', 'Safety' => 'S3'] : []),
             ]);
         }
 
@@ -280,9 +291,61 @@ it('maps every Group Class seen in the real feed to its collection, and still dr
         expect($product->collections->pluck('id')->all())->toBe($handle === null ? [] : [CatalogueKeys::collection($handle)->id], $class);
     }
 
+    $unmappedIndex = array_search(null, array_values($classes), true) + 1;
+
     expect($report->errors)->toBe(0)
-        ->and(VendorProduct::query()->where('vendor_product_id', '910015')->sole()->draft_reasons)->toContain(DraftReason::UNMAPPED_CATEGORY)
-        ->and($report->tallies['draft_reason'][DraftReason::UNMAPPED_CATEGORY])->toBe(1);
+        ->and(VendorProduct::query()->where('vendor_product_id', (string) (910000 + $unmappedIndex))->sole()->draft_reasons)->toContain(DraftReason::UNMAPPED_CATEGORY)
+        ->and($report->tallies['draft_reason'][DraftReason::UNMAPPED_CATEGORY])->toBe(1)
+        // The children's Group Classes were never created at all.
+        ->and($report->tallies['out_of_scope']['children'])->toBe(count($childrensClasses))
+        ->and(VendorProduct::query()->whereIn('vendor_product_id', [(string) (910000 + count($classes) + 1), (string) (910000 + count($classes) + 2)])->count())->toBe(0);
+});
+
+it('excludes children\'s, boys\' and girls\' lines by Group Class or by name, keeping small adult sizes', function (): void {
+    $report = importRows(fn (array $t): array => [
+        fsRow($t, ['Product Reference' => 'Q-1', 'ProductID' => '920001', 'Family Product Reference' => '920001-1', 'Group Class' => 'Boys Boots', 'Short Product Name' => 'Boys Boots', 'UK Size' => '2', 'EU Size' => '35']),
+        fsRow($t, ['Product Reference' => 'Q-2', 'ProductID' => '920002', 'Family Product Reference' => '920002-1', 'Group Class' => 'Girls BTS', 'Short Product Name' => 'Girls Shoe', 'UK Size' => '2', 'EU Size' => '35']),
+        // Not a children's Group Class, but the name says Junior.
+        fsRow($t, ['Product Reference' => 'Q-3', 'ProductID' => '920003', 'Family Product Reference' => '920003-1', 'Group Class' => 'Plain PVC Wellingtons', 'Short Product Name' => 'DU SPORT JNR', 'Long Product Name' => 'Sport Wellington Junior', 'UK Size' => '2', 'EU Size' => '35']),
+        // A small adult size in an ordinary Group Class with no children's wording: kept.
+        fsRow($t, ['Product Reference' => 'Q-4', 'ProductID' => '920004', 'Family Product Reference' => '920004-1', 'Group Class' => 'Unisex Sports', 'Short Product Name' => 'Consul Lace Trainer', 'UK Size' => '1', 'EU Size' => '33']),
+    ]);
+
+    expect($report->outOfScope)->toBe(3)
+        ->and($report->tallies['out_of_scope'])->toBe(['children' => 3])
+        ->and(VendorProduct::query()->whereIn('vendor_product_id', ['920001', '920002', '920003'])->count())->toBe(0)
+        ->and(VendorSync::product('FS', '920004')->collections->pluck('id')->all())->toBe([CatalogueKeys::collection('sports-trainers')->id]);
+});
+
+it('moves a certified product out of a non-safety Group Class, and an uncertified one out of a safety Group Class', function (): void {
+    $report = importRows(fn (array $t): array => [
+        // A safety-rated wellington filed under the non-safety Group Class.
+        fsRow($t, [
+            'Product Reference' => 'R-1', 'ProductID' => '930001', 'Family Product Reference' => '930001-1',
+            'Group Class' => 'Plain Rubber Wellingtons', 'Short Product Name' => 'Rated Wellington',
+            'Safety Standard' => 'EN ISO 20345:2011', 'Safety Cat' => 'SRC', 'Safety' => 'S5',
+            'UK Size' => '8', 'EU Size' => '42', 'VAT' => '0.2000',
+        ]),
+        // An occupational-rated boot filed under the non-safety Group Class.
+        fsRow($t, [
+            'Product Reference' => 'R-2', 'ProductID' => '930002', 'Family Product Reference' => '930002-1',
+            'Group Class' => 'Mens Boots', 'Short Product Name' => 'Rated Occupational Boot',
+            'Safety Standard' => 'EN ISO 20347:2012', 'Safety Cat' => 'SRA', 'Safety' => 'OB',
+            'UK Size' => '8', 'EU Size' => '42', 'VAT' => '0.2000',
+        ]),
+        // An uncertified shoe filed under a safety Group Class.
+        fsRow($t, [
+            'Product Reference' => 'R-3', 'ProductID' => '930003', 'Family Product Reference' => '930003-1',
+            'Group Class' => 'Shoes- Safety', 'Short Product Name' => 'Not Actually Certified',
+            'Safety Standard' => 'Not Set', 'Safety Cat' => '', 'Safety' => '',
+            'UK Size' => '8', 'EU Size' => '42', 'VAT' => '0.2000',
+        ]),
+    ]);
+
+    expect($report->errors)->toBe(0)
+        ->and(VendorSync::product('FS', '930001')->collections->pluck('id')->all())->toBe([CatalogueKeys::collection('safety-wellingtons')->id])
+        ->and(VendorSync::product('FS', '930002')->collections->pluck('id')->all())->toBe([CatalogueKeys::collection('occupational-footwear')->id])
+        ->and(VendorSync::product('FS', '930003')->collections->pluck('id')->all())->toBe([CatalogueKeys::collection('casual-footwear')->id]);
 });
 
 it('maps France, keeps WRU and adds WR for waterproof rows', function (): void {
@@ -358,6 +421,18 @@ it('fails loudly when every Footsure image download fails', function (): void {
         ->toThrow(ImageSyncFailed::class, 'Image sync failed for vendor product 900001: none of the 1 images could be saved');
 
     Http::assertSent(fn (Request $request): bool => str_starts_with($request->url(), 'http://ts-images'));
+});
+
+it('prints one progress line per product, using the vendor\'s own product name', function (): void {
+    VendorSync::footsureFile(fn (array $rows): array => [
+        fsRow($rows[0], ['Product Reference' => 'P-1', 'ProductID' => '990001', 'Family Product Reference' => '990001-1', 'Short Product Name' => 'Ligero', 'UK Size' => '5', 'EU Size' => '38', 'VAT' => '0.2000']),
+        fsRow($rows[0], ['Product Reference' => 'P-2', 'ProductID' => '990002', 'Family Product Reference' => '990002-1', 'Short Product Name' => 'Tactic', 'UK Size' => '6', 'EU Size' => '39', 'VAT' => '0.2000']),
+    ]);
+
+    $this->artisan('vendorsync:catalogue', ['vendor' => 'FS'])
+        ->expectsOutputToContain('Ligero (1 of 2)')
+        ->expectsOutputToContain('Tactic (2 of 2)')
+        ->assertSuccessful();
 });
 
 it('does not count a product made only of placeholder rows as an error', function (): void {

@@ -162,14 +162,19 @@ it('imports the product list in scope and skips the rest as out of scope', funct
 
     $report = VendorSync::import('SJ');
 
+    // 388610 (Workwear) is now in scope on its own (no norm needed): created
+    // and drafted, since this minimal fixture gives it no workwear category.
     expect($report->status)->toBe('succeeded')
         ->and($report->seen)->toBe(7)
-        ->and($report->created)->toBe(5)
-        ->and($report->outOfScope)->toBe(2)
+        ->and($report->created)->toBe(6)
+        ->and($report->outOfScope)->toBe(1)
         ->and($report->errors)->toBe(0)
-        ->and($report->tallies['out_of_scope'])->toBe(['article_type' => 1, 'no_en_iso_norm' => 1])
+        ->and($report->tallies['out_of_scope'])->toBe(['no_en_iso_norm' => 1])
         ->and(VendorProduct::query()->pluck('vendor_product_id')->sort()->values()->all())
-        ->toBe(['215754', '279074', '284096', '296233', '407407']);
+        ->toBe(['215754', '279074', '284096', '296233', '388610', '407407']);
+
+    expect(VendorSync::product('SJ', '388610')->attr('gender'))->toBe('Unisex')
+        ->and(VendorProduct::query()->where('vendor_product_id', '388610')->sole()->draft_reasons)->toContain(DraftReason::UNMAPPED_CATEGORY);
 
     $bestboot = VendorSync::product('SJ', '215754');
     $tactic = VendorSync::product('SJ', '279074');
@@ -227,9 +232,9 @@ it('skips unchanged products on the next run and reprocesses them with force', f
     $second = VendorSync::import('SJ');
     $forced = VendorSync::import('SJ', force: true);
 
-    expect($second->unchanged)->toBe(5)
+    expect($second->unchanged)->toBe(6)
         ->and($second->created + $second->updated)->toBe(0)
-        ->and($forced->updated)->toBe(5);
+        ->and($forced->updated)->toBe(6);
 });
 
 it('reports missing data instead of guessing', function (): void {

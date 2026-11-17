@@ -490,7 +490,9 @@ it('waits for the configured delays and never re-fetches more than twice', funct
 
 it('does not re-fetch a product that is out of scope', function (): void {
     $detail = currencyProduct(['42' => [20.0, 'EUR']]);
-    $detail['articletype'] = [['name' => 'workwear', 'value' => 'Workwear']];
+    // Not on the article_types list at all: still out of scope on its own,
+    // unlike workwear, gloves and the rest, which no longer need a norm.
+    $detail['articletype'] = [['name' => 'promotional', 'value' => 'Promotional']];
 
     $report = importSequence([$detail]);
 

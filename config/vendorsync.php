@@ -117,9 +117,11 @@ return [
         'refetch_delay_seconds' => (int) env('VENDORSYNC_SJ_REFETCH_DELAY', 2),
         'refetch_second_delay_seconds' => (int) env('VENDORSYNC_SJ_REFETCH_DELAY_SECOND', 10),
 
-        // Catalogue scope: article type in this list AND an EN ISO 20345 or
-        // EN ISO 20347 norm. Everything else is out of scope.
-        'article_types' => ['shoes'],
+        // Catalogue scope: article type in this list. `shoes` additionally
+        // needs an EN ISO 20345 or EN ISO 20347 norm (SafetyJoggerScope);
+        // every other listed type is in scope on its own. Anything not
+        // listed here is out of scope.
+        'article_types' => ['shoes', 'workwear', 'gloves', 'head_protection', 'fall_protection', 'overshoes', 'accessories'],
         'excluded_brands' => [],
 
         // RRP includes VAT at this rate whatever the tax class (basis points).
@@ -147,7 +149,7 @@ return [
 
         // Norm family => article type => model => collection handle.
         // "safety" means an EN ISO 20345 norm, "occupational" EN ISO 20347
-        // only. "*" matches any model.
+        // only. "*" matches any model. Shoes only: SafetyJoggerScope.
         'categories' => [
             'safety' => [
                 'shoes' => [
@@ -164,6 +166,37 @@ return [
                     '*' => 'occupational-footwear',
                 ],
             ],
+        ],
+
+        // workwear_product_category code => collection handle. An unknown
+        // code drafts the product (unmapped_category), as an unmapped
+        // Footsure Group Class does.
+        'workwear_categories' => [
+            'work_trousers' => 'trousers-shorts',
+            'jacket' => 'jackets-fleeces',
+            'sweater' => 'sweatshirts-hoodies',
+            'tshirt_polo' => 'tshirts-polos-shirts',
+            'socks' => 'socks',
+            'thermal_base_layer' => 'base-layers',
+            'accessories' => 'other-accessories',
+        ],
+
+        // headprotection_product_subcategory code => collection handle.
+        'head_protection_categories' => [
+            'hard_hats' => 'hard-hats-helmets',
+            'spectacles' => 'eye-face-protection',
+            'goggles' => 'eye-face-protection',
+            'visors' => 'eye-face-protection',
+            'earplugs' => 'hearing-protection',
+            'earmuffs' => 'hearing-protection',
+            'filtering' => 'respiratory-protection',
+        ],
+
+        // Article types with exactly one destination collection.
+        'simple_categories' => [
+            'gloves' => 'gloves',
+            'fall_protection' => 'fall-protection',
+            'overshoes' => 'overshoes',
         ],
 
         // Local seeding only: where FixtureSource reads its JSON from.
@@ -194,37 +227,159 @@ return [
         ],
 
         // Group Class => collection handle. An unmapped value drafts the
-        // product and is reported.
+        // product and is reported. Every leaf here can hold either vendor's
+        // products: a footwear leaf (CategoryTree::isFootwear()) gets the
+        // footwear variant treatment regardless of which vendor supplies it,
+        // and FootsureMapper's safety-rating check can still move a product
+        // between the safety-footwear and non-safety-footwear leaves below
+        // (a certified product filed under a non-safety Group Class, or an
+        // uncertified one filed under a safety Group Class).
         'categories' => [
             'Boots Safety' => 'safety-boots',
             'Goodyear Welted Safety' => 'safety-boots',
+            'Waterproof Safety Footwear' => 'safety-boots',
+            'Ladies Safety Boots' => 'safety-boots',
+            'Hiker Safety Footwear' => 'safety-boots',
+            'Dealers Safety' => 'safety-boots',
+            'Riggers Safety' => 'safety-boots',
             'Shoes- Safety' => 'safety-shoes',
+            'Ladies Safety Shoes' => 'safety-shoes',
+            'Trainers Safety' => 'safety-trainers',
+            'Ladies Safety Trainers' => 'safety-trainers',
+            'Safety Wellingtons' => 'safety-wellingtons',
             'Mens Occupational Footwear' => 'occupational-footwear',
-            'Classic Ladies Slippers' => 'slippers',
+            'Ladies Occupational Footwear' => 'occupational-footwear',
+            'Unisex Occupational Footwear' => 'occupational-footwear',
+            'Metal Free Safety Footwear' => 'metal-free-metatarsal',
+            'Metatarsal Safety Footwear' => 'metal-free-metatarsal',
             'Classic Mens Slippers' => 'slippers',
+            'Classic Ladies Slippers' => 'slippers',
             'Touch Fastening Ladies Slipper' => 'slippers',
+            'Touch Fastening Mens Slippers' => 'slippers',
             'Touch Fastening Ladies Bootees' => 'slippers',
             'Touch Fastening Mens Bootees' => 'slippers',
-            'Gusset Plimsolls' => 'plimsolls',
-            'Lace Plimsolls' => 'plimsolls',
-            'Unisex Sports' => 'casual-footwear',
-            'Mens Boots' => 'casual-footwear',
-            'Insoles' => 'accessories',
             'Mule Ladies Slippers' => 'slippers',
             'Mens Mule Slippers' => 'slippers',
-            'Touch Fastening Mens Slippers' => 'slippers',
-            'Trainers Safety' => 'safety-trainers',
-            // Certified to EN ISO 20346 (protective footwear), class PB.
-            'Ladies Safety Shoes' => 'safety-shoes',
-            'Waterproof Safety Footwear' => 'safety-boots',
-            'Mens Classic Lace Shoes' => 'occupational-footwear',
-            'Plain PVC Wellingtons' => 'wellingtons',
+            'Childrens Slippers' => 'slippers',
+            'Ladies Bootie Slippers' => 'slippers',
+            'Ladies Novelty Slippers' => 'slippers',
+            'Unisex Slippers' => 'slippers',
+            'Gusset Plimsolls' => 'plimsolls',
+            'Lace Plimsolls' => 'plimsolls',
+            'Touch Fastening Plimsolls' => 'plimsolls',
             'Plain Rubber Wellingtons' => 'wellingtons',
+            'Plain PVC Wellingtons' => 'wellingtons',
+            'Plain PU Wellingtons' => 'wellingtons',
             'Childrens Wellingtons' => 'wellingtons',
+            'Patterned Wellingtons' => 'wellingtons',
+            'Textile/Weather Wellingtons' => 'wellingtons',
+            'ThermalWellingtons' => 'wellingtons',
             'Waders' => 'wellingtons',
-            'Canvas Ladies Summer' => 'casual-footwear',
-            'Garden Shoes' => 'casual-footwear',
+            'Garden Shoes' => 'wellingtons',
+            'Mens Hiking Boots' => 'hiking-outdoor',
+            'Ladies Hiking Boots' => 'hiking-outdoor',
+            'Mens Hiking Shoes' => 'hiking-outdoor',
+            'Ladies Hiking Shoes' => 'hiking-outdoor',
+            'Childrens Hiking Shoes' => 'hiking-outdoor',
+            'Childrens Hiking Boots' => 'hiking-outdoor',
+            'Mens Trail' => 'hiking-outdoor',
+            'Ladies Trail' => 'hiking-outdoor',
+            'Mens Boots' => 'boots',
+            'Mens Classic Boots' => 'boots',
+            'Mens Formal Boots' => 'boots',
+            'Ladies Ankle Boots' => 'boots',
+            'Ladies Long Boots' => 'boots',
+            'Ladies Mid Boot' => 'boots',
+            'Boys Boots' => 'boots',
+            'Girls Boots' => 'boots',
+            'Mens Classic Lace Shoes' => 'casual-footwear',
+            'Mens Classic Slip On Shoes' => 'casual-footwear',
+            'Mens Classic Touch Fastening Shoes' => 'casual-footwear',
+            'Mens Formal Slip On Shoes' => 'casual-footwear',
+            'Mens Formal Lace Ups' => 'casual-footwear',
+            'Lace Ladies Shoes' => 'casual-footwear',
+            'Slip On Ladies Shoes' => 'casual-footwear',
+            'Court Ladies Shoes' => 'casual-footwear',
+            'Touch Fastening Ladies Shoes' => 'casual-footwear',
+            'Ladies Heels' => 'casual-footwear',
+            'Riva Ballerinas' => 'casual-footwear',
+            'Ballerinas' => 'casual-footwear',
+            'Adult Clogs' => 'casual-footwear',
+            'Ladies Clogs' => 'casual-footwear',
+            'Mens Clogs' => 'casual-footwear',
+            'Unisex Clogs' => 'casual-footwear',
+            'Childrens Clogs' => 'casual-footwear',
             'Boys BTS' => 'casual-footwear',
+            'Girls BTS' => 'casual-footwear',
+            'Boys BTS FLFR' => 'casual-footwear',
+            'Girls BTS FLFR' => 'casual-footwear',
+            'Unisex BTS' => 'casual-footwear',
+            'Sandal Ladies Summer' => 'sandals-summer-shoes',
+            'Mule Ladies Summer' => 'sandals-summer-shoes',
+            'Toe Post Ladies Summer' => 'sandals-summer-shoes',
+            'Canvas Ladies Summer' => 'sandals-summer-shoes',
+            'Shoe Ladies Summer' => 'sandals-summer-shoes',
+            'Ladies Heeled Sandals' => 'sandals-summer-shoes',
+            'Lace Mens Summer' => 'sandals-summer-shoes',
+            'Mule Mens Summer' => 'sandals-summer-shoes',
+            'Sandal Mens Summer' => 'sandals-summer-shoes',
+            'Slip On Mens Summer' => 'sandals-summer-shoes',
+            'Childrens Unisex Summer' => 'sandals-summer-shoes',
+            'Boys Summer' => 'sandals-summer-shoes',
+            'Girls Summer' => 'sandals-summer-shoes',
+            'Childrens Beach' => 'sandals-summer-shoes',
+            'Unisex Beach' => 'sandals-summer-shoes',
+            'Ladies Beach' => 'sandals-summer-shoes',
+            'Mens Beach' => 'sandals-summer-shoes',
+            'Mens Sports' => 'sports-trainers',
+            'Ladies Sports' => 'sports-trainers',
+            'Unisex Sports' => 'sports-trainers',
+            'Boys Trainers' => 'sports-trainers',
+            'Girls Trainers' => 'sports-trainers',
+            'Football/Rugby Boots' => 'sports-trainers',
+            'Golf Shoes' => 'sports-trainers',
+            'Jackets' => 'jackets-fleeces',
+            'Fleeces' => 'jackets-fleeces',
+            'Body Warmers' => 'jackets-fleeces',
+            'Trousers' => 'trousers-shorts',
+            'Shorts' => 'trousers-shorts',
+            'Tee Shirts' => 'tshirts-polos-shirts',
+            'Polo Shirts' => 'tshirts-polos-shirts',
+            'Shirts' => 'tshirts-polos-shirts',
+            'Long Sleeve Shirts' => 'tshirts-polos-shirts',
+            'Short Sleeve Shirts' => 'tshirts-polos-shirts',
+            'Sweat Shirts' => 'sweatshirts-hoodies',
+            'Hoodies' => 'sweatshirts-hoodies',
+            'Joggers' => 'activewear-loungewear',
+            'Leggings' => 'activewear-loungewear',
+            'Bras' => 'activewear-loungewear',
+            'Skirts & Dresses' => 'activewear-loungewear',
+            'Loungewear' => 'activewear-loungewear',
+            'Base Layer' => 'base-layers',
+            'Boiler suit/Coverall' => 'coveralls',
+            'Socks' => 'socks',
+            'Headwear' => 'hats-beanies-scarves',
+            'Beanies' => 'hats-beanies-scarves',
+            'Hats' => 'hats-beanies-scarves',
+            'Scarves' => 'hats-beanies-scarves',
+            'Sunglasses Ladies' => 'sunglasses',
+            'Sunglasses Mens' => 'sunglasses',
+            'Back Packs' => 'bags-wallets',
+            'Brief/Shoulder Bags' => 'bags-wallets',
+            'Hand Bags' => 'bags-wallets',
+            'Holdalls' => 'bags-wallets',
+            'Shoe/Gym Bags' => 'bags-wallets',
+            'Wallets' => 'bags-wallets',
+            'BTS Accessories' => 'bags-wallets',
+            'Insoles' => 'insoles-laces-shoe-care',
+            'Laces' => 'insoles-laces-shoe-care',
+            'Polishes/Cleaners' => 'insoles-laces-shoe-care',
+            'Trees/Brushes/Horns' => 'insoles-laces-shoe-care',
+            'Accessories' => 'other-accessories',
+            'Miscellaneous Other' => 'other-accessories',
+            'Gloves' => 'gloves',
+            'Eyewear' => 'eye-face-protection',
+            'PPE' => 'other-ppe',
         ],
 
         'gender_map' => [

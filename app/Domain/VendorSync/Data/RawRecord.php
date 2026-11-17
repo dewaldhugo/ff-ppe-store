@@ -27,6 +27,11 @@ final readonly class RawRecord
         public ?string $error = null,
         // Set by a source that had to ask again (retries, recoveries, diagnostics).
         public ?FetchOutcome $fetch = null,
+        // The vendor's own name for this product, when the source has it
+        // cheaply (a list response, a CSV row) without waiting on the
+        // mapper. Used only for the importer's progress output; null falls
+        // back to the external id.
+        public ?string $name = null,
     ) {}
 
     public function hash(): string

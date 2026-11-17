@@ -7,9 +7,11 @@ namespace App\Domain\VendorSync\SafetyJogger;
 use Illuminate\Support\Str;
 
 /**
- * Whether a Safety Jogger product detail is in catalogue scope: an article type
- * from `article_types` AND an EN ISO 20345 or 20347 norm. The mapper decides
- * scope with exactly this class, and the source uses it to avoid re-fetching
+ * Whether a Safety Jogger product detail is in catalogue scope: an article
+ * type from `article_types`, and, for the `shoes` type only, an EN ISO 20345
+ * or 20347 norm (every other listed article type is in scope on its own: a
+ * glove or a hard hat never carries either norm). The mapper decides scope
+ * with exactly this class, and the source uses it to avoid re-fetching
  * products the mapper would drop anyway, so the two cannot drift apart.
  */
 final readonly class SafetyJoggerScope
@@ -17,6 +19,9 @@ final readonly class SafetyJoggerScope
     public const string SAFETY_NORM = 'EN ISO 20345';
 
     public const string OCCUPATIONAL_NORM = 'EN ISO 20347';
+
+    /** The only article type that needs a norm to be in scope. */
+    public const string FOOTWEAR_ARTICLE_TYPE = 'shoes';
 
     /**
      * @param  array<string, mixed>  $config  The `vendorsync.safety_jogger` config.
@@ -28,7 +33,17 @@ final readonly class SafetyJoggerScope
      */
     public function inScope(array $data): bool
     {
-        return $this->articleType($data) !== null && $this->family(self::values($data['norms'] ?? [])) !== null;
+        $type = $this->articleType($data);
+
+        if ($type === null) {
+            return false;
+        }
+
+        if ($type !== self::FOOTWEAR_ARTICLE_TYPE) {
+            return true;
+        }
+
+        return $this->family(self::values($data['norms'] ?? [])) !== null;
     }
 
     /**

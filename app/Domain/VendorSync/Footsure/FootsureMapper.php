@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domain\VendorSync\Footsure;
 
+use App\Domain\Catalogue\Collections\CategoryTree;
+use App\Domain\Catalogue\Options\GarmentSizes;
 use App\Domain\Catalogue\Options\ShoeSizes;
 use App\Domain\VendorSync\Contracts\VendorMapper;
 use App\Domain\VendorSync\Data\MappingResult;
@@ -35,6 +37,18 @@ final readonly class FootsureMapper implements VendorMapper
 
     private const string SAFETY_NORM = 'EN ISO 20345';
 
+    /** Either footwear norm: decides whether a product is footwear at all, for the leaf override below. */
+    private const string FOOTWEAR_NORM_PATTERN = '/EN ISO 2034[57]/';
+
+    /** A Group Class starting with one of these is a children's line, out of scope regardless of its wording. */
+    private const string CHILDREN_GROUP_PATTERN = '/^(Childrens|Boys|Girls)\b/i';
+
+    /** Outside those groups, a product whose own name says it is a children's line is out of scope too. */
+    private const string CHILDREN_NAME_PATTERN = '/\b(junior|juniors|jnr|kids?|childrens?)\b/i';
+
+    /** The one non-footwear Group Class whose UK and EU Size columns are real shoe sizes. */
+    private const string INSOLES_GROUP_CLASS = 'Insoles';
+
     /**
      * @param  array<string, mixed>  $config  The `vendorsync.footsure` config.
      */
@@ -60,6 +74,10 @@ final readonly class FootsureMapper implements VendorMapper
             return MappingResult::outOfScope('excluded_brand');
         }
 
+        if ($this->isChildrens($first)) {
+            return MappingResult::outOfScope('children');
+        }
+
         $messages = [];
         $facts = [];
         $draftReasons = [];
@@ -74,16 +92,26 @@ final readonly class FootsureMapper implements VendorMapper
         }
 
         $collection = $this->config['categories'][$first['Group Class']] ?? null;
+        $isFootwear = $collection !== null && CategoryTree::isFootwear($collection);
+
+        // A product in a footwear Group Class may still move between the
+        // safety-footwear and non-safety-footwear leaves by its own EN ISO
+        // rating: Footsure files some certified boots under a non-safety
+        // Group Class, and some uncertified shoes under a safety one.
+        if ($isFootwear) {
+            $collection = $this->footwearLeaf($collection, $first['Safety Standard']);
+        }
+
+        // Insoles are the one non-footwear Group Class genuinely sized on
+        // the shoe scale (its UK and EU Size columns are real shoe sizes),
+        // so it is sized as footwear although its collection is not one.
+        $shoeSized = $isFootwear || $first['Group Class'] === self::INSOLES_GROUP_CLASS;
 
         $facts[] = ['category', $first['Group Class'].' => '.($collection ?? 'UNMAPPED')];
 
         if ($collection === null) {
             $draftReasons[] = DraftReason::UNMAPPED_CATEGORY;
             $messages[] = "{$label}: Group Class '{$first['Group Class']}' is not mapped to a collection (draft reason unmapped_category).";
-        }
-
-        if ($first['Product Status'] === 'No More') {
-            $draftReasons[] = DraftReason::VENDOR_DISCONTINUED;
         }
 
         $isSafety = str_contains($first['Safety Standard'], self::SAFETY_NORM);
@@ -93,6 +121,9 @@ final readonly class FootsureMapper implements VendorMapper
             $separateCodes[] = 'WR';
         }
 
+        // Footwear-only: a safety class and features only mean anything on
+        // a certified shoe, boot or wellington.
+        $separateCodes = $isFootwear ? $separateCodes : [];
         [$features, $unknownFeatures] = $this->features->normalise($separateCodes);
 
         foreach ($unknownFeatures as $code) {
@@ -126,7 +157,7 @@ final readonly class FootsureMapper implements VendorMapper
             return MappingResult::outOfScope('placeholder_rows_only', $facts, SkuIssues::collapse($label, $messages));
         }
 
-        foreach ($this->withoutDuplicates($real, $label, $messages) as $row) {
+        foreach ($this->withoutDuplicates($real, $label, $messages, $shoeSized) as $row) {
             $colour = $this->colour($row);
 
             if ($colour === null) {
@@ -142,7 +173,9 @@ final readonly class FootsureMapper implements VendorMapper
                 $clearance = true;
             }
 
-            $variant = $this->variant($row, $colour, $isSafety, $label, $messages, $facts);
+            $variant = $shoeSized
+                ? $this->variant($row, $colour, $isSafety, $label, $messages, $facts)
+                : $this->garmentVariant($row, $colour, $label, $messages, $facts);
 
             if ($variant === null) {
                 continue;
@@ -188,23 +221,23 @@ final readonly class FootsureMapper implements VendorMapper
             vendorCode: self::VENDOR_CODE,
             vendorProductId: $record->externalId,
             label: $label,
-            productType: 'safety-footwear',
+            productType: $collection === null ? 'accessories' : CategoryTree::productType($collection),
             brand: blank($brand) ? null : $brand,
             name: $first['Short Product Name'],
             title: $this->text($first['Long Product Name']),
             shortDescription: null,
             description: $this->text($first['InspirationalCopy']),
             keyPoints: $this->keyPoints($first),
-            safetyClass: SafetyClass::normalise($first['Safety'], $separateCodes),
+            safetyClass: $isFootwear ? SafetyClass::normalise($first['Safety'], $separateCodes) : null,
             features: $features,
-            standards: $first['Safety Standard'] === self::NON_SAFETY || blank($first['Safety Standard']) ? [] : [$first['Safety Standard']],
+            standards: $isFootwear && $first['Safety Standard'] !== self::NON_SAFETY && filled($first['Safety Standard']) ? [$first['Safety Standard']] : [],
             toecap: null,
             midsole: null,
-            outsole: $this->text($first['SoleMaterial']),
-            upper: $this->text($first['Upper Outer Material']),
-            lining: $this->text($first['Lining Material']),
+            outsole: $isFootwear ? $this->text($first['SoleMaterial']) : null,
+            upper: $isFootwear ? $this->text($first['Upper Outer Material']) : null,
+            lining: $isFootwear ? $this->text($first['Lining Material']) : null,
             cut: null,
-            fastening: $this->text($first['Fastening']),
+            fastening: $isFootwear ? $this->text($first['Fastening']) : null,
             industries: [],
             gender: $this->config['gender_map'][$first['Gender']] ?? null,
             countryOfOrigin: $country,
@@ -308,6 +341,130 @@ final readonly class FootsureMapper implements VendorMapper
     }
 
     /**
+     * A variant for everything outside the footwear groups: clothing,
+     * gloves, eyewear and PPE. Always standard rate (the feed's own VAT
+     * column is 20% for all but a handful of rows this store has no zero
+     * rate for), sized on the garment scale, no EU size.
+     *
+     * @param  array<string, string>  $row
+     * @param  list<string>  $messages
+     * @param  list<array{0: string, 1: string}>  $facts
+     */
+    private function garmentVariant(array $row, string $colour, string $label, array &$messages, array &$facts): ?NormalisedVariant
+    {
+        $reference = $row['Product Reference'];
+
+        $vatBasisPoints = $this->vatBasisPoints($row['VAT']);
+
+        if ($vatBasisPoints === null) {
+            $messages[] = [SkuIssues::UNKNOWN_VAT, $reference, "VAT '{$row['VAT']}'"];
+
+            return null;
+        }
+
+        $cost = Money::toPence($row['Trade Price']);
+        $srp = Money::toPence($row['SRP']);
+        $price = $this->prices->calculate($cost, $srp === null ? null : Money::exVat($srp, $vatBasisPoints));
+
+        if ($price['price'] === null) {
+            $messages[] = [SkuIssues::NO_COST, $reference];
+
+            return null;
+        }
+
+        if ($price['reason'] === PriceCalculator::COST_AT_OR_ABOVE_RRP) {
+            $messages[] = [SkuIssues::COST_ABOVE_RRP, $reference];
+        }
+
+        $discontinued = $row['Colour Status'] === 'No More' || $row['Product Status'] === 'No More';
+        $raw = $this->garmentSizeRaw($row);
+        $size = GarmentSizes::name($raw) ?? GarmentSizes::ONE_SIZE_LABEL;
+        [$weight, $length, $width, $height] = $this->measurements($row);
+
+        return new NormalisedVariant(
+            vendorSku: $reference,
+            sku: self::VENDOR_CODE.'-'.$reference,
+            ean: $this->text($row['Barcode']),
+            colour: $colour,
+            colourHex: null,
+            shoeSize: $size,
+            sizeSort: GarmentSizes::sort($size),
+            euSize: null,
+            vendorStock: max(0, (int) $row['Stock']),
+            sellable: $price['sellable'] && ! $discontinued,
+            price: $price['price'],
+            comparePrice: $price['compare'],
+            costPrice: $cost,
+            taxClass: 'standard',
+            weightKg: $weight,
+            lengthMm: $length,
+            widthMm: $width,
+            heightMm: $height,
+            vendorProductName: $row['Long Product Name'],
+            vendorColour: $this->text($row['Colour Extention']),
+            vendorSize: $raw === '' ? null : $raw,
+            sizeOptionHandle: 'garment_size',
+        );
+    }
+
+    /**
+     * `Size` is the richest column (it alone carries waist and chest
+     * measurements); `UK Size` and `EU Size` are read only when it is blank.
+     *
+     * @param  array<string, string>  $row
+     */
+    private function garmentSizeRaw(array $row): string
+    {
+        foreach ([$row['Size'], $row['UK Size'], $row['EU Size']] as $candidate) {
+            if (trim($candidate) !== '') {
+                return trim($candidate);
+            }
+        }
+
+        return '';
+    }
+
+    /**
+     * A product in a footwear Group Class is reassigned by its own EN ISO
+     * rating when the Group Class disagrees with it: a certified product
+     * filed under a non-safety Group Class becomes safety footwear, and an
+     * uncertified one filed under a safety Group Class becomes casual
+     * footwear. A product whose Group Class already agrees is untouched.
+     */
+    private function footwearLeaf(string $collection, string $safetyStandard): string
+    {
+        $rated = preg_match(self::FOOTWEAR_NORM_PATTERN, $safetyStandard) === 1;
+        $parent = CategoryTree::parents()[$collection] ?? null;
+
+        if ($parent === 'safety-footwear' && ! $rated) {
+            return 'casual-footwear';
+        }
+
+        if ($parent === 'non-safety-footwear' && $rated) {
+            if ($collection === 'wellingtons') {
+                return 'safety-wellingtons';
+            }
+
+            return str_contains($safetyStandard, 'EN ISO 20347') ? 'occupational-footwear' : 'safety-boots';
+        }
+
+        return $collection;
+    }
+
+    /**
+     * Children's, boys' and girls' lines are out of scope: the Group Class
+     * says so directly, or, for a handful of products filed elsewhere, the
+     * product's own name does.
+     *
+     * @param  array<string, string>  $first
+     */
+    private function isChildrens(array $first): bool
+    {
+        return preg_match(self::CHILDREN_GROUP_PATTERN, $first['Group Class']) === 1
+            || preg_match(self::CHILDREN_NAME_PATTERN, $first['Short Product Name'].' '.$first['Long Product Name']) === 1;
+    }
+
+    /**
      * Two rows of one product with the same colour and size cannot both be
      * variants. Keep the one with a barcode; skip and report the other.
      *
@@ -315,12 +472,12 @@ final readonly class FootsureMapper implements VendorMapper
      * @param  list<string>  $messages
      * @return list<array<string, string>>
      */
-    private function withoutDuplicates(array $rows, string $label, array &$messages): array
+    private function withoutDuplicates(array $rows, string $label, array &$messages, bool $shoeSized): array
     {
         $kept = [];
 
         foreach ($rows as $row) {
-            $key = $row['Family Product Reference'].'|'.($this->colour($row) ?? '').'|'.$this->sizeName($row);
+            $key = $row['Family Product Reference'].'|'.($this->colour($row) ?? '').'|'.$this->sizeName($row, $shoeSized);
 
             if (! isset($kept[$key])) {
                 $kept[$key] = $row;
@@ -335,14 +492,14 @@ final readonly class FootsureMapper implements VendorMapper
                 $kept[$key] = $row;
             }
 
-            $messages[] = [SkuIssues::DUPLICATE, $skipped['Product Reference'], ($this->colour($row) ?? 'no colour').' '.$this->sizeName($row)];
+            $messages[] = [SkuIssues::DUPLICATE, $skipped['Product Reference'], ($this->colour($row) ?? 'no colour').' '.$this->sizeName($row, $shoeSized)];
         }
 
         // Colourways of one product can also repeat a colour name.
         $byColourAndSize = [];
 
         foreach ($kept as $row) {
-            $key = ($this->colour($row) ?? '').'|'.$this->sizeName($row);
+            $key = ($this->colour($row) ?? '').'|'.$this->sizeName($row, $shoeSized);
 
             if (! isset($byColourAndSize[$key])) {
                 $byColourAndSize[$key] = $row;
@@ -357,7 +514,7 @@ final readonly class FootsureMapper implements VendorMapper
                 $byColourAndSize[$key] = $row;
             }
 
-            $messages[] = [SkuIssues::DUPLICATE, $skipped['Product Reference'], ($this->colour($row) ?? 'no colour').' '.$this->sizeName($row)];
+            $messages[] = [SkuIssues::DUPLICATE, $skipped['Product Reference'], ($this->colour($row) ?? 'no colour').' '.$this->sizeName($row, $shoeSized)];
         }
 
         return array_values($byColourAndSize);
@@ -365,12 +522,17 @@ final readonly class FootsureMapper implements VendorMapper
 
     /**
      * The option value a row's size will have, for telling two rows of one
-     * colour apart: an infant UK 6 and a junior UK 6 are different sizes.
+     * colour apart: an infant UK 6 and a junior UK 6 are different sizes on
+     * the shoe scale; on the garment scale, whatever GarmentSizes makes of it.
      *
      * @param  array<string, string>  $row
      */
-    private function sizeName(array $row): string
+    private function sizeName(array $row, bool $shoeSized): string
     {
+        if (! $shoeSized) {
+            return GarmentSizes::name($this->garmentSizeRaw($row)) ?? GarmentSizes::ONE_SIZE_LABEL;
+        }
+
         $uk = Sizes::uk($row['UK Size']) ?? $row['UK Size'];
 
         return ShoeSizes::name($uk, is_numeric($row['EU Size']) ? (float) $row['EU Size'] : null);

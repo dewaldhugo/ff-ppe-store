@@ -140,7 +140,8 @@ it('maps every Group Class in the fixture, so only rule drafts remain', function
 
     expect($chelmsford->status)->toBe('draft')
         ->and($chelmsford->variants->sum('stock'))->toBe(0)
-        ->and($chelmsford->collections->pluck('id')->all())->toContain(CatalogueKeys::collection('casual-footwear')->id);
+        // Group Class "Mens Boots".
+        ->and($chelmsford->collections->pluck('id')->all())->toContain(CatalogueKeys::collection('boots')->id);
 
     // Dasco insoles: cost above RRP, so stock 0, and reported.
     expect(VendorSync::product('FS', '1615')->variants->sum('stock'))->toBe(0)

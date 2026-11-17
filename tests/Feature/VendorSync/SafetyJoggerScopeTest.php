@@ -46,7 +46,14 @@ it('decides scope exactly as the mapper does', function (array $articleTypes, ar
     'article type with spaces' => [[['name' => ' shoes ', 'value' => 'Shoes']], ['EN ISO 20345:2022'], null],
     'norm with spaces and an amendment' => [[['name' => 'shoes', 'value' => 'Shoes']], ['  EN ISO 20345:2022+A1:2024 '], null],
     'second article type is in scope' => [[['name' => 'workwear', 'value' => 'Workwear'], ['name' => 'shoes', 'value' => 'Shoes']], ['EN ISO 20345:2022'], null],
-    'workwear' => [[['name' => 'workwear', 'value' => 'Workwear']], ['EN ISO 20345:2022'], 'article_type'],
+    // workwear, gloves and the rest need no norm at all: only shoes do.
+    'workwear, no norms' => [[['name' => 'workwear', 'value' => 'Workwear']], [], null],
+    'gloves, no norms' => [[['name' => 'gloves', 'value' => 'Gloves']], [], null],
+    'head protection, no norms' => [[['name' => 'head_protection', 'value' => 'Head protection']], [], null],
+    'fall protection, no norms' => [[['name' => 'fall_protection', 'value' => 'Fall protection']], [], null],
+    'overshoes, no norms' => [[['name' => 'overshoes', 'value' => 'Overshoes']], [], null],
+    'accessories, no norms' => [[['name' => 'accessories', 'value' => 'Accessories']], [], null],
+    'an article type not on the list' => [[['name' => 'promotional', 'value' => 'Promotional']], ['EN ISO 20345:2022'], 'article_type'],
     'no article type' => [[], ['EN ISO 20345:2022'], 'article_type'],
     'blank article type name' => [[['name' => '  ', 'value' => 'Shoes']], ['EN ISO 20345:2022'], 'article_type'],
     'shoes, no norms' => [[['name' => 'shoes', 'value' => 'Shoes']], [], 'no_en_iso_norm'],
@@ -67,12 +74,14 @@ it('still imports the recorded catalogue with the same in-scope and out of scope
 
     $report = VendorSync::import('SJ', dryRun: true);
 
+    // 388610 (Workwear) is now in scope on its own (no norm needed): created
+    // and drafted, since this minimal fixture gives it no workwear category.
     expect($report->seen)->toBe(7)
-        ->and($report->outOfScope)->toBe(2)
-        ->and($report->tallies['out_of_scope'])->toBe(['article_type' => 1, 'no_en_iso_norm' => 1])
+        ->and($report->outOfScope)->toBe(1)
+        ->and($report->tallies['out_of_scope'])->toBe(['no_en_iso_norm' => 1])
         ->and($report->currencyRefetches)->toBe(0)
         // No product in the recorded catalogue is retried: no extra request is made.
-        ->and($report->counts())->toMatchArray(['seen' => 7, 'out_of_scope' => 2, 'created' => 5]);
+        ->and($report->counts())->toMatchArray(['seen' => 7, 'out_of_scope' => 1, 'created' => 6]);
 });
 
 it('keeps only allow-listed response headers and never one that could carry a credential', function (): void {

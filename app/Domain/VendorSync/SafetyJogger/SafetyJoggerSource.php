@@ -49,12 +49,12 @@ final readonly class SafetyJoggerSource implements VendorSource
             throw SourceAborted::because($exception->getMessage());
         }
 
-        // Only the id and the brand of each list item are needed. The rest
+        // Only the id, brand and name of each list item are needed. The rest
         // of the list (property ids, price ranges) is released here.
         $items = [];
 
         foreach ($products as $item) {
-            $items[] = [(int) ($item['id'] ?? 0), (string) ($item['brandDescription'] ?? '')];
+            $items[] = [(int) ($item['id'] ?? 0), (string) ($item['brandDescription'] ?? ''), (string) ($item['name'] ?? '')];
         }
 
         $total = count($products);
@@ -141,18 +141,18 @@ final readonly class SafetyJoggerSource implements VendorSource
     }
 
     /**
-     * @param  list<array{0: int, 1: string}>  $items  Product id and brand.
+     * @param  list<array{0: int, 1: string, 2: string}>  $items  Product id, brand and name.
      * @return Generator<int, RawRecord>
      */
     private function records(array $items): Generator
     {
-        foreach ($items as [$id, $brand]) {
+        foreach ($items as [$id, $brand, $name]) {
             if ($id < 1) {
                 continue;
             }
 
             if ($this->isExcludedBrand($brand)) {
-                yield new RawRecord((string) $id, outOfScope: 'excluded_brand');
+                yield new RawRecord((string) $id, outOfScope: 'excluded_brand', name: $name === '' ? null : $name);
 
                 continue;
             }
@@ -160,13 +160,13 @@ final readonly class SafetyJoggerSource implements VendorSource
             $fetched = $this->fetcher->fetch($id);
 
             if ($fetched['detail'] === null) {
-                yield new RawRecord((string) $id, error: $fetched['error'], fetch: $fetched['outcome']);
+                yield new RawRecord((string) $id, error: $fetched['error'], fetch: $fetched['outcome'], name: $name === '' ? null : $name);
 
                 continue;
             }
 
             $detail = self::trim($fetched['detail']);
-            $record = new RawRecord((string) $id, $detail, self::hashable($detail), fetch: $fetched['outcome']);
+            $record = new RawRecord((string) $id, $detail, self::hashable($detail), fetch: $fetched['outcome'], name: $name === '' ? null : $name);
             unset($fetched);
             unset($detail);
 
