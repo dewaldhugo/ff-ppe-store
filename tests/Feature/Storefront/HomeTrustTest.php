@@ -25,7 +25,7 @@ it('sits under the industries slider, before the category tiles, on a centred li
     $strip = trustStrip($html);
 
     expect(strpos($html, 'data-home-industries'))->toBeLessThan(strpos($html, 'data-home-trust'))
-        ->and(strpos($html, 'data-home-trust'))->toBeLessThan(strpos($html, 'data-home-categories'))
+        ->and(strpos($html, 'data-home-trust'))->toBeLessThan(strpos($html, 'data-home-products'))
         ->and($strip)->toContain('bg-surface-muted')
         ->and($strip)->toContain('sm:justify-center')
         ->and($strip)->toContain('text-[1.05rem]')
@@ -69,7 +69,7 @@ it('is semantic: one h1, a heading for every section, and lazy images below the 
 
     expect(substr_count($html, '<h1'))->toBe(1);
 
-    foreach (['data-home-hero' => 'home-hero-title', 'data-home-trust' => 'home-trust', 'data-home-categories' => 'home-categories', 'data-home-featured' => 'home-featured'] as $marker => $id) {
+    foreach (['data-home-hero' => 'home-hero-title', 'data-home-trust' => 'home-trust', 'data-home-products' => 'home-products', 'data-home-featured' => 'home-featured'] as $marker => $id) {
         preg_match('#<section[^>]*'.$marker.'[^>]*>#', $html, $open);
 
         expect($open[0] ?? '')->toContain('aria-labelledby="'.$id.'"')
@@ -86,7 +86,7 @@ it('is semantic: one h1, a heading for every section, and lazy images below the 
 });
 
 it('has no hard-coded paths in the home templates', function (): void {
-    foreach (['home.blade.php', 'components/home/hero.blade.php', 'components/home/category-tiles.blade.php', 'components/home/standard-chips.blade.php', 'components/home/trust-strip.blade.php'] as $file) {
+    foreach (['home.blade.php', 'components/home/hero.blade.php', 'components/home/product-picks.blade.php', 'components/home/standard-chips.blade.php', 'components/home/trust-strip.blade.php'] as $file) {
         expect((string) file_get_contents(resource_path('views/'.$file)))->not->toMatch('#href="/#');
     }
 });

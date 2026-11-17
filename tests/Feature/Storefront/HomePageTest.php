@@ -3,12 +3,7 @@
 declare(strict_types=1);
 
 use App\Domain\Catalogue\Home\HeroImage;
-use App\Domain\Catalogue\Keys\CatalogueKeys;
-use Lunar\FieldTypes\Text;
-use Lunar\FieldTypes\TranslatedText;
-use Lunar\Models\Collection;
-use Lunar\Models\CollectionGroup;
-use Lunar\Models\Language;
+use App\Domain\Catalogue\Home\HomeFeaturedProducts;
 use Lunar\Models\Url;
 
 function heroSection(string $html): string
@@ -133,82 +128,71 @@ it('claims no testimonials or client logos on the home page', function (): void 
     expect($html)->not->toContain('testimonial')->and($html)->not->toContain('trusted by');
 });
 
-function tileCategory(string $name, string $slug): Collection
+function productPicksOf(string $html): string
 {
-    $collection = Collection::create([
-        'collection_group_id' => CollectionGroup::query()->where('handle', 'categories')->sole()->id,
-        'attribute_data' => ['name' => new TranslatedText(['en' => new Text($name)])],
-    ], CatalogueKeys::collection('safety-footwear'));
-
-    $collection->urls()->create(['slug' => $slug, 'default' => true, 'language_id' => Language::getDefault()->id]);
-
-    return $collection;
-}
-
-function tilesOf(string $html): string
-{
-    preg_match('#<section[^>]*data-home-categories.*?</section>#s', $html, $section);
+    preg_match('#<section[^>]*data-home-products.*?</section>#s', $html, $section);
 
     return $section[0] ?? '';
 }
 
-it('shows a tile for each child of safety footwear, each one a single link', function (): void {
-    $html = tilesOf($this->get(route('home'))->assertOk()->getContent());
+it('replaces the shop by type tiles with a Featured products section of linked product cards', function (): void {
+    $html = $this->get(route('home'))->assertOk()->getContent();
+    $section = productPicksOf($html);
+    $cards = substr_count($section, 'data-home-product>');
 
-    foreach (['safety-trainers' => 'Safety Trainers', 'safety-shoes' => 'Safety Shoes', 'safety-boots' => 'Safety Boots'] as $slug => $name) {
-        expect($html)->toContain('href="'.route('category', 'safety-footwear/'.$slug).'"')
-            ->and($html)->toContain('aria-label="Shop '.$name.'"');
+    expect($html)->not->toContain('data-home-categories')
+        ->and($html)->not->toContain('Shop by type')
+        ->and($section)->toMatch('#<h2[^>]*id="home-products"[^>]*>Featured products</h2>#')
+        ->and($cards)->toBeGreaterThan(0)
+        ->and($cards)->toBeLessThanOrEqual(5);
+
+    preg_match_all('#<li[^>]*data-home-product>.*?</li>#s', $section, $items);
+
+    foreach ($items[0] as $item) {
+        expect($item)->toContain('href="'.url('/products/')) // a product link, built from route('product')
+            ->and($item)->toContain('loading="lazy"')
+            ->and($item)->toContain('width="300"')
+            ->and($item)->toContain('height="300"')
+            ->and($item)->toContain('data-price');
+    }
+});
+
+it('shows five products when the catalogue has at least five that can be shown', function (): void {
+    $eligible = (new HomeFeaturedProducts)->pick(100)->count();
+
+    $shown = substr_count(productPicksOf($this->get(route('home'))->getContent()), 'data-home-product>');
+
+    expect($shown)->toBe(min(5, $eligible));
+});
+
+it('picks a different set of products from page load to page load', function (): void {
+    $eligible = (new HomeFeaturedProducts)->pick(100)->count();
+
+    if ($eligible <= 5) {
+        $this->markTestSkipped('The fixture catalogue has five or fewer products to pick from.');
     }
 
-    expect(substr_count($html, 'data-category-tile'))->toBe(3)
-        ->and($html)->not->toContain('All products')
-        ->and($html)->toMatch('#<h2[^>]*id="home-categories"#');
+    $sets = [];
+
+    foreach (range(1, 25) as $ignored) {
+        $sets[implode(',', (new HomeFeaturedProducts)->pick()->modelKeys())] = true;
+    }
+
+    expect(count($sets))->toBeGreaterThan(1);
 });
 
-it('builds tiles from the collection tree, so a new child collection appears', function (): void {
-    tileCategory('Safety Sandals', 'safety-sandals');
-
-    $html = tilesOf($this->get(route('home'))->getContent());
-
-    expect(substr_count($html, 'data-category-tile'))->toBe(4)
-        ->and($html)->toContain('href="'.route('category', 'safety-footwear/safety-sandals').'"')
-        ->and($html)->toContain('aria-label="Shop Safety Sandals"');
-});
-
-it('uses the first published product with an image, lazy loaded with its size set', function (): void {
+it('only picks published products that have an image and a price', function (): void {
     $product = Url::query()->where('slug', 'safety-jogger-ligero')->sole()->element;
-    $collection = tileCategory('Safety Sandals', 'safety-sandals');
-    $collection->products()->attach($product->id, ['position' => 1]);
+    $picks = new HomeFeaturedProducts;
 
-    $html = tilesOf($this->get(route('home'))->getContent());
-    preg_match('#<a\s+href="'.preg_quote(route('category', 'safety-footwear/safety-sandals'), '#').'".*?</a>#s', $html, $tile);
-
-    expect($tile[0])->toContain('<img')
-        ->and($tile[0])->toContain('loading="lazy"')
-        ->and($tile[0])->toContain('width="800"')
-        ->and($tile[0])->toContain('height="800"')
-        ->and($tile[0])->toContain('srcset=');
-});
-
-it('skips draft products and products with no image, and falls back to a plain tile', function (): void {
-    $product = Url::query()->where('slug', 'safety-jogger-ligero')->sole()->element;
-    $collection = tileCategory('Safety Sandals', 'safety-sandals');
-    $collection->products()->attach($product->id, ['position' => 1]);
+    expect($picks->pick(100)->modelKeys())->toContain($product->id);
 
     $product->update(['status' => 'draft']);
-
-    $tile = fn (): string => (function (string $html): string {
-        preg_match('#<a\s+href="'.preg_quote(route('category', 'safety-footwear/safety-sandals'), '#').'".*?</a>#s', $html, $m);
-
-        return $m[0];
-    })(tilesOf($this->get(route('home'))->getContent()));
-
-    expect($tile())->not->toContain('<img')->and($tile())->toContain('Safety Sandals');
+    expect($picks->pick(100)->modelKeys())->not->toContain($product->id);
 
     $product->update(['status' => 'published']);
     $product->clearMediaCollection(config('lunar.media.collection'));
-
-    expect($tile())->not->toContain('<img');
+    expect($picks->pick(100)->modelKeys())->not->toContain($product->id);
 });
 
 it('shows the industry slider under the hero, with its heading', function (): void {

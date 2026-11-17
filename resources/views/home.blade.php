@@ -21,7 +21,7 @@
 
     <x-home.trust-strip />
 
-    <x-home.category-tiles />
+    <x-home.product-picks />
 
     <x-home.featured-products />
 
