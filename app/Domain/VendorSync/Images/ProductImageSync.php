@@ -59,7 +59,7 @@ final readonly class ProductImageSync
         /** @var Product $product */
         $product = Product::query()->findOrFail($link->product_id);
         $collection = (string) config('lunar.media.collection');
-        $planHash = hash('sha256', json_encode(array_map(fn (NormalisedImage $image): array => [$image->url, $image->colour, $image->role], $plan), JSON_THROW_ON_ERROR));
+        $planHash = $this->hashOf($plan);
         $existingMedia = $product->getMedia($collection);
 
         // Re-download only when the URL set changed, or on a full refresh.
@@ -251,6 +251,30 @@ final readonly class ProductImageSync
         $link->update(['image_urls_hash' => $newHash]);
 
         return $result;
+    }
+
+    /**
+     * The hash a product's image state must equal for its images to be up to
+     * date: the one `sync()` compares with `vendor_products.image_urls_hash`.
+     * Null when the plan is blocked (no mapper, no stored payload, no images),
+     * which a job reports as a failure.
+     *
+     * The image dispatcher calls this to leave unchanged products out of the
+     * queue, so it and `sync()` cannot disagree about what "unchanged" means.
+     */
+    public function planHash(VendorProduct $link): ?string
+    {
+        $plan = $this->plan($link, new ImageSyncResult);
+
+        return $plan === null ? null : $this->hashOf($plan);
+    }
+
+    /**
+     * @param  list<NormalisedImage>  $plan
+     */
+    private function hashOf(array $plan): string
+    {
+        return hash('sha256', json_encode(array_map(fn (NormalisedImage $image): array => [$image->url, $image->colour, $image->role], $plan), JSON_THROW_ON_ERROR));
     }
 
     /**

@@ -111,8 +111,12 @@ final class CatalogueCommand extends Command
         }
 
         try {
-            $queued = $images->dispatch($vendor);
-            $this->line("Queued {$queued} image jobs.");
+            $dispatch = $images->run($vendor);
+            $this->line("Queued {$dispatch->queued} image jobs.");
+
+            if ($dispatch->skipped > 0) {
+                $this->line("{$dispatch->skipped} products with up-to-date images were not queued.");
+            }
         } catch (RunAlreadyRunning $exception) {
             $this->error($exception->getMessage());
         }
