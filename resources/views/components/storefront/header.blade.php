@@ -86,7 +86,7 @@
     </div>
 
     {{-- Main navigation. Below the lg breakpoint it is the drawer; without JavaScript the plain links show at every size. --}}
-    <nav aria-label="Main" class="relative hidden border-b border-border bg-white no-js:block lg:block">
+    <nav aria-label="Main" class="relative hidden border-b border-border bg-surface-nav no-js:block lg:block">
         <x-ui.container>
             <ul class="flex flex-wrap items-center gap-x-8">
                 <li>

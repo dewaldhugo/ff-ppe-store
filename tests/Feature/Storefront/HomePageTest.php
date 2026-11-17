@@ -213,7 +213,7 @@ it('shows the feature products section with two videos, in place of the standard
 
     preg_match('#<section[^>]*data-home-featured.*?</section>#s', $html, $section);
 
-    expect($section[0] ?? '')->toMatch('#<h2[^>]*id="home-featured"[^>]*>Featured products</h2>#')
+    expect($section[0] ?? '')->toMatch('#<h2[^>]*id="home-featured"[^>]*>Product spotlights</h2>#')
         ->and(substr_count($section[0], '<video'))->toBe(2)
         ->and($section[0])->toContain('md:grid-cols-2')
         ->and($section[0])->toContain('src="https://frontline-footwear.com/shop/datasheets/CADOR%20Colours%20that%20work.mp4"')

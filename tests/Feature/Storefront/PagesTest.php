@@ -154,6 +154,13 @@ it('gives the size guide and technical features the same h1 and divider as the o
     }
 });
 
+it('gives the main menu a light grey background, with the products panel staying white', function (): void {
+    $html = $this->get(route('about'))->assertOk()->getContent();
+
+    expect($html)->toMatch('#<nav aria-label="Main"[^>]*bg-surface-nav#')
+        ->and($html)->toMatch('#id="products-menu"[^>]*bg-white#');
+});
+
 it('links to technical features straight after the size guide in the desktop and mobile menus', function (): void {
     $html = $this->get(route('about'))->assertOk()->getContent();
 
