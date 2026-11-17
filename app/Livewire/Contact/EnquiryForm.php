@@ -89,7 +89,7 @@ final class EnquiryForm extends Component
         $recipient = (string) config('store.enquiry_email');
 
         if (filter_var($recipient, FILTER_VALIDATE_EMAIL) === false) {
-            report(new \RuntimeException('No valid enquiry recipient: set STORE_ENQUIRY_EMAIL or STORE_EMAIL.'));
+            report(new \RuntimeException('No valid enquiry recipient: set store.enquiry_email in config/store.php.'));
             $this->addError('form', 'Sorry, we could not send your enquiry just now. Please try again later.');
 
             return;

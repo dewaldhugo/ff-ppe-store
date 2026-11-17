@@ -82,7 +82,7 @@ Current routes (`routes/web.php`):
 | `search` | `/search` | `CategoryListing` |
 | `product` | `/products/{slug}` | `ProductPage` |
 | `about` | `/about` | view `pages.about` (real content, supplied by the client) |
-| `contact` | `/contact` | view `pages.contact`: enquiry form (Livewire `EnquiryForm`) emailing `STORE_ENQUIRY_EMAIL` or `STORE_EMAIL` |
+| `contact` | `/contact` | view `pages.contact`: enquiry form (Livewire `EnquiryForm`) emailing the store email (`config/store.php`), or `STORE_ENQUIRY_EMAIL` when set |
 | placeholders | `/login`, `/register`, `/account`, `/cart`, `/checkout`, `/terms`, `/privacy`, `/cookies`, `/returns`, `/delivery`, `/accessibility` | `pages.placeholder` (noindex) |
 
 Rules:
@@ -102,7 +102,7 @@ Rules:
 - **Noindex.** One flag, `STORE_NOINDEX` (`config/store.php`, default true), puts `<meta name="robots" content="noindex">` on every page. Placeholder pages also carry their own noindex. See docs/launch-checklist.md. Noindex works through the meta tag only.
 - **robots.txt.** `public/robots.txt` exists and disallows `/lunar`, `/horizon`, `/cart`, `/checkout` and `/account`. It is a static file: `STORE_NOINDEX` does not change it, and it does not keep the store out of search engines (a crawler must be able to fetch a page to see its noindex tag, so never Disallow the catalogue there).
 - **Config-driven home page.** `config/homepage.php` holds the "Shop by standard" chips (`standards`) and the trust strip claims (`trust`; an empty slot is not rendered).
-- **Store identity.** `STORE_*` values in `.env` feed `config/store.php` and `App\Support\Store`; each reads `TBC` until it is known.
+- **Store identity.** `config/store.php` and `App\Support\Store` hold it. The address, phone number and email are fixed in `config/store.php` (no env variable). The other `STORE_*` values come from `.env` and each reads `TBC` until it is known.
 
 ## Workflow
 

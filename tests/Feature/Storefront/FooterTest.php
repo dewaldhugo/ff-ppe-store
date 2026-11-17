@@ -53,7 +53,7 @@ it('reads every identity value from config, with TBC as the default', function (
 
     $example = (string) file_get_contents(base_path('.env.example'));
 
-    foreach (['STORE_NAME', 'STORE_LEGAL_NAME', 'STORE_COMPANY_NUMBER', 'STORE_REGISTERED_OFFICE', 'STORE_ADDRESS', 'STORE_VAT_NUMBER', 'STORE_PHONE', 'STORE_EMAIL'] as $key) {
+    foreach (['STORE_NAME', 'STORE_LEGAL_NAME', 'STORE_COMPANY_NUMBER', 'STORE_REGISTERED_OFFICE', 'STORE_VAT_NUMBER'] as $key) {
         expect($example)->toContain($key.'=TBC');
     }
 });
@@ -107,4 +107,22 @@ it('shows the customer address in the footer', function (): void {
     expect($address[1])->toBe('Stamford House, 2a Lagoon Road, Orpington, BR5 3QX')
         ->and(Store::contactAddress())->toBe('Stamford House, 2a Lagoon Road, Orpington, BR5 3QX')
         ->and($footer)->not->toContain('Registered office');
+});
+
+it('fixes the address, phone and email in config/store.php, with no environment variable', function (): void {
+    $file = require config_path('store.php');
+    $source = (string) file_get_contents(config_path('store.php'));
+
+    expect($file['address'])->toBe('Stamford House, 2a Lagoon Road, Orpington, BR5 3QX')
+        ->and($file['phone'])->toBe('+44 20 8289 5858')
+        ->and($file['email'])->toBe('info@thebridgegroup.uk.com')
+        ->and($source)->not->toContain('STORE_ADDRESS')
+        ->and($source)->not->toContain('STORE_PHONE')
+        ->and($source)->not->toContain("env('STORE_EMAIL'");
+
+    foreach (['.env.example', '.env.production.example'] as $example) {
+        $text = (string) file_get_contents(base_path($example));
+
+        expect($text)->not->toContain('STORE_ADDRESS=')->not->toContain('STORE_PHONE=')->not->toContain('STORE_EMAIL=');
+    }
 });
