@@ -51,3 +51,17 @@ it('uses UK English and no em dashes in its copy', function (): void {
     expect($text)->not->toContain('—')
         ->and($text)->not->toMatch('/\b(organization|program|center|color|behavior)\b/i');
 });
+
+it('shows the team photo with descriptive alt text in the Our People section', function (): void {
+    $html = $this->get(route('about'))->assertOk()->getContent();
+
+    preg_match('#<section[^>]*aria-labelledby="about-people".*?</section>#s', $html, $section);
+    preg_match('#<img[^>]*data-about-people-image[^>]*>#s', $section[0] ?? '', $img);
+
+    expect($img[0] ?? '')->toContain(asset('images/about/our-people.webp'))
+        ->toMatch('#alt="[^"]{20,}"#')
+        ->toContain('width="763"')
+        ->toContain('height="500"')
+        ->toContain('loading="lazy"')
+        ->and(is_file(public_path('images/about/our-people.webp')))->toBeTrue();
+});

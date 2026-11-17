@@ -3,12 +3,12 @@
     Route: /about (route name about), see routes/web.php.
 
     Copy is supplied by the client (The Bridge Group's group-level "About Us" page).
-    Left out on purpose: the sister-site buttons, the hero photo, the two team photos
+    Left out on purpose: the sister-site buttons, the hero photo, the "How We Work" photo
     (add them here when the files are supplied), the enquiry form (the Contact page
     will own it) and the link to the group's policies (no policy pages exist yet).
 --}}
 <x-layouts.storefront title="About The Bridge Group" description="The Bridge Group brings together security, property support and management technology to help clients protect their people, look after their assets and keep everyday operations running smoothly.">
-    <article class="mx-auto max-w-3xl" data-about>
+    <article class="w-full" data-about>
         <x-ui.section-heading title="About The Bridge Group" tag="h1">People, expertise and technology. Working together for you.</x-ui.section-heading>
 
         <div class="mt-8 space-y-4 leading-relaxed text-ink">
@@ -44,14 +44,29 @@
         </section>
 
         <section class="mt-12 border-t border-border pt-10" aria-labelledby="about-people">
-            <h2 id="about-people" class="text-2xl text-brand-navy sm:text-3xl">Our People</h2>
-            <p class="mt-2 font-semibold text-brand-blue">The people behind the service.</p>
+            <div class="grid items-start gap-8 md:grid-cols-2 md:gap-12">
+                <div>
+                    <h2 id="about-people" class="text-2xl text-brand-navy sm:text-3xl">Our People</h2>
+                    <p class="mt-2 font-semibold text-brand-blue">The people behind the service.</p>
 
-            <div class="mt-6 space-y-4 leading-relaxed text-ink">
-                <p>Our services depend on the people who deliver them: security officers, engineers, site teams, operational managers and software specialists.</p>
-                <p>They work in very different environments, from busy construction sites and utility operations to residential buildings where professionalism, discretion and an approachable manner matter every day.</p>
-                <p>We value practical knowledge, clear communication and taking responsibility. Our aim is for clients to feel confident in both the team on site and the people supporting them behind the scenes.</p>
-                <p>Working together across disciplines helps us understand problems more fully and bring the right expertise to each requirement.</p>
+                    <div class="mt-6 space-y-4 leading-relaxed text-ink">
+                        <p>Our services depend on the people who deliver them: security officers, engineers, site teams, operational managers and software specialists.</p>
+                        <p>They work in very different environments, from busy construction sites and utility operations to residential buildings where professionalism, discretion and an approachable manner matter every day.</p>
+                        <p>We value practical knowledge, clear communication and taking responsibility. Our aim is for clients to feel confident in both the team on site and the people supporting them behind the scenes.</p>
+                        <p>Working together across disciplines helps us understand problems more fully and bring the right expertise to each requirement.</p>
+                    </div>
+                </div>
+
+                <img
+                    src="{{ asset('images/about/our-people.webp') }}"
+                    alt="A group of The Bridge Group colleagues, including office staff, security officers with a police dog, engineers and site operatives, standing outside an office building beside a company van."
+                    width="763"
+                    height="500"
+                    loading="lazy"
+                    decoding="async"
+                    class="h-auto w-full rounded-lg"
+                    data-about-people-image
+                >
             </div>
         </section>
 
