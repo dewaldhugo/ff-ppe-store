@@ -40,7 +40,8 @@
                         <span data-store-email>{{ \App\Support\Store::email() }}</span>
                     @endif
                 </li>
-                <li><a href="{{ route('account') }}" class="hover:underline">Account</a></li>
+                <li><a href="{{ route('login') }}" class="hover:underline" data-login-link>Log in</a></li>
+                <li><a href="{{ route('register') }}" class="hover:underline" data-register-link>Register</a></li>
             </ul>
         </x-ui.container>
     </div>

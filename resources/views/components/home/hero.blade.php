@@ -8,16 +8,62 @@
     Without it the text spans the full width, with no placeholder.
 --}}
 <section class="surface-dark relative isolate flex items-center overflow-hidden bg-brand-navy text-white sm:min-h-[33rem]" aria-labelledby="home-hero-title" data-home-hero>
-    {{-- Decorative background photo: one of the seven hero-bg images, picked at random on each page load, centred, no overlay. --}}
-    <img
-        src="{{ asset('images/hero-bg-'.random_int(1, 7).'.jpg') }}"
-        alt=""
-        width="1920"
-        height="882"
-        fetchpriority="high"
-        data-hero-bg
-        class="absolute inset-0 -z-10 h-full w-full object-cover object-center"
+    {{--
+        Decorative background photos: the seven hero-bg images, starting at a random one on each page
+        load and fading into the next every 6 seconds, centred, no overlay. Only the first photo is in
+        the page; the others load just before their turn (data-src). The photo being faded in sits on
+        top while the previous one stays fully visible beneath it, so the background never dips to
+        navy. Without JavaScript it stays on the first photo. It fades whatever the visitor's "reduce
+        motion" setting: a slow fade is not the kind of movement that setting is for, and a slideshow that
+        silently stops looks broken.
+    --}}
+    @php
+        $heroStart = random_int(1, 7);
+        $heroOrder = array_map(fn (int $step): int => (($heroStart - 1 + $step) % 7) + 1, range(0, 6));
+    @endphp
+    <div
+        class="absolute inset-0 -z-10"
+        aria-hidden="true"
+        data-hero-slides
+        data-interval="6000"
+        x-data="{
+            current: 0,
+            previous: null,
+            count: {{ count($heroOrder) }},
+            async load(i) {
+                const el = this.$refs['slide' + i];
+                if (el.dataset.src) { el.src = el.dataset.src; el.removeAttribute('data-src'); }
+                // Never wait more than 4 seconds, so one slow photo cannot stall the rotation.
+                try { await Promise.race([el.decode(), new Promise((r) => setTimeout(r, 4000))]); } catch (e) {}
+            },
+            init() {
+                this.load(1);
+                setInterval(async () => {
+                    if (document.hidden) return;
+                    const next = (this.current + 1) % this.count;
+                    await this.load(next);
+                    this.previous = this.current;
+                    this.current = next;
+                    this.load((next + 1) % this.count);
+                }, 6000);
+            },
+        }"
     >
+        @foreach ($heroOrder as $i => $n)
+            <img
+                @if ($i === 0) src="{{ asset('images/hero-bg-'.$n.'.jpg') }}" fetchpriority="high" @else data-src="{{ asset('images/hero-bg-'.$n.'.jpg') }}" @endif
+                alt=""
+                width="1920"
+                height="882"
+                @if ($i === 0) data-hero-bg @endif
+                data-hero-slide
+                x-ref="slide{{ $i }}"
+                data-state="{{ $i === 0 ? 'current' : 'idle' }}"
+                x-bind:data-state="current === {{ $i }} ? 'current' : (previous === {{ $i }} ? 'previous' : 'idle')"
+                class="absolute inset-0 h-full w-full object-cover object-center opacity-0 data-[state=current]:z-10 data-[state=current]:opacity-100 data-[state=current]:transition-opacity data-[state=current]:duration-[1500ms] data-[state=current]:ease-in-out data-[state=previous]:opacity-100"
+            >
+        @endforeach
+    </div>
 
     <x-ui.container class="w-full py-14 sm:py-20">
         <div @class(['items-center gap-12', 'md:grid md:grid-cols-2' => $image])>

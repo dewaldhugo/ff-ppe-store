@@ -9,6 +9,7 @@ beforeEach(function (): void {
     config()->set('store.legal_name', 'The Bridge Group Ltd');
     config()->set('store.company_number', '01234567');
     config()->set('store.registered_office', '1 Example Street, London, EC1A 1AA');
+    config()->set('store.address', 'TBC');
     config()->set('store.vat_number', 'GB123456789');
     config()->set('store.phone', 'TBC');
     config()->set('store.email', 'TBC');
@@ -21,23 +22,22 @@ function footer(string $html): string
     return $footer[0];
 }
 
-it('shows the UK trading disclosure from config', function (): void {
-    $footer = footer($this->get(route('shop'))->getContent());
-
-    $expected = 'The Bridge Group Ltd, registered in England and Wales, company number 01234567. Registered office: 1 Example Street, London, EC1A 1AA. VAT number GB123456789.';
-
-    expect(Store::disclosure())->toBe($expected)
-        ->and($footer)->toContain('data-disclosure>'.$expected.'<')
-        ->and($footer)->toContain('&copy; '.date('Y').' The Bridge Group');
-});
-
-it('shows TBC placeholders until the details are known', function (): void {
+it('has only the copyright line in the lower footer, with no TBC placeholders', function (): void {
     foreach (['legal_name', 'company_number', 'registered_office', 'vat_number'] as $key) {
         config()->set('store.'.$key, 'TBC');
     }
 
-    expect(footer($this->get(route('shop'))->getContent()))
-        ->toContain('TBC, registered in England and Wales, company number TBC. Registered office: TBC. VAT number TBC.');
+    $footer = footer($this->get(route('shop'))->getContent());
+
+    preg_match('#<div class="border-t border-white/20">(.*?)</div>#s', $footer, $lower);
+
+    expect(trim(html_entity_decode(strip_tags($lower[1]))))->toBe('© '.date('Y').' The Bridge Group')
+        ->and(substr_count($lower[1], '<p'))->toBe(1)
+        ->and($lower[1])->toContain('data-copyright')
+        ->and($lower[1])->not->toContain('TBC')
+        ->and($footer)->not->toContain('data-disclosure')
+        ->and($footer)->not->toContain('data-business-notice')
+        ->and($footer)->not->toContain('registered in England and Wales');
 });
 
 it('reads every identity value from config, with TBC as the default', function (): void {
@@ -48,19 +48,14 @@ it('reads every identity value from config, with TBC as the default', function (
         return array_keys($file);
     })();
 
-    expect($defaults)->toBe(['name', 'legal_name', 'company_number', 'registered_office', 'vat_number', 'phone', 'email', 'noindex'])
+    expect($defaults)->toBe(['name', 'legal_name', 'company_number', 'registered_office', 'address', 'vat_number', 'phone', 'email', 'enquiry_email', 'noindex'])
         ->and(file_get_contents(config_path('store.php')))->not->toContain("'The Bridge Group'");
 
     $example = (string) file_get_contents(base_path('.env.example'));
 
-    foreach (['STORE_NAME', 'STORE_LEGAL_NAME', 'STORE_COMPANY_NUMBER', 'STORE_REGISTERED_OFFICE', 'STORE_VAT_NUMBER', 'STORE_PHONE', 'STORE_EMAIL'] as $key) {
+    foreach (['STORE_NAME', 'STORE_LEGAL_NAME', 'STORE_COMPANY_NUMBER', 'STORE_REGISTERED_OFFICE', 'STORE_ADDRESS', 'STORE_VAT_NUMBER', 'STORE_PHONE', 'STORE_EMAIL'] as $key) {
         expect($example)->toContain($key.'=TBC');
     }
-});
-
-it('tells visitors it supplies business customers and that prices exclude VAT', function (): void {
-    expect(footer($this->get(route('shop'))->getContent()))
-        ->toContain('data-business-notice>We supply business customers. All prices exclude VAT.<');
 });
 
 it('has the footer columns with the right links', function (): void {
@@ -100,4 +95,16 @@ it('uses the white logo on the brand-blue footer', function (): void {
     expect($footer)->toContain('bg-brand-blue')
         ->and($logo[0])->toContain(asset('images/the-bridge-group-logo-white.svg'))
         ->and($logo[0])->not->toContain('the-bridge-group-logo.svg');
+});
+
+it('shows the customer address in the footer', function (): void {
+    config()->set('store.address', 'Stamford House, 2a Lagoon Road, Orpington, BR5 3QX');
+
+    $footer = footer($this->get(route('shop'))->getContent());
+
+    preg_match('#<address[^>]*>(.*?)</address>#s', $footer, $address);
+
+    expect($address[1])->toBe('Stamford House, 2a Lagoon Road, Orpington, BR5 3QX')
+        ->and(Store::contactAddress())->toBe('Stamford House, 2a Lagoon Road, Orpington, BR5 3QX')
+        ->and($footer)->not->toContain('Registered office');
 });

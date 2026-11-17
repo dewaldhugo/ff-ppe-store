@@ -48,13 +48,15 @@ it('shows the logo in the header, linked to the home page, with the store name a
         ->and(is_file(public_path('images/the-bridge-group-logo-white.svg')))->toBeTrue();
 });
 
-it('has a top bar with the trade notice, contact details and an account link', function (): void {
+it('has a top bar with the trade notice, contact details and Log in and Register links', function (): void {
     $html = $this->get(route('shop'))->getContent();
 
     preg_match('#<div class="surface-dark bg-brand-navy.*?</ul>#s', $html, $bar);
 
     expect($bar[0])->toContain('Trade supplier: all prices exclude VAT')
-        ->and($bar[0])->toContain('href="'.route('account').'"')
+        ->and($bar[0])->toContain('href="'.route('login').'"')
+        ->and($bar[0])->toContain('href="'.route('register').'"')
+        ->and($bar[0])->not->toContain('href="'.route('account').'"')
         // Placeholders are plain text, never a dead tel: or mailto: link.
         ->and($bar[0])->toContain('data-store-phone>TBC<')
         ->and($bar[0])->toContain('data-store-email>TBC<')
@@ -81,6 +83,20 @@ it('has a cart link with an item count badge of zero', function (): void {
     expect($cart)->not->toBeEmpty()
         ->and($cart[0])->toContain('aria-label="Cart, 0 items"')
         ->and($cart[0])->toMatch('#data-cart-count[^>]*>0<#');
+});
+
+it('has Log in and Register in the top bar, in place of Account, and not beside the cart', function (): void {
+    $html = $this->get(route('shop'))->getContent();
+
+    preg_match('#<div class="surface-dark bg-brand-navy.*?</ul>#s', $html, $bar);
+    preg_match('#<a\s+href="'.preg_quote(route('cart'), '#').'"[^>]*data-cart-link.*?</a>#s', $html, $cart);
+
+    expect($bar[0])->toMatch('#<a href="'.preg_quote(route('login'), '#').'"[^>]*data-login-link>Log in</a>#')
+        ->and($bar[0])->toMatch('#<a href="'.preg_quote(route('register'), '#').'"[^>]*data-register-link>Register</a>#')
+        ->and($bar[0])->not->toContain('>Account<')
+        ->and($cart[0])->not->toContain('Log in')
+        ->and(route('login', absolute: false))->toBe('/login')
+        ->and(route('register', absolute: false))->toBe('/register');
 });
 
 it('has the main navigation: Home, Products, About and Contact', function (): void {

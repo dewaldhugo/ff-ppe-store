@@ -11,7 +11,7 @@
             <a href="{{ route('home') }}" class="inline-block" data-footer-logo>
                 <x-storefront.logo light />
             </a>
-            <address class="not-italic text-white/90">{{ \App\Support\Store::address() }}</address>
+            <address class="not-italic text-white/90">{{ \App\Support\Store::contactAddress() }}</address>
             <p>
                 @if ($phoneHref)
                     <a href="{{ $phoneHref }}" class="{{ $link }}">{{ \App\Support\Store::phone() }}</a>
@@ -68,9 +68,7 @@
 
     <div class="border-t border-white/20">
         <x-ui.container class="space-y-2 py-6 text-sm text-white/90">
-            <p class="font-semibold text-white" data-business-notice>We supply business customers. All prices exclude VAT.</p>
-            <p data-disclosure>{{ \App\Support\Store::disclosure() }}</p>
-            <p>&copy; {{ date('Y') }} {{ \App\Support\Store::name() }}</p>
+            <p data-copyright>&copy; {{ date('Y') }} {{ \App\Support\Store::name() }}</p>
         </x-ui.container>
     </div>
 </footer>

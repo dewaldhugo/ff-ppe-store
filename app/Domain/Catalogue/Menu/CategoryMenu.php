@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domain\Catalogue\Menu;
 
+use App\Domain\Catalogue\Keys\CatalogueKeys;
+use App\Domain\Catalogue\Keys\KeyType;
 use App\Domain\Catalogue\Urls\CategoryUrl;
 use Illuminate\Support\Facades\Cache;
 use Lunar\Models\Collection;
@@ -21,12 +23,13 @@ use Lunar\Models\CollectionGroup;
  */
 final class CategoryMenu
 {
-    public const string CACHE_KEY = 'storefront.category_menu';
+    /** Bump the suffix whenever the shape of `tree()` changes, so a stale cached copy is never read. */
+    public const string CACHE_KEY = 'storefront.category_menu.v2';
 
     public function __construct(private readonly CategoryUrl $urls) {}
 
     /**
-     * @return list<array{name: string, url: string, children: list<array{name: string, url: string}>}>
+     * @return list<array{name: string, url: string, handle: string|null, children: list<array{name: string, url: string, handle: string|null}>}>
      */
     public function tree(): array
     {
@@ -41,7 +44,7 @@ final class CategoryMenu
     }
 
     /**
-     * @return list<array{name: string, url: string, children: list<array{name: string, url: string}>}>
+     * @return list<array{name: string, url: string, handle: string|null, children: list<array{name: string, url: string, handle: string|null}>}>
      */
     private function build(): array
     {
@@ -65,6 +68,7 @@ final class CategoryMenu
             return $url === null ? null : [
                 'name' => (string) $collection->translateAttribute('name'),
                 'url' => $url,
+                'handle' => CatalogueKeys::handleFor(KeyType::Collection, $collection),
             ];
         };
 

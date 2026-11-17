@@ -233,3 +233,45 @@ it('puts an intro h3 under the industries heading and a light grey band above th
     expect($html)->toMatch('#Solutions for every workplace</h2>.*?<h3[^>]*data-industries-intro[^>]*>Streamline your site procurement with a single, dependable UK trade supplier\. We stock certified head-to-toe PPE, workwear, and safety footwear ready for rapid nationwide dispatch and competitive bulk pricing\.</h3>#s')
         ->and($serviceClass[0] ?? '')->toContain('bg-surface-muted');
 });
+
+it('fades through all seven hero photos every six seconds, starting at a random one', function (): void {
+    $hero = heroSection($this->get(route('home'))->getContent());
+
+    preg_match_all('#<img[^>]*data-hero-slide[^>]*>#s', $hero, $slides);
+
+    expect($slides[0])->toHaveCount(7)
+        ->and($hero)->toContain('data-hero-slides')
+        ->and($hero)->toContain('data-interval="6000"')
+        ->and($hero)->toContain('}, 6000);')
+        ->and($hero)->not->toContain('prefers-reduced-motion');
+
+    // The first photo is in the page; the other six wait in data-src until their turn.
+    expect($slides[0][0])->toContain(' src="')->toContain('data-hero-bg')->toContain('data-state="current"');
+
+    $files = [];
+
+    foreach ($slides[0] as $i => $img) {
+        preg_match('#(?:data-src|(?<![-\w])src)="[^"]*hero-bg-([1-7])\.jpg"#', $img, $m);
+        $files[] = (int) $m[1];
+
+        if ($i > 0) {
+            expect($img)->not->toMatch('#(?<![-\w])src="#')->toContain('data-state="idle"');
+        }
+    }
+
+    // Every photo once, in a fixed cycle that starts wherever the page began.
+    expect(collect($files)->sort()->values()->all())->toBe([1, 2, 3, 4, 5, 6, 7]);
+
+    foreach ($files as $i => $n) {
+        expect($files[($i + 1) % 7])->toBe($n % 7 + 1);
+    }
+});
+
+it('fades the incoming photo in over the previous one so the background never dips to navy', function (): void {
+    $hero = heroSection($this->get(route('home'))->getContent());
+
+    expect($hero)->toContain('data-[state=current]:z-10')
+        ->and($hero)->toContain('data-[state=current]:duration-[1500ms]')
+        ->and($hero)->toContain('data-[state=previous]:opacity-100')
+        ->and($hero)->not->toContain('motion-reduce:');
+});

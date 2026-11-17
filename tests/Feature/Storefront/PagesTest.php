@@ -9,12 +9,15 @@ const NOINDEX = '<meta name="robots" content="noindex">';
 beforeEach(function (): void {
     // The flag is the environment's choice; the tests pick their own.
     config()->set('store.noindex', true);
+    // Placeholders, so the shell has no tel: or mailto: links whatever this machine's .env says.
+    config()->set('store.phone', 'TBC');
+    config()->set('store.email', 'TBC');
 });
 
 /** Route name => [URI, heading]. Placeholder pages: noindex until they have real content. */
 const PLACEHOLDERS = [
-    'about' => ['/about', 'About us'],
-    'contact' => ['/contact', 'Contact us'],
+    'login' => ['/login', 'Log in'],
+    'register' => ['/register', 'Register'],
     'account' => ['/account', 'Account'],
     'cart' => ['/cart', 'Cart'],
     'checkout' => ['/checkout', 'Checkout'],
@@ -95,7 +98,7 @@ it('renders the existing listing and product pages inside the new layout', funct
     $this->get(route('category', 'safety-footwear'))
         ->assertOk()
         ->assertSee('<nav aria-label="Main"', false)
-        ->assertSee('data-business-notice', false)
+        ->assertSee('data-copyright', false)
         ->assertSee('data-testid="product-grid"', false);
 
     $this->get(route('product', 'safety-jogger-ligero'))
@@ -111,7 +114,7 @@ it('uses route names for every link in the header and footer', function (): void
     preg_match_all('#<(?:header|footer).*?</(?:header|footer)>#s', $html, $shell);
     preg_match_all('~href="([^"#]+)"~', implode('', $shell[0]), $hrefs);
 
-    $known = collect(['home', 'shop', 'about', 'contact', 'account', 'cart', 'checkout', 'terms', 'privacy', 'cookies', 'returns', 'delivery', 'accessibility', 'search', 'size-guide', 'technical-features'])
+    $known = collect(['home', 'shop', 'about', 'contact', 'login', 'register', 'account', 'cart', 'checkout', 'terms', 'privacy', 'cookies', 'returns', 'delivery', 'accessibility', 'search', 'size-guide', 'technical-features'])
         ->map(fn (string $name): string => route($name));
 
     $categories = collect(app(CategoryMenu::class)->tree())

@@ -24,6 +24,15 @@ final class Store
         return (string) config('store.registered_office');
     }
 
+    /**
+     * The address shown to customers (footer, Contact page). Not the registered
+     * office, which `address()` returns for the trading disclosure.
+     */
+    public static function contactAddress(): string
+    {
+        return (string) config('store.address');
+    }
+
     public static function phone(): string
     {
         return (string) config('store.phone');
