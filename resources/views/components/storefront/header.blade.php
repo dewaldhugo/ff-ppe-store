@@ -130,17 +130,17 @@
             x-show="mega"
             x-cloak
             x-on:click.outside="mega = false"
-            class="absolute inset-x-0 top-full border-t-2 border-brand-teal bg-white shadow-lg"
+            class="absolute inset-x-0 top-full border-t-2 border-brand-teal bg-surface-nav shadow-lg"
         >
-            <x-ui.container class="py-8">
-                <p class="mb-6"><a href="{{ route('shop') }}" class="font-semibold text-brand-blue hover:underline">All products</a></p>
+            <x-ui.container class="py-6">
+                <p class="mb-4"><a href="{{ route('shop') }}" class="font-semibold text-brand-blue hover:underline">All products</a></p>
 
-                <ul class="grid gap-x-8 gap-y-6 sm:grid-cols-2 lg:grid-cols-4" data-menu-categories>
+                <ul class="grid gap-x-5 gap-y-5 sm:grid-cols-2 lg:grid-cols-5" data-menu-categories>
                     @foreach ($categories as $category)
                         <li>
-                            <a href="{{ $category['url'] }}" class="font-semibold text-ink hover:text-brand-blue hover:underline">{{ $category['name'] }}</a>
+                            <a href="{{ $category['url'] }}" class="text-sm font-semibold text-ink hover:text-brand-blue hover:underline">{{ $category['name'] }}</a>
                             @if ($category['children'] !== [])
-                                <ul class="mt-2 space-y-1">
+                                <ul class="mt-1.5 space-y-1">
                                     @foreach ($category['children'] as $child)
                                         <li><a href="{{ $child['url'] }}" class="text-sm text-ink-muted hover:text-brand-blue hover:underline">{{ $child['name'] }}</a></li>
                                     @endforeach

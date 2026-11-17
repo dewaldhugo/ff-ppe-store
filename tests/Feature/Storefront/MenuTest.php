@@ -48,7 +48,7 @@ it('lists the categories collection tree, with children, in the Products menu', 
     }
 
     // Children sit under their parent; ranges are not categories.
-    preg_match('#href="'.preg_quote(route('category', 'safety-footwear'), '#').'".*?<ul class="mt-2 space-y-1">(.*?)</ul>#s', $menu, $children);
+    preg_match('#href="'.preg_quote(route('category', 'safety-footwear'), '#').'".*?<ul class="mt-1\.5 space-y-1">(.*?)</ul>#s', $menu, $children);
 
     expect($children[1])->toContain(route('category', 'safety-footwear/safety-boots'))
         ->and($children[1])->toContain('Safety Trainers')
