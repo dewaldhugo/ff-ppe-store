@@ -52,16 +52,31 @@ it('links the primary button to the shop and the secondary button to the account
         ->and($hero)->not->toContain('rounded-full');
 });
 
-it('uses the site photo as the hero background, centred under the navy overlay', function (): void {
-    $hero = heroSection($this->get(route('home'))->getContent());
+it('uses one of the seven hero-bg photos as the hero background, centred, with no overlay', function (): void {
+    foreach (range(1, 7) as $n) {
+        expect(is_file(public_path("images/hero-bg-{$n}.jpg")))->toBeTrue();
+    }
 
-    expect(is_file(public_path('images/home-hero.jpg')))->toBeTrue()
-        ->and($hero)->toContain('src="'.asset('images/home-hero.jpg').'"')
-        ->and($hero)->toContain('alt=""')
-        ->and($hero)->toContain('width="1536"')
-        ->and($hero)->toContain('height="1024"')
-        ->and($hero)->toContain('object-cover object-[center_15%]')
-        ->and($hero)->toMatch('#data-hero-overlay[^>]*-z-10[^>]*from-brand-navy/86#');
+    $seen = [];
+
+    foreach (range(1, 40) as $ignored) {
+        $hero = heroSection($this->get(route('home'))->getContent());
+
+        expect($hero)->toMatch('#<img[^>]*src="'.preg_quote(asset('images/hero-bg-'), '#').'[1-7]\.jpg"[^>]*data-hero-bg#')
+            ->and($hero)->toContain('alt=""')
+            ->and($hero)->toContain('width="1920"')
+            ->and($hero)->toContain('height="882"')
+            ->and($hero)->toContain('object-cover object-center')
+            ->and($hero)->not->toContain('object-[center_')
+            ->and($hero)->not->toContain('data-hero-overlay')
+            ->and($hero)->not->toContain('from-brand-navy/');
+
+        preg_match('#hero-bg-([1-7])\.jpg#', $hero, $m);
+        $seen[$m[1]] = true;
+    }
+
+    // Random per page load: 40 loads showing a single image has odds of 7^-39.
+    expect(count($seen))->toBeGreaterThan(1);
 });
 
 it('gives the text the full width when there is no hero image file', function (): void {
