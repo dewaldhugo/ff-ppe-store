@@ -13,7 +13,9 @@
         load and fading into the next every 6 seconds, centred, no overlay. Only the first photo is in
         the page; the others load just before their turn (data-src). The photo being faded in sits on
         top while the previous one stays fully visible beneath it, so the background never dips to
-        navy. Without JavaScript, or with "reduce motion" set, it stays on the first photo.
+        navy. Without JavaScript it stays on the first photo. It fades whatever the visitor's "reduce
+        motion" setting: a slow fade is not the kind of movement that setting is for, and a slideshow that
+        silently stops looks broken.
     --}}
     @php
         $heroStart = random_int(1, 7);
@@ -35,7 +37,6 @@
                 try { await Promise.race([el.decode(), new Promise((r) => setTimeout(r, 4000))]); } catch (e) {}
             },
             init() {
-                if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
                 this.load(1);
                 setInterval(async () => {
                     if (document.hidden) return;
@@ -59,7 +60,7 @@
                 x-ref="slide{{ $i }}"
                 data-state="{{ $i === 0 ? 'current' : 'idle' }}"
                 x-bind:data-state="current === {{ $i }} ? 'current' : (previous === {{ $i }} ? 'previous' : 'idle')"
-                class="absolute inset-0 h-full w-full object-cover object-center opacity-0 data-[state=current]:z-10 data-[state=current]:opacity-100 data-[state=current]:transition-opacity data-[state=current]:duration-[1500ms] data-[state=current]:ease-in-out data-[state=previous]:opacity-100 motion-reduce:transition-none"
+                class="absolute inset-0 h-full w-full object-cover object-center opacity-0 data-[state=current]:z-10 data-[state=current]:opacity-100 data-[state=current]:transition-opacity data-[state=current]:duration-[1500ms] data-[state=current]:ease-in-out data-[state=previous]:opacity-100"
             >
         @endforeach
     </div>

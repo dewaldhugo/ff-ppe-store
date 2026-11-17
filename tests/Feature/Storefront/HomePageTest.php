@@ -243,7 +243,7 @@ it('fades through all seven hero photos every six seconds, starting at a random 
         ->and($hero)->toContain('data-hero-slides')
         ->and($hero)->toContain('data-interval="6000"')
         ->and($hero)->toContain('}, 6000);')
-        ->and($hero)->toContain('prefers-reduced-motion: reduce');
+        ->and($hero)->not->toContain('prefers-reduced-motion');
 
     // The first photo is in the page; the other six wait in data-src until their turn.
     expect($slides[0][0])->toContain(' src="')->toContain('data-hero-bg')->toContain('data-state="current"');
@@ -273,5 +273,5 @@ it('fades the incoming photo in over the previous one so the background never di
     expect($hero)->toContain('data-[state=current]:z-10')
         ->and($hero)->toContain('data-[state=current]:duration-[1500ms]')
         ->and($hero)->toContain('data-[state=previous]:opacity-100')
-        ->and($hero)->toContain('motion-reduce:transition-none');
+        ->and($hero)->not->toContain('motion-reduce:');
 });
