@@ -35,7 +35,7 @@
 </style>
 
 <div
-    class="w-full py-2"
+    class="w-full"
     x-data="{
         tab: 'safety-icons',
         tabs: [
@@ -70,7 +70,7 @@
     }"
     @hashchange.window="fromHash()"
 >
-    <h1 class="text-3xl font-bold text-brand-navy sm:text-4xl">Technical features</h1>
+    <x-ui.section-heading title="Technical features" tag="h1" />
 
     {{-- Tab list --}}
     <div

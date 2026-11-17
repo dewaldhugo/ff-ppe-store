@@ -6,7 +6,7 @@
 <style>[x-cloak] { display: none !important; }</style>
 
 <div
-    class="w-full py-10"
+    class="w-full"
     x-data="{
         tabs: ['shoes', 'workwear', 'gloves'],
         tab: 'shoes',
@@ -31,8 +31,8 @@
         last() { const n = this.tabs[this.tabs.length - 1]; this.select(n); this.$nextTick(() => this.$refs[n].focus()); },
     }"
 >
-    <h1 class="text-3xl font-semibold text-brand-navy">Find your perfect size with the our Size Guide</h1>
-    <p class="mt-3 text-ink">
+    <x-ui.section-heading title="Find your perfect size with our Size Guide" tag="h1" />
+    <p class="mt-4 text-ink">
         Use these charts to choose the right size. If you are unsure,
         <a href="{{ route('contact') }}" class="font-semibold text-brand-blue underline">contact us</a>
         and we will help.

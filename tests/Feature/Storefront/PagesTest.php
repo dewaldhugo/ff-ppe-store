@@ -142,6 +142,18 @@ it('serves the technical features page at /technical-features in the standard la
         ->and($html)->toContain('Technical features</h1>');
 });
 
+it('gives the size guide and technical features the same h1 and divider as the other pages', function (): void {
+    $placeholder = $this->get(route('about'))->assertOk()->getContent();
+    preg_match('#<h1[^>]*class="([^"]*)"#', $placeholder, $standard);
+
+    foreach (['size-guide', 'technical-features'] as $name) {
+        $html = $this->get(route($name))->assertOk()->getContent();
+
+        expect(substr_count($html, '<h1'))->toBe(1)
+            ->and($html)->toMatch('#<h1[^>]*class="'.preg_quote($standard[1], '#').'"[^>]*>[^<]+</h1>\s*<div aria-hidden="true" class="[^"]*bg-brand-teal#');
+    }
+});
+
 it('links to technical features straight after the size guide in the desktop and mobile menus', function (): void {
     $html = $this->get(route('about'))->assertOk()->getContent();
 
