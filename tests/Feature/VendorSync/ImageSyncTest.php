@@ -56,10 +56,10 @@ function freezeClock(): void
  * Import BESTBOOT [215754] from its recorded detail. Its catalogue run
  * leaves the product draft, waiting for its first image.
  */
-function importBestboot(array $brokenImages = [], array $hugeImages = []): VendorProduct
+function importBestboot(array $brokenImages = [], array $hugeImages = [], array $realImages = []): VendorProduct
 {
     $detail = VendorSync::json('SafetyJogger/product-215754.json');
-    VendorSync::fakeHttp([['id' => 215754]], [215754 => $detail], brokenImages: $brokenImages, hugeImages: $hugeImages);
+    VendorSync::fakeHttp([['id' => 215754]], [215754 => $detail], brokenImages: $brokenImages, hugeImages: $hugeImages, realImages: $realImages);
     VendorSync::import('SJ');
 
     return VendorProduct::query()->where('vendor_product_id', '215754')->sole();
@@ -109,12 +109,72 @@ it('saves BESTBOOT\'s images when its vendor product ID is passed to --product',
         ->and($run->seen)->toBe(1)
         ->and($run->updated)->toBe(1)
         ->and($run->errors)->toBe(0)
-        ->and(implode("\n", $run->messages))->toContain('BESTBOOT-BLK-HIRES.PNG: the image is 3692 x 3291 (12.2 megapixels, limit 5.0); used BESTBOOT-BLK-WEB01.JPG instead');
+        ->and(implode("\n", $run->messages))->toContain('BESTBOOT-BLK-HIRES.PNG: the image is 3692 x 3291 (12.2 megapixels, limit 7.0); used BESTBOOT-BLK-WEB01.JPG instead');
 
     // The image host is public: no API credentials are sent to it.
     Http::assertSent(fn (Request $request): bool => str_contains($request->url(), '/image/'));
     Http::assertNotSent(fn (Request $request): bool => str_contains($request->url(), '/image/')
         && ($request->hasHeader('secret') || $request->hasHeader('username')));
+});
+
+it('accepts a 2560 x 2560 vendor original and converts it', function (): void {
+    // The size the production run rejected at the old 5.0 megapixel limit. A real
+    // decode, so the process needs the memory a worker has (256M on the server).
+    $memory = ini_get('memory_limit');
+    ini_set('memory_limit', '256M');
+
+    try {
+        $link = importBestboot(realImages: ['BESTBOOT-BLK-HIRES.PNG' => [2560, 2560]]);
+
+        expect((float) config('vendorsync.images.max_megapixels'))->toBe(7.0);
+
+        $this->artisan('vendorsync:images', ['vendor' => 'SJ', '--product' => '215754'])->assertSuccessful();
+
+        $media = VendorSync::product('SJ', '215754')->getMedia('images');
+        $run = imageRun();
+
+        // The original itself was stored: no smaller rendition was used.
+        expect($media)->toHaveCount(6)
+            ->and($media[0]->getCustomProperty('source_url'))->toEndWith('BESTBOOT-BLK-HIRES.PNG')
+            ->and($media[0]->getCustomProperty('downloaded_url'))->toEndWith('BESTBOOT-BLK-HIRES.PNG')
+            ->and($media[0]->hasGeneratedConversion('small'))->toBeTrue()
+            ->and($run->status)->toBe('succeeded')
+            ->and($run->errors)->toBe(0)
+            ->and(implode('
+', $run->messages))->not->toContain('megapixels')
+            ->and($link->refresh()->image_urls_hash)->toHaveLength(64)
+            ->and(DB::table('failed_jobs')->count())->toBe(0);
+    } finally {
+        ini_set('memory_limit', (string) $memory);
+    }
+});
+
+it('still rejects an image above the limit and uses the smaller rendition', function (): void {
+    // 2700 x 2700 is 7.29 megapixels: just over the 7.0 limit.
+    importBestboot(hugeImages: ['BESTBOOT-BLK-HIRES.PNG' => [2700, 2700]]);
+
+    $this->artisan('vendorsync:images', ['vendor' => 'SJ', '--product' => '215754'])->assertSuccessful();
+
+    $media = VendorSync::product('SJ', '215754')->getMedia('images');
+
+    expect($media[0]->getCustomProperty('downloaded_url'))->toEndWith('BESTBOOT-BLK-WEB01.JPG')
+        ->and(implode('
+', imageRun()->messages))->toContain('BESTBOOT-BLK-HIRES.PNG: the image is 2700 x 2700 (7.3 megapixels, limit 7.0); used BESTBOOT-BLK-WEB01.JPG instead');
+});
+
+it('accepts an image of exactly the limit and rejects one pixel row more', function (): void {
+    // A 4.0 megapixel limit keeps the real decode small. The check is "above".
+    config(['vendorsync.images.max_megapixels' => 4.0]);
+
+    importBestboot(realImages: ['BESTBOOT-BLK-HIRES.PNG' => [2000, 2000]], hugeImages: ['BESTBOOT-BLK-HR01.PNG' => [2000, 2001]]);
+
+    $this->artisan('vendorsync:images', ['vendor' => 'SJ', '--product' => '215754'])->assertSuccessful();
+
+    $media = VendorSync::product('SJ', '215754')->getMedia('images');
+
+    expect($media[0]->getCustomProperty('downloaded_url'))->toEndWith('BESTBOOT-BLK-HIRES.PNG')
+        ->and(implode('
+', imageRun()->messages))->toContain('BESTBOOT-BLK-HR01.PNG: the image is 2000 x 2001 (4.0 megapixels, limit 4.0); used BESTBOOT-BLK-WEB02.JPG instead');
 });
 
 it('reindexes the product once it has an image', function (): void {
@@ -230,7 +290,7 @@ it('fails loudly when an oversized image has no smaller rendition and nothing el
     $link = importBestboot(brokenImages: ['HR0', 'OUTS', 'WEB'], hugeImages: ['BESTBOOT-BLK-HIRES.PNG']);
 
     expect(fn () => (new SyncProductImages($link->id))->handle(app(ProductImageSync::class)))
-        ->toThrow(ImageSyncFailed::class, 'the image is 3692 x 3291 (12.2 megapixels, limit 5.0), and the smaller rendition');
+        ->toThrow(ImageSyncFailed::class, 'the image is 3692 x 3291 (12.2 megapixels, limit 7.0), and the smaller rendition');
 });
 
 it('treats a partial success as a success with a warning', function (): void {
