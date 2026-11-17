@@ -16,7 +16,7 @@
 
 <section class="py-12 sm:py-16" aria-labelledby="home-featured" data-home-featured>
     <x-ui.container>
-        <x-ui.section-heading id="home-featured" title="Featured products" />
+        <x-ui.section-heading id="home-featured" title="Product spotlights" />
 
         <div class="mt-8 grid gap-6 md:grid-cols-2">
             @foreach ($videos as $video)

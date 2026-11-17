@@ -6,6 +6,7 @@ namespace App\Livewire\Catalogue;
 
 use App\Domain\Catalogue\Features\FeatureLabels;
 use App\Domain\Catalogue\Seo\ProductStructuredData;
+use App\Domain\Catalogue\Urls\ProductBreadcrumbs;
 use App\Domain\Catalogue\Variants\VariantSelection;
 use App\Domain\Pricing\DisplayPrice;
 use App\Domain\Pricing\PriceDisplay;
@@ -131,7 +132,7 @@ final class ProductPage extends Component
         $this->added = true;
     }
 
-    public function render(PriceDisplay $priceDisplay, ProductStructuredData $structuredData): View
+    public function render(PriceDisplay $priceDisplay, ProductStructuredData $structuredData, ProductBreadcrumbs $breadcrumbs): View
     {
         $product = $this->product();
         $selection = $this->selection();
@@ -140,6 +141,7 @@ final class ProductPage extends Component
 
         return view('livewire.catalogue.product-page', [
             'product' => $product,
+            'breadcrumbs' => $breadcrumbs->for($product),
             'selection' => $selection,
             'options' => $selection->options(),
             'variant' => $variant,

@@ -1,4 +1,6 @@
 <article>
+    <x-storefront.breadcrumbs :items="$breadcrumbs" class="mb-4" />
+
     <div class="grid gap-8 lg:grid-cols-[calc((100%_-_2rem)*0.4)_1fr]">
         {{-- Gallery: the selected colour's images. --}}
         {{--

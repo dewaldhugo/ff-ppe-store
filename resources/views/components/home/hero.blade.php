@@ -8,16 +8,16 @@
     Without it the text spans the full width, with no placeholder.
 --}}
 <section class="surface-dark relative isolate flex items-center overflow-hidden bg-brand-navy text-white sm:min-h-[33rem]" aria-labelledby="home-hero-title" data-home-hero>
-    {{-- Decorative site photo, shifted down from centre (position 15%), under a brand-navy overlay that keeps white text readable. --}}
+    {{-- Decorative background photo: one of the seven hero-bg images, picked at random on each page load, centred, no overlay. --}}
     <img
-        src="{{ asset('images/home-hero.jpg') }}"
+        src="{{ asset('images/hero-bg-'.random_int(1, 7).'.jpg') }}"
         alt=""
-        width="1536"
-        height="1024"
+        width="1920"
+        height="882"
         fetchpriority="high"
-        class="absolute inset-0 -z-20 h-full w-full object-cover object-[center_15%]"
+        data-hero-bg
+        class="absolute inset-0 -z-10 h-full w-full object-cover object-center"
     >
-    <div aria-hidden="true" data-hero-overlay class="absolute inset-0 -z-10 bg-linear-to-r from-brand-navy/86 via-brand-navy/77 to-brand-navy/62"></div>
 
     <x-ui.container class="w-full py-14 sm:py-20">
         <div @class(['items-center gap-12', 'md:grid md:grid-cols-2' => $image])>

@@ -111,7 +111,7 @@ it('uses route names for every link in the header and footer', function (): void
     preg_match_all('#<(?:header|footer).*?</(?:header|footer)>#s', $html, $shell);
     preg_match_all('~href="([^"#]+)"~', implode('', $shell[0]), $hrefs);
 
-    $known = collect(['home', 'shop', 'about', 'contact', 'account', 'cart', 'checkout', 'terms', 'privacy', 'cookies', 'returns', 'delivery', 'accessibility', 'search', 'size-guide'])
+    $known = collect(['home', 'shop', 'about', 'contact', 'account', 'cart', 'checkout', 'terms', 'privacy', 'cookies', 'returns', 'delivery', 'accessibility', 'search', 'size-guide', 'technical-features'])
         ->map(fn (string $name): string => route($name));
 
     $categories = collect(app(CategoryMenu::class)->tree())
@@ -130,6 +130,106 @@ it('serves the size guide at /size-guide in the standard layout', function (): v
     expect($html)->toContain('Size Guide')
         ->and($html)->toContain('<title>Size Guide | ')
         ->and($html)->toContain('id="main"');
+});
+
+it('serves the technical features page at /technical-features in the standard layout', function (): void {
+    expect(route('technical-features', [], false))->toBe('/technical-features');
+
+    $html = $this->get(route('technical-features'))->assertOk()->getContent();
+
+    expect($html)->toContain('<title>Technical Features | ')
+        ->and($html)->toContain('id="main"')
+        ->and($html)->toContain('Technical features</h1>');
+});
+
+it('gives the size guide and technical features the same h1 and divider as the other pages', function (): void {
+    $placeholder = $this->get(route('about'))->assertOk()->getContent();
+    preg_match('#<h1[^>]*class="([^"]*)"#', $placeholder, $standard);
+
+    foreach (['size-guide', 'technical-features'] as $name) {
+        $html = $this->get(route($name))->assertOk()->getContent();
+
+        expect(substr_count($html, '<h1'))->toBe(1)
+            ->and($html)->toMatch('#<h1[^>]*class="'.preg_quote($standard[1], '#').'"[^>]*>[^<]+</h1>\s*<div aria-hidden="true" class="[^"]*bg-brand-teal#');
+    }
+});
+
+it('gives the main menu a light grey background, with the products panel staying white', function (): void {
+    $html = $this->get(route('about'))->assertOk()->getContent();
+
+    expect($html)->toMatch('#<nav aria-label="Main"[^>]*bg-surface-nav#')
+        ->and($html)->toMatch('#id="products-menu"[^>]*bg-white#');
+});
+
+it('marks the current page in the main menu with brand-blue text and a teal underline, and no other', function (): void {
+    $nav = fn (string $route, string|array $params = []): string => (function (string $html): string {
+        preg_match('#<nav aria-label="Main".*?</nav>#s', $html, $m);
+
+        return $m[0];
+    })($this->get(route($route, $params))->assertOk()->getContent());
+
+    // Products has a button (with JavaScript) and a link (without), so the labels are de-duplicated.
+    $current = fn (string $nav): array => array_values(array_unique(array_map(
+        fn (array $link): string => trim(strip_tags($link[0])),
+        (preg_match_all('#<(?:a|button)[^>]*border-brand-teal[^>]*text-brand-blue[^>]*>.*?</(?:a|button)>#s', $nav, $m, PREG_SET_ORDER) ? $m : []),
+    )));
+
+    expect($current($nav('size-guide')))->toBe(['Size Guide'])
+        ->and($current($nav('technical-features')))->toBe(['Technical Features'])
+        ->and($current($nav('home')))->toBe(['Home'])
+        ->and($current($nav('shop')))->toBe(['Products'])
+        ->and($current($nav('category', 'safety-footwear')))->toBe(['Products']);
+});
+
+it('marks the current page in the mobile menu too', function (): void {
+    $html = $this->get(route('technical-features'))->assertOk()->getContent();
+
+    preg_match('#id="mobile-menu".*?</nav>#s', $html, $drawer);
+
+    expect($drawer[0])->toMatch('#<a href="'.preg_quote(route('technical-features'), '#').'" class="[^"]*text-brand-blue[^"]*"\s*aria-current="page"\s*>#')
+        ->and(substr_count($drawer[0], 'aria-current="page"'))->toBe(1);
+});
+
+it('shows a View product button on every card in the home page picks and in category listings', function (): void {
+    preg_match('#<section[^>]*data-home-products.*?</section>#s', $this->get(route('home'))->assertOk()->getContent(), $picks);
+    $home = $picks[0] ?? '';
+    $listing = $this->get(route('category', 'safety-footwear'))->assertOk()->getContent();
+
+    preg_match('#<ul[^>]*data-testid="product-grid".*?</ul>#s', $listing, $grid);
+
+    foreach ([$home, $grid[0]] as $html) {
+        $cards = substr_count($html, '<li');
+
+        expect($cards)->toBeGreaterThan(0)
+            ->and(substr_count($html, 'View product</span>'))->toBe($cards)
+            // Decoration over the stretched card link, so it is not a second link or tab stop.
+            ->and($html)->toContain('<span aria-hidden="true" class="inline-flex ');
+    }
+});
+
+it('uses the standard page heading on category listings', function (): void {
+    $html = $this->get(route('category', 'safety-footwear'))->assertOk()->getContent();
+
+    preg_match('#<h1[^>]*class="([^"]*)"#', $this->get(route('about'))->getContent(), $standard);
+
+    expect(substr_count($html, '<h1'))->toBe(1)
+        ->and($html)->toMatch('#<h1[^>]*class="'.preg_quote($standard[1], '#').'"[^>]*>Safety Footwear</h1>\s*(?:<!--.*?-->\s*)*<div aria-hidden="true" class="[^"]*bg-brand-teal#s');
+});
+
+it('links to technical features straight after the size guide in the desktop and mobile menus', function (): void {
+    $html = $this->get(route('about'))->assertOk()->getContent();
+
+    preg_match('#<header.*?</header>#s', $html, $header);
+    preg_match_all('#<a href="([^"]+)"[^>]*>\s*(Size Guide|Technical Features)\s*</a>#', $header[0], $links, PREG_SET_ORDER);
+
+    $hrefs = array_column($links, 1);
+
+    // Desktop nav, then the mobile menu: each lists the size guide first.
+    expect($hrefs)->toBe([route('size-guide'), route('technical-features'), route('size-guide'), route('technical-features')]);
+
+    preg_match('#<footer.*?</footer>#s', $html, $footer);
+
+    expect($footer[0])->toMatch('#href="'.preg_quote(route('size-guide'), '#').'"[^>]*>Size Guide</a></li>\s*<li><a href="'.preg_quote(route('technical-features'), '#').'"[^>]*>Technical Features</a>#');
 });
 
 it('links to the size guide from the menus and the footer', function (): void {
