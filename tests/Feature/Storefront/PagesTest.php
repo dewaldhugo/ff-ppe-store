@@ -161,6 +161,61 @@ it('gives the main menu a light grey background, with the products panel staying
         ->and($html)->toMatch('#id="products-menu"[^>]*bg-white#');
 });
 
+it('marks the current page in the main menu with brand-blue text and a teal underline, and no other', function (): void {
+    $nav = fn (string $route, string|array $params = []): string => (function (string $html): string {
+        preg_match('#<nav aria-label="Main".*?</nav>#s', $html, $m);
+
+        return $m[0];
+    })($this->get(route($route, $params))->assertOk()->getContent());
+
+    // Products has a button (with JavaScript) and a link (without), so the labels are de-duplicated.
+    $current = fn (string $nav): array => array_values(array_unique(array_map(
+        fn (array $link): string => trim(strip_tags($link[0])),
+        (preg_match_all('#<(?:a|button)[^>]*border-brand-teal[^>]*text-brand-blue[^>]*>.*?</(?:a|button)>#s', $nav, $m, PREG_SET_ORDER) ? $m : []),
+    )));
+
+    expect($current($nav('size-guide')))->toBe(['Size Guide'])
+        ->and($current($nav('technical-features')))->toBe(['Technical Features'])
+        ->and($current($nav('home')))->toBe(['Home'])
+        ->and($current($nav('shop')))->toBe(['Products'])
+        ->and($current($nav('category', 'safety-footwear')))->toBe(['Products']);
+});
+
+it('marks the current page in the mobile menu too', function (): void {
+    $html = $this->get(route('technical-features'))->assertOk()->getContent();
+
+    preg_match('#id="mobile-menu".*?</nav>#s', $html, $drawer);
+
+    expect($drawer[0])->toMatch('#<a href="'.preg_quote(route('technical-features'), '#').'" class="[^"]*text-brand-blue[^"]*"\s*aria-current="page"\s*>#')
+        ->and(substr_count($drawer[0], 'aria-current="page"'))->toBe(1);
+});
+
+it('shows a View product button on every card in the home page picks and in category listings', function (): void {
+    preg_match('#<section[^>]*data-home-products.*?</section>#s', $this->get(route('home'))->assertOk()->getContent(), $picks);
+    $home = $picks[0] ?? '';
+    $listing = $this->get(route('category', 'safety-footwear'))->assertOk()->getContent();
+
+    preg_match('#<ul[^>]*data-testid="product-grid".*?</ul>#s', $listing, $grid);
+
+    foreach ([$home, $grid[0]] as $html) {
+        $cards = substr_count($html, '<li');
+
+        expect($cards)->toBeGreaterThan(0)
+            ->and(substr_count($html, 'View product</span>'))->toBe($cards)
+            // Decoration over the stretched card link, so it is not a second link or tab stop.
+            ->and($html)->toContain('<span aria-hidden="true" class="inline-flex ');
+    }
+});
+
+it('uses the standard page heading on category listings', function (): void {
+    $html = $this->get(route('category', 'safety-footwear'))->assertOk()->getContent();
+
+    preg_match('#<h1[^>]*class="([^"]*)"#', $this->get(route('about'))->getContent(), $standard);
+
+    expect(substr_count($html, '<h1'))->toBe(1)
+        ->and($html)->toMatch('#<h1[^>]*class="'.preg_quote($standard[1], '#').'"[^>]*>Safety Footwear</h1>\s*(?:<!--.*?-->\s*)*<div aria-hidden="true" class="[^"]*bg-brand-teal#s');
+});
+
 it('links to technical features straight after the size guide in the desktop and mobile menus', function (): void {
     $html = $this->get(route('about'))->assertOk()->getContent();
 

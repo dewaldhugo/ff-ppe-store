@@ -10,7 +10,7 @@
                         $price = $priceDisplay->fromPrice($product);
                         $hasRange = $product->variants->flatMap->prices->pluck('price.value')->unique()->count() > 1;
                     @endphp
-                    <li class="relative flex flex-col rounded border border-border p-3 transition-colors hover:border-brand-teal" data-home-product>
+                    <li class="group relative flex flex-col rounded border border-border p-3 transition-colors hover:border-brand-teal" data-home-product>
                         <div class="aspect-square overflow-hidden rounded bg-surface-muted">
                             @if ($product->thumbnail)
                                 <img
@@ -42,6 +42,8 @@
                                 <span class="text-xs text-ink-muted">{{ $price->suffix() }}</span>
                             </p>
                         @endif
+
+                        <x-ui.card-cta class="mt-3" data-view-product>View product</x-ui.card-cta>
                     </li>
                 @endforeach
             </ul>

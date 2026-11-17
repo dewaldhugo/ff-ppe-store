@@ -12,7 +12,7 @@
         </nav>
     @endif
 
-    <h1 class="text-2xl font-bold tracking-tight">{{ $heading }}</h1>
+    <x-ui.section-heading :title="$heading" tag="h1" />
 
     <div class="mt-6 grid gap-8 lg:grid-cols-[16rem_1fr]">
         <aside aria-label="Filters">
@@ -59,7 +59,7 @@
                             $inStock = $product->variants->sum('stock') > 0;
                             $prices = $product->variants->flatMap->prices->pluck('price.value')->unique();
                         @endphp
-                        <li wire:key="product-{{ $product->id }}" class="relative flex flex-col rounded border border-border p-3">
+                        <li wire:key="product-{{ $product->id }}" class="group relative flex flex-col rounded border border-border p-3 transition-colors hover:border-brand-teal">
                             <div class="relative aspect-square overflow-hidden rounded bg-surface-muted">
                                 @if ($product->thumbnail)
                                     <img
@@ -110,6 +110,8 @@
                                     <span class="text-xs text-ink-muted">{{ $price->suffix() }}</span>
                                 </p>
                             @endif
+
+                            <x-ui.card-cta class="mt-3" data-view-product>View product</x-ui.card-cta>
                         </li>
                     @endforeach
                 </ul>

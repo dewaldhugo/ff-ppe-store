@@ -5,7 +5,12 @@
         ['route' => 'about', 'label' => 'About', 'active' => request()->routeIs('about')],
         ['route' => 'contact', 'label' => 'Contact', 'active' => request()->routeIs('contact')],
     ];
-    $linkClass = 'inline-block py-3 font-semibold text-ink hover:text-brand-blue';
+    // The page you are on gets brand-blue text and a brand-teal underline. Every link reserves the same
+    // 4px border, so nothing shifts when the current one changes.
+    $navLink = fn (bool $active): string => 'inline-block border-b-4 py-3 font-semibold hover:text-brand-blue '
+        .($active ? 'border-brand-teal text-brand-blue' : 'border-transparent text-ink');
+    $productsActive = request()->routeIs('shop', 'category', 'product');
+    $drawerLink = fn (bool $active): string => 'block py-3 font-semibold '.($active ? 'text-brand-blue' : 'text-ink');
     $phoneHref = \App\Support\Store::phoneHref();
     $emailHref = \App\Support\Store::emailHref();
 @endphp
@@ -90,13 +95,13 @@
         <x-ui.container>
             <ul class="flex flex-wrap items-center gap-x-8">
                 <li>
-                    <a href="{{ route('home') }}" class="{{ $linkClass }}" @if (request()->routeIs('home')) aria-current="page" @endif>Home</a>
+                    <a href="{{ route('home') }}" class="{{ $navLink(request()->routeIs('home')) }}" @if (request()->routeIs('home')) aria-current="page" @endif>Home</a>
                 </li>
 
                 <li>
                     <button
                         type="button"
-                        class="no-js:hidden {{ $linkClass }} inline-flex items-center gap-1"
+                        class="no-js:hidden {{ $navLink($productsActive) }} inline-flex items-center gap-1"
                         aria-expanded="false"
                         aria-controls="products-menu"
                         x-bind:aria-expanded="mega.toString()"
@@ -107,13 +112,13 @@
                         Products
                         <svg aria-hidden="true" class="h-4 w-4 transition-transform" x-bind:class="mega && 'rotate-180'" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6"/></svg>
                     </button>
-                    {{-- Only without JavaScript. It must not share $linkClass: its inline-block would override hidden. --}}
-                    <a href="{{ route('shop') }}" class="hidden no-js:inline-block py-3 font-semibold text-ink hover:text-brand-blue" data-products-link>Products</a>
+                    {{-- Only without JavaScript. It must not share $navLink: its inline-block would override hidden. --}}
+                    <a href="{{ route('shop') }}" class="hidden no-js:inline-block border-b-4 py-3 font-semibold hover:text-brand-blue {{ $productsActive ? 'border-brand-teal text-brand-blue' : 'border-transparent text-ink' }}" data-products-link>Products</a>
                 </li>
 
                 @foreach ($links as $link)
                     <li>
-                        <a href="{{ route($link['route']) }}" class="{{ $linkClass }}" @if ($link['active']) aria-current="page" @endif>{{ $link['label'] }}</a>
+                        <a href="{{ route($link['route']) }}" class="{{ $navLink($link['active']) }}" @if ($link['active']) aria-current="page" @endif>{{ $link['label'] }}</a>
                     </li>
                 @endforeach
             </ul>
@@ -210,11 +215,9 @@
                         </ul>
                     </li>
 
-                    <li><a href="{{ route('size-guide') }}" class="block py-3 font-semibold text-ink">Size Guide</a></li>
-                    <li><a href="{{ route('technical-features') }}" class="block py-3 font-semibold text-ink">Technical Features</a></li>
-                    <li><a href="{{ route('about') }}" class="block py-3 font-semibold text-ink">About</a></li>
-                    <li><a href="{{ route('contact') }}" class="block py-3 font-semibold text-ink">Contact</a></li>
-                    <li><a href="{{ route('account') }}" class="block py-3 font-semibold text-ink">Account</a></li>
+                    @foreach ([...$links, ['route' => 'account', 'label' => 'Account', 'active' => request()->routeIs('account')]] as $link)
+                        <li><a href="{{ route($link['route']) }}" class="{{ $drawerLink($link['active']) }}" @if ($link['active']) aria-current="page" @endif>{{ $link['label'] }}</a></li>
+                    @endforeach
                 </ul>
             </nav>
     </div>
