@@ -58,8 +58,8 @@ it('lists the categories collection tree, with children, in the Products menu', 
 it('puts the same categories in the drawer, the footer and the products grid', function (): void {
     $html = $this->get(route('shop'))->getContent();
 
-    // The drawer's lists are nested, so it runs to the end of its navigation.
-    foreach (['data-drawer-categories' => '</nav>', 'data-footer-categories' => '</ul>', 'data-category-grid' => '</ul>'] as $marker => $end) {
+    // The drawer's lists and the grid's subcategory lists are nested, so each runs to the end of its container.
+    foreach (['data-drawer-categories' => '</nav>', 'data-footer-categories' => '</ul>', 'data-category-grid' => '</main>'] as $marker => $end) {
         preg_match('#'.$marker.'.*?'.preg_quote($end, '#').'#s', $html, $list);
 
         foreach (app(CategoryMenu::class)->tree() as $category) {

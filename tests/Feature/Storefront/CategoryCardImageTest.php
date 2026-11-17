@@ -25,7 +25,8 @@ function topLevelHandles(): array
  */
 function shopGrid(string $html): string
 {
-    preg_match('#data-category-grid.*?</ul>#s', $html, $grid);
+    // The grid holds nested lists (the subcategory links), so it runs to the end of the page content.
+    preg_match('#data-category-grid.*?</main>#s', $html, $grid);
 
     return $grid[0] ?? '';
 }
