@@ -11,7 +11,7 @@
             <a href="{{ route('home') }}" class="inline-block" data-footer-logo>
                 <x-storefront.logo light />
             </a>
-            <address class="not-italic text-white/90">{{ \App\Support\Store::address() }}</address>
+            <address class="not-italic text-white/90">{{ \App\Support\Store::contactAddress() }}</address>
             <p>
                 @if ($phoneHref)
                     <a href="{{ $phoneHref }}" class="{{ $link }}">{{ \App\Support\Store::phone() }}</a>

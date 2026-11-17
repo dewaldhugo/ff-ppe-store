@@ -82,7 +82,8 @@ Current routes (`routes/web.php`):
 | `search` | `/search` | `CategoryListing` |
 | `product` | `/products/{slug}` | `ProductPage` |
 | `about` | `/about` | view `pages.about` (real content, supplied by the client) |
-| placeholders | `/contact`, `/account`, `/cart`, `/checkout`, `/terms`, `/privacy`, `/cookies`, `/returns`, `/delivery`, `/accessibility` | `pages.placeholder` (noindex) |
+| `contact` | `/contact` | view `pages.contact`: enquiry form (Livewire `EnquiryForm`) emailing `STORE_ENQUIRY_EMAIL` or `STORE_EMAIL` |
+| placeholders | `/login`, `/register`, `/account`, `/cart`, `/checkout`, `/terms`, `/privacy`, `/cookies`, `/returns`, `/delivery`, `/accessibility` | `pages.placeholder` (noindex) |
 
 Rules:
 

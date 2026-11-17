@@ -13,7 +13,8 @@ use Illuminate\Support\Facades\Route;
 // Pages without content yet. Each renders the standard layout with a heading,
 // "Content coming soon" and noindex.
 $placeholders = [
-    'contact' => ['/contact', 'Contact us'],
+    'login' => ['/login', 'Log in'],
+    'register' => ['/register', 'Register'],
     'account' => ['/account', 'Account'],
     'cart' => ['/cart', 'Cart'],
     'checkout' => ['/checkout', 'Checkout'],
@@ -50,6 +51,7 @@ Route::middleware(RedirectTrailingSlash::class)->group(function () use ($placeho
     Route::view('/size-guide', 'pages.size-guide')->name('size-guide');
     Route::view('/technical-features', 'pages.technical-features')->name('technical-features');
     Route::view('/about', 'pages.about')->name('about');
+    Route::view('/contact', 'pages.contact')->name('contact');
 
     foreach ($placeholders as $name => [$uri, $heading]) {
         Route::view($uri, 'pages.placeholder', ['heading' => $heading])->name($name);

@@ -9,6 +9,7 @@ beforeEach(function (): void {
     config()->set('store.legal_name', 'The Bridge Group Ltd');
     config()->set('store.company_number', '01234567');
     config()->set('store.registered_office', '1 Example Street, London, EC1A 1AA');
+    config()->set('store.address', 'TBC');
     config()->set('store.vat_number', 'GB123456789');
     config()->set('store.phone', 'TBC');
     config()->set('store.email', 'TBC');
@@ -48,12 +49,12 @@ it('reads every identity value from config, with TBC as the default', function (
         return array_keys($file);
     })();
 
-    expect($defaults)->toBe(['name', 'legal_name', 'company_number', 'registered_office', 'vat_number', 'phone', 'email', 'noindex'])
+    expect($defaults)->toBe(['name', 'legal_name', 'company_number', 'registered_office', 'address', 'vat_number', 'phone', 'email', 'enquiry_email', 'noindex'])
         ->and(file_get_contents(config_path('store.php')))->not->toContain("'The Bridge Group'");
 
     $example = (string) file_get_contents(base_path('.env.example'));
 
-    foreach (['STORE_NAME', 'STORE_LEGAL_NAME', 'STORE_COMPANY_NUMBER', 'STORE_REGISTERED_OFFICE', 'STORE_VAT_NUMBER', 'STORE_PHONE', 'STORE_EMAIL'] as $key) {
+    foreach (['STORE_NAME', 'STORE_LEGAL_NAME', 'STORE_COMPANY_NUMBER', 'STORE_REGISTERED_OFFICE', 'STORE_ADDRESS', 'STORE_VAT_NUMBER', 'STORE_PHONE', 'STORE_EMAIL'] as $key) {
         expect($example)->toContain($key.'=TBC');
     }
 });
@@ -100,4 +101,16 @@ it('uses the white logo on the brand-blue footer', function (): void {
     expect($footer)->toContain('bg-brand-blue')
         ->and($logo[0])->toContain(asset('images/the-bridge-group-logo-white.svg'))
         ->and($logo[0])->not->toContain('the-bridge-group-logo.svg');
+});
+
+it('shows the customer address in the footer, apart from the registered office in the disclosure', function (): void {
+    config()->set('store.address', 'Stamford House, 2a Lagoon Road, Orpington, BR5 3QX');
+
+    $footer = footer($this->get(route('shop'))->getContent());
+
+    preg_match('#<address[^>]*>(.*?)</address>#s', $footer, $address);
+
+    expect($address[1])->toBe('Stamford House, 2a Lagoon Road, Orpington, BR5 3QX')
+        ->and(Store::contactAddress())->toBe('Stamford House, 2a Lagoon Road, Orpington, BR5 3QX')
+        ->and($footer)->toContain('Registered office: 1 Example Street, London, EC1A 1AA.');
 });
