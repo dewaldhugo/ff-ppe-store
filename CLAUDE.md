@@ -81,7 +81,8 @@ Current routes (`routes/web.php`):
 | `category` | `/shop/{path}` | `CategoryListing`. `{path}` is the URL slugs of the collection's ancestors plus its own, e.g. `/shop/safety-footwear/safety-boots` |
 | `search` | `/search` | `CategoryListing` |
 | `product` | `/products/{slug}` | `ProductPage` |
-| placeholders | `/about`, `/contact`, `/account`, `/cart`, `/checkout`, `/terms`, `/privacy`, `/cookies`, `/returns`, `/delivery`, `/accessibility` | `pages.placeholder` (noindex) |
+| `about` | `/about` | view `pages.about` (real content, supplied by the client) |
+| placeholders | `/contact`, `/account`, `/cart`, `/checkout`, `/terms`, `/privacy`, `/cookies`, `/returns`, `/delivery`, `/accessibility` | `pages.placeholder` (noindex) |
 
 Rules:
 

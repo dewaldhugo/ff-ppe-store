@@ -13,7 +13,6 @@ beforeEach(function (): void {
 
 /** Route name => [URI, heading]. Placeholder pages: noindex until they have real content. */
 const PLACEHOLDERS = [
-    'about' => ['/about', 'About us'],
     'contact' => ['/contact', 'Contact us'],
     'account' => ['/account', 'Account'],
     'cart' => ['/cart', 'Cart'],
