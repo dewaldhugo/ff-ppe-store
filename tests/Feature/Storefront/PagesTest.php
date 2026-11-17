@@ -98,7 +98,7 @@ it('renders the existing listing and product pages inside the new layout', funct
     $this->get(route('category', 'safety-footwear'))
         ->assertOk()
         ->assertSee('<nav aria-label="Main"', false)
-        ->assertSee('data-business-notice', false)
+        ->assertSee('data-copyright', false)
         ->assertSee('data-testid="product-grid"', false);
 
     $this->get(route('product', 'safety-jogger-ligero'))
