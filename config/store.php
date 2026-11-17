@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 /*
  * Who the store is, for the header, the footer and the UK trading disclosure.
- * Every value comes from .env and reads "TBC" until it is known.
+ * The address, phone number and email are fixed here, not in .env. The other
+ * values come from .env and read "TBC" until they are known.
  */
 return [
     'name' => env('STORE_NAME', 'TBC'),
@@ -14,13 +15,13 @@ return [
 
     // The address customers see in the footer and on the Contact page. It may differ
     // from the registered office, which only appears in the trading disclosure.
-    'address' => env('STORE_ADDRESS', 'TBC'),
+    'address' => 'Stamford House, 2a Lagoon Road, Orpington, BR5 3QX',
     'vat_number' => env('STORE_VAT_NUMBER', 'TBC'),
-    'phone' => env('STORE_PHONE', 'TBC'),
-    'email' => env('STORE_EMAIL', 'TBC'),
+    'phone' => '+44 20 8289 5858',
+    'email' => 'info@thebridgegroup.uk.com',
 
-    // Where Contact page enquiries are emailed. Falls back to STORE_EMAIL.
-    'enquiry_email' => env('STORE_ENQUIRY_EMAIL') ?: env('STORE_EMAIL', 'TBC'),
+    // Where Contact page enquiries are emailed: the store email, unless STORE_ENQUIRY_EMAIL is set.
+    'enquiry_email' => env('STORE_ENQUIRY_EMAIL') ?: 'info@thebridgegroup.uk.com',
 
     // One switch for search engines. While true, every page of the site carries
     // <meta name="robots" content="noindex">. Set STORE_NOINDEX=false at launch

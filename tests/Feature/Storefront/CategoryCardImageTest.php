@@ -25,8 +25,7 @@ function topLevelHandles(): array
  */
 function shopGrid(string $html): string
 {
-    // The grid holds nested lists (the subcategory links), so it runs to the end of the page content.
-    preg_match('#data-category-grid.*?</main>#s', $html, $grid);
+    preg_match('#data-category-grid.*?</ul>#s', $html, $grid);
 
     return $grid[0] ?? '';
 }
@@ -77,4 +76,19 @@ it('refuses a handle that could point outside the images folder', function (): v
         ->and(CategoryCardImage::for('../home-hero'))->toBeNull()
         ->and(CategoryCardImage::for('no-such-category'))->toBeNull()
         ->and(CategoryCardImage::for('apparel'))->toMatchArray(['width' => CategoryCardImage::WIDTH, 'height' => CategoryCardImage::HEIGHT]);
+});
+
+it('lays the five cards out in one row on desktop, with the subcategories as plain text and no links below', function (): void {
+    $html = $this->get(route('shop'))->assertOk()->getContent();
+
+    preg_match('#<ul[^>]*data-category-grid[^>]*>#', $html, $ul);
+
+    $grid = shopGrid($html);
+
+    expect($ul[0] ?? '')->toContain('lg:grid-cols-5')
+        ->and(substr_count($grid, 'data-category-image'))->toBe(5)
+        ->and($grid)->not->toContain('data-category-children')
+        // One link per card: the category itself. The subcategory names are text.
+        ->and(substr_count(substr($grid, 0, (int) strpos($grid, '</ul>')), '<a '))->toBe(5)
+        ->and($grid)->toContain('Safety Boots');
 });

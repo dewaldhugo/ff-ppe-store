@@ -7,7 +7,7 @@ Do these before the store goes live. Nothing here is done by default.
 - [ ] Confirm the trust strip claims with the client (`config/homepage.php`, `trust`). The fourth slot is for a delivery claim that is not confirmed yet: leave it empty until it is.
 - [ ] Confirm `pcntl` and `posix` are present in the server's PHP CLI before starting Horizon (`composer.json` fakes them under `config.platform` for Windows, so Composer will not warn).
 - [ ] The footer shows only the copyright line: the UK trading disclosure (company name, number, registered office, VAT number; `Store::disclosure()`) was taken out on request. Put it back, or confirm the client does not need it, before go-live.
-- [ ] Replace every TBC in the store identity: name, legal name, company number, registered office, VAT number, phone and email (`STORE_*` in `.env`).
+- [ ] Replace every TBC in the store identity: name, legal name, company number, registered office and VAT number (`STORE_*` in `.env`). The address, phone and email are fixed in `config/store.php`.
 - [ ] Deploy sequence. This repository has no deploy script, so these are the steps for the server's own deploy routine, in order:
   1. `php artisan app:preflight`. It checks the PHP extensions (gd with WebP or imagick, exif, intl, bcmath, mbstring, zip, fileinfo, pcntl, posix, redis), the database, Redis, Meilisearch (host and key), that the products disk is writable and that `QUEUE_CONNECTION` is not `sync`. It also reports the CLI `memory_limit` and warns when the storage disk has less free space than `PREFLIGHT_MIN_FREE_DISK_GB` (default 10). It exits non-zero with one message per failure: do not carry on until it passes.
   2. `php artisan migrate --force`.
