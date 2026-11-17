@@ -298,12 +298,16 @@ return [
 
         // Largest image, in megapixels, that is stored and converted. With
         // the GD driver a conversion needs about 8 MB of memory per
-        // megapixel on top of the worker's own 64 MB, so a 12 megapixel
-        // vendor original does not fit in a 128 MB PHP process. A larger
-        // image is replaced by its smaller rendition when the vendor has
-        // one, and reported otherwise. Raise this only together with the
-        // worker's memory limit, or after switching to Imagick.
-        'max_megapixels' => (float) env('VENDORSYNC_IMAGE_MAX_MEGAPIXELS', 5.0),
+        // megapixel on top of the booted worker (about 54 MB). Measured with
+        // all four conversions inline in one process: a 2560 x 2560 image
+        // (6.55 MP) peaks at about 107 MB, and a 7.0 MP PNG of pure noise
+        // near the 20 MB file cap at about 147 MB, against the 256M CLI
+        // memory_limit. A larger image is replaced by its smaller rendition
+        // when the vendor has one, and reported otherwise. Raise this only
+        // together with the worker's memory limit, or after switching to
+        // Imagick. The environment value wins: the server's .env must be
+        // changed too (docs/vendorsync.md, Images).
+        'max_megapixels' => (float) env('VENDORSYNC_IMAGE_MAX_MEGAPIXELS', 7.0),
 
         // Largest file accepted, in bytes. Media Library's own default of
         // 10 MB is raised to this for imports only.

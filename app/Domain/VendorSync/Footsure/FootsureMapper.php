@@ -79,7 +79,7 @@ final readonly class FootsureMapper implements VendorMapper
 
         if ($collection === null) {
             $draftReasons[] = DraftReason::UNMAPPED_CATEGORY;
-            $messages[] = "{$label}: Group Class '{$first['Group Class']}' is not mapped to a collection; product drafted.";
+            $messages[] = "{$label}: Group Class '{$first['Group Class']}' is not mapped to a collection (draft reason unmapped_category).";
         }
 
         if ($first['Product Status'] === 'No More') {
@@ -169,7 +169,7 @@ final readonly class FootsureMapper implements VendorMapper
         // No variant can be imported at all: nothing to sell at a price.
         if ($variants === [] && ! $noUsableSize) {
             $draftReasons[] = DraftReason::NO_SELLABLE_PRICE;
-            $messages[] = "{$label}: nothing can be sold at a price; product drafted.";
+            $messages[] = "{$label}: nothing can be sold at a price (draft reason no_sellable_price).";
         }
 
         // Every variant is held at stock 0 because its cost is at or above
@@ -187,6 +187,7 @@ final readonly class FootsureMapper implements VendorMapper
         return MappingResult::product(new NormalisedProduct(
             vendorCode: self::VENDOR_CODE,
             vendorProductId: $record->externalId,
+            label: $label,
             productType: 'safety-footwear',
             brand: blank($brand) ? null : $brand,
             name: $first['Short Product Name'],

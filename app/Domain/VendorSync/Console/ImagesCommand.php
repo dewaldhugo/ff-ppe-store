@@ -39,7 +39,8 @@ final class ImagesCommand extends Command
         }
 
         try {
-            $queued = $images->dispatch($vendor, $product, (bool) $this->option('refresh'));
+            $dispatch = $images->run($vendor, $product, (bool) $this->option('refresh'));
+            $queued = $dispatch->queued;
         } catch (RunAlreadyRunning $exception) {
             $this->error($exception->getMessage());
 
@@ -47,6 +48,10 @@ final class ImagesCommand extends Command
         }
 
         $this->line("Queued {$queued} image ".($queued === 1 ? 'job' : 'jobs')." for {$vendor}".($product === null ? '' : " product {$product}").'.');
+        if ($dispatch->skipped > 0) {
+            $this->line("{$dispatch->skipped} products with up-to-date images were not queued. Use --refresh to check every image again.");
+        }
+
         $this->line('A job that cannot save any image fails and appears in failed_jobs. Run `php artisan vendorsync:status` for the result.');
 
         return self::SUCCESS;

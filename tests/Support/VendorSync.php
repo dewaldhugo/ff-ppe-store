@@ -35,7 +35,7 @@ final class VendorSync
     private static bool $faked = false;
 
     /** @var list<array<mixed>> */
-    private static array $responses = [[], [], [], [], []];
+    private static array $responses = [[], [], [], [], [], []];
 
     /** @var list<string> Image URL fragments whose request hangs until it times out. */
     private static array $hanging = [];
@@ -72,7 +72,7 @@ final class VendorSync
         File::ensureDirectoryExists(self::path('incoming'));
 
         self::$faked = false;
-        self::$responses = [[], [], [], [], []];
+        self::$responses = [[], [], [], [], [], []];
         self::$hanging = [];
         self::$slow = [];
         self::$delaySeconds = 0;
@@ -144,13 +144,15 @@ final class VendorSync
      * @param  array<int, array<string, mixed>>  $details  `GET /product/{id}` responses by id.
      * @param  list<array<string, mixed>>  $stock  The `GET /stock` response.
      * @param  list<string>  $brokenImages  Image URL fragments that return 404.
-     * @param  list<string>  $hugeImages  Image URL fragments that return a 3692 x 3291 PNG, like a vendor original.
+     * @param  array<int|string, string|array{0: int, 1: int}>  $hugeImages  Image URL fragments that return a PNG header only (not decodable): a plain fragment is
+     *                                                                       3692 x 3291, like a vendor original, and `fragment => [width, height]` sets the size.
+     * @param  array<string, array{0: int, 1: int}>  $realImages  `fragment => [width, height]`: a real, decodable flat-colour PNG of that size.
      */
-    public static function fakeHttp(array $list = [], array $details = [], array $stock = [], array $brokenImages = [], array $hugeImages = []): void
+    public static function fakeHttp(array $list = [], array $details = [], array $stock = [], array $brokenImages = [], array $hugeImages = [], array $realImages = []): void
     {
         // Laravel stacks fakes and the first one wins, so the fake is
         // registered once per test and reads the latest responses.
-        self::$responses = [$list, $details, $stock, $brokenImages, $hugeImages];
+        self::$responses = [$list, $details, $stock, $brokenImages, $hugeImages, $realImages];
 
         if (self::$faked) {
             return;
@@ -159,7 +161,7 @@ final class VendorSync
         self::$faked = true;
 
         Http::fake(function (Request $request) {
-            [$list, $details, $stock, $brokenImages, $hugeImages] = self::$responses;
+            [$list, $details, $stock, $brokenImages, $hugeImages, $realImages] = self::$responses;
 
             $url = $request->url();
 
@@ -203,9 +205,17 @@ final class VendorSync
                     }
                 }
 
-                foreach ($hugeImages as $fragment) {
+                foreach ($hugeImages as $key => $value) {
+                    [$fragment, $width, $height] = is_array($value) ? [(string) $key, $value[0], $value[1]] : [$value, 3692, 3291];
+
                     if (str_contains($url, $fragment)) {
-                        return Http::response(self::pngHeader(3692, 3291).basename($url), 200, ['Content-Type' => 'image/png']);
+                        return Http::response(self::pngHeader($width, $height).basename($url), 200, ['Content-Type' => 'image/png']);
+                    }
+                }
+
+                foreach ($realImages as $fragment => [$width, $height]) {
+                    if (str_contains($url, (string) $fragment)) {
+                        return Http::response(self::flatPng($width, $height).basename($url), 200, ['Content-Type' => 'image/png']);
                     }
                 }
 
@@ -306,6 +316,22 @@ final class VendorSync
      * The first bytes of a PNG that declares the given dimensions. Enough
      * to read its size from; it is never decoded.
      */
+    /**
+     * A real PNG of one flat colour: a few kilobytes on the wire, but it
+     * decodes to width x height pixels, so converting it costs the memory of
+     * an image that size. Needs the GD extension, as the app does.
+     */
+    public static function flatPng(int $width, int $height): string
+    {
+        $image = imagecreatetruecolor($width, $height);
+        imagefill($image, 0, 0, (int) imagecolorallocate($image, 40, 90, 160));
+
+        ob_start();
+        imagepng($image, null, 9);
+
+        return (string) ob_get_clean();
+    }
+
     public static function pngHeader(int $width, int $height): string
     {
         return hex2bin('89504e470d0a1a0a0000000d49484452').pack('NN', $width, $height).hex2bin('0806000000').pack('N', 0);

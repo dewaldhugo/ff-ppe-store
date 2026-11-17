@@ -35,6 +35,10 @@ final readonly class NormalisedProduct
     public function __construct(
         public string $vendorCode,
         public string $vendorProductId,
+        // How reports name this product, `NAME [vendor product ID]`. The mapper
+        // puts it on every line it writes for the product, and the importer
+        // uses it for its own, so one product has one name in a report.
+        public string $label,
         // Contract product type handle.
         public string $productType,
         // Null means no customer-facing brand.

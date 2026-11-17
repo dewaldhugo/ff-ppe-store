@@ -347,6 +347,25 @@ it('drafts a published product when its prices become unsellable, and republishe
         ->and(VendorSync::product('SJ', '273934')->variants->sum('stock'))->toBeGreaterThan(0);
 });
 
+it('names a product the same way on every report line, and says "not created" without also saying "drafted"', function (): void {
+    // As SAFETYSTAR S3 LOW [335606] in the production report: the vendor's own name
+    // (SFTYSTRS3L) and its commercial name differ, and one line used each.
+    $detail = sjWithPrices(335606, 'SFTYSTRS3L', array_fill(0, 14, [9.9, 55.1]), firstSku: 940165, buyPer: 10);
+    $detail['commercialName'] = 'SAFETYSTAR S3 LOW';
+    VendorSync::fakeHttp([['id' => 335606]], [335606 => $detail]);
+
+    $report = VendorSync::import('SJ');
+    $text = implode('
+', $report->messages);
+
+    expect($report->created)->toBe(0)
+        ->and($report->messages)->toHaveCount(3)
+        ->and($report->messages)->each->toStartWith('SFTYSTRS3L [335606]: ')
+        ->and($text)->not->toContain('SAFETYSTAR')
+        ->and($text)->toContain('product not created')
+        ->and($text)->not->toContain('drafted');
+});
+
 it('reports a product with no importable variant on one line and does not publish it', function (): void {
     // SAFETYBOY [215965] in the live catalogue: fourteen SKUs, none sold per single pair.
     $detail = sjWithPrices(215965, 'SAFETYBOY', array_fill(0, 14, [9.9, 55.1]), firstSku: 840165, buyPer: 10);
@@ -359,7 +378,7 @@ it('reports a product with no importable variant on one line and does not publis
         ->and(Product::query()->count())->toBe(0)
         ->and($report->messages)->toHaveCount(3)
         ->and($report->messages[0])->toStartWith('SAFETYBOY [215965]: 14 SKUs not sold per single pair; not imported (SKUs: 840165, 840166, ')
-        ->and($report->messages[1])->toBe('SAFETYBOY [215965]: nothing can be sold at a price; product drafted.')
+        ->and($report->messages[1])->toBe('SAFETYBOY [215965]: nothing can be sold at a price (draft reason no_sellable_price).')
         ->and($report->messages[2])->toBe('SAFETYBOY [215965]: no importable variant (no_sellable_price); product not created.');
 
     // The same product once it exists: drafted with the reason, kept, off sale.
