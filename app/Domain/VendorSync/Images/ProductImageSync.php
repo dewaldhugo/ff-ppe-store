@@ -8,6 +8,7 @@ use App\Domain\VendorSync\Contracts\VendorMapper;
 use App\Domain\VendorSync\Data\NormalisedImage;
 use App\Domain\VendorSync\Data\RawRecord;
 use App\Domain\VendorSync\Import\CatalogueWriter;
+use App\Domain\VendorSync\Import\DraftReason;
 use App\Domain\VendorSync\Models\VendorProduct;
 use App\Domain\VendorSync\Models\VendorRawRecord;
 use Carbon\CarbonInterface;
@@ -189,12 +190,31 @@ final readonly class ProductImageSync
             return $result;
         }
 
+        // A partial result gets a different hash, so the next run
+        // tries the missing images again without re-downloading the rest.
+        $newHash = $result->failed === []
+            ? $planHash
+            : hash('sha256', $planHash.'|incomplete|'.implode('|', $result->failed));
+
+        // The product must be sent to the search index when its images or
+        // status changed, when this hash is new, and whenever it is still
+        // draft or flagged `no_image`, because the status change below
+        // would otherwise be missed by the index.
+        $needsIndex = $result->changed
+            || $newHash !== $link->image_urls_hash
+            || $product->status !== 'published'
+            || in_array(DraftReason::NO_IMAGE, $link->draft_reasons ?? [], true);
+
+        // Write ahead: the hash is cleared BEFORE the status is changed and
+        // the product is indexed, and written back only once indexing has
+        // succeeded. Anything that stops the sync in between (an exception,
+        // a timeout, a killed worker) leaves a hash that does not match, so
+        // the next run takes this path again, reuses the stored images and
+        // reindexes. Clearing it afterwards would not survive a kill, and
+        // not advancing it would change nothing on a refresh, where the new
+        // hash equals the stored one.
         $link->update([
-            // A partial result gets a different hash, so the next run
-            // tries the missing images again without re-downloading the rest.
-            'image_urls_hash' => $result->failed === []
-                ? $planHash
-                : hash('sha256', $planHash.'|incomplete|'.implode('|', $result->failed)),
+            'image_urls_hash' => $needsIndex ? null : $newHash,
             'images_synced_at' => now(),
         ]);
 
@@ -203,14 +223,32 @@ final readonly class ProductImageSync
         // first image of the vendor's list is missing: that image is the
         // product's hero, and another image must not take its place on the
         // storefront. The product stays draft with `no_image`, and the next
-        // run fetches only what is missing.
-        if (! $result->heroFailed && $this->writer->refreshStatus($link->refresh())) {
+        // run fetches only what is missing. Search syncing is off for this
+        // save: the one index call below is the only one, so a failure
+        // can be caught and reported.
+        if (! $result->heroFailed && Product::withoutSyncingToSearch(fn (): bool => $this->writer->refreshStatus($link->refresh()))) {
             $result->changed = true;
         }
 
-        if ($result->changed) {
-            $product->refresh()->searchable();
+        if (! $needsIndex) {
+            return $result;
         }
+
+        // No database transaction is open here, so this call to the search
+        // engine never runs inside one.
+        try {
+            $product->refresh()->searchable();
+        } catch (Throwable $exception) {
+            report($exception);
+
+            // The images and the status are saved. The hash stays cleared, so
+            // the next run reindexes the product without downloading again.
+            $result->indexFailure = class_basename($exception).': '.$exception->getMessage();
+
+            return $result;
+        }
+
+        $link->update(['image_urls_hash' => $newHash]);
 
         return $result;
     }

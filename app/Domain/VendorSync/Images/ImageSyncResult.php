@@ -51,6 +51,13 @@ final class ImageSyncResult
     /** @var list<string> Things worth knowing that are not failures (a smaller rendition was used). */
     public array $notes = [];
 
+    /**
+     * Sending the product to the search index threw. The images and the status
+     * are saved in the database and only indexing failed. Holds the exception
+     * class and message. Null when indexing succeeded or was not needed.
+     */
+    public ?string $indexFailure = null;
+
     /** Why no work could be done at all. Null when some work was possible. */
     public ?string $blocked = null;
 }

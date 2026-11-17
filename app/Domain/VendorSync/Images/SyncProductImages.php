@@ -33,6 +33,12 @@ use Throwable;
  * first image is the one missing, the product stays draft and the warning
  * starts `HERO IMAGE FAILED`.
  *
+ * When the images were saved but sending the product to the search index
+ * threw, the job fails too (it lands in `failed_jobs`, the run counts
+ * `index_failed_jobs`), and the message says the database is up to date and
+ * only indexing failed. The image hash is cleared before the index call, so
+ * the next run reindexes the product from the stored images.
+ *
  * No download starts unless the time left in the job (its timeout minus
  * `vendorsync.images.job_margin_seconds`) covers the longest one can take, so
  * a hanging host cannot get the job killed before it reports.
@@ -86,6 +92,13 @@ final class SyncProductImages implements ShouldQueue
             $this->fail($id, "none of the {$result->planned} images could be saved. ".implode(' | ', $result->failed), result: $result);
         }
 
+        if ($result->indexFailure !== null) {
+            // The images and the status are saved; only the search index is
+            // stale. The job fails so the failure is seen, and the next run
+            // (or `queue:retry`) reindexes it without downloading again.
+            $this->fail($id, $this->indexFailureMessage($result), result: $result, counts: ['index_failed_jobs' => 1]);
+        }
+
         $messages = [];
 
         foreach ($result->notes as $note) {
@@ -127,6 +140,23 @@ final class SyncProductImages implements ShouldQueue
     }
 
     /**
+     * The failure reason when the images were saved and only the search
+     * indexing failed. Any images that failed too are named after it.
+     */
+    private function indexFailureMessage(ImageSyncResult $result): string
+    {
+        $message = "{$result->stored} of {$result->planned} images saved, but search indexing failed ({$result->indexFailure}). "
+            .'The database is up to date and only indexing failed. The image hash was cleared, so the next image run '
+            .'reindexes this product without downloading the stored images again.';
+
+        if ($result->failed !== []) {
+            $message .= ' '.count($result->failed).' images also failed: '.implode(' | ', $result->failed);
+        }
+
+        return $message;
+    }
+
+    /**
      * What a partial result says in the run report: which kind, how many
      * images were saved, and why the others were not.
      *
@@ -156,15 +186,16 @@ final class SyncProductImages implements ShouldQueue
     }
 
     /**
+     * @param  array<string, int>  $counts  Added to the run's statistics.
      * @return never
      */
-    private function fail(string $vendorProductId, string $reason, ?Throwable $previous = null, ?ImageSyncResult $result = null): void
+    private function fail(string $vendorProductId, string $reason, ?Throwable $previous = null, ?ImageSyncResult $result = null, array $counts = []): void
     {
         $exception = ImageSyncFailed::for($vendorProductId, $reason);
 
         Log::error('VendorSync images: '.$exception->getMessage(), ['run_id' => $this->runId]);
 
-        $this->record(false, 1, [$exception->getMessage()], failed: true, counts: $result === null ? [] : $this->counts($result));
+        $this->record(false, 1, [$exception->getMessage()], failed: true, counts: ($result === null ? [] : $this->counts($result)) + $counts);
 
         throw $previous === null ? $exception : new ImageSyncFailed($exception->getMessage(), previous: $previous);
     }
