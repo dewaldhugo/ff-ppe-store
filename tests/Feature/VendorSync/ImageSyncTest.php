@@ -120,8 +120,18 @@ it('saves BESTBOOT\'s images when its vendor product ID is passed to --product',
 it('accepts a 2560 x 2560 vendor original and converts it', function (): void {
     // The size the production run rejected at the old 5.0 megapixel limit. A real
     // decode, so the process needs the memory a worker has (256M on the server).
-    $memory = ini_get('memory_limit');
-    ini_set('memory_limit', '256M');
+    // Only ever raised: a full run of the suite may already hold more than 256M.
+    $memory = (string) ini_get('memory_limit');
+    $bytes = (int) $memory * match (strtoupper(substr($memory, -1))) {
+        'G' => 1024 ** 3,
+        'M' => 1024 ** 2,
+        'K' => 1024,
+        default => 1,
+    };
+
+    if ($memory !== '-1' && $bytes < 256 * 1024 ** 2) {
+        ini_set('memory_limit', '256M');
+    }
 
     try {
         $link = importBestboot(realImages: ['BESTBOOT-BLK-HIRES.PNG' => [2560, 2560]]);
@@ -145,7 +155,7 @@ it('accepts a 2560 x 2560 vendor original and converts it', function (): void {
             ->and($link->refresh()->image_urls_hash)->toHaveLength(64)
             ->and(DB::table('failed_jobs')->count())->toBe(0);
     } finally {
-        ini_set('memory_limit', (string) $memory);
+        ini_set('memory_limit', $memory);
     }
 });
 
