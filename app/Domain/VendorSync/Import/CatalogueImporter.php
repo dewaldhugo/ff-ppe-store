@@ -336,7 +336,7 @@ final class CatalogueImporter
         // drafted by the writer; one that does not exist cannot be created
         // in contract shape without a variant, so it is reported instead.
         if ($result->product->variants === [] && $link === null) {
-            $report->error("{$result->product->name} [{$record->externalId}]: no importable variant (".implode(', ', $result->product->draftReasons).'); product not created.');
+            $report->error("{$result->product->label}: no importable variant (".implode(', ', $result->product->draftReasons).'); product not created.');
 
             return true;
         }

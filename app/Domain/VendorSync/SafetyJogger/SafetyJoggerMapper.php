@@ -90,7 +90,7 @@ final readonly class SafetyJoggerMapper implements VendorMapper
 
         if ($collection === null) {
             $draftReasons[] = DraftReason::UNMAPPED_CATEGORY;
-            $messages[] = "{$label}: article type '{$articleType}' with model '".($model ?? 'none')."' ({$family}) is not mapped to a collection; product drafted.";
+            $messages[] = "{$label}: article type '{$articleType}' with model '".($model ?? 'none')."' ({$family}) is not mapped to a collection (draft reason unmapped_category).";
         }
 
         $cut = $model === null ? null : ($this->config['cut_map'][$model] ?? null);
@@ -182,7 +182,7 @@ final readonly class SafetyJoggerMapper implements VendorMapper
         // No variant can be imported at all: nothing to sell at a price.
         if ($variants === [] && ! $noUsableSize) {
             $draftReasons[] = DraftReason::NO_SELLABLE_PRICE;
-            $messages[] = "{$label}: nothing can be sold at a price; product drafted.";
+            $messages[] = "{$label}: nothing can be sold at a price (draft reason no_sellable_price).";
         }
 
         // Every variant is held at stock 0 because its cost is at or above
@@ -196,6 +196,7 @@ final readonly class SafetyJoggerMapper implements VendorMapper
         return MappingResult::product(new NormalisedProduct(
             vendorCode: self::VENDOR_CODE,
             vendorProductId: $record->externalId,
+            label: $label,
             productType: 'safety-footwear',
             brand: $brand === '' ? null : $brand,
             name: $this->productName((string) ($data['commercialName'] ?? $vendorName) ?: $vendorName),
