@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Domain\Catalogue\Home\HeroImage;
 use App\Domain\Catalogue\Home\HomeFeaturedProducts;
+use App\Domain\Catalogue\Keys\CatalogueKeys;
 use App\Models\User;
 use Lunar\Models\Url;
 
@@ -269,15 +270,35 @@ it('shows the Product Spotlight as one image, in place of the videos and the sta
         ->and($html)->not->toContain('data-home-standards');
 });
 
-it('picks from every category, not just Safety Footwear', function (): void {
+it('only picks products from the Safety Footwear and PPE & Gear categories', function (): void {
+    $allowed = collect(HomeFeaturedProducts::CATEGORIES)
+        ->flatMap(fn (string $handle) => CatalogueKeys::collection($handle)->descendants->pluck('id')->push(CatalogueKeys::collection($handle)->id))
+        ->all();
+
+    $picks = (new HomeFeaturedProducts)->pick(100);
+
+    expect($picks)->not->toBeEmpty();
+
+    foreach ($picks as $product) {
+        expect($product->collections->pluck('id')->intersect($allowed))->not->toBeEmpty();
+    }
+});
+
+it('leaves out a product that is in neither category, and takes one from PPE & Gear', function (): void {
     $product = Url::query()->where('slug', 'safety-jogger-ligero')->sole()->element;
     $picks = new HomeFeaturedProducts;
 
-    // Take the product out of every category: it is still eligible.
+    // Moved to Apparel: not eligible.
     $product->collections()->detach();
+    $product->collections()->attach(CatalogueKeys::collection('apparel')->id, ['position' => 1]);
 
-    expect($product->collections()->count())->toBe(0)
-        ->and($picks->pick(100)->modelKeys())->toContain($product->id);
+    expect($picks->pick(100)->modelKeys())->not->toContain($product->id);
+
+    // Moved to a PPE & Gear sub-category: eligible.
+    $product->collections()->detach();
+    $product->collections()->attach(CatalogueKeys::collection('gloves')->id, ['position' => 1]);
+
+    expect($picks->pick(100)->modelKeys())->toContain($product->id);
 });
 
 it('styles the industries heading like the others, 20% larger, with a left aligned intro', function (): void {

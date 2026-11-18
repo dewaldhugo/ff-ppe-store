@@ -1,4 +1,4 @@
-{{-- Ten random published products from the whole catalogue (two rows of five on desktop), a new pick on every page load. Each card is one link. --}}
+{{-- Ten random published products from the Safety Footwear and PPE & Gear categories (two rows of five on desktop), a new pick on every page load. Each card is one link. --}}
 @if ($products->isNotEmpty())
     <section class="py-12 sm:py-16" aria-labelledby="home-products" data-home-products>
         <x-ui.container>
