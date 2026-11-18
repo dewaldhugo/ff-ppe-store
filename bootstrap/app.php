@@ -13,7 +13,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // A signed-in customer who opens a guest-only page (login, register) goes to My Account.
+        $middleware->redirectUsersTo(fn (): string => route('account'));
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Domain\Catalogue\Urls\CollectionPath;
+use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Middleware\RedirectTrailingSlash;
 use App\Http\Middleware\ResolveCategoryPath;
 use App\Http\Middleware\ResolveProductSlug;
@@ -14,7 +15,6 @@ use Illuminate\Support\Facades\Route;
 // "Content coming soon" and noindex.
 $placeholders = [
     'login' => ['/login', 'Log in'],
-    'register' => ['/register', 'Register'],
     'account' => ['/account', 'Account'],
     'cart' => ['/cart', 'Cart'],
     'checkout' => ['/checkout', 'Checkout'],
@@ -52,6 +52,13 @@ Route::middleware(RedirectTrailingSlash::class)->group(function () use ($placeho
     Route::view('/technical-features', 'pages.technical-features')->name('technical-features');
     Route::view('/about', 'pages.about')->name('about');
     Route::view('/contact', 'pages.contact')->name('contact');
+
+    // Customer accounts. Every route names the `web` guard: staff use the separate
+    // `staff` guard (Lunar) and are never customers.
+    Route::middleware('guest:web')->group(function (): void {
+        Route::get('/register', [RegisterController::class, 'create'])->name('register');
+        Route::post('/register', [RegisterController::class, 'store'])->middleware('throttle:register');
+    });
 
     foreach ($placeholders as $name => [$uri, $heading]) {
         Route::view($uri, 'pages.placeholder', ['heading' => $heading])->name($name);
