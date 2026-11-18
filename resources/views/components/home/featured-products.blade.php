@@ -1,36 +1,22 @@
-{{-- Two feature videos. The files are hosted on frontline-footwear.com and their poster images on frontline-shop.com. --}}
-@php
-    $videos = [
-        [
-            'src' => 'https://frontline-footwear.com/shop/datasheets/CADOR%20Colours%20that%20work.mp4',
-            'poster' => 'https://frontline-shop.com/v1.jpg',
-            'label' => 'CADOR: colours that work',
-        ],
-        [
-            'src' => 'https://frontline-footwear.com/shop/datasheets/MODULO_540p.mp4',
-            'poster' => 'https://frontline-shop.com/v2.jpg',
-            'label' => 'MODULO',
-        ],
-    ];
-@endphp
-
+{{-- The Product Spotlight: one campaign image, CADOR S1 P in six colours. Served from public/images/home. --}}
 <section class="py-12 sm:py-16" aria-labelledby="home-featured" data-home-featured>
     <x-ui.container>
-        <x-ui.section-heading id="home-featured" title="Product spotlights" />
+        <x-ui.section-heading id="home-featured" title="Product Spotlight" />
 
-        <div class="mt-8 grid gap-6 md:grid-cols-2">
-            @foreach ($videos as $video)
-                <video
-                    class="aspect-video w-full rounded-lg bg-surface-muted object-cover"
-                    src="{{ $video['src'] }}"
-                    poster="{{ $video['poster'] }}"
-                    controls
-                    preload="metadata"
-                    controlslist="nodownload"
-                    aria-label="{{ $video['label'] }}"
-                    data-featured-video
-                ></video>
-            @endforeach
-        </div>
+        <figure class="mt-8">
+            <picture>
+                <source type="image/webp" srcset="{{ asset('images/home/cador-colours-that-work.webp') }}">
+                <img
+                    src="{{ asset('images/home/cador-colours-that-work.jpg') }}"
+                    alt="CADOR S1 P safety trainer in yellow, green, blue, pink, red and grey, with its AirBlaze ventilation, SRC slip resistance, ESD, SJ Foam footbed and steel toe cap and midsole."
+                    width="1200"
+                    height="1563"
+                    loading="lazy"
+                    decoding="async"
+                    class="h-auto w-full rounded-lg"
+                    data-featured-image
+                >
+            </picture>
+        </figure>
     </x-ui.container>
 </section>

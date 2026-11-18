@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Domain\Catalogue\Home\HeroImage;
 use App\Domain\Catalogue\Home\HomeFeaturedProducts;
+use App\Domain\Catalogue\Urls\CollectionPath;
 use Lunar\Models\Url;
 
 function heroSection(string $html): string
@@ -144,7 +145,7 @@ it('replaces the shop by type tiles with a Featured products section of linked p
         ->and($html)->not->toContain('Shop by type')
         ->and($section)->toMatch('#<h2[^>]*id="home-products"[^>]*>Featured products</h2>#')
         ->and($cards)->toBeGreaterThan(0)
-        ->and($cards)->toBeLessThanOrEqual(5);
+        ->and($cards)->toBeLessThanOrEqual(10);
 
     preg_match_all('#<li[^>]*data-home-product>.*?</li>#s', $section, $items);
 
@@ -157,19 +158,19 @@ it('replaces the shop by type tiles with a Featured products section of linked p
     }
 });
 
-it('shows five products when the catalogue has at least five that can be shown', function (): void {
+it('shows ten products when the Safety Footwear category has at least ten that can be shown', function (): void {
     $eligible = (new HomeFeaturedProducts)->pick(100)->count();
 
     $shown = substr_count(productPicksOf($this->get(route('home'))->getContent()), 'data-home-product>');
 
-    expect($shown)->toBe(min(5, $eligible));
+    expect($shown)->toBe(min(10, $eligible));
 });
 
 it('picks a different set of products from page load to page load', function (): void {
     $eligible = (new HomeFeaturedProducts)->pick(100)->count();
 
-    if ($eligible <= 5) {
-        $this->markTestSkipped('The fixture catalogue has five or fewer products to pick from.');
+    if ($eligible <= 10) {
+        $this->markTestSkipped('The fixture catalogue has ten or fewer products to pick from.');
     }
 
     $sets = [];
@@ -208,20 +209,47 @@ it('shows the industry slider under the hero, with its heading', function (): vo
         ->and(substr_count($html, '<h1'))->toBe(1);
 });
 
-it('shows the feature products section with two videos, in place of the standards chips', function (): void {
+it('shows the Product Spotlight as one image, in place of the videos and the standards chips', function (): void {
     $html = $this->get(route('home'))->assertOk()->getContent();
 
     preg_match('#<section[^>]*data-home-featured.*?</section>#s', $html, $section);
 
-    expect($section[0] ?? '')->toMatch('#<h2[^>]*id="home-featured"[^>]*>Product spotlights</h2>#')
-        ->and(substr_count($section[0], '<video'))->toBe(2)
-        ->and($section[0])->toContain('md:grid-cols-2')
-        ->and($section[0])->toContain('src="https://frontline-footwear.com/shop/datasheets/CADOR%20Colours%20that%20work.mp4"')
-        ->and($section[0])->toContain('src="https://frontline-footwear.com/shop/datasheets/MODULO_540p.mp4"')
-        ->and($section[0])->toContain('poster="https://frontline-shop.com/v1.jpg"')
-        ->and($section[0])->toContain('poster="https://frontline-shop.com/v2.jpg"')
-        ->and(substr_count($section[0], 'preload="metadata"'))->toBe(2)
+    expect($section[0] ?? '')->toMatch('#<h2[^>]*id="home-featured"[^>]*>Product Spotlight</h2>#')
+        ->and($section[0])->not->toContain('<video')
+        ->and(substr_count($section[0], '<img'))->toBe(1)
+        ->and($section[0])->toContain('images/home/cador-colours-that-work.jpg')
+        ->and($section[0])->toContain('images/home/cador-colours-that-work.webp')
+        ->and($section[0])->toContain('width="1200"')
+        ->and($section[0])->toContain('height="1563"')
+        ->and(file_exists(public_path('images/home/cador-colours-that-work.jpg')))->toBeTrue()
         ->and($html)->not->toContain('data-home-standards');
+});
+
+it('only picks products from the Safety Footwear category', function (): void {
+    $categoryId = array_search(CollectionPath::fromSegments('safety-footwear'), (new CollectionPath)->all(), true);
+    $picks = (new HomeFeaturedProducts)->pick(100);
+
+    expect($categoryId)->not->toBeFalse()->and($picks)->not->toBeEmpty();
+
+    foreach ($picks as $product) {
+        $ids = $product->collections->flatMap(fn ($collection) => $collection->ancestors->pluck('id')->push($collection->id));
+
+        expect($ids->contains($categoryId))->toBeTrue();
+    }
+});
+
+it('styles the industries heading like the others, 20% larger, with a left aligned intro', function (): void {
+    $html = $this->get(route('home'))->assertOk()->getContent();
+
+    $start = (int) strpos($html, '[&_h2]:text-[1.8rem]');
+    $block = substr($html, $start, (int) strpos($html, '</h3>', $start) - $start);
+
+    expect($start)->toBeGreaterThan(0)
+        ->and($block)->toContain('sm:[&_h2]:text-[2.25rem]')
+        ->and($block)->toContain('h-1 w-12') // the teal rule, like the other headings
+        ->and($block)->toContain('text-[1.2rem]')
+        ->and($block)->not->toContain('text-center')
+        ->and($block)->not->toContain('mx-auto');
 });
 
 it('puts an intro h3 under the industries heading and a light grey band above the footer', function (): void {
