@@ -49,9 +49,9 @@
             >
         </div>
 
-        <ul class="mt-4 flex flex-wrap gap-x-[5px] gap-y-2" data-testid="brand-grid">
+        <ul class="mt-4 flex flex-wrap gap-x-[10px] gap-y-4" data-testid="brand-grid">
             @foreach ($tiles as $tile)
-                <li class="w-[50px] sm:w-[60px]" x-show="matches(@js(Str::lower($tile->name)))" data-brand="{{ $tile->slug }}">
+                <li class="w-[100px] sm:w-[120px]" x-show="matches(@js(Str::lower($tile->name)))" data-brand="{{ $tile->slug }}">
                     <a
                         href="{{ route('brands.show', $tile->slug) }}"
                         x-on:click.prevent="toggle(@js($tile->slug))"
@@ -62,7 +62,7 @@
                     >
                         <span
                             @class([
-                                'relative flex size-[46px] items-center justify-center rounded-full border border-border transition sm:size-[58px]',
+                                'relative flex size-[92px] items-center justify-center rounded-full border border-border transition sm:size-[116px]',
                                 'bg-white' => $tile->logoUrl !== null && $tile->background === null,
                             ])
                             x-bind:class="isSelected(@js($tile->slug)) ? 'ring-2 ring-brand-blue' : 'group-hover:border-brand-teal'"
@@ -73,22 +73,22 @@
                             @endif
                         >
                             @if ($tile->logoUrl !== null)
-                                <img src="{{ $tile->logoUrl }}" alt="" loading="lazy" class="max-h-8 max-w-8 object-contain sm:max-h-10 sm:max-w-10">
+                                <img src="{{ $tile->logoUrl }}" alt="" loading="lazy" class="max-h-16 max-w-16 object-contain sm:max-h-20 sm:max-w-20">
                             @else
-                                <span aria-hidden="true" class="text-sm font-semibold tracking-wide sm:text-base">{{ $tile->monogram() }}</span>
+                                <span aria-hidden="true" class="text-xl font-semibold tracking-wide sm:text-3xl">{{ $tile->monogram() }}</span>
                             @endif
 
                             <span
                                 x-show="isSelected(@js($tile->slug))"
                                 x-cloak
                                 aria-hidden="true"
-                                class="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-brand-blue text-white"
+                                class="absolute -right-0.5 -top-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-brand-blue text-white"
                             >
-                                <svg viewBox="0 0 20 20" fill="currentColor" class="h-2.5 w-2.5"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 0 1 0 1.4l-8 8a1 1 0 0 1-1.4 0l-4-4a1 1 0 1 1 1.4-1.4L8 12.6l7.3-7.3a1 1 0 0 1 1.4 0Z" clip-rule="evenodd"/></svg>
+                                <svg viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 0 1 0 1.4l-8 8a1 1 0 0 1-1.4 0l-4-4a1 1 0 1 1 1.4-1.4L8 12.6l7.3-7.3a1 1 0 0 1 1.4 0Z" clip-rule="evenodd"/></svg>
                             </span>
                         </span>
 
-                        <span class="mt-1 line-clamp-2 break-words text-[10px] font-semibold leading-tight group-hover:underline sm:text-[11px]" title="{{ $tile->name }}">{{ $tile->name }}</span>
+                        <span class="mt-2 line-clamp-2 break-words text-xs font-semibold leading-tight group-hover:underline sm:text-sm" title="{{ $tile->name }}">{{ $tile->name }}</span>
                         <span class="sr-only">{{ $tile->productCount }} {{ Str::plural('product', $tile->productCount) }}</span>
                     </a>
                 </li>
