@@ -62,7 +62,7 @@ it('shows the register form with every field, the honeypot and the terms line', 
 });
 
 it('creates a user and a Lunar customer attached to it, with the default customer group', function (): void {
-    $this->post(route('register'), registration())->assertRedirect(route('account'));
+    $this->post(route('register'), registration())->assertRedirect(route('verification.notice'));
 
     $user = User::query()->where('email', 'jo@builder.example')->firstOrFail();
     $customer = $user->customers()->firstOrFail();
@@ -212,7 +212,7 @@ it('still registers the customer when the search engine is down, and indexes aft
 
     $baseline = DB::transactionLevel();
 
-    $this->post(route('register'), registration())->assertRedirect(route('account'));
+    $this->post(route('register'), registration())->assertRedirect(route('verification.notice'));
 
     expect(User::query()->where('email', 'jo@builder.example')->exists())->toBeTrue()
         ->and($engine->levels)->toBe([$baseline]);
@@ -223,7 +223,7 @@ it('completes registration and reports the problem when no default customer grou
     Exceptions::fake();
     CustomerGroup::query()->update(['default' => false]);
 
-    $this->post(route('register'), registration())->assertRedirect(route('account'));
+    $this->post(route('register'), registration())->assertRedirect(route('verification.notice'));
 
     $customer = User::query()->where('email', 'jo@builder.example')->firstOrFail()->customers()->firstOrFail();
 
@@ -251,7 +251,7 @@ it('does not fail the registration when the email cannot be queued', function ()
     Exceptions::fake();
     Event::listen(Registered::class, fn () => throw new RuntimeException('Mailer is down'));
 
-    $this->post(route('register'), registration())->assertRedirect(route('account'));
+    $this->post(route('register'), registration())->assertRedirect(route('verification.notice'));
 
     expect(User::query()->where('email', 'jo@builder.example')->exists())->toBeTrue();
     $this->assertAuthenticated('web');

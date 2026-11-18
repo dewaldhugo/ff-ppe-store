@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Domain\Catalogue\Urls\CollectionPath;
+use App\Http\Controllers\Auth\EmailVerificationController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
@@ -77,6 +78,17 @@ Route::middleware(RedirectTrailingSlash::class)->group(function () use ($placeho
 
     // Open to everyone, so a double click or an expired session just lands on the home page.
     Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
+
+    // Email verification. The names are the ones Laravel's notification and request classes look for.
+    Route::middleware('auth:web')->group(function (): void {
+        Route::get('/email/verify', [EmailVerificationController::class, 'notice'])->name('verification.notice');
+        Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
+            ->middleware(['signed', 'throttle:6,1'])
+            ->name('verification.verify');
+        Route::post('/email/verification-notification', [EmailVerificationController::class, 'send'])
+            ->middleware('throttle:verification-send')
+            ->name('verification.send');
+    });
 
     foreach ($placeholders as $name => [$uri, $heading]) {
         Route::view($uri, 'pages.placeholder', ['heading' => $heading])->name($name);
