@@ -36,6 +36,7 @@ final readonly class ListingQuery
      * @param  array<string, list<string>>  $facets  Selected values by facet name.
      * @param  ?int  $priceMin  Pence, ex VAT.
      * @param  ?int  $priceMax  Pence, ex VAT.
+     * @param  ?list<string>  $brandScope  Lunar brand names a brand page is limited to; null for no limit, [] for nothing.
      */
     public function __construct(
         public ?int $collectionId = null,
@@ -47,6 +48,7 @@ final readonly class ListingQuery
         public ListingSort $sort = ListingSort::Relevance,
         public int $page = 1,
         public int $perPage = self::PER_PAGE,
+        public ?array $brandScope = null,
     ) {}
 
     /**
@@ -59,8 +61,9 @@ final readonly class ListingQuery
      * whole pounds.
      *
      * @param  array<string, mixed>  $input
+     * @param  ?list<string>  $brandScope
      */
-    public static function fromArray(array $input, ?int $collectionId = null): self
+    public static function fromArray(array $input, ?int $collectionId = null, ?array $brandScope = null): self
     {
         $facets = [];
 
@@ -74,6 +77,7 @@ final readonly class ListingQuery
 
         return new self(
             collectionId: $collectionId,
+            brandScope: $brandScope,
             term: is_string($input['q'] ?? null) ? trim($input['q']) : '',
             facets: $facets,
             priceMin: self::pounds($input['price_min'] ?? null),

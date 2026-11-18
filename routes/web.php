@@ -9,7 +9,9 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\BrandIndexController;
 use App\Http\Middleware\RedirectTrailingSlash;
+use App\Http\Middleware\ResolveBrandSlugs;
 use App\Http\Middleware\ResolveCategoryPath;
 use App\Http\Middleware\ResolveProductSlug;
 use App\Livewire\Catalogue\CategoryListing;
@@ -50,6 +52,15 @@ Route::middleware(RedirectTrailingSlash::class)->group(function () use ($placeho
         ->name('product');
 
     Route::get('/search', CategoryListing::class)->name('search');
+
+    Route::get('/brands', BrandIndexController::class)->name('brands');
+
+    // One slug or several joined by commas, sorted: /brands/amblers,safety-jogger.
+    // The middleware resolves them (301 to the sorted form, 404 when unknown).
+    Route::get('/brands/{brands}', CategoryListing::class)
+        ->where('brands', '[A-Za-z0-9\-]+(,[A-Za-z0-9\-]+)*')
+        ->middleware(ResolveBrandSlugs::class)
+        ->name('brands.show');
 
     Route::view('/size-guide', 'pages.size-guide')->name('size-guide');
     Route::view('/technical-features', 'pages.technical-features')->name('technical-features');

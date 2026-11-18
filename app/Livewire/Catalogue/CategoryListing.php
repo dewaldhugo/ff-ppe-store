@@ -11,6 +11,7 @@ use App\Domain\Catalogue\Search\ListingQuery;
 use App\Domain\Catalogue\Search\ListingSort;
 use App\Domain\Catalogue\Urls\CategoryUrl;
 use App\Domain\Pricing\PriceDisplay;
+use App\Http\Middleware\ResolveBrandSlugs;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Locked;
@@ -32,6 +33,22 @@ final class CategoryListing extends Component
 {
     #[Locked]
     public ?int $collectionId = null;
+
+    /**
+     * Set on /brands/{slugs} only: the URL slugs, the Lunar brand names the
+     * listing is limited to, and the page heading.
+     *
+     * @var list<string>
+     */
+    #[Locked]
+    public array $brandSlugs = [];
+
+    /** @var ?list<string> */
+    #[Locked]
+    public ?array $brandScope = null;
+
+    #[Locked]
+    public string $brandHeading = '';
 
     #[Url(except: '')]
     public string $q = '';
@@ -79,10 +96,23 @@ final class CategoryListing extends Component
      * The ResolveCategoryPath middleware has already matched the URL path to a
      * collection (or redirected, or answered 404) and passes its id in. The
      * search page has none.
+     *
+     * On a brand page ResolveBrandSlugs has resolved the brands and left them
+     * in a request attribute. They are not route parameters on purpose:
+     * Livewire also passes route parameters to mount() by position, so any
+     * extra mount() argument would shift collectionId on every listing.
      */
     public function mount(?int $collectionId = null): void
     {
         $this->collectionId = $collectionId;
+
+        $brands = request()->attributes->get(ResolveBrandSlugs::ATTRIBUTE);
+
+        if (is_array($brands)) {
+            $this->brandSlugs = $brands['slugs'];
+            $this->brandScope = $brands['scope'];
+            $this->brandHeading = $brands['heading'];
+        }
     }
 
     /**
@@ -107,13 +137,14 @@ final class CategoryListing extends Component
 
     public function render(CatalogueSearch $search, PriceDisplay $priceDisplay, CategoryUrl $categoryUrl): View
     {
-        $query = ListingQuery::fromArray($this->state(), $this->collectionId);
+        $query = ListingQuery::fromArray($this->state(), $this->collectionId, $this->brandScope);
         $result = $search->search($query);
 
         $collection = $this->collectionId === null ? null : Collection::query()->find($this->collectionId);
 
         $heading = match (true) {
             $collection !== null => (string) $collection->translateAttribute('name'),
+            $this->brandSlugs !== [] => $this->brandHeading,
             $query->term !== '' => 'Search results for "'.$query->term.'"',
             default => 'All products',
         };
@@ -138,6 +169,10 @@ final class CategoryListing extends Component
      */
     private function breadcrumbs(?Collection $collection, CategoryUrl $categoryUrl): array
     {
+        if ($this->brandSlugs !== []) {
+            return [['name' => 'Brands', 'url' => route('brands')]];
+        }
+
         $crumbs = [];
 
         foreach ($collection?->ancestors ?? [] as $ancestor) {
@@ -179,6 +214,13 @@ final class CategoryListing extends Component
      */
     private function canonical(?Collection $collection, CategoryUrl $categoryUrl): string
     {
+        // A brand page follows the category rule: filters never make a new canonical page.
+        if ($this->brandSlugs !== []) {
+            $url = route('brands.show', implode(',', $this->brandSlugs));
+
+            return $this->page > 1 && $this->onlyPaging() ? $url.'?page='.$this->page : $url;
+        }
+
         if ($collection !== null) {
             $url = $categoryUrl->for($collection);
 

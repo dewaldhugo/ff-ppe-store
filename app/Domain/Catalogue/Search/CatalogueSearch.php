@@ -121,6 +121,12 @@ final class CatalogueSearch
             $filters[] = 'collection_ids = '.$query->collectionId;
         }
 
+        // A brand page (/brands/{slugs}). Always applied, including to the
+        // brand facet's own counts: the page is about these brands only.
+        if ($query->brandScope !== null) {
+            $filters[] = $this->in('brand', $query->brandScope === [] ? [''] : $query->brandScope);
+        }
+
         if ($query->inStockOnly) {
             $filters[] = 'in_stock = true';
         }
