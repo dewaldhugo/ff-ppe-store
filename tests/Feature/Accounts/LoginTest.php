@@ -41,10 +41,10 @@ it('shows the log in form', function (): void {
         ->toContain('<meta name="robots" content="noindex">');
 });
 
-it('logs a customer in on the web guard only and sends them to My Account', function (): void {
+it('logs a customer in on the web guard only and sends them to the shop', function (): void {
     $user = accountCustomer();
 
-    $this->post(route('login'), accountCredentials())->assertRedirect(route('account'));
+    $this->post(route('login'), accountCredentials())->assertRedirect(route('shop'));
 
     $this->assertAuthenticatedAs($user, 'web');
     $this->assertGuest('staff');
@@ -72,7 +72,7 @@ it('sends the customer back to the page they were trying to reach', function ():
 it('matches the email address whatever its case', function (): void {
     accountCustomer();
 
-    $this->post(route('login'), accountCredentials(['email' => ' Jo@Builder.EXAMPLE ']))->assertRedirect(route('account'));
+    $this->post(route('login'), accountCredentials(['email' => ' Jo@Builder.EXAMPLE ']))->assertRedirect(route('shop'));
 
     $this->assertAuthenticated('web');
 });
@@ -142,7 +142,7 @@ it('does not lock out another email address from the same IP', function (): void
         $this->post(route('login'), accountCredentials(['password' => 'wrong-password-'.$attempt]));
     }
 
-    $this->post(route('login'), accountCredentials(['email' => 'sam@builder.example']))->assertRedirect(route('account'));
+    $this->post(route('login'), accountCredentials(['email' => 'sam@builder.example']))->assertRedirect(route('shop'));
     $this->assertAuthenticated('web');
 });
 
@@ -153,7 +153,7 @@ it('forgets the failed attempts after a successful log in', function (): void {
         $this->post(route('login'), accountCredentials(['password' => 'wrong-password-'.$attempt]));
     }
 
-    $this->post(route('login'), accountCredentials())->assertRedirect(route('account'));
+    $this->post(route('login'), accountCredentials())->assertRedirect(route('shop'));
     auth('web')->logout();
 
     foreach (range(1, LoginRequest::MAX_ATTEMPTS - 1) as $attempt) {
@@ -173,7 +173,7 @@ it('answers 429 to the 21st log in request a minute from one IP', function (): v
 it('lets an unverified customer log in', function (): void {
     accountCustomer(['email_verified_at' => null]);
 
-    $this->post(route('login'), accountCredentials())->assertRedirect(route('account'));
+    $this->post(route('login'), accountCredentials())->assertRedirect(route('shop'));
 
     $this->assertAuthenticated('web');
 });
@@ -215,5 +215,5 @@ it('lets the customer try again once the lockout has passed', function (): void 
 
     $this->travel(2)->minutes();
 
-    $this->post(route('login'), accountCredentials())->assertRedirect(route('account'));
+    $this->post(route('login'), accountCredentials())->assertRedirect(route('shop'));
 });

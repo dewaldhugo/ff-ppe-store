@@ -27,17 +27,17 @@ final class RegisterController extends Controller
         }
 
         $user = $register($request->safe()->only([
-            'first_name', 'last_name', 'company_name', 'vat_number', 'phone', 'email', 'password',
+            'first_name', 'last_name', 'company_name', 'address_line_one', 'address_line_two', 'address_city',
+            'address_county', 'address_postcode', 'industry', 'vat_number', 'phone', 'email', 'password',
         ]));
 
         Auth::guard('web')->login($user);
         $request->session()->regenerate();
 
-        // With verification on, the new customer is asked to check their email first.
-        if (User::verificationRequired()) {
-            return redirect()->route('verification.notice')->with('status', 'Your account has been created.');
-        }
-
-        return redirect()->route('account')->with('status', 'Your account has been created.');
+        // Straight to the shop. With verification on, the banner there says to check the email; the
+        // storefront and its prices work unverified, and only My Account asks for the verified address.
+        return redirect()->route('shop')->with('status', User::verificationRequired()
+            ? 'Your account has been created. We have emailed you a link to verify your address.'
+            : 'Your account has been created.');
     }
 }

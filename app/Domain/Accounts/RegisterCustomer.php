@@ -7,6 +7,7 @@ namespace App\Domain\Accounts;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\DB;
+use Lunar\Models\Country;
 use Lunar\Models\Customer;
 use Lunar\Models\CustomerGroup;
 use Throwable;
@@ -22,7 +23,7 @@ use Throwable;
 final class RegisterCustomer
 {
     /**
-     * @param  array{first_name: string, last_name: string, company_name: string, vat_number?: ?string, phone?: ?string, email: string, password: string}  $data
+     * @param  array{first_name: string, last_name: string, company_name: string, address_line_one: string, address_line_two?: ?string, address_city: string, address_county?: ?string, address_postcode: string, industry: string, vat_number?: ?string, phone?: ?string, email: string, password: string}  $data
      */
     public function __invoke(array $data): User
     {
@@ -43,9 +44,27 @@ final class RegisterCustomer
                 'last_name' => $data['last_name'],
                 'company_name' => $data['company_name'],
                 'tax_identifier' => $data['vat_number'] ?? null,
+                'meta' => ['industry' => $data['industry']],
             ]));
 
             $user->customers()->attach($customer);
+
+            // The company address is the customer's billing address. Country is always the UK:
+            // the store sells to UK customers only. No Lunar country row leaves the id null.
+            $customer->addresses()->create([
+                'country_id' => Country::query()->where('iso2', 'GB')->value('id'),
+                'first_name' => $data['first_name'],
+                'last_name' => $data['last_name'],
+                'company_name' => $data['company_name'],
+                'line_one' => $data['address_line_one'],
+                'line_two' => $data['address_line_two'] ?? null,
+                'city' => $data['address_city'],
+                'state' => $data['address_county'] ?? null,
+                'postcode' => $data['address_postcode'],
+                'contact_email' => $data['email'],
+                'contact_phone' => $data['phone'] ?? null,
+                'billing_default' => true,
+            ]);
 
             $this->attachDefaultGroup($customer);
 

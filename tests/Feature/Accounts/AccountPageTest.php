@@ -332,7 +332,7 @@ it('lets the customer log in with the new password after a change', function ():
     $this->post(route('logout'));
 
     $this->post(route('login'), ['email' => 'jo@builder.example', 'password' => 'the-old-password-1'])->assertSessionHasErrors('email');
-    $this->post(route('login'), ['email' => 'jo@builder.example', 'password' => 'a-brand-new-password-2'])->assertRedirect(route('account'));
+    $this->post(route('login'), ['email' => 'jo@builder.example', 'password' => 'a-brand-new-password-2'])->assertRedirect(route('shop'));
 });
 
 it('links My account from the header once signed in', function (): void {
