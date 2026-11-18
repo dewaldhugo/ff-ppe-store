@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Domain\Catalogue\Urls\CollectionPath;
+use App\Http\Controllers\AccountController;
 use App\Http\Controllers\Auth\EmailVerificationController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\NewPasswordController;
@@ -18,7 +19,6 @@ use Illuminate\Support\Facades\Route;
 // Pages without content yet. Each renders the standard layout with a heading,
 // "Content coming soon" and noindex.
 $placeholders = [
-    'account' => ['/account', 'Account'],
     'cart' => ['/cart', 'Cart'],
     'checkout' => ['/checkout', 'Checkout'],
     'terms' => ['/terms', 'Terms and Conditions of Sale'],
@@ -78,6 +78,13 @@ Route::middleware(RedirectTrailingSlash::class)->group(function () use ($placeho
 
     // Open to everyone, so a double click or an expired session just lands on the home page.
     Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
+
+    // My Account: signed-in customers only, with a verified email address while that is required.
+    Route::middleware(['auth:web', 'account.verified'])->group(function (): void {
+        Route::get('/account', [AccountController::class, 'show'])->name('account');
+        Route::put('/account/profile', [AccountController::class, 'updateProfile'])->name('account.profile.update');
+        Route::put('/account/password', [AccountController::class, 'updatePassword'])->name('account.password.update');
+    });
 
     // Email verification. The names are the ones Laravel's notification and request classes look for.
     Route::middleware('auth:web')->group(function (): void {

@@ -38,7 +38,7 @@ final class RegisterCustomer
 
             // Scout would index the customer inside the transaction, so a Meilisearch outage
             // would roll the registration back. Index it after the commit instead.
-            $customer = Customer::withoutSyncingToSearch(fn (): Customer => Customer::create([
+            $customer = CustomerSearch::withoutIndexing(fn (): Customer => Customer::create([
                 'first_name' => $data['first_name'],
                 'last_name' => $data['last_name'],
                 'company_name' => $data['company_name'],
@@ -52,7 +52,7 @@ final class RegisterCustomer
             return $user;
         });
 
-        $this->index($customer);
+        CustomerSearch::index($customer);
 
         try {
             // The framework listens to this and calls User::sendEmailVerificationNotification(),
@@ -81,18 +81,5 @@ final class RegisterCustomer
         }
 
         $customer->customerGroups()->attach($group);
-    }
-
-    private function index(?Customer $customer): void
-    {
-        if ($customer === null) {
-            return;
-        }
-
-        try {
-            $customer->searchable();
-        } catch (Throwable $e) {
-            report($e);
-        }
     }
 }
