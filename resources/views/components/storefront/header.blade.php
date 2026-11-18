@@ -40,8 +40,18 @@
                         <span data-store-email>{{ \App\Support\Store::email() }}</span>
                     @endif
                 </li>
-                <li><a href="{{ route('login') }}" class="hover:underline" data-login-link>Log in</a></li>
-                <li><a href="{{ route('register') }}" class="hover:underline" data-register-link>Register</a></li>
+                @if ($customer)
+                    <li><a href="{{ route('account') }}" class="hover:underline" data-account-link>My account</a></li>
+                    <li>
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <button type="submit" class="hover:underline" data-logout-button>Log out</button>
+                        </form>
+                    </li>
+                @else
+                    <li><a href="{{ route('login') }}" class="hover:underline" data-login-link>Log in</a></li>
+                    <li><a href="{{ route('register') }}" class="hover:underline" data-register-link>Register</a></li>
+                @endif
             </ul>
         </x-ui.container>
     </div>

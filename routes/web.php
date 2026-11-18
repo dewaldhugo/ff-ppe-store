@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Domain\Catalogue\Urls\CollectionPath;
+use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Middleware\RedirectTrailingSlash;
 use App\Http\Middleware\ResolveCategoryPath;
@@ -14,7 +15,6 @@ use Illuminate\Support\Facades\Route;
 // Pages without content yet. Each renders the standard layout with a heading,
 // "Content coming soon" and noindex.
 $placeholders = [
-    'login' => ['/login', 'Log in'],
     'account' => ['/account', 'Account'],
     'cart' => ['/cart', 'Cart'],
     'checkout' => ['/checkout', 'Checkout'],
@@ -58,7 +58,13 @@ Route::middleware(RedirectTrailingSlash::class)->group(function () use ($placeho
     Route::middleware('guest:web')->group(function (): void {
         Route::get('/register', [RegisterController::class, 'create'])->name('register');
         Route::post('/register', [RegisterController::class, 'store'])->middleware('throttle:register');
+
+        Route::get('/login', [LoginController::class, 'create'])->name('login');
+        Route::post('/login', [LoginController::class, 'store'])->middleware('throttle:login');
     });
+
+    // Open to everyone, so a double click or an expired session just lands on the home page.
+    Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
 
     foreach ($placeholders as $name => [$uri, $heading]) {
         Route::view($uri, 'pages.placeholder', ['heading' => $heading])->name($name);

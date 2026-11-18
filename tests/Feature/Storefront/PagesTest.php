@@ -16,7 +16,6 @@ beforeEach(function (): void {
 
 /** Route name => [URI, heading]. Placeholder pages: noindex until they have real content. */
 const PLACEHOLDERS = [
-    'login' => ['/login', 'Log in'],
     'account' => ['/account', 'Account'],
     'cart' => ['/cart', 'Cart'],
     'checkout' => ['/checkout', 'Checkout'],
@@ -31,7 +30,7 @@ const PLACEHOLDERS = [
 it('has a named route for every page', function (string $name, string $uri): void {
     expect(route($name, absolute: false))->toBe($uri);
 })->with(array_merge(
-    [['home', '/'], ['shop', '/shop'], ['register', '/register']],
+    [['home', '/'], ['shop', '/shop'], ['register', '/register'], ['login', '/login']],
     array_map(fn (string $name, array $page): array => [$name, $page[0]], array_keys(PLACEHOLDERS), PLACEHOLDERS),
 ));
 

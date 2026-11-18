@@ -15,6 +15,10 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         // A signed-in customer who opens a guest-only page (login, register) goes to My Account.
         $middleware->redirectUsersTo(fn (): string => route('account'));
+
+        // A guest who opens a signed-in page goes to the log in page. Lunar's admin panel
+        // and Horizon have their own sign-in and are not affected.
+        $middleware->redirectGuestsTo(fn (): string => route('login'));
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
