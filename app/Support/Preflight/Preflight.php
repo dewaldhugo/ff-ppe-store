@@ -46,6 +46,7 @@ final class Preflight
             $this->meilisearch(),
             $this->productsDisk(),
             $this->queueConnection(),
+            $this->mail(),
             $this->memoryLimit(),
             $this->freeDiskSpace(),
         ];
@@ -163,6 +164,35 @@ final class Preflight
         return in_array($connection, ['sync', 'null'], true)
             ? Result::fail('queue', "QUEUE_CONNECTION is {$connection}: jobs would run inside web requests or be dropped")
             : Result::pass('queue', $connection);
+    }
+
+    /**
+     * Customer accounts send email: the verification link, and the password reset link. With email
+     * verification on, a mailer that only writes to the log or an array means no customer can ever
+     * verify, so that is a failure. With verification off it only means reset emails go nowhere.
+     */
+    public function mail(): Result
+    {
+        $check = 'mail';
+        $mailer = (string) config('mail.default');
+        $logOnly = in_array($mailer, ['log', 'array'], true);
+        $verification = (bool) config('store.require_email_verification');
+
+        if ($logOnly && $verification) {
+            return Result::fail($check, "STORE_REQUIRE_EMAIL_VERIFICATION is on but MAIL_MAILER is {$mailer}, so customers cannot receive their verification link. Configure a real mailer, or set STORE_REQUIRE_EMAIL_VERIFICATION=false.");
+        }
+
+        if ($logOnly) {
+            return Result::warn($check, "MAIL_MAILER is {$mailer}: password reset emails will not be delivered until a real mailer is configured.");
+        }
+
+        $from = (string) config('mail.from.address');
+
+        if ($from === '' || str_ends_with($from, '@example.com')) {
+            return Result::warn($check, "MAIL_FROM_ADDRESS is '{$from}': set the address customers should see emails come from.");
+        }
+
+        return Result::pass($check, "{$mailer}, email verification ".($verification ? 'on' : 'off'));
     }
 
     public function memoryLimit(): Result

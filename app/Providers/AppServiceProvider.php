@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Domain\Accounts\RateLimits;
 use App\Domain\Catalogue\Keys\CatalogueKeys;
 use App\Domain\Catalogue\Menu\CategoryMenu;
 use App\Domain\Catalogue\Urls\CollectionPath;
 use App\Domain\Catalogue\Urls\Redirects\CollectionRedirectObserver;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Validation\Rules\Password;
 use Lunar\Admin\Support\Facades\LunarPanel;
 use Lunar\Facades\Telemetry;
 use Lunar\Models\Collection;
@@ -29,6 +31,11 @@ final class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Telemetry::optOut();
+
+        // Customer accounts: named limiters for the account routes and the password rules
+        // for register, reset and change password.
+        RateLimits::register();
+        Password::defaults(fn (): Password => Password::min(10)->letters()->numbers());
 
         // The storefront menu is cached. Any change to a collection, its URL
         // or the collection group clears it, whoever makes the change.

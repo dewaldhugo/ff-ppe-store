@@ -3,6 +3,12 @@
 declare(strict_types=1);
 
 use App\Domain\Catalogue\Urls\CollectionPath;
+use App\Http\Controllers\AccountController;
+use App\Http\Controllers\Auth\EmailVerificationController;
+use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\NewPasswordController;
+use App\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Middleware\RedirectTrailingSlash;
 use App\Http\Middleware\ResolveCategoryPath;
 use App\Http\Middleware\ResolveProductSlug;
@@ -13,9 +19,6 @@ use Illuminate\Support\Facades\Route;
 // Pages without content yet. Each renders the standard layout with a heading,
 // "Content coming soon" and noindex.
 $placeholders = [
-    'login' => ['/login', 'Log in'],
-    'register' => ['/register', 'Register'],
-    'account' => ['/account', 'Account'],
     'cart' => ['/cart', 'Cart'],
     'checkout' => ['/checkout', 'Checkout'],
     'terms' => ['/terms', 'Terms and Conditions of Sale'],
@@ -52,6 +55,47 @@ Route::middleware(RedirectTrailingSlash::class)->group(function () use ($placeho
     Route::view('/technical-features', 'pages.technical-features')->name('technical-features');
     Route::view('/about', 'pages.about')->name('about');
     Route::view('/contact', 'pages.contact')->name('contact');
+
+    // Customer accounts. Every route names the `web` guard: staff use the separate
+    // `staff` guard (Lunar) and are never customers.
+    Route::middleware('guest:web')->group(function (): void {
+        Route::get('/register', [RegisterController::class, 'create'])->name('register');
+        Route::post('/register', [RegisterController::class, 'store'])->middleware('throttle:register');
+
+        Route::get('/login', [LoginController::class, 'create'])->name('login');
+        Route::post('/login', [LoginController::class, 'store'])->middleware('throttle:login');
+
+        Route::get('/forgot-password', [PasswordResetLinkController::class, 'create'])->name('password.request');
+        Route::post('/forgot-password', [PasswordResetLinkController::class, 'store'])
+            ->middleware('throttle:password-email')
+            ->name('password.email');
+
+        Route::get('/reset-password/{token}', [NewPasswordController::class, 'create'])->name('password.reset');
+        Route::post('/reset-password', [NewPasswordController::class, 'store'])
+            ->middleware('throttle:password-reset')
+            ->name('password.store');
+    });
+
+    // Open to everyone, so a double click or an expired session just lands on the home page.
+    Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
+
+    // My Account: signed-in customers only, with a verified email address while that is required.
+    Route::middleware(['auth:web', 'account.verified'])->group(function (): void {
+        Route::get('/account', [AccountController::class, 'show'])->name('account');
+        Route::put('/account/profile', [AccountController::class, 'updateProfile'])->name('account.profile.update');
+        Route::put('/account/password', [AccountController::class, 'updatePassword'])->name('account.password.update');
+    });
+
+    // Email verification. The names are the ones Laravel's notification and request classes look for.
+    Route::middleware('auth:web')->group(function (): void {
+        Route::get('/email/verify', [EmailVerificationController::class, 'notice'])->name('verification.notice');
+        Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
+            ->middleware(['signed', 'throttle:6,1'])
+            ->name('verification.verify');
+        Route::post('/email/verification-notification', [EmailVerificationController::class, 'send'])
+            ->middleware('throttle:verification-send')
+            ->name('verification.send');
+    });
 
     foreach ($placeholders as $name => [$uri, $heading]) {
         Route::view($uri, 'pages.placeholder', ['heading' => $heading])->name($name);

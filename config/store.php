@@ -28,4 +28,9 @@ return [
     // (see the Launch checklist in CLAUDE.md). It defaults to true so a new
     // environment is never indexed by accident.
     'noindex' => (bool) env('STORE_NOINDEX', true),
+
+    // Whether a new customer must verify their email address before using My Account.
+    // Defaults to true. Set STORE_REQUIRE_EMAIL_VERIFICATION=false on a server that has no
+    // working mailer yet (app:preflight fails when this is on and MAIL_MAILER is log or array).
+    'require_email_verification' => filter_var(env('STORE_REQUIRE_EMAIL_VERIFICATION', true), FILTER_VALIDATE_BOOL),
 ];
