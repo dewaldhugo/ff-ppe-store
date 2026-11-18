@@ -21,6 +21,11 @@ enum ListingSort: string
         };
     }
 
+    public function isPriceSort(): bool
+    {
+        return $this === self::PriceAscending || $this === self::PriceDescending;
+    }
+
     /**
      * Meilisearch sort expressions. Price sorts use the ex VAT price, so the
      * order matches the prices shown.

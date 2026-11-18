@@ -137,6 +137,14 @@ final class CategoryListing extends Component
 
     public function render(CatalogueSearch $search, PriceDisplay $priceDisplay, CategoryUrl $categoryUrl): View
     {
+        $showPrices = $priceDisplay->visible();
+
+        // Guests must not be able to learn prices by filtering or sorting on them,
+        // whether through the URL or a later Livewire update. Render runs after both.
+        if (! $showPrices) {
+            $this->dropPriceState();
+        }
+
         $query = ListingQuery::fromArray($this->state(), $this->collectionId, $this->brandScope);
         $result = $search->search($query);
 
@@ -155,13 +163,27 @@ final class CategoryListing extends Component
             'result' => $result,
             'products' => $this->products($result->productIds),
             'priceDisplay' => $priceDisplay,
-            'sorts' => ListingSort::cases(),
+            'showPrices' => $showPrices,
+            'sorts' => array_values(array_filter(
+                ListingSort::cases(),
+                fn (ListingSort $sort): bool => $showPrices || ! $sort->isPriceSort(),
+            )),
             'facetGroups' => $this->facetGroups($result->facets),
             'hasFilters' => $query->facets !== [] || $query->hasPriceRange() || $query->inStockOnly,
         ])->layout('components.layouts.storefront', [
             'title' => $heading,
             'canonical' => $this->canonical($collection, $categoryUrl),
         ]);
+    }
+
+    private function dropPriceState(): void
+    {
+        $this->price_min = '';
+        $this->price_max = '';
+
+        if (ListingSort::tryFrom($this->sort)?->isPriceSort() === true) {
+            $this->sort = ListingSort::Relevance->value;
+        }
     }
 
     /**

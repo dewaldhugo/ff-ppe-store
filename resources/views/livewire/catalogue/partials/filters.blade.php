@@ -43,6 +43,7 @@
         </fieldset>
     @endforeach
 
+    @if ($showPrices)
     <fieldset>
         <legend class="font-semibold">Price (ex VAT)</legend>
         <div class="mt-2 flex items-center gap-2">
@@ -71,4 +72,5 @@
             >
         </div>
     </fieldset>
+    @endif
 </div>

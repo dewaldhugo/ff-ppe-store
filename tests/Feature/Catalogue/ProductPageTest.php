@@ -4,12 +4,18 @@ declare(strict_types=1);
 
 use App\Domain\Catalogue\Media\PlaceholderImageGenerator;
 use App\Livewire\Catalogue\ProductPage;
+use App\Models\User;
 use Database\Seeders\FixtureCatalogueSeeder;
 use Livewire\Livewire;
 use Lunar\FieldTypes\Text;
 use Lunar\Models\Product;
 use Lunar\Models\Url;
 use Tests\Support\CatalogueFactory;
+
+// Only signed-in customers see prices (tests/Feature/Storefront/PriceGatingTest.php covers guests).
+beforeEach(function (): void {
+    $this->actingAs(User::factory()->create(), 'web');
+});
 
 /**
  * @return array<string, mixed>
@@ -436,6 +442,40 @@ it('does not allow more than the stock of the chosen size', function (): void {
     expect(addButton($component->html()))->toBe(['disabled' => false, 'label' => 'Add to cart']);
 
     $component->assertDontSee('available in this size')->call('addToCart')->assertSet('added', true);
+});
+
+it('shows the stock of the chosen variant next to the quantity field once every option is chosen, and uses it as the max', function (): void {
+    $component = Livewire::test(ProductPage::class, ['slug' => 'amblers-safety-fs65']);
+
+    // No size yet: no stock figure, and no max.
+    expect($component->html())->not->toContain('data-stock-available')
+        ->and($component->html())->not->toMatch('/<input[^>]*data-quantity[^>]*max=/s');
+
+    $component->call('choose', 'shoe_size', '6'); // 3 in stock
+
+    preg_match('#<p[^>]*data-stock-available[^>]*>(.*?)</p>#s', $component->html(), $stock);
+
+    expect(trim($stock[1] ?? ''))->toBe('3 available');
+    $component->assertSeeHtml('max="3"');
+
+    // The figure follows the selection.
+    $component->call('choose', 'shoe_size', '5'); // 1 in stock
+
+    preg_match('#<p[^>]*data-stock-available[^>]*>(.*?)</p>#s', $component->html(), $stock);
+
+    expect(trim($stock[1] ?? ''))->toBe('1 available');
+    $component->assertSeeHtml('max="1"');
+});
+
+it('says out of stock next to the quantity field for a variant with no stock', function (): void {
+    $component = Livewire::test(ProductPage::class, ['slug' => 'safety-jogger-ligero'])
+        ->call('choose', 'colour', 'black')
+        ->call('choose', 'shoe_size', '10');
+
+    preg_match('#<p[^>]*data-stock-available[^>]*>(.*?)</p>#s', $component->html(), $stock);
+
+    expect(trim($stock[1] ?? ''))->toBe('Out of stock')
+        ->and($component->html())->not->toMatch('/<input[^>]*data-quantity[^>]*max=/s');
 });
 
 it('shows a labelled quantity field that starts empty', function (): void {

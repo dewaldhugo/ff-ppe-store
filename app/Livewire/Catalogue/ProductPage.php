@@ -10,6 +10,7 @@ use App\Domain\Catalogue\Urls\ProductBreadcrumbs;
 use App\Domain\Catalogue\Variants\VariantSelection;
 use App\Domain\Pricing\DisplayPrice;
 use App\Domain\Pricing\PriceDisplay;
+use App\Domain\Pricing\PriceVisibility;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
@@ -90,8 +91,13 @@ final class ProductPage extends Component
         $this->sync($this->selection());
     }
 
-    public function choose(string $handle, string $key): void
+    public function choose(string $handle, string $key, PriceVisibility $visibility): void
     {
+        // Guests can look at the sizes but not pick one; colours stay selectable.
+        if (! $visibility->visible() && str_ends_with($handle, '_size')) {
+            return;
+        }
+
         $selection = $this->selection()->select($handle, $key);
 
         $this->sync($selection);
@@ -104,10 +110,15 @@ final class ProductPage extends Component
         $this->added = false;
     }
 
-    public function addToCart(): void
+    public function addToCart(PriceVisibility $visibility): void
     {
         $selection = $this->selection();
         $this->added = false;
+
+        // Guests have no quantity field or button; refuse a hand-made update too.
+        if (! $visibility->visible()) {
+            return;
+        }
 
         if (! $selection->isComplete()) {
             $this->missingOption = $selection->missing()[0];
@@ -147,6 +158,7 @@ final class ProductPage extends Component
             'variant' => $variant,
             'images' => $this->images($product, $selection),
             'price' => $this->price($priceDisplay, $selection, $variant),
+            'showPrices' => $priceDisplay->visible(),
             'pricesVary' => $variant === null && $this->pricesVary($selection),
             'stockMessage' => $this->stockMessage($selection, $variant),
             // Enabled only once every option is chosen, that variant is in
@@ -247,6 +259,10 @@ final class ProductPage extends Component
 
     private function price(PriceDisplay $priceDisplay, VariantSelection $selection, ?ProductVariant $variant): ?DisplayPrice
     {
+        if (! $priceDisplay->visible()) {
+            return null;
+        }
+
         if ($variant !== null) {
             return $priceDisplay->forVariant($variant);
         }

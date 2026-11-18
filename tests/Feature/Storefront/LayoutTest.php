@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Models\User;
 use App\Support\Store;
 use Illuminate\Support\Facades\Route;
 
@@ -48,12 +49,19 @@ it('shows the logo in the header, linked to the home page, with the store name a
         ->and(is_file(public_path('images/the-bridge-group-logo-white.svg')))->toBeTrue();
 });
 
-it('has a top bar with the trade notice, contact details and Log in and Register links', function (): void {
+it('has a top bar with the contact details on the left and the Log in and Register buttons on the right', function (): void {
     $html = $this->get(route('shop'))->getContent();
 
-    preg_match('#<div class="surface-dark bg-brand-navy.*?</ul>#s', $html, $bar);
+    preg_match('#<div class="surface-dark bg-brand-navy.*?</ul>\s*<ul.*?</ul>#s', $html, $bar);
 
-    expect($bar[0])->toContain('Trade supplier: all prices exclude VAT')
+    expect($bar[0])->not->toContain('Trade supplier')
+        // Contact first (left), account buttons after it (right).
+        ->and(strpos($bar[0], 'data-top-bar-contact'))->toBeLessThan(strpos($bar[0], 'data-top-bar-account'))
+        ->and(strpos($bar[0], 'data-store-phone'))->toBeLessThan(strpos($bar[0], 'data-top-bar-account'))
+        ->and(strpos($bar[0], 'data-store-email'))->toBeLessThan(strpos($bar[0], 'data-top-bar-account'))
+        // Log in and Register look like buttons: a border, padding and rounded corners.
+        ->and($bar[0])->toMatch('#<a href="'.preg_quote(route('login'), '#').'" class="[^"]*rounded-md[^"]*border[^"]*px-3[^"]*"[^>]*data-login-link#')
+        ->and($bar[0])->toMatch('#<a href="'.preg_quote(route('register'), '#').'" class="[^"]*rounded-md[^"]*bg-brand-teal[^"]*"[^>]*data-register-link#')
         ->and($bar[0])->toContain('href="'.route('login').'"')
         ->and($bar[0])->toContain('href="'.route('register').'"')
         ->and($bar[0])->not->toContain('href="'.route('account').'"')
@@ -75,7 +83,17 @@ it('links the phone and email once they are real', function (): void {
         ->and(Store::phoneHref())->toBe('tel:02079460000');
 });
 
-it('has a cart link with an item count badge of zero', function (): void {
+it('has no cart link for a guest', function (): void {
+    $html = $this->get(route('shop'))->assertOk()->getContent();
+
+    expect($html)->not->toContain('data-cart-link')
+        ->and($html)->not->toContain('data-cart-count')
+        ->and($html)->not->toContain('href="'.route('cart').'"');
+});
+
+it('has a cart link with an item count badge of zero for a signed-in customer', function (): void {
+    $this->actingAs(User::factory()->create(), 'web');
+
     $html = $this->get(route('shop'))->getContent();
 
     preg_match('#<a\s+href="'.preg_quote(route('cart'), '#').'"[^>]*data-cart-link.*?</a>#s', $html, $cart);
@@ -85,16 +103,14 @@ it('has a cart link with an item count badge of zero', function (): void {
         ->and($cart[0])->toMatch('#data-cart-count[^>]*>0<#');
 });
 
-it('has Log in and Register in the top bar, in place of Account, and not beside the cart', function (): void {
+it('has Log in and Register in the top bar, in place of Account', function (): void {
     $html = $this->get(route('shop'))->getContent();
 
-    preg_match('#<div class="surface-dark bg-brand-navy.*?</ul>#s', $html, $bar);
-    preg_match('#<a\s+href="'.preg_quote(route('cart'), '#').'"[^>]*data-cart-link.*?</a>#s', $html, $cart);
+    preg_match('#<div class="surface-dark bg-brand-navy.*?</ul>\s*<ul.*?</ul>#s', $html, $bar);
 
     expect($bar[0])->toMatch('#<a href="'.preg_quote(route('login'), '#').'"[^>]*data-login-link>Log in</a>#')
         ->and($bar[0])->toMatch('#<a href="'.preg_quote(route('register'), '#').'"[^>]*data-register-link>Register</a>#')
         ->and($bar[0])->not->toContain('>Account<')
-        ->and($cart[0])->not->toContain('Log in')
         ->and(route('login', absolute: false))->toBe('/login')
         ->and(route('register', absolute: false))->toBe('/register');
 });

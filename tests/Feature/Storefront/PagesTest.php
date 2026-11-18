@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Domain\Catalogue\Menu\CategoryMenu;
+use App\Models\User;
 
 const NOINDEX = '<meta name="robots" content="noindex">';
 
@@ -92,6 +93,8 @@ it('has a Launch checklist in CLAUDE.md with the three launch tasks', function (
 });
 
 it('renders the existing listing and product pages inside the new layout', function (): void {
+    $this->actingAs(User::factory()->create(), 'web'); // add to cart is for signed-in customers
+
     $this->get(route('category', 'safety-footwear'))
         ->assertOk()
         ->assertSee('<nav aria-label="Main"', false)

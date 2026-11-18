@@ -54,7 +54,8 @@ final class ProductStructuredData
 
         $offers = [];
 
-        foreach ($product->variants as $variant) {
+        // Guests do not see prices, so the markup must not state them either.
+        foreach ($this->priceDisplay->visible() ? $product->variants : [] as $variant) {
             if ($variant->prices->isEmpty()) {
                 continue;
             }

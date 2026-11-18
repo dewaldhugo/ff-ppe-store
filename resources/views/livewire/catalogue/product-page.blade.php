@@ -109,19 +109,41 @@
 
                             <div class="mt-2 flex flex-wrap gap-2">
                                 @foreach ($option['values'] as $value)
+                                    @php
+                                        // Guests see every size, in stock or not, and cannot pick one.
+                                        $sizeReadOnly = ! $showPrices && str_ends_with($option['handle'], '_size');
+                                        $available = $showPrices ? $value['available'] : true;
+                                    @endphp
+
+                                    @if ($sizeReadOnly)
+                                        <span
+                                            wire:key="{{ $option['handle'] }}-{{ $value['key'] }}"
+                                            data-value="{{ $value['key'] }}"
+                                            data-size-readonly
+                                            class="flex min-w-12 cursor-default items-center gap-2 rounded border border-border-strong bg-white px-3 py-2 text-sm"
+                                        >
+                                            <span>{{ $value['name'] }}</span>
+
+                                            @if ($option['handle'] === 'shoe_size' && isset($euSizes[$value['key']]))
+                                                <span class="text-xs opacity-75">EU {{ $euSizes[$value['key']] }}</span>
+                                            @endif
+                                        </span>
+                                        @continue
+                                    @endif
+
                                     <button
                                         type="button"
                                         wire:key="{{ $option['handle'] }}-{{ $value['key'] }}"
                                         wire:click="choose('{{ $option['handle'] }}', '{{ $value['key'] }}')"
                                         aria-pressed="{{ $value['selected'] ? 'true' : 'false' }}"
                                         data-value="{{ $value['key'] }}"
-                                        @disabled(! $value['available'])
-                                        @if (! $value['available']) title="Out of stock" @endif
+                                        @disabled(! $available)
+                                        @if (! $available) title="Out of stock" @endif
                                         @class([
                                             'flex min-w-12 items-center gap-2 rounded border px-3 py-2 text-sm',
                                             'border-brand-blue bg-brand-blue text-white' => $value['selected'],
-                                            'border-border-strong bg-white hover:border-brand-blue' => ! $value['selected'] && $value['available'],
-                                            'cursor-not-allowed border-border bg-surface-muted text-ink-muted line-through' => ! $value['available'],
+                                            'border-border-strong bg-white hover:border-brand-blue' => ! $value['selected'] && $available,
+                                            'cursor-not-allowed border-border bg-surface-muted text-ink-muted line-through' => ! $available,
                                         ])
                                     >
                                         @if ($option['handle'] === 'colour')
@@ -138,7 +160,7 @@
                                             <span class="text-xs opacity-75">EU {{ $euSizes[$value['key']] }}</span>
                                         @endif
 
-                                        @if (! $value['available'])
+                                        @if (! $available)
                                             <span class="sr-only">(out of stock)</span>
                                         @endif
                                     </button>
@@ -154,24 +176,35 @@
                     @endif
                 @endforeach
 
+                {{-- Guests see no prices, so they cannot order either: no quantity or add to cart. --}}
+                @if ($showPrices)
                 <div>
                     <label for="quantity" class="block font-semibold text-ink">Quantity</label>
-                    <input
-                        id="quantity"
-                        type="number"
-                        inputmode="numeric"
-                        min="1"
-                        step="1"
-                        @if ($maxQuantity !== null) max="{{ $maxQuantity }}" @endif
-                        wire:model.live.debounce.300ms="quantity"
-                        @if ($quantityError !== null) aria-invalid="true" aria-describedby="error-quantity" @endif
-                        data-quantity
-                        @class([
-                            'mt-2 w-28 rounded border px-3 py-2 text-lg',
-                            'border-border-strong' => $quantityError === null,
-                            'border-danger' => $quantityError !== null,
-                        ])
-                    >
+                    <div class="mt-2 flex flex-wrap items-center gap-3">
+                        <input
+                            id="quantity"
+                            type="number"
+                            inputmode="numeric"
+                            min="1"
+                            step="1"
+                            @if ($maxQuantity !== null) max="{{ $maxQuantity }}" @endif
+                            wire:model.live.debounce.300ms="quantity"
+                            @if ($quantityError !== null) aria-invalid="true" aria-describedby="error-quantity" @endif
+                            data-quantity
+                            @class([
+                                'w-28 rounded border px-3 py-2 text-lg',
+                                'border-border-strong' => $quantityError === null,
+                                'border-danger' => $quantityError !== null,
+                            ])
+                        >
+
+                        {{-- Once every option is chosen: the stock of that exact variant, which is also the input's max. --}}
+                        @if ($variant !== null)
+                            <p class="text-sm font-semibold text-ink-muted" data-stock-available aria-live="polite">
+                                {{ $maxQuantity !== null ? $maxQuantity.' available' : 'Out of stock' }}
+                            </p>
+                        @endif
+                    </div>
 
                     @if ($quantityError !== null)
                         <p id="error-quantity" role="alert" class="mt-2 text-sm font-semibold text-danger">{{ $quantityError }}</p>
@@ -191,6 +224,7 @@
                     <p role="status" class="rounded border border-success bg-success-surface p-3 text-sm text-success">
                         Online ordering opens soon. Your selection is available.
                     </p>
+                @endif
                 @endif
             </form>
 
