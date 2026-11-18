@@ -56,6 +56,7 @@ Read the matching file before you start the work it covers.
 - Read [docs/data-contract.md](docs/data-contract.md) before touching seeders, search, catalogue, pricing, tax, media or order code.
 - Read [docs/vendorsync.md](docs/vendorsync.md) before any ingestion phase work, or before reading or writing the vendor tables.
 - Read [docs/search.md](docs/search.md) before changing the search indexer, index settings, listings or facets, or any bulk write that affects products.
+- Read [docs/accounts.md](docs/accounts.md) before touching registration, login, password reset, email verification, My Account, the `login`/`register`/`account` routes, the customer and staff guards, or the mail those send.
 - Read [docs/launch-checklist.md](docs/launch-checklist.md) before any deploy or go-live task.
 
 ## Conventions
@@ -64,7 +65,7 @@ Read the matching file before you start the work it covers.
 - Domain code under `app/Domain/{Area}`, Livewire components under `app/Livewire/{Area}`. Small cross-cutting helpers live in `app/Support`; Blade components under `resources/views/components/{ui,home,storefront,layouts}`.
 - Money is never a float. Use Lunar's `Price` and `Money` objects or integers in pence.
 - Use Lunar's models, actions, pipelines and events. Do not duplicate cart, pricing, tax or order logic that Lunar already provides. If Lunar cannot do something, explain why before writing custom logic.
-- Pest for tests, in `tests/Feature/{Catalogue,Deployment,Pricing,Storefront,VendorSync}` and `tests/Unit`. Every feature ships with feature tests. Use the fixture seeder, never live vendor data.
+- Pest for tests, in `tests/Feature/{Accounts,Catalogue,Deployment,Pricing,Storefront,VendorSync}` and `tests/Unit`. Every feature ships with feature tests. Use the fixture seeder, never live vendor data.
 - Run `./vendor/bin/pint` and `./vendor/bin/pest` before declaring a task done.
 - No new composer or npm packages without stating why and asking first.
 - UK English in all customer-facing copy (colour, catalogue, favourite). Never use em dashes in copy, comments or docs.
@@ -83,7 +84,12 @@ Current routes (`routes/web.php`):
 | `product` | `/products/{slug}` | `ProductPage` |
 | `about` | `/about` | view `pages.about` (real content, supplied by the client) |
 | `contact` | `/contact` | view `pages.contact`: enquiry form (Livewire `EnquiryForm`) emailing the store email (`config/store.php`), or `STORE_ENQUIRY_EMAIL` when set |
-| placeholders | `/login`, `/register`, `/account`, `/cart`, `/checkout`, `/terms`, `/privacy`, `/cookies`, `/returns`, `/delivery`, `/accessibility` | `pages.placeholder` (noindex) |
+| `login`, `register` | `/login`, `/register` | `LoginController`, `RegisterController` (`guest:web`, noindex; docs/accounts.md) |
+| `password.request`, `password.email`, `password.reset`, `password.store` | `/forgot-password`, `/reset-password/{token}` | `PasswordResetLinkController`, `NewPasswordController` (`guest:web`) |
+| `logout` | POST `/logout` | `LoginController@destroy` (regenerates the session, never invalidates it) |
+| `verification.notice`, `verification.verify`, `verification.send` | `/email/verify`, `/email/verify/{id}/{hash}`, POST `/email/verification-notification` | `EmailVerificationController` (`auth:web`) |
+| `account`, `account.profile.update`, `account.password.update` | `/account`, PUT `/account/profile`, PUT `/account/password` | `AccountController` (`auth:web`, `account.verified`, noindex) |
+| placeholders | `/cart`, `/checkout`, `/terms`, `/privacy`, `/cookies`, `/returns`, `/delivery`, `/accessibility` | `pages.placeholder` (noindex) |
 
 Rules:
 
@@ -102,7 +108,8 @@ Rules:
 - **Noindex.** One flag, `STORE_NOINDEX` (`config/store.php`, default true), puts `<meta name="robots" content="noindex">` on every page. Placeholder pages also carry their own noindex. See docs/launch-checklist.md. Noindex works through the meta tag only.
 - **robots.txt.** `public/robots.txt` exists and disallows `/lunar`, `/horizon`, `/cart`, `/checkout` and `/account`. It is a static file: `STORE_NOINDEX` does not change it, and it does not keep the store out of search engines (a crawler must be able to fetch a page to see its noindex tag, so never Disallow the catalogue there).
 - **Config-driven home page.** `config/homepage.php` holds the "Shop by standard" chips (`standards`) and the trust strip claims (`trust`; an empty slot is not rendered).
-- **Store identity.** `config/store.php` and `App\Support\Store` hold it. The address, phone number and email are fixed in `config/store.php` (no env variable). The other `STORE_*` values come from `.env` and each reads `TBC` until it is known.
+- **Store identity.** `config/store.php` and `App\Support\Store` hold it. The address, phone number and email are fixed in `config/store.php` (no env variable). The other `STORE_*` values come from `.env` and each reads `TBC` until it is known (`STORE_NOINDEX` and `STORE_REQUIRE_EMAIL_VERIFICATION` are switches, not identity).
+- **Customer accounts.** Full detail in [docs/accounts.md](docs/accounts.md). Hand-rolled on Laravel's own auth (no Fortify, Breeze or Jetstream). A customer is an `App\Models\User` on the `web` guard with a Lunar `Customer` attached through `customer_user`; staff are `Lunar\Admin\Models\Staff` on Lunar's separate `staff` guard and are never customers. Every storefront auth route names its guard (`auth:web`, `guest:web`). Customer logout regenerates the session and must never invalidate it, or a staff session in the same browser ends. `RegisterCustomer` and `UpdateCustomerProfile` write the User and Customer in one transaction and index the customer after the commit (`CustomerSearch`), so a search outage never undoes a sign-up. Account emails (`CustomerVerifyEmail`, `CustomerResetPassword`) go on the `default` queue. `STORE_REQUIRE_EMAIL_VERIFICATION` (default true) gates My Account on a verified address; `app:preflight` fails when it is on and `MAIL_MAILER` is `log` or `array`. Guests see prices exactly as before: there is no price gating and no approval workflow.
 
 ## Workflow
 
@@ -126,6 +133,7 @@ Full list, with details, in [docs/launch-checklist.md](docs/launch-checklist.md)
 - [ ] Confirm the trust strip claims with the client.
 - [ ] Confirm `pcntl` and `posix` exist in the server's PHP CLI before starting Horizon.
 - [ ] Replace every TBC in the store identity (`STORE_*`).
+- [ ] Before the first deploy of the customer accounts release, set `STORE_REQUIRE_EMAIL_VERIFICATION=false` in `shared/.env` (or configure a real `MAIL_MAILER` and `MAIL_FROM_ADDRESS`). Otherwise `app:preflight` fails by design. Password reset emails also need a real mailer (docs/accounts.md).
 - [ ] Run `php artisan app:preflight` first on every deploy, and `php artisan catalogue:verify-media` and `php artisan catalogue:verify-index` after any import.
 - [ ] Run `CatalogueFoundationSeeder` on the first deploy only, and use `storage:link --force`.
 - [ ] Run `php artisan catalogue:sync-redirects` after migrations on every deploy (first run only takes snapshots), and make sure the server cron runs `schedule:run`.

@@ -27,7 +27,7 @@ const REQUIRED_ENV_VARIABLES = [
     'VENDORSYNC_FS_ARCHIVE_PATH', 'VENDORSYNC_IMAGE_MAX_MEGAPIXELS', 'SESSION_SECURE_COOKIE',
     'SESSION_SAME_SITE', 'LOG_DAILY_DAYS', 'SCOUT_PREFIX', 'MEILISEARCH_HOST', 'MEILISEARCH_KEY',
     'STORE_NAME', 'STORE_LEGAL_NAME', 'STORE_COMPANY_NUMBER', 'STORE_REGISTERED_OFFICE',
-    'STORE_VAT_NUMBER', 'STORE_NOINDEX',
+    'STORE_VAT_NUMBER', 'STORE_NOINDEX', 'STORE_REQUIRE_EMAIL_VERIFICATION',
 ];
 
 it('lists every required variable in .env.example, active or commented', function (): void {
@@ -63,6 +63,9 @@ it('sets the production values in .env.production.example', function (): void {
         'REDIS_DB' => '10',
         'REDIS_CACHE_DB' => '11',
         'STORE_NOINDEX' => 'true',
+        // On by default. With MAIL_MAILER=log below, app:preflight fails until the operator
+        // configures a mailer or sets this to false (docs/accounts.md).
+        'STORE_REQUIRE_EMAIL_VERIFICATION' => 'true',
         'VENDORSYNC_SCHEDULE_ENABLED' => 'false',
         'MAIL_MAILER' => 'log',
         'QUEUE_CONVERSIONS_BY_DEFAULT' => 'false',
