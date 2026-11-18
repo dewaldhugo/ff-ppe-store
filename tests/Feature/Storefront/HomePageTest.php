@@ -89,8 +89,8 @@ it('shows Open a trade account to guests only', function (): void {
         ->and($hero)->toContain('View all products');
 });
 
-it('uses one of the seven hero-bg photos as the hero background, centred, with no overlay', function (): void {
-    foreach (range(1, 7) as $n) {
+it('uses one of the six hero-bg photos in the slideshow as the hero background, centred, with no overlay', function (): void {
+    foreach ([1, 2, 3, 7, 8, 9] as $n) {
         expect(is_file(public_path("images/hero-bg-{$n}.jpg")))->toBeTrue();
     }
 
@@ -99,7 +99,7 @@ it('uses one of the seven hero-bg photos as the hero background, centred, with n
     foreach (range(1, 40) as $ignored) {
         $hero = heroSection($this->get(route('home'))->getContent());
 
-        expect($hero)->toMatch('#<img[^>]*src="'.preg_quote(asset('images/hero-bg-'), '#').'[1-7]\.jpg"[^>]*data-hero-bg#')
+        expect($hero)->toMatch('#<img[^>]*src="'.preg_quote(asset('images/hero-bg-'), '#').'[1-9]\.jpg"[^>]*data-hero-bg#')
             ->and($hero)->toContain('alt=""')
             ->and($hero)->toContain('width="1920"')
             ->and($hero)->toContain('height="882"')
@@ -108,11 +108,12 @@ it('uses one of the seven hero-bg photos as the hero background, centred, with n
             ->and($hero)->not->toContain('data-hero-overlay')
             ->and($hero)->not->toContain('from-brand-navy/');
 
-        preg_match('#hero-bg-([1-7])\.jpg#', $hero, $m);
+        preg_match('#hero-bg-([1-9])\.jpg#', $hero, $m);
+        expect([1, 2, 3, 7, 8, 9])->toContain((int) $m[1]); // 4, 5 and 6 are out of the slideshow
         $seen[$m[1]] = true;
     }
 
-    // Random per page load: 40 loads showing a single image has odds of 7^-39.
+    // Random per page load: 40 loads showing a single image has odds of 6^-39.
     expect(count($seen))->toBeGreaterThan(1);
 });
 
@@ -303,24 +304,28 @@ it('puts an intro h3 under the industries heading and a light grey band above th
         ->and($serviceClass[0] ?? '')->toContain('bg-surface-muted');
 });
 
-it('fades through all seven hero photos every six seconds, starting at a random one', function (): void {
+it('fades through the six hero photos in use every six seconds, starting at a random one', function (): void {
     $hero = heroSection($this->get(route('home'))->getContent());
 
     preg_match_all('#<img[^>]*data-hero-slide[^>]*>#s', $hero, $slides);
 
-    expect($slides[0])->toHaveCount(7)
+    expect($slides[0])->toHaveCount(6)
         ->and($hero)->toContain('data-hero-slides')
         ->and($hero)->toContain('data-interval="6000"')
         ->and($hero)->toContain('}, 6000);')
         ->and($hero)->not->toContain('prefers-reduced-motion');
 
-    // The first photo is in the page; the other six wait in data-src until their turn.
+    expect($hero)->not->toContain('hero-bg-4.jpg')
+        ->and($hero)->not->toContain('hero-bg-5.jpg')
+        ->and($hero)->not->toContain('hero-bg-6.jpg');
+
+    // The first photo is in the page; the other five wait in data-src until their turn.
     expect($slides[0][0])->toContain(' src="')->toContain('data-hero-bg')->toContain('data-state="current"');
 
     $files = [];
 
     foreach ($slides[0] as $i => $img) {
-        preg_match('#(?:data-src|(?<![-\w])src)="[^"]*hero-bg-([1-7])\.jpg"#', $img, $m);
+        preg_match('#(?:data-src|(?<![-\w])src)="[^"]*hero-bg-([1-9])\.jpg"#', $img, $m);
         $files[] = (int) $m[1];
 
         if ($i > 0) {
@@ -329,10 +334,10 @@ it('fades through all seven hero photos every six seconds, starting at a random 
     }
 
     // Every photo once, in a fixed cycle that starts wherever the page began.
-    expect(collect($files)->sort()->values()->all())->toBe([1, 2, 3, 4, 5, 6, 7]);
+    expect(collect($files)->sort()->values()->all())->toBe([1, 2, 3, 7, 8, 9]);
 
     foreach ($files as $i => $n) {
-        expect($files[($i + 1) % 7])->toBe($n % 7 + 1);
+        expect($files[($i + 1) % 6])->toBe([1 => 2, 2 => 3, 3 => 7, 7 => 8, 8 => 9, 9 => 1][$n]);
     }
 });
 

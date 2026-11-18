@@ -9,7 +9,7 @@
 --}}
 <section class="surface-dark relative isolate flex items-center overflow-hidden bg-brand-navy text-white sm:min-h-[33rem]" aria-labelledby="home-hero-title" data-home-hero>
     {{--
-        Decorative background photos: the seven hero-bg images, starting at a random one on each page
+        Decorative background photos: the six hero-bg images in use, starting at a random one on each page
         load and fading into the next every 6 seconds, centred, no overlay. Only the first photo is in
         the page; the others load just before their turn (data-src). The photo being faded in sits on
         top while the previous one stays fully visible beneath it, so the background never dips to
@@ -18,8 +18,12 @@
         silently stops looks broken.
     --}}
     @php
-        $heroStart = random_int(1, 7);
-        $heroOrder = array_map(fn (int $step): int => (($heroStart - 1 + $step) % 7) + 1, range(0, 6));
+        // The photos in the slideshow, by number (public/images/hero-bg-N.jpg). 4, 5 and 6 are left out;
+        // their files are still in public/images.
+        $heroImages = [1, 2, 3, 7, 8, 9];
+        $heroCount = count($heroImages);
+        $heroStart = random_int(0, $heroCount - 1);
+        $heroOrder = array_map(fn (int $step): int => $heroImages[($heroStart + $step) % $heroCount], range(0, $heroCount - 1));
     @endphp
     <div
         class="absolute inset-0 -z-10"
