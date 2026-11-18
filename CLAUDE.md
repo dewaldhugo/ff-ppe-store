@@ -81,6 +81,8 @@ Current routes (`routes/web.php`):
 | (none) | `/products` | 301 to `/shop` |
 | `category` | `/shop/{path}` | `CategoryListing`. `{path}` is the URL slugs of the collection's ancestors plus its own, e.g. `/shop/safety-footwear/safety-boots` |
 | `search` | `/search` | `CategoryListing` |
+| `brands` | `/brands` | `BrandIndexController`: brand tiles (logo or monogram) from `BrandDirectory`; customers select one or more |
+| `brands.show` | `/brands/{brands}` | `CategoryListing` limited to the chosen brands. `{brands}` is one slug or several joined by commas; `ResolveBrandSlugs` 301s to the sorted, lower-case, de-duplicated form and 404s an unknown slug |
 | `product` | `/products/{slug}` | `ProductPage` |
 | `about` | `/about` | view `pages.about` (real content, supplied by the client) |
 | `contact` | `/contact` | view `pages.contact`: enquiry form (Livewire `EnquiryForm`) emailing the store email (`config/store.php`), or `STORE_ENQUIRY_EMAIL` when set |
@@ -103,6 +105,7 @@ Rules:
 
 ## Storefront
 
+- **Brands.** `storefront_brands` (slug, name, logo, tile colour) and `storefront_brand_members` (which Lunar brands it covers) are storefront-owned; the Lunar brands table is never changed. `StorefrontBrandSeeder` holds the brand list and logos (`public/images/brands`); run it after an import that adds brands. A Lunar brand with no storefront record still appears, with a slug from its name and a monogram. Product counts and brand pages query Meilisearch through `CatalogueSearch` (`ListingQuery::brandScope`).
 - **Design tokens.** Colours are tokens in the `@theme` block of `resources/css/app.css` (`brand-blue`, `brand-teal`, `brand-navy`, `ink`, `ink-muted`, `surface-muted`, `white`, `border`, `danger`, `success` and the disabled pair). Templates use only these tokens. `tests/Feature/Storefront/DesignTokensTest.php` reads the CSS and requires WCAG AA contrast (4.5:1) for every text and background pair used.
 - **Buttons.** `x-ui.button` has two variants: primary (`brand-blue` fill, white text) and `accent` (`brand-teal` fill, `brand-navy` text), which is only for navy surfaces. `x-ui.button-outline` is the secondary button (`on-dark` for navy surfaces).
 - **Noindex.** One flag, `STORE_NOINDEX` (`config/store.php`, default true), puts `<meta name="robots" content="noindex">` on every page. Placeholder pages also carry their own noindex. See docs/launch-checklist.md. Noindex works through the meta tag only.

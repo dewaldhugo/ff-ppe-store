@@ -20,6 +20,8 @@ final class DatabaseSeeder extends Seeder
                 $this->command?->line("{$report->vendorCode} catalogue {$report->status}: {$report->created} created, {$report->errors} errors");
             }
 
+            $this->call(StorefrontBrandSeeder::class);
+
             return;
         }
 
@@ -27,5 +29,9 @@ final class DatabaseSeeder extends Seeder
         if (app()->environment(['local', 'testing'])) {
             $this->call(FixtureCatalogueSeeder::class);
         }
+
+        // Needs the Lunar brands, so it runs after the catalogue. In production
+        // run it after the first import: php artisan db:seed --class=StorefrontBrandSeeder
+        $this->call(StorefrontBrandSeeder::class);
     }
 }

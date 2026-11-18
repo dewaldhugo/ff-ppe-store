@@ -1,5 +1,6 @@
 @php
     $links = [
+        ['route' => 'brands', 'label' => 'Brands', 'active' => request()->routeIs('brands', 'brands.show')],
         ['route' => 'size-guide', 'label' => 'Size Guide', 'active' => request()->routeIs('size-guide')],
         ['route' => 'technical-features', 'label' => 'Technical Features', 'active' => request()->routeIs('technical-features')],
         ['route' => 'about', 'label' => 'About', 'active' => request()->routeIs('about')],
