@@ -17,6 +17,10 @@
         </div>
 
         <p class="text-sm text-ink">
+            <a href="{{ route('password.request') }}" class="font-semibold text-brand-blue underline" data-forgot-password-link>Forgot your password?</a>
+        </p>
+
+        <p class="text-sm text-ink">
             New here?
             <a href="{{ route('register') }}" class="font-semibold text-brand-blue underline">Create an account</a>
         </p>

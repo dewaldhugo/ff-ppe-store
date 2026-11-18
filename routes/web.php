@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use App\Domain\Catalogue\Urls\CollectionPath;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\NewPasswordController;
+use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Middleware\RedirectTrailingSlash;
 use App\Http\Middleware\ResolveCategoryPath;
@@ -61,6 +63,16 @@ Route::middleware(RedirectTrailingSlash::class)->group(function () use ($placeho
 
         Route::get('/login', [LoginController::class, 'create'])->name('login');
         Route::post('/login', [LoginController::class, 'store'])->middleware('throttle:login');
+
+        Route::get('/forgot-password', [PasswordResetLinkController::class, 'create'])->name('password.request');
+        Route::post('/forgot-password', [PasswordResetLinkController::class, 'store'])
+            ->middleware('throttle:password-email')
+            ->name('password.email');
+
+        Route::get('/reset-password/{token}', [NewPasswordController::class, 'create'])->name('password.reset');
+        Route::post('/reset-password', [NewPasswordController::class, 'store'])
+            ->middleware('throttle:password-reset')
+            ->name('password.store');
     });
 
     // Open to everyone, so a double click or an expired session just lands on the home page.
