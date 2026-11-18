@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\User;
+use Lunar\Models\Customer;
 use Lunar\Models\CustomerGroup;
 
 beforeEach(function (): void {
@@ -51,6 +52,36 @@ it('shows a signed-in customer My account and a Log out button, not Log in and R
         ->and($bar)->not->toContain('data-register-link');
 });
 
+it('shows a signed-in customer a user icon, their name and their company in brackets, in the top bar', function (): void {
+    $user = User::factory()->create(['name' => 'Jo Builder']);
+    $user->customers()->attach(Customer::create([
+        'first_name' => 'Jo', 'last_name' => 'Builder', 'company_name' => 'Builder & Sons Ltd',
+    ]));
+
+    $bar = topBar($this->actingAs($user, 'web')->get(route('home'))->getContent());
+
+    preg_match('#<li[^>]*data-account-name>(.*?)</li>#s', $bar, $name);
+
+    expect($name)->not->toBeEmpty()
+        // The icon comes first, then the text.
+        ->and(strpos($name[1], '<svg'))->toBeLessThan(strpos($name[1], 'Jo Builder'))
+        ->and(trim((string) preg_replace('/\s+/', ' ', strip_tags($name[1]))))->toBe('Jo Builder [Builder &amp; Sons Ltd]')
+        // The name sits before the My account and Log out buttons.
+        ->and(strpos($bar, 'data-account-name'))->toBeLessThan(strpos($bar, 'data-account-link'));
+});
+
+it('shows the name alone when the customer has no company, and nothing to a guest', function (): void {
+    $withoutCompany = topBar($this->actingAs(User::factory()->create(['name' => 'Sam Solo']), 'web')->get(route('home'))->getContent());
+
+    preg_match('#<li[^>]*data-account-name>(.*?)</li>#s', $withoutCompany, $name);
+
+    expect(trim((string) preg_replace('/\s+/', ' ', strip_tags($name[1] ?? ''))))->toBe('Sam Solo');
+
+    auth('web')->logout();
+
+    expect(topBar($this->get(route('home'))->getContent()))->not->toContain('data-account-name');
+});
+
 it('shows a guest no price and a registered customer the list price', function (): void {
     expect(pagePrices($this->get(route('product', 'safety-jogger-ligero'))->assertOk()->getContent()))->toBeEmpty();
 
@@ -59,6 +90,10 @@ it('shows a guest no price and a registered customer the list price', function (
         'first_name' => 'Jo',
         'last_name' => 'Builder',
         'company_name' => 'Builder Ltd',
+        'address_line_one' => '1 High Street',
+        'address_city' => 'Croydon',
+        'address_postcode' => 'CR0 1XX',
+        'industry' => 'construction',
         'email' => 'jo@builder.example',
         'password' => 'a-good-password-1',
         'password_confirmation' => 'a-good-password-1',

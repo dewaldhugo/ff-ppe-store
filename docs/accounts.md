@@ -61,6 +61,7 @@ A customer is two records, created together in one database transaction by `Regi
 
 - `users`: `name` ("First Last"), `email` (lower case, unique), `phone` (nullable, added by `2026_11_18_100000_add_phone_to_users_table`), `password`, `email_verified_at`.
 - Lunar `Customer` (`lunar_customers`), attached through the `lunar_customer_user` pivot (`$user->customers()`): `first_name`, `last_name`, `company_name`, `tax_identifier` (the VAT number; Lunar 1.5 renamed `vat_no` to `tax_identifier`). Lunar never creates customers for users, so only these two actions do.
+- Registration also asks for the **company address** and the **industry**, both required (address line 2 and county are optional). The address is saved by `RegisterCustomer` as a Lunar `Address` on the customer (`$customer->addresses()`), as the billing default, with the company name, the contact email and phone, and the UK country (`GB`, from the seeded Lunar country; the store sells to UK customers only, so the form has no country field). The postcode is format-checked and stored upper case with one space (`App\Domain\Accounts\Postcode`). The industry is a slug from `App\Domain\Accounts\Industries`, stored in the customer's `meta` as `industry`. My Account does not show or edit either yet (see Known gaps).
 
 The Customer is also attached to Lunar's default customer group (`CustomerGroup::getDefault()`, the seeded `retail` group), so pricing resolves exactly as it does for a guest. If no default group exists the customer is still created, the problem is reported with `report()`, and pricing falls back to the default group by itself.
 
@@ -98,7 +99,7 @@ Rules that keep it that way:
 
 `STORE_REQUIRE_EMAIL_VERIFICATION` (`config/store.php` `require_email_verification`, default `true`; read with `FILTER_VALIDATE_BOOL`, so `false`, `0` and `off` turn it off).
 
-- **On.** The `account.verified` middleware sends a customer whose `email_verified_at` is null to `verification.notice`. A new customer is signed in and sent there straight after registering. The signed link (`verification.verify`, valid 60 minutes) needs the customer to be signed in; a guest who opens it is sent to log in and then back to the link. Resend is limited to 3 per 10 minutes.
+- **On.** The `account.verified` middleware sends a customer whose `email_verified_at` is null to `verification.notice`. A new customer is signed in and sent to `/shop` after registering, with a one-off banner (`data-flash`, in the storefront layout) saying a verification link has been emailed; the storefront and prices work unverified, and only My Account asks for the verified address. Logging in also goes to `/shop`, unless the customer was sent to log in from another page (Laravel's intended URL). The signed link (`verification.verify`, valid 60 minutes) needs the customer to be signed in; a guest who opens it is sent to log in and then back to the link. Resend is limited to 3 per 10 minutes.
 - **Off.** No verification email is sent, nothing is gated, and the verify pages redirect to My Account. `email_verified_at` is left null at registration, so switching verification on later asks those customers to verify on their next visit to My Account.
 - Changing the email address in My Account needs the current password, clears `email_verified_at` and sends a new link (when verification is on).
 
@@ -145,7 +146,7 @@ Over a route limit the response is a plain 429. Limits and constants are in `App
 
 - **No account deletion and no data export.** UK GDPR gives customers the right to erasure and access. Until this is built, requests have to be handled by hand by staff in the Lunar admin.
 - **No HMRC VAT verification.** The VAT number is format-checked only.
-- **No address book.** My Account holds contact and company details only.
+- **No address book.** My Account holds contact and company details only. The company address and industry given at registration are saved but cannot be seen or changed in My Account, and a customer made any other way (a seeder, or a user with no customer) has neither.
 - **No approval workflow.** Anyone can register and sign in.
 - **No order history.** There is no cart, checkout or orders yet.
 - Other devices stay signed in after a password reset or change (their "keep me logged in" cookies are ended, but live sessions are not). Adding `AuthenticateSession` to the account routes would close it.

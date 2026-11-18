@@ -33,6 +33,12 @@ function registration(array $overrides = []): array
         'first_name' => 'Jo',
         'last_name' => 'Builder',
         'company_name' => 'Builder & Sons Ltd',
+        'address_line_one' => '1 High Street',
+        'address_line_two' => 'Unit 4',
+        'address_city' => 'Croydon',
+        'address_county' => 'Surrey',
+        'address_postcode' => 'cr0 1xx',
+        'industry' => 'construction',
         'vat_number' => 'GB 123 4567 82',
         'phone' => '020 8289 5858',
         'email' => 'jo@builder.example',
@@ -48,6 +54,14 @@ it('shows the register form with every field, the honeypot and the terms line', 
         ->toContain('name="first_name"')
         ->toContain('name="last_name"')
         ->toContain('name="company_name"')
+        ->toContain('name="address_line_one"')
+        ->toContain('name="address_line_two"')
+        ->toContain('name="address_city"')
+        ->toContain('name="address_county"')
+        ->toContain('name="address_postcode"')
+        ->toContain('<select')
+        ->toContain('name="industry"')
+        ->toContain('<option value="construction"')
         ->toContain('name="vat_number"')
         ->toContain('name="phone"')
         ->toContain('name="email"')
@@ -62,7 +76,7 @@ it('shows the register form with every field, the honeypot and the terms line', 
 });
 
 it('creates a user and a Lunar customer attached to it, with the default customer group', function (): void {
-    $this->post(route('register'), registration())->assertRedirect(route('verification.notice'));
+    $this->post(route('register'), registration())->assertRedirect(route('shop'));
 
     $user = User::query()->where('email', 'jo@builder.example')->firstOrFail();
     $customer = $user->customers()->firstOrFail();
@@ -78,6 +92,41 @@ it('creates a user and a Lunar customer attached to it, with the default custome
         ->and($user->latestCustomer()?->is($customer))->toBeTrue()
         ->and($customer->customerGroups->pluck('id')->all())->toBe([CustomerGroup::getDefault()->id]);
 });
+
+it('saves the company address as the billing address, and the industry on the customer', function (): void {
+    $this->post(route('register'), registration())->assertSessionHasNoErrors();
+
+    $customer = User::query()->where('email', 'jo@builder.example')->firstOrFail()->customers()->firstOrFail();
+    $address = $customer->addresses()->sole();
+
+    expect($customer->meta['industry'])->toBe('construction')
+        ->and($address->company_name)->toBe('Builder & Sons Ltd')
+        ->and($address->line_one)->toBe('1 High Street')
+        ->and($address->line_two)->toBe('Unit 4')
+        ->and($address->city)->toBe('Croydon')
+        ->and($address->state)->toBe('Surrey')
+        // Upper case, with the space before the last three characters.
+        ->and($address->postcode)->toBe('CR0 1XX')
+        ->and($address->country->iso2)->toBe('GB')
+        ->and($address->billing_default)->toBeTrue()
+        ->and($address->contact_email)->toBe('jo@builder.example');
+});
+
+it('accepts the postcode however it is typed, and leaves the optional address lines empty', function (string $typed, string $stored): void {
+    $this->post(route('register'), registration([
+        'address_postcode' => $typed, 'address_line_two' => '', 'address_county' => '',
+    ]))->assertSessionHasNoErrors();
+
+    $address = User::query()->where('email', 'jo@builder.example')->firstOrFail()->customers()->firstOrFail()->addresses()->sole();
+
+    expect($address->postcode)->toBe($stored)
+        ->and($address->line_two)->toBeNull()
+        ->and($address->state)->toBeNull();
+})->with([
+    'lower case' => ['sw1a1aa', 'SW1A 1AA'],
+    'extra spaces' => ['  m1   1ae ', 'M1 1AE'],
+    'already tidy' => ['EC1A 1BB', 'EC1A 1BB'],
+]);
 
 it('logs the new customer in on the web guard only and regenerates the session', function (): void {
     $this->get(route('register'));
@@ -117,6 +166,12 @@ it('rejects invalid registrations and creates nothing', function (array $overrid
     'no first name' => [['first_name' => ''], 'first_name'],
     'no last name' => [['last_name' => ''], 'last_name'],
     'no company' => [['company_name' => ''], 'company_name'],
+    'no address line 1' => [['address_line_one' => ''], 'address_line_one'],
+    'no town or city' => [['address_city' => ''], 'address_city'],
+    'no postcode' => [['address_postcode' => ''], 'address_postcode'],
+    'bad postcode' => [['address_postcode' => 'NOT A POSTCODE'], 'address_postcode'],
+    'no industry' => [['industry' => ''], 'industry'],
+    'unknown industry' => [['industry' => 'pirate-radio'], 'industry'],
     'no email' => [['email' => ''], 'email'],
     'bad email' => [['email' => 'not-an-email'], 'email'],
     'no password' => [['password' => '', 'password_confirmation' => ''], 'password'],
@@ -212,7 +267,7 @@ it('still registers the customer when the search engine is down, and indexes aft
 
     $baseline = DB::transactionLevel();
 
-    $this->post(route('register'), registration())->assertRedirect(route('verification.notice'));
+    $this->post(route('register'), registration())->assertRedirect(route('shop'));
 
     expect(User::query()->where('email', 'jo@builder.example')->exists())->toBeTrue()
         ->and($engine->levels)->toBe([$baseline]);
@@ -223,7 +278,7 @@ it('completes registration and reports the problem when no default customer grou
     Exceptions::fake();
     CustomerGroup::query()->update(['default' => false]);
 
-    $this->post(route('register'), registration())->assertRedirect(route('verification.notice'));
+    $this->post(route('register'), registration())->assertRedirect(route('shop'));
 
     $customer = User::query()->where('email', 'jo@builder.example')->firstOrFail()->customers()->firstOrFail();
 
@@ -241,7 +296,7 @@ it('queues the verification email when verification is on', function (): void {
 it('sends no verification email when verification is off, and still registers', function (): void {
     config()->set('store.require_email_verification', false);
 
-    $this->post(route('register'), registration())->assertRedirect(route('account'));
+    $this->post(route('register'), registration())->assertRedirect(route('shop'));
 
     expect(User::query()->where('email', 'jo@builder.example')->exists())->toBeTrue();
     Notification::assertNothingSent();
@@ -251,7 +306,7 @@ it('does not fail the registration when the email cannot be queued', function ()
     Exceptions::fake();
     Event::listen(Registered::class, fn () => throw new RuntimeException('Mailer is down'));
 
-    $this->post(route('register'), registration())->assertRedirect(route('verification.notice'));
+    $this->post(route('register'), registration())->assertRedirect(route('shop'));
 
     expect(User::query()->where('email', 'jo@builder.example')->exists())->toBeTrue();
     $this->assertAuthenticated('web');

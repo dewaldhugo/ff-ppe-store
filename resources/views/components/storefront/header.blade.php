@@ -50,6 +50,10 @@
 
             <ul class="flex flex-wrap items-center gap-x-2" data-top-bar-account>
                 @if ($customer)
+                    <li class="flex max-w-[16rem] items-center gap-2 sm:max-w-sm" data-account-name>
+                        <svg aria-hidden="true" class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6.75a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.5 20.25a7.5 7.5 0 0 1 15 0"/></svg>
+                        <span class="truncate font-semibold" title="{{ $customer->name }}{{ $companyName ? ' ['.$companyName.']' : '' }}">{{ $customer->name }}@if ($companyName) <span class="font-normal">[{{ $companyName }}]</span>@endif</span>
+                    </li>
                     <li><a href="{{ route('account') }}" class="{{ $barOutline }}" data-account-link>My account</a></li>
                     <li>
                         <form method="POST" action="{{ route('logout') }}">

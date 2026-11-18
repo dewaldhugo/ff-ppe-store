@@ -10,6 +10,15 @@
         <x-ui.field name="first_name" label="First name" autocomplete="given-name" maxlength="100" />
         <x-ui.field name="last_name" label="Last name" autocomplete="family-name" maxlength="100" />
         <x-ui.field name="company_name" label="Company name" autocomplete="organization" maxlength="150" class="sm:col-span-2" />
+        <x-ui.select name="industry" label="Industry" :options="\App\Domain\Accounts\Industries::all()" placeholder="Choose your industry" class="sm:col-span-2" />
+
+        {{-- The company address. UK only: the store sells to UK customers. --}}
+        <x-ui.field name="address_line_one" label="Company address line 1" autocomplete="address-line1" maxlength="255" class="sm:col-span-2" />
+        <x-ui.field name="address_line_two" label="Company address line 2" :optional="true" autocomplete="address-line2" maxlength="255" class="sm:col-span-2" />
+        <x-ui.field name="address_city" label="Town or city" autocomplete="address-level2" maxlength="100" />
+        <x-ui.field name="address_county" label="County" :optional="true" autocomplete="address-level1" maxlength="100" />
+        <x-ui.field name="address_postcode" label="Postcode" autocomplete="postal-code" maxlength="10" />
+
         <x-ui.field name="vat_number" label="VAT number" :optional="true" maxlength="20" hint="For example GB123456789. We do not check it with HMRC." />
         <x-ui.field name="phone" label="Phone number" type="tel" :optional="true" autocomplete="tel" maxlength="20" />
         <x-ui.field name="email" label="Email address" type="email" autocomplete="email" maxlength="255" class="sm:col-span-2" />

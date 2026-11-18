@@ -156,7 +156,7 @@ it('lets the customer log in with the new password and not the old one', functio
     $this->post(route('password.store'), resetPayload($token));
 
     $this->post(route('login'), ['email' => 'jo@builder.example', 'password' => 'the-old-password-1'])->assertSessionHasErrors('email');
-    $this->post(route('login'), ['email' => 'jo@builder.example', 'password' => 'a-brand-new-password-2'])->assertRedirect(route('account'));
+    $this->post(route('login'), ['email' => 'jo@builder.example', 'password' => 'a-brand-new-password-2'])->assertRedirect(route('shop'));
 });
 
 it('refuses a bad token, an unknown email and an expired token with one message', function (): void {

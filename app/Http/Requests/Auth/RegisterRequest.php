@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Auth;
 
+use App\Domain\Accounts\Industries;
+use App\Domain\Accounts\Postcode;
 use App\Domain\Accounts\VatNumber;
 use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
@@ -22,6 +24,7 @@ final class RegisterRequest extends FormRequest
         $this->merge([
             'email' => is_string($this->input('email')) ? mb_strtolower(trim($this->input('email'))) : $this->input('email'),
             'vat_number' => VatNumber::normalise($this->input('vat_number')),
+            'address_postcode' => Postcode::normalise($this->input('address_postcode')),
         ]);
     }
 
@@ -34,6 +37,12 @@ final class RegisterRequest extends FormRequest
             'first_name' => ['required', 'string', 'max:100'],
             'last_name' => ['required', 'string', 'max:100'],
             'company_name' => ['required', 'string', 'max:150'],
+            'address_line_one' => ['required', 'string', 'max:255'],
+            'address_line_two' => ['nullable', 'string', 'max:255'],
+            'address_city' => ['required', 'string', 'max:100'],
+            'address_county' => ['nullable', 'string', 'max:100'],
+            'address_postcode' => ['required', 'string', 'regex:'.Postcode::PATTERN],
+            'industry' => ['required', 'string', Rule::in(Industries::slugs())],
             'vat_number' => ['nullable', 'string', 'max:20', new VatNumber],
             'phone' => ['nullable', 'string', 'regex:/^[0-9+() \-]{7,20}$/'],
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique(User::class, 'email')],
@@ -49,6 +58,9 @@ final class RegisterRequest extends FormRequest
         return [
             'email.unique' => 'An account with this email address already exists. Log in instead.',
             'phone.regex' => 'Enter a phone number using digits, spaces, brackets, + or -.',
+            'address_postcode.regex' => 'Enter a UK postcode, for example SW1A 1AA.',
+            'industry.in' => 'Choose the industry that fits your business best.',
+            'industry.required' => 'Choose the industry that fits your business best.',
         ];
     }
 
@@ -61,6 +73,11 @@ final class RegisterRequest extends FormRequest
             'first_name' => 'first name',
             'last_name' => 'last name',
             'company_name' => 'company name',
+            'address_line_one' => 'address line 1',
+            'address_line_two' => 'address line 2',
+            'address_city' => 'town or city',
+            'address_county' => 'county',
+            'address_postcode' => 'postcode',
             'vat_number' => 'VAT number',
             'email' => 'email address',
         ];

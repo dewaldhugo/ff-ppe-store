@@ -453,9 +453,13 @@ it('shows the stock of the chosen variant next to the quantity field once every 
 
     $component->call('choose', 'shoe_size', '6'); // 3 in stock
 
-    preg_match('#<p[^>]*data-stock-available[^>]*>(.*?)</p>#s', $component->html(), $stock);
+    preg_match('#(<p[^>]*data-stock-available[^>]*>)(.*?)</p>#s', $component->html(), $stock);
 
-    expect(trim($stock[1] ?? ''))->toBe('3 available');
+    // A badge (the dot before the text is decoration only), red because 3 is low stock.
+    expect(trim(strip_tags($stock[2] ?? '')))->toBe('3 available')
+        ->and($stock[1])->toContain('rounded-full')
+        ->and($stock[1])->toContain('border-danger')
+        ->and($stock[1])->not->toContain('border-success');
     $component->assertSeeHtml('max="3"');
 
     // The figure follows the selection.
@@ -463,8 +467,20 @@ it('shows the stock of the chosen variant next to the quantity field once every 
 
     preg_match('#<p[^>]*data-stock-available[^>]*>(.*?)</p>#s', $component->html(), $stock);
 
-    expect(trim($stock[1] ?? ''))->toBe('1 available');
+    expect(trim(strip_tags($stock[1] ?? '')))->toBe('1 available');
     $component->assertSeeHtml('max="1"');
+});
+
+it('shows a green stock badge when there is plenty in stock', function (): void {
+    // LIGERO in size 8 is "In stock", above the low-stock line.
+    $component = Livewire::test(ProductPage::class, ['slug' => 'safety-jogger-ligero'])->call('choose', 'shoe_size', '8');
+
+    preg_match('#(<p[^>]*data-stock-available[^>]*>)(.*?)</p>#s', $component->html(), $stock);
+
+    expect($stock[1])->toContain('rounded-full')
+        ->and($stock[1])->toContain('border-success')
+        ->and($stock[1])->not->toContain('border-danger')
+        ->and(trim(strip_tags($stock[2])))->toMatch('/^\d+ available$/');
 });
 
 it('says out of stock next to the quantity field for a variant with no stock', function (): void {
@@ -474,7 +490,7 @@ it('says out of stock next to the quantity field for a variant with no stock', f
 
     preg_match('#<p[^>]*data-stock-available[^>]*>(.*?)</p>#s', $component->html(), $stock);
 
-    expect(trim($stock[1] ?? ''))->toBe('Out of stock')
+    expect(trim(strip_tags($stock[1] ?? '')))->toBe('Out of stock')
         ->and($component->html())->not->toMatch('/<input[^>]*data-quantity[^>]*max=/s');
 });
 

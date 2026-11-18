@@ -25,7 +25,8 @@ final class LoginController extends Controller
         // A new session id on every login stops session fixation.
         $request->session()->regenerate();
 
-        return redirect()->intended(route('account'));
+        // To the shop, unless the customer was sent to log in from a page that needs it.
+        return redirect()->intended(route('shop'));
     }
 
     /**

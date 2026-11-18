@@ -36,6 +36,15 @@
 
     <x-storefront.header />
 
+    {{-- One-off message after an action, such as registering. --}}
+    @if (session('status'))
+        <div class="border-b border-border bg-surface-muted">
+            <x-ui.container class="py-3">
+                <x-ui.alert data-flash>{{ session('status') }}</x-ui.alert>
+            </x-ui.container>
+        </div>
+    @endif
+
     @if (! empty($full))
         <main id="main" class="flex-1">
             {{ $slot }}
