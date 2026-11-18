@@ -167,6 +167,7 @@ final class ProductPage extends Component
                 && $this->quantityValue() !== null && $this->quantityValue() <= $variant->stock,
             'quantityError' => $this->quantityError($variant),
             'maxQuantity' => $variant !== null && $variant->stock > 0 ? $variant->stock : null,
+            'lowStock' => $variant !== null && $variant->stock > 0 && $variant->stock <= self::LOW_STOCK,
             'addLabel' => $this->addLabel($selection, $variant),
             'euSizes' => $this->euSizes($product, $selection),
             'specification' => $this->specification($product),

@@ -200,7 +200,17 @@
 
                         {{-- Once every option is chosen: the stock of that exact variant, which is also the input's max. --}}
                         @if ($variant !== null)
-                            <p class="text-sm font-semibold text-ink-muted" data-stock-available aria-live="polite">
+                            {{-- A badge: green when comfortably in stock, red when low or out. --}}
+                            <p
+                                @class([
+                                    'inline-flex items-center gap-2 rounded-full border-2 px-4 py-1.5 text-base font-bold',
+                                    'border-success bg-success-surface text-success' => $maxQuantity !== null && ! $lowStock,
+                                    'border-danger bg-surface-muted text-danger' => $maxQuantity === null || $lowStock,
+                                ])
+                                data-stock-available
+                                aria-live="polite"
+                            >
+                                <span aria-hidden="true" class="inline-block h-2.5 w-2.5 rounded-full bg-current"></span>
                                 {{ $maxQuantity !== null ? $maxQuantity.' available' : 'Out of stock' }}
                             </p>
                         @endif
