@@ -5,12 +5,17 @@ declare(strict_types=1);
 use App\Domain\Catalogue\Keys\CatalogueKeys;
 use App\Domain\Catalogue\Search\ListingQuery;
 use App\Livewire\Catalogue\CategoryListing;
+use App\Models\User;
 use Livewire\Livewire;
 use Lunar\Models\Product;
 use Tests\Support\SearchIndex;
 
 beforeEach(function (): void {
     SearchIndex::use();
+
+    // Only signed-in customers see prices or can filter and sort by them
+    // (tests/Feature/Storefront/PriceGatingTest.php covers guests).
+    $this->actingAs(User::factory()->create(), 'web');
 });
 
 /** The id the router passes to the listing once it has resolved /shop/safety-footwear. */

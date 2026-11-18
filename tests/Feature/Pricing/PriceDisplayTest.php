@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Domain\Catalogue\Features\FeatureLabels;
 use App\Domain\Pricing\PriceDisplay;
+use App\Models\User;
 use Lunar\Models\ProductVariant;
 
 function displayVariant(string $sku): ProductVariant
@@ -41,6 +42,8 @@ it('has no compare price when the variant has none', function (): void {
 });
 
 it('finds the lowest variant price of a product', function (): void {
+    $this->actingAs(User::factory()->create(), 'web');
+
     $product = displayVariant('FS-00048-00480-03')->product->load('variants.prices');
 
     expect(app(PriceDisplay::class)->fromPrice($product)->price->value)->toBe(1498);

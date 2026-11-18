@@ -1,6 +1,6 @@
 <x-layouts.account title="Register" heading="Create an account">
     <p class="text-ink-muted">
-        Register a trade account to manage your details. You can browse the full catalogue and see every price without registering.
+        Register a trade account to see prices and manage your details. You can browse the full catalogue without registering.
         All prices are shown excluding VAT.
     </p>
 

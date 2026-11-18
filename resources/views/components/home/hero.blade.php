@@ -74,7 +74,9 @@
 
                 <div class="mt-8 flex flex-wrap gap-4">
                     <x-ui.button variant="accent" :href="route('shop')">View all products</x-ui.button>
-                    <x-ui.button-outline :href="route('account')" :on-dark="true" shape="md">Open a trade account</x-ui.button-outline>
+                    @guest('web')
+                        <x-ui.button-outline :href="route('register')" :on-dark="true" shape="md">Open a trade account</x-ui.button-outline>
+                    @endguest
                 </div>
             </div>
 

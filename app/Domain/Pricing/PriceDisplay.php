@@ -18,6 +18,17 @@ use Lunar\Models\ProductVariant;
  */
 final class PriceDisplay
 {
+    public function __construct(private readonly PriceVisibility $visibility) {}
+
+    /**
+     * Whether the current visitor may see prices (signed-in customers only).
+     * Callers that render a price must check this or use fromPrice().
+     */
+    public function visible(): bool
+    {
+        return $this->visibility->visible();
+    }
+
     public function forVariant(ProductVariant $variant): DisplayPrice
     {
         $matched = Pricing::for($variant)->get()->matched;
@@ -33,10 +44,15 @@ final class PriceDisplay
     }
 
     /**
-     * The lowest price among a product's variants.
+     * The lowest price among a product's variants, or null when the visitor
+     * may not see prices or no variant has one.
      */
     public function fromPrice(Product $product): ?DisplayPrice
     {
+        if (! $this->visible()) {
+            return null;
+        }
+
         $lowest = null;
 
         foreach ($product->variants as $variant) {

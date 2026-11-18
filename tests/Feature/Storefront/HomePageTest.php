@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use App\Domain\Catalogue\Home\HeroImage;
 use App\Domain\Catalogue\Home\HomeFeaturedProducts;
-use App\Domain\Catalogue\Urls\CollectionPath;
+use App\Models\User;
 use Lunar\Models\Url;
 
 function heroSection(string $html): string
@@ -40,12 +40,53 @@ it('has the new hero copy, with one h1 and no placeholder text', function (): vo
         ->and($html)->not->toContain('full size runs');
 });
 
-it('links the primary button to the shop and the secondary button to the account page, with the same corner radius', function (): void {
+it('links the primary button to the shop and the secondary button to registration, with the same corner radius', function (): void {
     $hero = heroSection($this->get(route('home'))->getContent());
 
     expect($hero)->toMatch('#<a href="'.preg_quote(route('shop'), '#').'"[^>]*rounded-md[^>]*bg-brand-teal[^>]*text-brand-navy[^>]*>View all products</a>#')
-        ->and($hero)->toMatch('#<a href="'.preg_quote(route('account'), '#').'"[^>]*rounded-md[^>]*border-brand-teal[^>]*>Open a trade account</a>#')
+        ->and($hero)->toMatch('#<a href="'.preg_quote(route('register'), '#').'"[^>]*rounded-md[^>]*border-brand-teal[^>]*>Open a trade account</a>#')
         ->and($hero)->not->toContain('rounded-full');
+});
+
+it('pins the View product button to the bottom of every card, so cards match in height with no price shown', function (string $page): void {
+    // A guest sees no price, which is what used to leave the buttons floating.
+    $html = $this->get($page === 'home' ? route('home') : route('category', 'safety-footwear'))->assertOk()->getContent();
+
+    $cards = substr_count($html, 'data-view-product');
+
+    expect($cards)->toBeGreaterThan(0)
+        ->and(preg_match_all('#<div class="mt-auto flex flex-col">\s*(?:<p[^>]*data-price.*?</p>\s*)?<span[^>]*data-view-product#s', $html))->toBe($cards);
+})->with(['home', 'listing']);
+
+it('shows an autoplaying, muted, looping video across the full width of the container, above the featured products', function (): void {
+    $html = $this->get(route('home'))->assertOk()->getContent();
+
+    preg_match('#<section[^>]*data-home-video.*?</section>#s', $html, $section);
+    preg_match('#<video[^>]*>#s', $section[0] ?? '', $video);
+
+    expect($section)->not->toBeEmpty()
+        ->and($video[0])->toContain('src="https://frontline-footwear.com/shop/datasheets/CADOR%20Colours%20that%20work.mp4"')
+        ->and($video[0])->toMatch('/\sautoplay\s/')
+        ->and($video[0])->toMatch('/\smuted\s/')
+        ->and($video[0])->toMatch('/\splaysinline\s/')
+        ->and($video[0])->toMatch('/\sloop\s/')
+        ->and($video[0])->toMatch('/\scontrols\s/')
+        ->and($video[0])->toContain('w-full')
+        // The width of the page container (the same one as the sections around it), not the screen.
+        ->and($section[0])->toContain('max-w-7xl')
+        // Directly above the Featured products section.
+        ->and(strpos($html, 'data-home-video'))->toBeLessThan(strpos($html, 'data-home-products'));
+});
+
+it('shows Open a trade account to guests only', function (): void {
+    expect(heroSection($this->get(route('home'))->getContent()))->toContain('Open a trade account');
+
+    $this->actingAs(User::factory()->create(), 'web');
+
+    $hero = heroSection($this->get(route('home'))->assertOk()->getContent());
+
+    expect($hero)->not->toContain('Open a trade account')
+        ->and($hero)->toContain('View all products');
 });
 
 it('uses one of the seven hero-bg photos as the hero background, centred, with no overlay', function (): void {
@@ -137,6 +178,8 @@ function productPicksOf(string $html): string
 }
 
 it('replaces the shop by type tiles with a Featured products section of linked product cards', function (): void {
+    $this->actingAs(User::factory()->create(), 'web'); // the cards show a price only to signed-in customers
+
     $html = $this->get(route('home'))->assertOk()->getContent();
     $section = productPicksOf($html);
     $cards = substr_count($section, 'data-home-product>');
@@ -158,7 +201,7 @@ it('replaces the shop by type tiles with a Featured products section of linked p
     }
 });
 
-it('shows ten products when the Safety Footwear category has at least ten that can be shown', function (): void {
+it('shows ten products when the catalogue has at least ten that can be shown', function (): void {
     $eligible = (new HomeFeaturedProducts)->pick(100)->count();
 
     $shown = substr_count(productPicksOf($this->get(route('home'))->getContent()), 'data-home-product>');
@@ -225,17 +268,15 @@ it('shows the Product Spotlight as one image, in place of the videos and the sta
         ->and($html)->not->toContain('data-home-standards');
 });
 
-it('only picks products from the Safety Footwear category', function (): void {
-    $categoryId = array_search(CollectionPath::fromSegments('safety-footwear'), (new CollectionPath)->all(), true);
-    $picks = (new HomeFeaturedProducts)->pick(100);
+it('picks from every category, not just Safety Footwear', function (): void {
+    $product = Url::query()->where('slug', 'safety-jogger-ligero')->sole()->element;
+    $picks = new HomeFeaturedProducts;
 
-    expect($categoryId)->not->toBeFalse()->and($picks)->not->toBeEmpty();
+    // Take the product out of every category: it is still eligible.
+    $product->collections()->detach();
 
-    foreach ($picks as $product) {
-        $ids = $product->collections->flatMap(fn ($collection) => $collection->ancestors->pluck('id')->push($collection->id));
-
-        expect($ids->contains($categoryId))->toBeTrue();
-    }
+    expect($product->collections()->count())->toBe(0)
+        ->and($picks->pick(100)->modelKeys())->toContain($product->id);
 });
 
 it('styles the industries heading like the others, 20% larger, with a left aligned intro', function (): void {

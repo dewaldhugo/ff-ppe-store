@@ -8,7 +8,19 @@ Registration, login, logout ("keep me logged in"), password reset by email, emai
 
 Not built: address book, orders, cart, checkout (a later phase), and the items under "Known gaps".
 
-Guests keep seeing prices exactly as before. There is no price gating and no approval workflow. A signed-in customer sees the same prices as a guest (tests prove it).
+## Prices are for signed-in customers only
+
+Guests see no prices anywhere on the storefront. A signed-in customer (the `web` guard) sees them, ex VAT, as before; any registered customer qualifies, there is no approval workflow. Email verification is not required to see prices.
+
+- One definition: `App\Domain\Pricing\PriceVisibility::visible()`, reached through `PriceDisplay::visible()`. A staff member signed in to Lunar is a guest here.
+- Guests get no price and no prompt: the price is simply absent. `PriceDisplay::fromPrice()` returns null for guests, which covers product cards on listings, search, brand pages, the home page and related products; the product page checks `PriceDisplay::visible()`. Any new view that renders a price must do the same.
+- The header cart link and its count badge are hidden from guests. The `/cart` and `/checkout` placeholder pages still open by URL; they hold no cart yet, so when the cart is built it must require a signed-in customer.
+- The product page also hides the quantity field and the add to cart button from guests (`ProductPage::addToCart()` refuses a guest too). Options and stock still show, with one exception: a guest sees every size (`*_size` options) whether it is in stock or not, as plain non-clickable tags (`data-size-readonly`, no strike-through or out of stock label), and `ProductPage::choose()` refuses a size from a guest. Colours stay clickable, because they change the gallery.
+- Guests cannot probe prices: the price filter and the two price sorts are hidden, and `price_min`, `price_max` and `sort=price-asc|price-desc` are ignored for a guest (in the URL and in Livewire updates; `CategoryListing::render()` resets them).
+- Product structured data (JSON-LD) has no `offers` for guests, so search engines see no prices either. Rich price results will not appear in search until that changes.
+- Listings and product pages are not cached per visitor; do not add a shared page or response cache without varying it on sign-in.
+
+Tests: `tests/Feature/Storefront/PriceGatingTest.php` (guests) and the price tests, which sign in first.
 
 ## Approach
 

@@ -14,7 +14,7 @@ beforeEach(function (): void {
  */
 function topBar(string $html): string
 {
-    preg_match('#<div class="surface-dark bg-brand-navy.*?</ul>#s', $html, $bar);
+    preg_match('#<div class="surface-dark bg-brand-navy.*?</ul>\s*<ul.*?</ul>#s', $html, $bar);
 
     return $bar[0];
 }
@@ -51,10 +51,8 @@ it('shows a signed-in customer My account and a Log out button, not Log in and R
         ->and($bar)->not->toContain('data-register-link');
 });
 
-it('shows a registered customer exactly the prices a guest sees', function (): void {
-    $guest = pagePrices($this->get(route('product', 'safety-jogger-ligero'))->assertOk()->getContent());
-
-    expect($guest)->not->toBeEmpty();
+it('shows a guest no price and a registered customer the list price', function (): void {
+    expect(pagePrices($this->get(route('product', 'safety-jogger-ligero'))->assertOk()->getContent()))->toBeEmpty();
 
     // Registered the way the site registers people: with the default customer group.
     $this->post(route('register'), [
@@ -68,13 +66,13 @@ it('shows a registered customer exactly the prices a guest sees', function (): v
     $this->assertAuthenticated('web');
     expect(User::firstOrFail()->customers->first()->customerGroups->pluck('id')->all())->toBe([CustomerGroup::getDefault()->id]);
 
-    expect(pagePrices($this->get(route('product', 'safety-jogger-ligero'))->assertOk()->getContent()))->toBe($guest);
+    expect(implode(' ', pagePrices($this->get(route('product', 'safety-jogger-ligero'))->assertOk()->getContent())))
+        ->toContain('£68.90 ex VAT');
 });
 
-it('shows a customer with no customer group the guest prices too', function (): void {
-    $guest = pagePrices($this->get(route('product', 'safety-jogger-ligero'))->assertOk()->getContent());
-
+it('shows a customer with no customer group the same list price', function (): void {
     $this->actingAs(User::factory()->create(), 'web');
 
-    expect(pagePrices($this->get(route('product', 'safety-jogger-ligero'))->assertOk()->getContent()))->toBe($guest);
+    expect(implode(' ', pagePrices($this->get(route('product', 'safety-jogger-ligero'))->assertOk()->getContent())))
+        ->toContain('£68.90 ex VAT');
 });

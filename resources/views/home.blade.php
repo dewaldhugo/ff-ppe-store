@@ -24,6 +24,8 @@
 
     <x-home.trust-strip />
 
+    <x-home.video-banner />
+
     <x-home.product-picks />
 
     <x-home.featured-products />

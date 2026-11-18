@@ -24,9 +24,14 @@
     {{-- Top bar --}}
     <div class="surface-dark bg-brand-navy text-xs text-white sm:text-sm">
         <x-ui.container class="flex flex-wrap items-center justify-between gap-x-6 gap-y-1 py-2">
-            <p>Trade supplier: all prices exclude VAT</p>
+            @php
+                // Small buttons on the navy bar: outline for the main action, teal fill for Register.
+                $barButton = 'inline-flex items-center rounded-md border px-3 py-1 font-semibold transition-colors';
+                $barOutline = $barButton.' border-white text-white hover:bg-white hover:text-brand-navy';
+                $barFilled = $barButton.' border-brand-teal bg-brand-teal text-brand-navy hover:border-white hover:bg-white';
+            @endphp
 
-            <ul class="flex flex-wrap items-center gap-x-5">
+            <ul class="flex flex-wrap items-center gap-x-5" data-top-bar-contact>
                 <li>
                     @if ($phoneHref)
                         <a href="{{ $phoneHref }}" class="hover:underline">{{ \App\Support\Store::phone() }}</a>
@@ -41,17 +46,20 @@
                         <span data-store-email>{{ \App\Support\Store::email() }}</span>
                     @endif
                 </li>
+            </ul>
+
+            <ul class="flex flex-wrap items-center gap-x-2" data-top-bar-account>
                 @if ($customer)
-                    <li><a href="{{ route('account') }}" class="hover:underline" data-account-link>My account</a></li>
+                    <li><a href="{{ route('account') }}" class="{{ $barOutline }}" data-account-link>My account</a></li>
                     <li>
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
-                            <button type="submit" class="hover:underline" data-logout-button>Log out</button>
+                            <button type="submit" class="{{ $barOutline }}" data-logout-button>Log out</button>
                         </form>
                     </li>
                 @else
-                    <li><a href="{{ route('login') }}" class="hover:underline" data-login-link>Log in</a></li>
-                    <li><a href="{{ route('register') }}" class="hover:underline" data-register-link>Register</a></li>
+                    <li><a href="{{ route('login') }}" class="{{ $barOutline }}" data-login-link>Log in</a></li>
+                    <li><a href="{{ route('register') }}" class="{{ $barFilled }}" data-register-link>Register</a></li>
                 @endif
             </ul>
         </x-ui.container>
@@ -90,6 +98,8 @@
                 <x-ui.button type="submit" class="px-5 py-2.5 text-sm">Search</x-ui.button>
             </form>
 
+            {{-- Guests cannot see prices or order, so they get no cart. --}}
+            @if ($customer)
             <a
                 href="{{ route('cart') }}"
                 class="relative ml-auto inline-flex h-11 w-11 items-center justify-center rounded-md text-brand-blue hover:bg-surface-muted lg:ml-0"
@@ -99,6 +109,7 @@
                 <svg aria-hidden="true" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 7h12l-1 13H7L6 7Zm3 0V6a3 3 0 0 1 6 0v1"/></svg>
                 <span aria-hidden="true" data-cart-count class="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-teal px-1 text-xs font-bold text-brand-navy">{{ $cartCount }}</span>
             </a>
+            @endif
         </x-ui.container>
     </div>
 

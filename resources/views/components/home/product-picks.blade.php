@@ -1,4 +1,4 @@
-{{-- Ten random published Safety Footwear products (two rows of five on desktop), a new pick on every page load. Each card is one link. --}}
+{{-- Ten random published products from the whole catalogue (two rows of five on desktop), a new pick on every page load. Each card is one link. --}}
 @if ($products->isNotEmpty())
     <section class="py-12 sm:py-16" aria-labelledby="home-products" data-home-products>
         <x-ui.container>
@@ -33,17 +33,20 @@
                         </h3>
                         <p class="text-sm text-ink-muted">{{ $product->translateAttribute('title') }}</p>
 
-                        @if ($price)
-                            <p class="mt-auto pt-2" data-price>
-                                @if ($hasRange)
-                                    <span class="text-sm text-ink-muted">From</span>
-                                @endif
-                                <span class="font-bold">{{ $price->formatted() }}</span>
-                                <span class="text-xs text-ink-muted">{{ $price->suffix() }}</span>
-                            </p>
-                        @endif
+                        {{-- Pinned to the bottom of the card, so every card in a row is the same height and the buttons line up, with or without a price. --}}
+                        <div class="mt-auto flex flex-col">
+                            @if ($price)
+                                <p class="pt-2" data-price>
+                                    @if ($hasRange)
+                                        <span class="text-sm text-ink-muted">From</span>
+                                    @endif
+                                    <span class="font-bold">{{ $price->formatted() }}</span>
+                                    <span class="text-xs text-ink-muted">{{ $price->suffix() }}</span>
+                                </p>
+                            @endif
 
-                        <x-ui.card-cta class="mt-3" data-view-product>View product</x-ui.card-cta>
+                            <x-ui.card-cta class="mt-3" data-view-product>View product</x-ui.card-cta>
+                        </div>
                     </li>
                 @endforeach
             </ul>

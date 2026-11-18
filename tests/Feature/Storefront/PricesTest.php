@@ -2,10 +2,16 @@
 
 declare(strict_types=1);
 
+use App\Models\User;
+
 /**
  * The store sells to business buyers only: every price shown is ex VAT and
  * says so. The compare price is the manufacturer's RRP, labelled as such.
+ * Only signed-in customers see prices, so these tests sign in first.
  */
+beforeEach(function (): void {
+    $this->actingAs(User::factory()->create(), 'web');
+});
 
 /**
  * The page's main content without its prices, filter placeholders and scripts.
