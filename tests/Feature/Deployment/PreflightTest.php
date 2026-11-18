@@ -148,6 +148,85 @@ it('defaults the free disk threshold to 10 GB', function (): void {
     expect(config('preflight.min_free_disk_gb'))->toBe(10.0);
 });
 
+it('fails when email verification is on and the mailer is log or array', function (string $mailer): void {
+    config(['mail.default' => $mailer, 'store.require_email_verification' => true]);
+
+    $result = (new Preflight)->mail();
+
+    expect($result->status)->toBe(Result::FAIL)
+        ->and($result->failed())->toBeTrue()
+        ->and($result->message)->toContain('MAIL_MAILER is '.$mailer)
+        ->toContain('STORE_REQUIRE_EMAIL_VERIFICATION=false');
+})->with(['log', 'array']);
+
+it('warns, without failing, when verification is off and the mailer is log or array', function (string $mailer): void {
+    config(['mail.default' => $mailer, 'store.require_email_verification' => false]);
+
+    $result = (new Preflight)->mail();
+
+    expect($result->status)->toBe(Result::WARN)
+        ->and($result->failed())->toBeFalse()
+        ->and($result->message)->toContain('password reset emails will not be delivered')
+        ->and(strtolower($result->message))->not->toContain('fail');
+})->with(['log', 'array']);
+
+it('passes with a real mailer and a real from address, whatever the verification switch', function (bool $verification): void {
+    config(['mail.default' => 'smtp', 'mail.from.address' => 'orders@store.test', 'store.require_email_verification' => $verification]);
+
+    $result = (new Preflight)->mail();
+
+    expect($result->status)->toBe(Result::PASS)
+        ->and($result->message)->toContain('smtp');
+})->with([true, false]);
+
+it('warns when a real mailer has no usable from address', function (string $from): void {
+    config(['mail.default' => 'smtp', 'mail.from.address' => $from, 'store.require_email_verification' => true]);
+
+    $result = (new Preflight)->mail();
+
+    expect($result->status)->toBe(Result::WARN)
+        ->and($result->message)->toContain('MAIL_FROM_ADDRESS')
+        ->and(strtolower($result->message))->not->toContain('fail');
+})->with(['', 'hello@example.com']);
+
+it('exits non-zero when verification is on and the mailer is log, naming the mail check', function (): void {
+    $this->app->instance(Preflight::class, new Preflight(allLoaded()));
+    fakeMeilisearch();
+    Storage::fake('products');
+    config(['queue.default' => 'redis', 'preflight.min_free_disk_gb' => 0, 'mail.default' => 'log', 'store.require_email_verification' => true]);
+    Redis::shouldReceive('connection')->with('default')->andReturn(new class
+    {
+        public function ping(): bool
+        {
+            return true;
+        }
+    });
+
+    $this->artisan('app:preflight')
+        ->expectsOutputToContain('mail: STORE_REQUIRE_EMAIL_VERIFICATION is on but MAIL_MAILER is log')
+        ->assertFailed();
+});
+
+it('keeps the exit code zero and prints no failure when only the mail warning applies', function (): void {
+    $this->app->instance(Preflight::class, new Preflight(allLoaded()));
+    fakeMeilisearch();
+    Storage::fake('products');
+    config(['queue.default' => 'redis', 'preflight.min_free_disk_gb' => 0, 'mail.default' => 'log', 'store.require_email_verification' => false]);
+    Redis::shouldReceive('connection')->with('default')->andReturn(new class
+    {
+        public function ping(): bool
+        {
+            return true;
+        }
+    });
+
+    $this->artisan('app:preflight')
+        ->expectsOutputToContain('Warning: mail: MAIL_MAILER is log')
+        ->expectsOutputToContain('Preflight passed.')
+        ->doesntExpectOutputToContain('preflight check(s) failed')
+        ->assertSuccessful();
+});
+
 it('exits non-zero and names every failed check', function (): void {
     $this->app->instance(Preflight::class, new Preflight(onlyLoaded('imagick', 'exif')));
     fakeMeilisearch();
@@ -165,6 +244,7 @@ it('exits zero when every check passes', function (): void {
     fakeMeilisearch();
     Storage::fake('products');
     config(['queue.default' => 'redis', 'preflight.min_free_disk_gb' => 0]);
+    config(['mail.default' => 'smtp', 'mail.from.address' => 'orders@store.test', 'store.require_email_verification' => true]);
     Redis::shouldReceive('connection')->with('default')->andReturn(new class
     {
         public function ping(): bool
