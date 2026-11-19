@@ -92,7 +92,7 @@ it('shows Open a trade account to guests only', function (): void {
 });
 
 it('uses one of the six hero-bg photos in the slideshow as the hero background, centred, with no overlay', function (): void {
-    foreach ([1, 2, 3, 7, 8, 9] as $n) {
+    foreach ([1, 2, 7, 8, 9, 10] as $n) {
         expect(is_file(public_path("images/hero-bg-{$n}.jpg")))->toBeTrue();
     }
 
@@ -101,7 +101,7 @@ it('uses one of the six hero-bg photos in the slideshow as the hero background, 
     foreach (range(1, 40) as $ignored) {
         $hero = heroSection($this->get(route('home'))->getContent());
 
-        expect($hero)->toMatch('#<img[^>]*src="'.preg_quote(asset('images/hero-bg-'), '#').'[1-9]\.jpg"[^>]*data-hero-bg#')
+        expect($hero)->toMatch('#<img[^>]*src="'.preg_quote(asset('images/hero-bg-'), '#').'\d+\.jpg"[^>]*data-hero-bg#')
             ->and($hero)->toContain('alt=""')
             ->and($hero)->toContain('width="1920"')
             ->and($hero)->toContain('height="882"')
@@ -110,8 +110,8 @@ it('uses one of the six hero-bg photos in the slideshow as the hero background, 
             ->and($hero)->not->toContain('data-hero-overlay')
             ->and($hero)->not->toContain('from-brand-navy/');
 
-        preg_match('#hero-bg-([1-9])\.jpg#', $hero, $m);
-        expect([1, 2, 3, 7, 8, 9])->toContain((int) $m[1]); // 4, 5 and 6 are out of the slideshow
+        preg_match('#hero-bg-(\d+)\.jpg#', $hero, $m);
+        expect([1, 2, 7, 8, 9, 10])->toContain((int) $m[1]); // 3, 4, 5 and 6 are out of the slideshow
         $seen[$m[1]] = true;
     }
 
@@ -255,20 +255,32 @@ it('shows the industry slider under the hero, with its heading', function (): vo
         ->and(substr_count($html, '<h1'))->toBe(1);
 });
 
-it('shows the Product Spotlight as one image, in place of the videos and the standards chips', function (): void {
-    $html = $this->get(route('home'))->assertOk()->getContent();
+it('shows the Product Spotlight as one image picked at random from three, in place of the videos and the standards chips', function (): void {
+    $files = ['cador-colours-that-work', 'topskate-s3s-safety-sneaker', 'maximus-helmet'];
+    $seen = [];
 
-    preg_match('#<section[^>]*data-home-featured.*?</section>#s', $html, $section);
+    foreach (range(1, 40) as $ignored) {
+        $html = $this->get(route('home'))->assertOk()->getContent();
 
-    expect($section[0] ?? '')->toMatch('#<h2[^>]*id="home-featured"[^>]*>Product Spotlight</h2>#')
-        ->and($section[0])->not->toContain('<video')
-        ->and(substr_count($section[0], '<img'))->toBe(1)
-        ->and($section[0])->toContain('images/home/cador-colours-that-work.jpg')
-        ->and($section[0])->toContain('images/home/cador-colours-that-work.webp')
-        ->and($section[0])->toContain('width="1200"')
-        ->and($section[0])->toContain('height="1563"')
-        ->and(file_exists(public_path('images/home/cador-colours-that-work.jpg')))->toBeTrue()
-        ->and($html)->not->toContain('data-home-standards');
+        preg_match('#<section[^>]*data-home-featured.*?</section>#s', $html, $section);
+
+        expect($section[0] ?? '')->toMatch('#<h2[^>]*id="home-featured"[^>]*>Product Spotlight</h2>#')
+            ->and($section[0])->not->toContain('<video')
+            ->and(substr_count($section[0], '<img'))->toBe(1)
+            ->and($section[0])->toContain('width="1200"')
+            ->and($html)->not->toContain('data-home-standards');
+
+        preg_match('#images/home/([a-z0-9-]+)\.jpg#', $section[0], $m);
+        expect($files)->toContain($m[1]);
+        $seen[$m[1]] = true;
+    }
+
+    foreach ($files as $file) {
+        expect(file_exists(public_path("images/home/{$file}.jpg")))->toBeTrue();
+    }
+
+    expect(file_exists(public_path('images/home/cador-colours-that-work.webp')))->toBeTrue()
+        ->and(count($seen))->toBeGreaterThan(1);
 });
 
 it('only picks products from the Safety Footwear and PPE & Gear categories', function (): void {
@@ -337,7 +349,8 @@ it('fades through the six hero photos in use every six seconds, starting at a ra
         ->and($hero)->toContain('}, 6000);')
         ->and($hero)->not->toContain('prefers-reduced-motion');
 
-    expect($hero)->not->toContain('hero-bg-4.jpg')
+    expect($hero)->not->toContain('hero-bg-3.jpg')
+        ->and($hero)->not->toContain('hero-bg-4.jpg')
         ->and($hero)->not->toContain('hero-bg-5.jpg')
         ->and($hero)->not->toContain('hero-bg-6.jpg');
 
@@ -347,7 +360,7 @@ it('fades through the six hero photos in use every six seconds, starting at a ra
     $files = [];
 
     foreach ($slides[0] as $i => $img) {
-        preg_match('#(?:data-src|(?<![-\w])src)="[^"]*hero-bg-([1-9])\.jpg"#', $img, $m);
+        preg_match('#(?:data-src|(?<![-\w])src)="[^"]*hero-bg-(\d+)\.jpg"#', $img, $m);
         $files[] = (int) $m[1];
 
         if ($i > 0) {
@@ -356,10 +369,10 @@ it('fades through the six hero photos in use every six seconds, starting at a ra
     }
 
     // Every photo once, in a fixed cycle that starts wherever the page began.
-    expect(collect($files)->sort()->values()->all())->toBe([1, 2, 3, 7, 8, 9]);
+    expect(collect($files)->sort()->values()->all())->toBe([1, 2, 7, 8, 9, 10]);
 
     foreach ($files as $i => $n) {
-        expect($files[($i + 1) % 6])->toBe([1 => 2, 2 => 3, 3 => 7, 7 => 8, 8 => 9, 9 => 1][$n]);
+        expect($files[($i + 1) % 6])->toBe([1 => 2, 2 => 7, 7 => 8, 8 => 9, 9 => 10, 10 => 1][$n]);
     }
 });
 
