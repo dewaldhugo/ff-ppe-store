@@ -30,7 +30,7 @@ function verificationUrl(User $user, ?string $hash = null, ?int $id = null): str
     ]);
 }
 
-it('sends a new customer to the shop, says to check their email, and queues the link', function (): void {
+it('sends no verification link at registration: activating the login marks the address verified', function (): void {
     Notification::fake();
 
     $this->post(route('register'), [
@@ -44,17 +44,11 @@ it('sends a new customer to the shop, says to check their email, and queues the 
         'email' => 'jo@builder.example',
         'password' => 'a-good-password-1',
         'password_confirmation' => 'a-good-password-1',
-    ])->assertRedirect(route('shop'));
-
-    // The shop shows the one-off message, once.
-    $this->get(route('shop'))->assertOk()
-        ->assertSee('data-flash', false)
-        ->assertSee('We have emailed you a link to verify your address.');
-    $this->get(route('shop'))->assertDontSee('data-flash', false);
+    ])->assertRedirect(route('home'));
 
     $user = User::firstOrFail();
     expect($user->hasVerifiedEmail())->toBeFalse();
-    Notification::assertSentTo($user, CustomerVerifyEmail::class);
+    Notification::assertNotSentTo($user, CustomerVerifyEmail::class);
 });
 
 it('shows the verify page with the address and a resend button, noindex', function (): void {

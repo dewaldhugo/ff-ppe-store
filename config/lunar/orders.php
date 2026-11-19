@@ -93,6 +93,47 @@ return [
             'favourite' => true,
         ],
 
+        // The Stripe states that config/lunar/stripe.php (status_mapping) can give an order.
+        'auth-pending' => [
+            'label' => 'Authorisation Pending',
+            'color' => '#848a8c',
+            'mailers' => [],
+            'notifications' => [],
+            'favourite' => false,
+        ],
+
+        'processing' => [
+            'label' => 'Payment Processing',
+            'color' => '#848a8c',
+            'mailers' => [],
+            'notifications' => [],
+            'favourite' => false,
+        ],
+
+        'requires-capture' => [
+            'label' => 'Requires Capture',
+            'color' => '#0A81D7',
+            'mailers' => [],
+            'notifications' => [],
+            'favourite' => false,
+        ],
+
+        'failed' => [
+            'label' => 'Payment Failed',
+            'color' => '#d33f3f',
+            'mailers' => [],
+            'notifications' => [],
+            'favourite' => false,
+        ],
+
+        'cancelled' => [
+            'label' => 'Cancelled',
+            'color' => '#d33f3f',
+            'mailers' => [],
+            'notifications' => [],
+            'favourite' => false,
+        ],
+
         'dispatched' => [
             'label' => 'Dispatched',
             'mailers' => [],

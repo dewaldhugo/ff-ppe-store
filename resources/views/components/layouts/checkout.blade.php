@@ -13,6 +13,11 @@
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
+
+    {{-- Stripe.js and the card form, only while card payment is switched on (both Stripe keys set). --}}
+    @if (app(\App\Domain\Checkout\CardPayments::class)->isConfigured())
+        <x-checkout.stripe-scripts />
+    @endif
 </head>
 <body class="min-h-screen bg-surface-muted text-ink antialiased">
     <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded focus:bg-white focus:px-4 focus:py-2 focus:shadow">

@@ -8,7 +8,7 @@
         <h1 class="text-2xl font-bold sm:text-3xl">Checkout</h1>
         <p class="mt-1 text-sm"><a href="{{ route('cart') }}" class="font-semibold text-brand-blue hover:underline">Back to cart</a></p>
 
-        <form wire:submit="placeOrder" novalidate class="mt-6 grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_26rem]" data-checkout-form>
+        <form wire:submit="placeOrder" novalidate class="mt-6 grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_26rem]" data-checkout-form @if ($cardLive) x-data="cardCheckout({ key: @js($stripeKey), amount: {{ $cardAmount }} })" @else x-data="{ busy: false }" @endif>
             {{-- Left: data entry and logistics. --}}
             <div class="space-y-6">
                 <section aria-labelledby="contact-heading" class="rounded border border-border bg-white p-5" data-section="contact">
@@ -99,27 +99,61 @@
                     @endif
                 </section>
 
-                <section aria-labelledby="payment-heading" class="rounded border border-border bg-white p-5" data-section="payment">
+                <section
+                    aria-labelledby="payment-heading"
+                    class="rounded border border-border bg-white p-5"
+                    data-section="payment"
+                >
                     <h2 id="payment-heading" class="text-lg font-bold">Payment method</h2>
 
                     <div class="mt-3 space-y-3">
-                        <label class="flex items-start gap-3 rounded border border-brand-blue p-3" data-payment-option="bank-transfer">
-                            <input type="radio" wire:model="payment_method" value="bank-transfer" class="mt-1 h-4 w-4">
-                            <span>
-                                <span class="block font-semibold">Bank transfer</span>
-                                <span class="block text-sm text-ink-muted">We place your order now and contact you with our bank details. Goods are dispatched once payment is received.</span>
-                            </span>
-                        </label>
+                        @if ($cardLive)
+                            <label class="flex items-start gap-3 rounded border border-brand-blue p-3" data-payment-option="card">
+                                <input type="radio" wire:model="payment_method" value="card" class="mt-1 h-4 w-4">
+                                <span>
+                                    <span class="block font-semibold">Debit or credit card</span>
+                                    <span class="block text-sm text-ink-muted">Pay securely by card. Your order is placed as soon as the payment goes through.</span>
+                                    <x-checkout.payment-logos :names="['visa', 'mastercard', 'stripe']" class="mt-2 justify-start" />
+                                </span>
+                            </label>
 
-                        <div class="flex items-start gap-3 rounded border border-border bg-surface-muted p-3 text-ink-muted" data-payment-option="card" aria-disabled="true">
-                            <input type="radio" disabled class="mt-1 h-4 w-4" aria-label="Debit or credit card, not yet available">
-                            <span>
-                                <span class="block font-semibold">Debit or credit card</span>
-                                <span class="block text-sm">Coming soon.</span>
-                                <x-checkout.payment-logos :names="['stripe']" class="mt-2 justify-start" />
-                            </span>
-                        </div>
+                            {{-- Stripe's card form. Stripe draws it in its own frame, so card numbers never reach this server.
+                                 wire:ignore keeps the frame when the page above re-renders. --}}
+                            <div x-show="$wire.payment_method === 'card'" x-cloak class="rounded border border-border p-3" data-card-form>
+                                @if (str_starts_with($stripeKey, 'pk_test_'))
+                                    <p class="mb-3 rounded border border-border bg-surface-muted p-2 text-xs text-ink" data-test-mode>Test mode: no real card is charged. Use card 4242 4242 4242 4242, any future expiry and any CVC.</p>
+                                @endif
+                                <div wire:ignore x-ref="card" data-card-element></div>
+                                <p x-show="error" x-cloak x-text="error" role="alert" class="mt-3 text-sm font-semibold text-danger" data-card-error></p>
+                            </div>
+                        @else
+                            <div class="flex items-start gap-3 rounded border border-border bg-surface-muted p-3 text-ink-muted" data-payment-option="card" aria-disabled="true">
+                                <input type="radio" disabled class="mt-1 h-4 w-4" aria-label="Debit or credit card, not yet available">
+                                <span>
+                                    <span class="block font-semibold">Debit or credit card</span>
+                                    <span class="block text-sm">Not available at the moment.</span>
+                                    <x-checkout.payment-logos :names="['stripe']" class="mt-2 justify-start" />
+                                </span>
+                            </div>
+                        @endif
+
+                        {{-- 30 day terms are offered only to customers staff have enabled them for. --}}
+                        @if ($accountTerms)
+                            <label class="flex items-start gap-3 rounded border border-brand-blue p-3" data-payment-option="account-30-day">
+                                <input type="radio" wire:model="payment_method" value="account-30-day" class="mt-1 h-4 w-4">
+                                <span>
+                                    <span class="block font-semibold">30 day account</span>
+                                    <span class="block text-sm text-ink-muted">We place your order now and invoice you. Payment is due within 30 days.</span>
+                                </span>
+                            </label>
+                        @endif
                     </div>
+                    @unless ($canPay)
+                        <p class="mt-3 text-sm text-ink" data-no-payment-method>
+                            Card payment is not available at the moment, so you cannot place an order just yet.
+                            To buy on 30 day account terms, please <a href="{{ route('contact') }}" class="font-semibold text-brand-blue underline">contact us</a>.
+                        </p>
+                    @endunless
                     @error('payment_method') <p class="mt-2 text-sm text-danger">{{ $message }}</p> @enderror
                 </section>
             </div>
@@ -238,8 +272,18 @@
                     <x-ui.alert variant="error" class="mt-4" data-form-invalid>Please check the details marked above.</x-ui.alert>
                 @endif
 
-                <x-ui.button type="submit" class="mt-5 w-full py-4 text-lg" :disabled="! $canOrder" wire:loading.attr="disabled" wire:target="placeOrder" data-place-order>
-                    Place order
+                {{-- With card chosen, the button pays through Stripe's card form (cardCheckout, in the checkout layout) instead of submitting the form. --}}
+                <x-ui.button
+                    type="submit"
+                    class="mt-5 w-full py-4 text-lg"
+                    :disabled="! $canOrder || ! $canPay"
+                    wire:loading.attr="disabled"
+                    wire:target="placeOrder"
+                    data-place-order
+                    x-on:click="if ($wire.payment_method === 'card') { $event.preventDefault(); pay() }"
+                    x-bind:disabled="busy || {{ $canOrder && $canPay ? 'false' : 'true' }}"
+                >
+                    <span x-text="busy ? 'Processing...' : ($wire.payment_method === 'card' ? 'Pay by card' : 'Place order')">Place order</span>
                 </x-ui.button>
                 @unless ($canOrder)
                     <p class="mt-2 text-sm text-danger">Some items need attention. <a href="{{ route('cart') }}" class="font-semibold underline">Review your cart</a>.</p>

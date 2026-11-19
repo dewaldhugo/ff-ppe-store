@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Middleware\EnsureAccountVerified;
+use App\Http\Middleware\EnsureLoginActive;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -23,6 +24,10 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // My Account needs a verified email address while STORE_REQUIRE_EMAIL_VERIFICATION is on.
         $middleware->alias(['account.verified' => EnsureAccountVerified::class]);
+
+        // A customer whose login staff switched off is signed out on their next request. It must
+        // run after the session starts, so it is appended to the web group.
+        $middleware->appendToGroup('web', EnsureLoginActive::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

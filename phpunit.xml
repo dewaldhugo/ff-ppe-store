@@ -31,6 +31,9 @@
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="PRODUCTS_DISK_PATH" value="framework/testing/disks/products"/>
+        <env name="STRIPE_SECRET_KEY" value=""/>
+        <env name="STRIPE_PUBLISHABLE_KEY" value=""/>
+        <env name="STRIPE_WEBHOOK_SECRET" value=""/>
         <env name="SCOUT_DRIVER" value="null"/>
         <env name="SCOUT_PREFIX" value="testing_"/>
         <env name="SCOUT_QUEUE" value="false"/>

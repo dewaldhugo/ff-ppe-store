@@ -31,6 +31,24 @@ final class User extends Authenticatable implements LunarUserInterface, MustVeri
     use HasFactory, LunarUser, Notifiable;
 
     /**
+     * Whether staff have activated this login. A new registration is not approved, and cannot
+     * sign in, until it is (docs/accounts.md).
+     */
+    public function isApproved(): bool
+    {
+        return $this->approved_at !== null;
+    }
+
+    /**
+     * Whether this customer may pay on 30 day account terms. Off for every new customer;
+     * staff switch it on in the admin panel.
+     */
+    public function hasAccountTerms(): bool
+    {
+        return (bool) $this->account_terms;
+    }
+
+    /**
      * Whether this customer must verify their email address before using My Account.
      * Switched by STORE_REQUIRE_EMAIL_VERIFICATION.
      */
@@ -64,6 +82,8 @@ final class User extends Authenticatable implements LunarUserInterface, MustVeri
     {
         return [
             'email_verified_at' => 'datetime',
+            'approved_at' => 'datetime',
+            'account_terms' => 'boolean',
             'password' => 'hashed',
         ];
     }

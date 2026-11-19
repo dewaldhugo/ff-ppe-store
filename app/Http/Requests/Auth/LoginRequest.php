@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Auth;
 
+use App\Models\User;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
@@ -18,6 +19,9 @@ final class LoginRequest extends FormRequest
 
     /** The one message for an unknown email, a wrong password and an unusable account. */
     public const string FAILED = 'The email address or password is incorrect.';
+
+    /** Shown when the credentials are right but staff have not activated the login yet. */
+    public const string PENDING = 'Your login has not been activated yet. We will email you as soon as it is.';
 
     public function authorize(): bool
     {
@@ -56,6 +60,8 @@ final class LoginRequest extends FormRequest
         $guard = Auth::guard('web');
         $credentials = ['email' => Str::lower(trim((string) $this->input('email'))), 'password' => (string) $this->input('password')];
 
+        $this->ensureLoginIsActive($credentials);
+
         if (! $guard->attempt($credentials, $this->boolean('remember'))) {
             // An unknown email never reaches a password check, which would make it answer
             // faster than a wrong password. Spend the same time hashing instead.
@@ -67,6 +73,25 @@ final class LoginRequest extends FormRequest
         }
 
         RateLimiter::clear($this->throttleKey());
+    }
+
+    /**
+     * A correct email and password for a login staff have not activated yet gets its own
+     * message. Only someone who knows the password sees it, so it reveals nothing to a
+     * stranger, and it is not counted as a failed attempt.
+     *
+     * @param  array{email: string, password: string}  $credentials
+     *
+     * @throws ValidationException
+     */
+    private function ensureLoginIsActive(array $credentials): void
+    {
+        $provider = Auth::guard('web')->getProvider();
+        $user = $provider->retrieveByCredentials($credentials);
+
+        if ($user instanceof User && ! $user->isApproved() && $provider->validateCredentials($user, $credentials)) {
+            throw ValidationException::withMessages(['email' => self::PENDING]);
+        }
     }
 
     /**

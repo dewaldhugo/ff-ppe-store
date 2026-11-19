@@ -243,6 +243,13 @@
                 @endif
             </form>
 
+            {{-- Outside the cart form (forms cannot nest). Signed-in customers only; guests see nothing. --}}
+            @if (app(\App\Domain\Favourites\Favourites::class)->available())
+                <div class="mt-4" data-favourite-wrap>
+                    <x-storefront.favourite-button :product="$product" />
+                </div>
+            @endif
+
             @if (filled($product->attr('key_points')))
                 <ul class="mt-6 list-disc space-y-1 pl-5 text-ink-muted">
                     @foreach ($product->attr('key_points') as $point)

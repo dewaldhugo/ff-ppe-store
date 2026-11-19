@@ -1,0 +1,62 @@
+@props(['product'])
+
+{{--
+    The "Add to favourites" button, for the product page only and for signed-in customers only: it renders
+    nothing for a guest. Alpine posts with fetch and flips the label at once; without JavaScript the form
+    posts and goes back to the page.
+--}}
+@php
+    $favourites = app(\App\Domain\Favourites\Favourites::class);
+    $name = (string) $product->translateAttribute('name');
+    $on = $favourites->has((int) $product->id);
+@endphp
+
+@if ($favourites->available())
+    <form
+        method="POST"
+        action="{{ route('favourites.toggle', $product->id) }}"
+        class="inline-block"
+        data-favourite-form
+        x-data="{
+            on: {{ $on ? 'true' : 'false' }},
+            busy: false,
+            async toggle() {
+                if (this.busy) return;
+                this.busy = true;
+                const was = this.on;
+                this.on = ! was;
+                try {
+                    const response = await fetch(this.$el.action, {
+                        method: 'POST',
+                        headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content },
+                    });
+                    if (! response.ok) throw new Error('failed');
+                    const data = await response.json();
+                    this.on = data.favourited;
+                    window.dispatchEvent(new CustomEvent('favourites-updated', { detail: { count: data.count } }));
+                } catch (error) {
+                    this.on = was;
+                } finally {
+                    this.busy = false;
+                }
+            }
+        }"
+        x-on:submit.prevent="toggle()"
+    >
+        @csrf
+        <button
+            type="submit"
+            class="inline-flex items-center gap-2 rounded-md border-2 border-brand-teal px-4 py-2 text-sm font-semibold text-brand-blue hover:bg-surface-muted"
+            data-favourite-button
+            data-favourited="{{ $on ? 'true' : 'false' }}"
+            aria-pressed="{{ $on ? 'true' : 'false' }}"
+            aria-label="{{ $on ? 'Remove '.$name.' from favourites' : 'Add '.$name.' to favourites' }}"
+            x-bind:aria-pressed="on.toString()"
+            x-bind:data-favourited="on.toString()"
+            x-bind:aria-label="on ? @js('Remove '.$name.' from favourites') : @js('Add '.$name.' to favourites')"
+        >
+            <svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linejoin="round" fill="{{ $on ? 'currentColor' : 'none' }}" x-bind:fill="on ? 'currentColor' : 'none'"><path d="M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7c0 5.6-7.5 10.2-7.5 10.2Z"/></svg>
+            <span x-text="on ? 'Saved to favourites' : 'Add to favourites'">{{ $on ? 'Saved to favourites' : 'Add to favourites' }}</span>
+        </button>
+    </form>
+@endif

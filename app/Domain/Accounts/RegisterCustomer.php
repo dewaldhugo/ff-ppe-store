@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\Accounts;
 
 use App\Models\User;
-use Illuminate\Auth\Events\Registered;
+use App\Notifications\CustomerRegistrationReceived;
 use Illuminate\Support\Facades\DB;
 use Lunar\Models\Country;
 use Lunar\Models\Customer;
@@ -16,8 +16,8 @@ use Throwable;
  * Registers a customer: one User and one Lunar Customer attached to it, in a single
  * transaction. Lunar never creates customers for users, so this is the only place that does.
  *
- * Side effects that must not undo a registration (search indexing, the verification
- * email) run after the transaction has committed, and a failure in them is reported,
+ * The new login is not approved: staff activate it in the admin panel. Side effects that must
+ * not undo a registration (search indexing, the "we will tell you" email) run after the transaction has committed, and a failure in them is reported,
  * never thrown.
  */
 final class RegisterCustomer
@@ -74,9 +74,10 @@ final class RegisterCustomer
         CustomerSearch::index($customer);
 
         try {
-            // The framework listens to this and calls User::sendEmailVerificationNotification(),
-            // which does nothing while STORE_REQUIRE_EMAIL_VERIFICATION is false.
-            event(new Registered($user));
+            // The login stays inactive until staff approve it, so the customer is told to wait
+            // rather than asked to verify an address they cannot use yet. Approval marks the
+            // address verified (SetCustomerAccess).
+            $user->notify(new CustomerRegistrationReceived);
         } catch (Throwable $e) {
             report($e);
         }

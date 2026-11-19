@@ -10,7 +10,7 @@ Not built: address book, order history, and the items under "Known gaps". The ca
 
 ## Prices are for signed-in customers only
 
-Guests see no prices anywhere on the storefront. A signed-in customer (the `web` guard) sees them, ex VAT, as before; any registered customer qualifies, there is no approval workflow. Email verification is not required to see prices.
+Guests see no prices anywhere on the storefront. A signed-in customer (the `web` guard) sees them, ex VAT, as before; only a customer whose login staff have activated can sign in (see "Approval"). Email verification is not required to see prices.
 
 - One definition: `App\Domain\Pricing\PriceVisibility::visible()`, reached through `PriceDisplay::visible()`. A staff member signed in to Lunar is a guest here.
 - Guests get no price and no prompt: the price is simply absent. `PriceDisplay::fromPrice()` returns null for guests, which covers product cards on listings, search, brand pages, the home page and related products; the product page checks `PriceDisplay::visible()`. Any new view that renders a price must do the same.
@@ -21,6 +21,30 @@ Guests see no prices anywhere on the storefront. A signed-in customer (the `web`
 - Listings and product pages are not cached per visitor; do not add a shared page or response cache without varying it on sign-in.
 
 Tests: `tests/Feature/Storefront/PriceGatingTest.php` (guests) and the price tests, which sign in first.
+
+## Approval, and what staff control (branch feat/admin)
+
+A new registration cannot sign in until staff activate it in the admin panel.
+
+- **Registering** creates the User and Customer as before, but does not sign the customer in. They are sent to the home page, where the storefront notice banner (shown once) says "Your registration was successful. We will contact you shortly.", and `CustomerRegistrationReceived` (default queue) emails that they will be told when the login has been activated. No verification email is sent at registration.
+- **Activating.** `users.approved_at` (null until activated) and `users.account_terms` (boolean, default false) are added by `2026_11_19_100000_add_approval_and_terms_to_users_table`, which backfills `approved_at` for every existing user so nobody is locked out. They are not mass assignable. `User::isApproved()` and `User::hasAccountTerms()` read them.
+- **Where staff do it.** Admin panel, Customers, Edit: a "Storefront access" section with two toggles, **Login active** and **30 day account terms** (`App\Admin\Extensions\CustomerAccessResourceExtension` and `CustomerAccessEditExtension`, registered with `LunarPanel::extensions()` in `AppServiceProvider`). The customers list has Login and 30 day terms columns and an "Awaiting activation" filter. The section shows on the edit page only, and only for a customer that has a login (a customer made in the admin has none). `App\Domain\Accounts\SetCustomerAccess` applies the toggles to every login attached to the customer, in one transaction.
+- **The Approve button.** A green **Approve** button (with a confirmation) activates a waiting registration in one click: on each row of the customers list, as a bulk action ("Approve selected"), and in the header of the Edit and View Customer pages (`ApproveCustomerAction`). It shows only while a login on the customer is still waiting, leaves 30 day terms as they are, and sends the activation email. The toggle on the Edit page does the same thing.
+- **The activation email.** Switching Login active on for a login that was off sets `approved_at`, marks the email address verified (staff vetted the business, and the email goes to that address; this replaces the verification link for new customers) and sends `CustomerAccountActivated` (default queue) with the login URL and the username (the email address). **The password is never stored in a recoverable form, so it is never emailed:** the message says to use the password chosen at registration and links the password reset page. A failed send is reported and never undoes the activation; switching the login off and on again resends it. Saving again with the toggle already on sends nothing.
+- **Signing in.** `LoginRequest` gives a customer whose email and password are right but whose login is not active the message "Your login has not been activated yet. We will email you as soon as it is." (`LoginRequest::PENDING`). It is not counted as a failed attempt. A wrong password on a pending login gets the ordinary message, so nothing is revealed to a stranger.
+- **Switching a login off** signs the customer out on their next request: `EnsureLoginActive` is appended to the `web` middleware group, logs out the `web` guard only (regenerates the session, never invalidates it) and redirects to log in.
+- **Password reset** still works for a pending customer, but they still cannot sign in.
+- Payment options per customer are in docs/cart.md (Payment).
+
+## Favourites
+
+One "Add to favourites" button, on the product page only (`<x-storefront.favourite-button>`, under the cart form). There is no heart on product cards in listings, search, brand pages, the home page, related products or the favourites page: a customer removes a favourite from its product page.
+
+- **Who.** Signed-in customers (`web` guard) only. A guest sees no button at all and the toggle route needs a login. A staff member signed in to Lunar is a guest here.
+- **Data.** `favourites` (`user_id`, `product_id` to `lunar_products`, unique together, cascade on delete), model `App\Models\Favourite`. Storefront-owned; the ingestion module never writes it. Only a published product can be added; a saved product can always be removed, and a withdrawn one is left out of the list.
+- **Code.** `App\Domain\Favourites\Favourites` (scoped to the request: reads the customer's ids once, however many cards ask; `toggle()`, `has()`, `count()`, `products()`), `FavouriteController`, view `favourites/index`.
+- **Routes.** `GET /favourites` (name `favourites`, noindex) and `POST /favourites/{product}` (name `favourites.toggle`), both `auth:web`. The toggle answers JSON (`favourited`, `count`) to fetch, and redirects back for a plain form post (no JavaScript).
+- **Header.** A heart link with a count sits beside the cart for signed-in customers; the product page button announces the new count with a `favourites-updated` window event, as the cart does.
 
 ## Approach
 
@@ -140,14 +164,14 @@ Over a route limit the response is a plain 429. Limits and constants are in `App
 
 ## Tests
 
-`tests/Feature/Accounts/`: `AccountFoundationTest`, `AccountMailQueueTest`, `RegistrationTest`, `LoginTest`, `PasswordResetTest`, `EmailVerificationTest`, `AccountPageTest`, `GuardSeparationTest`, `HeaderAuthTest`. Mail is faked; nothing is sent. Search tests that need a real index are not involved: the Customer index uses the null Scout driver in tests, and a test installs a failing engine to prove registration survives a Meilisearch outage.
+`tests/Feature/Accounts/`: `ApprovalTest` (pending login, activation and its email, switching off, the admin Edit Customer page), `AccountFoundationTest`, `AccountMailQueueTest`, `RegistrationTest`, `LoginTest`, `PasswordResetTest`, `EmailVerificationTest`, `AccountPageTest`, `GuardSeparationTest`, `HeaderAuthTest`. Mail is faked; nothing is sent. Search tests that need a real index are not involved: the Customer index uses the null Scout driver in tests, and a test installs a failing engine to prove registration survives a Meilisearch outage.
 
 ## Known gaps
 
 - **No account deletion and no data export.** UK GDPR gives customers the right to erasure and access. Until this is built, requests have to be handled by hand by staff in the Lunar admin.
 - **No HMRC VAT verification.** The VAT number is format-checked only.
 - **No address book.** My Account holds contact and company details only. The company address and industry given at registration are saved but cannot be seen or changed in My Account, and a customer made any other way (a seeder, or a user with no customer) has neither.
-- **No approval workflow.** Anyone can register and sign in.
+- **Approval is one switch.** There is no rejection state, reason or audit trail, and no email when staff switch a login off. A registration staff do not want is deleted by hand in the admin.
 - **No order history.** Customers can place an order (docs/cart.md) and see its confirmation page once, but My Account lists no orders.
 - Other devices stay signed in after a password reset or change (their "keep me logged in" cookies are ended, but live sessions are not). Adding `AuthenticateSession` to the account routes would close it.
 - No two-factor authentication for customers.

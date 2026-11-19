@@ -18,11 +18,13 @@ use Lunar\Models\Order;
 use Lunar\Models\ProductVariant;
 use Tests\Support\CatalogueFactory;
 
-// The checkout (docs/cart.md): two columns, the live summary with VAT on every line, a bank
-// transfer order placed through Lunar, the vendor snapshot, and the confirmation page.
+// The checkout (docs/cart.md): two columns, the live summary with VAT on every line, a 30 day
+// account order placed through Lunar, the vendor snapshot, and the confirmation page. The
+// default customer here has 30 day terms, because card is not built yet; the payment rules
+// themselves are in PaymentTermsTest.
 
 beforeEach(function (): void {
-    $this->customer = User::factory()->create([
+    $this->customer = User::factory()->withAccountTerms()->create([
         'name' => 'Jo Builder',
         'email' => 'jo@builder.example',
         'phone' => '020 8289 5858',
@@ -127,14 +129,14 @@ it('starts with the billing address the same as the delivery address, and opens 
         ->assertSeeHtml('data-billing-fields');
 });
 
-it('offers bank transfer and shows card as coming soon', function (): void {
+it('offers 30 day account to a customer who has it, and shows card as not available', function (): void {
     checkoutCart($this->customer, checkoutVariant());
 
     Livewire::test(CheckoutPage::class)
-        ->assertSeeHtml('data-payment-option="bank-transfer"')
+        ->assertSeeHtml('data-payment-option="account-30-day"')
         ->assertSeeHtml('data-payment-option="card"')
-        ->assertSee('Coming soon.')
-        ->assertSet('payment_method', 'bank-transfer');
+        ->assertSee('Not available at the moment.')
+        ->assertSet('payment_method', 'account-30-day');
 });
 
 // --- Prefill -------------------------------------------------------------------
@@ -297,7 +299,7 @@ it('asks for the billing address only when it differs from the delivery address'
 
 // --- Placing the order -------------------------------------------------------------
 
-it('places a bank transfer order through Lunar and goes to the confirmation page', function (): void {
+it('places a 30 day account order through Lunar and goes to the confirmation page', function (): void {
     $cart = checkoutCart($this->customer, checkoutVariant());
 
     $page = fillCheckout(Livewire::test(CheckoutPage::class))
@@ -321,7 +323,7 @@ it('places a bank transfer order through Lunar and goes to the confirmation page
         // VAT is charged as for a business buying for employees (docs/data-contract.md).
         ->and($order->meta['buying_for_employees'])->toBeTrue()
         ->and($order->meta['site_type'])->toBe('residential')
-        ->and($order->meta['payment_method'])->toBe('bank-transfer')
+        ->and($order->meta['payment_method'])->toBe('account-30-day')
         ->and($order->meta['contact_email'])->toBe('jo@builder.example')
         // £50.00 goods + £50.00 delivery, and £20.00 VAT on both.
         ->and($order->sub_total->value)->toBe(5000)
