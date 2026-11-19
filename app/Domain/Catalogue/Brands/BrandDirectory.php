@@ -30,13 +30,18 @@ final class BrandDirectory
     public function __construct(private readonly CatalogueSearch $search) {}
 
     /**
-     * Brands with at least one published product, sorted by name.
+     * Brands with at least one published product, most products first, then by name.
      *
      * @return list<BrandTile>
      */
     public function withProducts(): array
     {
-        return array_values(array_filter($this->all(), fn (BrandTile $tile): bool => $tile->productCount > 0));
+        $tiles = array_values(array_filter($this->all(), fn (BrandTile $tile): bool => $tile->productCount > 0));
+
+        // all() is already by name, and usort is stable, so equal counts stay alphabetical.
+        usort($tiles, fn (BrandTile $a, BrandTile $b): int => $b->productCount <=> $a->productCount);
+
+        return $tiles;
     }
 
     /**
