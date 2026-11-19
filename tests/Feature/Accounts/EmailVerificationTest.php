@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Notifications\CustomerVerifyEmail;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Contracts\Notifications\Dispatcher;
+use Illuminate\Support\Env;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Route;
@@ -213,7 +214,7 @@ describe('the account.verified gate', function (): void {
 it('reads the switch from STORE_REQUIRE_EMAIL_VERIFICATION, true unless it is a false value', function (): void {
     // env() reads Laravel's env repository, which a local .env also fills, so set and clear it there.
     $read = function (?string $value): bool {
-        $repository = Illuminate\Support\Env::getRepository();
+        $repository = Env::getRepository();
         $previous = $repository->get('STORE_REQUIRE_EMAIL_VERIFICATION');
 
         $value === null

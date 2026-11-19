@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Models\User;
 use App\Support\CartCount;
+use Lunar\Admin\Models\Staff;
 use Lunar\Models\Cart;
 use Lunar\Models\Channel;
 use Lunar\Models\Currency;
@@ -27,7 +28,7 @@ it('opens the cart for a signed-in customer, out of search engines, with the emp
 });
 
 it('does not open the cart to a staff member signed in to Lunar', function (): void {
-    $this->actingAs(Lunar\Admin\Models\Staff::factory()->create(), 'staff');
+    $this->actingAs(Staff::factory()->create(), 'staff');
 
     $this->get(route('cart'))->assertRedirect(route('login'));
 });

@@ -217,7 +217,9 @@ it('shows one non-interactive colour swatch per colour under each product', func
             ->unique()
             ->count();
 
-        expect(preg_match_all('/\bdata-swatch(?![\w-])/', $card))->toBe($expected);
+        // One per swatch element. The component renders the attribute as data-swatch="data-swatch", so the
+        // attribute name (followed by =) is skipped and only its value counts, and a bare data-swatch counts too.
+        expect(preg_match_all('/\bdata-swatch(?![\w=-])/', $card))->toBe($expected);
 
         preg_match('#<p[^>]*data-swatches.*?</p>#s', $card, $swatches);
 

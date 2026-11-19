@@ -152,6 +152,7 @@ final class PlaceOrder
 
         return [$cart, $order];
     }
+
     /**
      * @param  array<string, ?string>  $fields
      * @return array<string, mixed>

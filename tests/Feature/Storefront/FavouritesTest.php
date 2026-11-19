@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Domain\Favourites\Favourites;
 use App\Models\Favourite;
 use App\Models\User;
+use Illuminate\Database\QueryException;
 use Lunar\Admin\Models\Staff;
 use Tests\Support\CatalogueFactory;
 
@@ -126,7 +127,7 @@ it('holds one row per customer and product at the database', function (): void {
     Favourite::create(['user_id' => $user->id, 'product_id' => $product->id]);
 
     // The unique key holds even if two requests race past the existence check.
-    expect(fn () => Favourite::create(['user_id' => $user->id, 'product_id' => $product->id]))->toThrow(Illuminate\Database\QueryException::class);
+    expect(fn () => Favourite::create(['user_id' => $user->id, 'product_id' => $product->id]))->toThrow(QueryException::class);
     expect(Favourite::count())->toBe(1);
 });
 
