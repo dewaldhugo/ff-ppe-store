@@ -23,6 +23,13 @@ return [
     // Where Contact page enquiries are emailed: the store email, unless STORE_ENQUIRY_EMAIL is set.
     'enquiry_email' => env('STORE_ENQUIRY_EMAIL') ?: 'info@thebridgegroup.uk.com',
 
+    // Delivery: a flat charge, free once the goods reach the free-from amount. Pence, ex VAT,
+    // goods before discounts. The rule itself is App\Domain\Cart\Delivery\DeliveryPolicy.
+    'delivery' => [
+        'free_from' => 100_000, // GBP 1,000.00
+        'charge' => 5_000,      // GBP 50.00
+    ],
+
     // One switch for search engines. While true, every page of the site carries
     // <meta name="robots" content="noindex">. Set STORE_NOINDEX=false at launch
     // (see the Launch checklist in CLAUDE.md). It defaults to true so a new

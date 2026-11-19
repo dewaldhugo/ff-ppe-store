@@ -11,6 +11,8 @@ return [
     | and should work for you in most cases.
     |
     */
-    'driver' => 'system',
+    // 'store' is App\Domain\Pricing\Vat\StoreTaxDriver (the system driver plus the employer
+    // rate for zero-protective lines), registered in AppServiceProvider.
+    'driver' => 'store',
 
 ];

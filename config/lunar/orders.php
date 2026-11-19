@@ -3,6 +3,7 @@
 use Lunar\Base\OrderReferenceGenerator;
 use Lunar\Pipelines\Order\Creation\CleanUpOrderLines;
 use Lunar\Pipelines\Order\Creation\CreateOrderAddresses;
+use App\Domain\Orders\SnapshotVendorOffers;
 use Lunar\Pipelines\Order\Creation\CreateOrderLines;
 use Lunar\Pipelines\Order\Creation\CreateShippingLine;
 use Lunar\Pipelines\Order\Creation\FillOrderFromCart;
@@ -120,6 +121,8 @@ return [
             CreateOrderAddresses::class,
             CreateShippingLine::class,
             CleanUpOrderLines::class,
+            // After the clean up, which deletes any line whose meta differs from its cart line's.
+            SnapshotVendorOffers::class,
             MapDiscountBreakdown::class,
         ],
     ],

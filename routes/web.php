@@ -10,19 +10,20 @@ use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\BrandIndexController;
+use App\Http\Controllers\OrderConfirmationController;
 use App\Http\Middleware\RedirectTrailingSlash;
 use App\Http\Middleware\ResolveBrandSlugs;
 use App\Http\Middleware\ResolveCategoryPath;
 use App\Http\Middleware\ResolveProductSlug;
+use App\Livewire\Cart\CartPage;
 use App\Livewire\Catalogue\CategoryListing;
 use App\Livewire\Catalogue\ProductPage;
+use App\Livewire\Checkout\CheckoutPage;
 use Illuminate\Support\Facades\Route;
 
 // Pages without content yet. Each renders the standard layout with a heading,
 // "Content coming soon" and noindex.
 $placeholders = [
-    'cart' => ['/cart', 'Cart'],
-    'checkout' => ['/checkout', 'Checkout'],
     'terms' => ['/terms', 'Terms and Conditions of Sale'],
     'privacy' => ['/privacy', 'Privacy Policy'],
     'cookies' => ['/cookies', 'Cookie Policy'],
@@ -96,6 +97,18 @@ Route::middleware(RedirectTrailingSlash::class)->group(function () use ($placeho
         Route::put('/account/profile', [AccountController::class, 'updateProfile'])->name('account.profile.update');
         Route::put('/account/password', [AccountController::class, 'updatePassword'])->name('account.password.update');
     });
+
+    // The cart is for signed-in customers: guests see no prices and cannot order. Verifying the
+    // email address is not needed to shop, as it is not needed to see prices.
+    Route::get('/cart', CartPage::class)->middleware('auth:web')->name('cart');
+
+    // Checkout: signed-in customers with something in their cart (an empty cart goes back to /cart).
+    // The confirmation shows an order only to the customer who placed it.
+    Route::get('/checkout', CheckoutPage::class)->middleware('auth:web')->name('checkout');
+    Route::get('/checkout/complete/{reference}', OrderConfirmationController::class)
+        ->where('reference', '[A-Za-z0-9\-]+')
+        ->middleware('auth:web')
+        ->name('checkout.complete');
 
     // Email verification. The names are the ones Laravel's notification and request classes look for.
     Route::middleware('auth:web')->group(function (): void {

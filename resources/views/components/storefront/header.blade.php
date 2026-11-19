@@ -104,15 +104,42 @@
 
             {{-- Guests cannot see prices or order, so they get no cart. --}}
             @if ($customer)
+            {{--
+                Hovering or focusing the icon drops down the mini cart (large screens; on a touch screen
+                the icon is simply a link). The panel sits flush against the icon, so the pointer can
+                cross to it without the wrapper's mouseleave firing.
+            --}}
+            <div
+                class="relative ml-auto lg:ml-0"
+                x-data="{ open: false }"
+                x-on:mouseenter="open = true; Livewire.dispatch('mini-cart-open')"
+                x-on:mouseleave="open = false"
+                x-on:focusin="open = true; Livewire.dispatch('mini-cart-open')"
+                x-on:focusout="if (! $el.contains($event.relatedTarget)) open = false"
+                x-on:keydown.escape="open = false"
+                data-mini-cart-wrapper
+            >
             <a
                 href="{{ route('cart') }}"
-                class="relative ml-auto inline-flex h-11 w-11 items-center justify-center rounded-md text-brand-blue hover:bg-surface-muted lg:ml-0"
+                class="relative inline-flex h-11 w-11 items-center justify-center rounded-md text-brand-blue hover:bg-surface-muted lg:ml-0"
                 aria-label="Cart, {{ $cartCount }} {{ Str::plural('item', $cartCount) }}"
                 data-cart-link
+                {{-- The product page and the cart page announce the new count with a cart-updated event. --}}
+                x-data="{ count: {{ $cartCount }} }"
+                x-on:cart-updated.window="count = $event.detail.count"
+                x-bind:aria-label="'Cart, ' + count + (count === 1 ? ' item' : ' items')"
             >
                 <svg aria-hidden="true" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 7h12l-1 13H7L6 7Zm3 0V6a3 3 0 0 1 6 0v1"/></svg>
-                <span aria-hidden="true" data-cart-count class="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-teal px-1 text-xs font-bold text-brand-navy">{{ $cartCount }}</span>
+                <span aria-hidden="true" data-cart-count x-text="count" class="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-teal px-1 text-xs font-bold text-brand-navy">{{ $cartCount }}</span>
             </a>
+
+            {{-- The cart page is already open when you are on it. --}}
+            @unless (request()->routeIs('cart'))
+                <div x-show="open" x-cloak class="absolute right-0 top-full z-40 pt-2 max-lg:hidden" data-mini-cart-panel>
+                    <livewire:cart.mini-cart />
+                </div>
+            @endunless
+            </div>
             @endif
         </x-ui.container>
     </div>

@@ -5,13 +5,17 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Domain\Accounts\RateLimits;
+use App\Domain\Cart\Delivery\StoreShippingModifier;
 use App\Domain\Catalogue\Keys\CatalogueKeys;
 use App\Domain\Catalogue\Menu\CategoryMenu;
 use App\Domain\Catalogue\Urls\CollectionPath;
 use App\Domain\Catalogue\Urls\Redirects\CollectionRedirectObserver;
+use App\Domain\Pricing\Vat\StoreTaxDriver;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use Lunar\Admin\Support\Facades\LunarPanel;
+use Lunar\Base\ShippingModifiers;
+use Lunar\Facades\Taxes;
 use Lunar\Facades\Telemetry;
 use Lunar\Models\Collection;
 use Lunar\Models\CollectionGroup;
@@ -31,6 +35,12 @@ final class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Telemetry::optOut();
+
+        // VAT: the system driver plus the employer rate for zero-protective lines. Delivery: one
+        // rule, offered on every cart. See docs/cart.md.
+        // The closure is rebound to the tax manager, so it must not use $this.
+        Taxes::extend('store', fn () => app(StoreTaxDriver::class));
+        $this->app->make(ShippingModifiers::class)->add(StoreShippingModifier::class);
 
         // Customer accounts: named limiters for the account routes and the password rules
         // for register, reset and change password.

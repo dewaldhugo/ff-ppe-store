@@ -27,7 +27,7 @@ final class CatalogueFactory
     /**
      * @param  list<array{colour?: string, size?: string, stock: int}>  $variants
      */
-    public static function product(string $name, array $variants, string $status = 'published', int $price = 5000): Product
+    public static function product(string $name, array $variants, string $status = 'published', int $price = 5000, string $taxClass = 'standard'): Product
     {
         $brand = Brand::query()->firstOrCreate(['name' => 'Test Brand']);
 
@@ -50,7 +50,7 @@ final class CatalogueFactory
         foreach ($variants as $index => $data) {
             $variant = ProductVariant::query()->create([
                 'product_id' => $product->id,
-                'tax_class_id' => CatalogueKeys::taxClass('standard')->id,
+                'tax_class_id' => CatalogueKeys::taxClass($taxClass)->id,
                 'sku' => 'TEST-'.Str::upper(Str::slug($name)).'-'.$index,
                 'stock' => $data['stock'],
                 'purchasable' => 'in_stock',

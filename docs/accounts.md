@@ -6,7 +6,7 @@ Read this before touching registration, login, password reset, email verificatio
 
 Registration, login, logout ("keep me logged in"), password reset by email, email verification and My Account (view and edit contact and company details, change password). Customers are business buyers: prices stay ex VAT.
 
-Not built: address book, orders, cart, checkout (a later phase), and the items under "Known gaps".
+Not built: address book, order history, and the items under "Known gaps". The cart and checkout are built (docs/cart.md).
 
 ## Prices are for signed-in customers only
 
@@ -14,7 +14,7 @@ Guests see no prices anywhere on the storefront. A signed-in customer (the `web`
 
 - One definition: `App\Domain\Pricing\PriceVisibility::visible()`, reached through `PriceDisplay::visible()`. A staff member signed in to Lunar is a guest here.
 - Guests get no price and no prompt: the price is simply absent. `PriceDisplay::fromPrice()` returns null for guests, which covers product cards on listings, search, brand pages, the home page and related products; the product page checks `PriceDisplay::visible()`. Any new view that renders a price must do the same.
-- The header cart link and its count badge are hidden from guests. The `/cart` and `/checkout` placeholder pages still open by URL; they hold no cart yet, so when the cart is built it must require a signed-in customer.
+- The header cart link and its count badge are hidden from guests. `/cart` requires a signed-in customer (a guest is sent to log in). `/checkout` requires a signed-in customer too.
 - The product page also hides the quantity field and the add to cart button from guests (`ProductPage::addToCart()` refuses a guest too). Options and stock still show, with one exception: a guest sees every size (`*_size` options) whether it is in stock or not, as plain non-clickable tags (`data-size-readonly`, no strike-through or out of stock label), and `ProductPage::choose()` refuses a size from a guest. Colours stay clickable, because they change the gallery.
 - Guests cannot probe prices: the price filter and the two price sorts are hidden, and `price_min`, `price_max` and `sort=price-asc|price-desc` are ignored for a guest (in the URL and in Livewire updates; `CategoryListing::render()` resets them).
 - Product structured data (JSON-LD) has no `offers` for guests, so search engines see no prices either. Rich price results will not appear in search until that changes.
@@ -148,7 +148,7 @@ Over a route limit the response is a plain 429. Limits and constants are in `App
 - **No HMRC VAT verification.** The VAT number is format-checked only.
 - **No address book.** My Account holds contact and company details only. The company address and industry given at registration are saved but cannot be seen or changed in My Account, and a customer made any other way (a seeder, or a user with no customer) has neither.
 - **No approval workflow.** Anyone can register and sign in.
-- **No order history.** There is no cart, checkout or orders yet.
+- **No order history.** Customers can place an order (docs/cart.md) and see its confirmation page once, but My Account lists no orders.
 - Other devices stay signed in after a password reset or change (their "keep me logged in" cookies are ended, but live sessions are not). Adding `AuthenticateSession` to the account routes would close it.
 - No two-factor authentication for customers.
 - Email changes do not notify the old address.

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Livewire\Catalogue;
 
+use App\Domain\Cart\CartRejected;
+use App\Domain\Cart\CustomerCart;
 use App\Domain\Catalogue\Features\FeatureLabels;
 use App\Domain\Catalogue\Seo\ProductStructuredData;
 use App\Domain\Catalogue\Urls\ProductBreadcrumbs;
@@ -11,6 +13,7 @@ use App\Domain\Catalogue\Variants\VariantSelection;
 use App\Domain\Pricing\DisplayPrice;
 use App\Domain\Pricing\PriceDisplay;
 use App\Domain\Pricing\PriceVisibility;
+use App\Support\CartCount;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
@@ -72,6 +75,12 @@ final class ProductPage extends Component
 
     public bool $added = false;
 
+    /** How many went into the cart on the last add, for the confirmation. */
+    public int $addedQuantity = 0;
+
+    /** Why the cart refused the last add (stock, or the item was withdrawn). */
+    public ?string $cartError = null;
+
     private ?Product $product = null;
 
     public function mount(string $slug): void
@@ -103,17 +112,20 @@ final class ProductPage extends Component
         $this->sync($selection);
         $this->missingOption = null;
         $this->added = false;
+        $this->cartError = null;
     }
 
     public function updatedQuantity(): void
     {
         $this->added = false;
+        $this->cartError = null;
     }
 
-    public function addToCart(PriceVisibility $visibility): void
+    public function addToCart(PriceVisibility $visibility, CustomerCart $customerCart): void
     {
         $selection = $this->selection();
         $this->added = false;
+        $this->cartError = null;
 
         // Guests have no quantity field or button; refuse a hand-made update too.
         if (! $visibility->visible()) {
@@ -133,14 +145,26 @@ final class ProductPage extends Component
         }
 
         $quantity = $this->quantityValue();
+        $variant = $selection->variant();
 
-        if ($quantity === null || $quantity > (int) $selection->variant()?->stock) {
+        if ($quantity === null || $variant === null || $quantity > $variant->stock) {
             return;
         }
 
-        // The basket arrives in the next phase. For now the page confirms
-        // that the selection is valid.
+        // Lunar validates the stock again, on the quantity already in the cart plus this one.
+        try {
+            $customerCart->add($variant, $quantity);
+        } catch (CartRejected $rejected) {
+            $this->cartError = $rejected->getMessage();
+
+            return;
+        }
+
         $this->added = true;
+        $this->addedQuantity = $quantity;
+
+        // The header badge listens for this.
+        $this->dispatch('cart-updated', count: CartCount::get());
     }
 
     public function render(PriceDisplay $priceDisplay, ProductStructuredData $structuredData, ProductBreadcrumbs $breadcrumbs): View
