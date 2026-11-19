@@ -49,47 +49,47 @@
             >
         </div>
 
-        <ul class="mt-4 flex flex-wrap gap-x-[10px] gap-y-4" data-testid="brand-grid">
+        {{-- A bordered grid: the ul draws the top and left edges, every cell the right and bottom. --}}
+        <ul
+            class="mt-4 grid grid-cols-[repeat(auto-fill,minmax(112px,1fr))] border-l border-t border-border"
+            data-testid="brand-grid"
+        >
             @foreach ($tiles as $tile)
-                <li class="w-[100px] sm:w-[120px]" x-show="matches(@js(Str::lower($tile->name)))" data-brand="{{ $tile->slug }}">
+                <li class="border-b border-r border-border" x-show="matches(@js(Str::lower($tile->name)))" data-brand="{{ $tile->slug }}">
                     <a
                         href="{{ route('brands.show', $tile->slug) }}"
                         x-on:click.prevent="toggle(@js($tile->slug))"
                         x-on:keydown.space.prevent="toggle(@js($tile->slug))"
                         x-bind:role="'button'"
                         x-bind:aria-pressed="isSelected(@js($tile->slug)).toString()"
-                        class="group flex flex-col items-center text-center"
+                        x-bind:class="isSelected(@js($tile->slug)) && 'ring-2 ring-inset ring-brand-blue'"
+                        @class([
+                            'group relative flex aspect-[3/2] w-full flex-col text-center transition-colors',
+                            'bg-white text-ink hover:bg-surface-muted',
+                        ])
+                        title="{{ $tile->name }}"
                     >
-                        <span
-                            @class([
-                                'relative flex size-[92px] items-center justify-center rounded-full border border-border transition sm:size-[116px]',
-                                'bg-white' => $tile->logoUrl !== null && $tile->background === null,
-                            ])
-                            x-bind:class="isSelected(@js($tile->slug)) ? 'ring-2 ring-brand-blue' : 'group-hover:border-brand-teal'"
-                            @if ($tile->logoUrl !== null && $tile->background !== null)
-                                style="background-color: #{{ $tile->background }}"
-                            @elseif ($tile->logoUrl === null)
-                                style="background-color: #{{ $tile->monogramColours()['background'] }}; color: #{{ $tile->monogramColours()['text'] }}"
-                            @endif
-                        >
+                        {{-- Logos sit on white. A logo with its own colour is already a rounded badge in the image, so
+                             colour never fills the cell. Brands without a logo show their name as plain text on the same white. --}}
+                        <span class="flex min-h-0 flex-1 items-center justify-center p-0.5">
                             @if ($tile->logoUrl !== null)
-                                <img src="{{ $tile->logoUrl }}" alt="" loading="lazy" class="max-h-16 max-w-16 object-contain sm:max-h-20 sm:max-w-20">
+                                <img src="{{ $tile->logoUrl }}" alt="" loading="lazy" width="360" height="240" class="h-full w-full object-contain">
                             @else
-                                <span aria-hidden="true" class="text-xl font-semibold tracking-wide sm:text-3xl">{{ $tile->monogram() }}</span>
+                                <span aria-hidden="true" class="line-clamp-3 break-words px-2 text-sm font-semibold leading-tight">{{ $tile->name }}</span>
                             @endif
-
-                            <span
-                                x-show="isSelected(@js($tile->slug))"
-                                x-cloak
-                                aria-hidden="true"
-                                class="absolute -right-0.5 -top-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-brand-blue text-white"
-                            >
-                                <svg viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 0 1 0 1.4l-8 8a1 1 0 0 1-1.4 0l-4-4a1 1 0 1 1 1.4-1.4L8 12.6l7.3-7.3a1 1 0 0 1 1.4 0Z" clip-rule="evenodd"/></svg>
-                            </span>
                         </span>
 
-                        <span class="mt-2 line-clamp-2 break-words text-xs font-semibold leading-tight group-hover:underline sm:text-sm" title="{{ $tile->name }}">{{ $tile->name }}</span>
-                        <span class="sr-only">{{ $tile->productCount }} {{ Str::plural('product', $tile->productCount) }}</span>
+                        <span
+                            x-show="isSelected(@js($tile->slug))"
+                            x-cloak
+                            aria-hidden="true"
+                            class="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-brand-blue text-white"
+                        >
+                            <svg viewBox="0 0 20 20" fill="currentColor" class="h-3.5 w-3.5"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 0 1 0 1.4l-8 8a1 1 0 0 1-1.4 0l-4-4a1 1 0 1 1 1.4-1.4L8 12.6l7.3-7.3a1 1 0 0 1 1.4 0Z" clip-rule="evenodd"/></svg>
+                        </span>
+
+                        {{-- No visible label for logos: the name is for screen readers (and the tooltip). --}}
+                        <span class="sr-only">{{ $tile->name }}, {{ $tile->productCount }} {{ Str::plural('product', $tile->productCount) }}</span>
                     </a>
                 </li>
             @endforeach

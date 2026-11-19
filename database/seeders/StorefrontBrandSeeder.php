@@ -28,48 +28,47 @@ final class StorefrontBrandSeeder extends Seeder
      */
     private const array BRANDS = [
         ['maxguard', 'Maxguard', ['Maxguard'], null, null],
-        ['safety-jogger', 'Safety Jogger', ['Safety Jogger', 'Safety Jogger AC/DC', 'Safety Jogger Mickey', 'Safety Jogger Adventure'], 'images/brands/safety-jogger.png', '2D2926'],
+        ['safety-jogger', 'Safety Jogger', ['Safety Jogger', 'Safety Jogger AC/DC', 'Safety Jogger Mickey', 'Safety Jogger Adventure', 'Safety Workwear'], 'images/brands/safety-jogger.png', '2D2926'],
         ['oxypas', 'Oxypas', ['Oxypas'], 'images/brands/oxypas.png', null],
-        ['safety-workwear', 'Safety Workwear', ['Safety Workwear'], null, null],
         ['tiger-grip', 'Tiger Grip', ['Tiger Grip'], null, null],
-        ['gbs', 'GBS', ['GBS', 'GBS Med'], null, null],
-        ['mirak', 'Mirak', ['Mirak'], null, null],
-        ['centek', 'Centek', ['Centek'], null, null],
+        ['gbs', 'GBS', ['GBS', 'GBS Med'], 'images/brands/gbs.png', '094FA4'],
+        ['mirak', 'Mirak', ['Mirak'], 'images/brands/mirak.png', null],
+        ['centek', 'Centek', ['Centek'], 'images/brands/centek.png', 'EB2326'],
         ['hi-tec', 'Hi-Tec', ['Hi-Tec'], 'images/brands/hi-tec.png', null],
         ['magnum', 'Magnum', ['Magnum'], 'images/brands/magnum.png', null],
         ['dr-martens', 'Dr Martens', ['Dr Martens'], 'images/brands/dr-martens.png', null],
         ['amblers', 'Amblers', ['Amblers', 'Amblers Safety'], 'images/brands/amblers.png', null],
-        ['dikamar', 'Dikamar', ['Dikamar'], null, null],
+        ['dikamar', 'Dikamar', ['Dikamar'], 'images/brands/dikamar.png', null],
         ['dasco', 'Dasco', ['Dasco'], null, null],
-        ['cincasa', 'Cincasa', ['Cincasa'], null, null],
+        ['cincasa', 'Cincasa', ['Cincasa'], 'images/brands/cincasa.png', null],
         ['group-five', 'Group Five', ['Group Five'], null, null],
         ['mitre', 'Mitre', ['Mitre'], 'images/brands/mitre.png', null],
         ['caterpillar', 'Caterpillar', ['Caterpillar'], 'images/brands/caterpillar.png', 'FFCD05'],
         ['dunlop', 'Dunlop', ['Dunlop'], 'images/brands/dunlop.png', null],
-        ['cotswold', 'Cotswold', ['Cotswold'], null, null],
+        ['cotswold', 'Cotswold', ['Cotswold'], 'images/brands/cotswold.png', null],
         ['yachtmaster', 'Yachtmaster', ['Yachtmaster'], null, null],
-        ['celia-ruiz', 'Celia Ruiz', ['Celia Ruiz'], null, null],
-        ['fleet-foster', 'Fleet & Foster', ['Fleet & Foster'], null, null],
-        ['glagla', 'Glagla', ['Glagla'], null, null],
-        ['surf', 'Surf', ['Surf'], null, null],
-        ['divaz', 'Divaz', ['Divaz'], null, null],
+        ['celia-ruiz', 'Celia Ruiz', ['Celia Ruiz'], 'images/brands/celia-ruiz.png', null],
+        ['fleet-foster', 'Fleet & Foster', ['Fleet & Foster'], 'images/brands/fleet-foster.png', null],
+        ['glagla', 'Glagla', ['Glagla'], 'images/brands/glagla.png', null],
+        ['surf', 'Surf', ['Surf'], 'images/brands/surf.png', null],
+        ['divaz', 'Divaz', ['Divaz'], 'images/brands/divaz.png', null],
         ['cherry-blossom', 'Cherry Blossom', ['Cherry Blossom'], null, null],
         ['the-flexx', 'The Flexx', ['The Flexx'], 'images/brands/the-flexx.png', null],
         ['blundstone', 'Blundstone', ['Blundstone'], 'images/brands/blundstone.png', '002D72'],
-        ['us-brass', 'US Brass', ['US Brass'], null, null],
-        ['nora', 'Nora', ['Nora'], null, null],
+        ['us-brass', 'US Brass', ['US Brass'], 'images/brands/us-brass.png', null],
+        ['nora', 'Nora', ['Nora'], 'images/brands/nora.png', null],
         ['puma', 'Puma', ['Puma Safety', 'Puma Workwear'], 'images/brands/puma.png', null],
         ['stanley', 'Stanley', ['Stanley'], 'images/brands/stanley.png', 'FBD504'],
-        ['grainger', 'Grainger', ['Grainger'], null, null],
+        ['grainger', 'Grainger', ['Grainger'], 'images/brands/grainger.png', null],
         ['skechers', 'Skechers', ['Skechers Workwear', 'Skechers Performance'], 'images/brands/skechers.png', null],
-        ['riva', 'Riva', ['Riva'], null, null],
-        ['fantasy', 'Fantasy', ['Fantasy'], null, null],
+        ['riva', 'Riva', ['Riva'], 'images/brands/riva.png', null],
+        ['fantasy', 'Fantasy', ['Fantasy'], 'images/brands/fantasy.png', null],
         ['albatros', 'Albatros', ['Albatros'], 'images/brands/albatros.png', null],
-        ['steel-flex', 'Steel Flex', ['Steel Flex'], null, null],
+        ['steel-flex', 'Steel Flex', ['Steel Flex'], 'images/brands/steel-flex.png', null],
         ['timberland-pro', 'Timberland Pro', ['Timberland Pro'], 'images/brands/timberland-pro.png', null],
-        ['shoes-for-crews', 'Shoes For Crews', ['Shoes For Crews'], null, null],
+        ['shoes-for-crews', 'Shoes For Crews', ['Shoes For Crews'], 'images/brands/shoes-for-crews.png', null],
         ['sperry', 'Sperry', ['Sperry'], 'images/brands/sperry.png', null],
-        ['the-clean-boot', 'The Clean Boot', ['The Clean Boot'], null, null],
+        ['the-clean-boot', 'The Clean Boot', ['The Clean Boot'], 'images/brands/the-clean-boot.png', null],
         ['fitflop', 'Fitflop', ['Fitflop'], 'images/brands/fitflop.png', null],
         ['dune', 'Dune', ['Dune'], 'images/brands/dune.png', null],
         ['boudavida', 'Boudavida', ['Boudavida'], null, null],
@@ -77,10 +76,10 @@ final class StorefrontBrandSeeder extends Seeder
         ['superga', 'Superga', ['Superga'], 'images/brands/superga.png', null],
         ['helly-hansen', 'Helly Hansen', ['Helly Hansen Workwear', 'Helly Hansen Sport'], 'images/brands/helly-hansen.png', 'C71620'],
         ['umbro', 'Umbro', ['Umbro'], 'images/brands/umbro.png', null],
-        ['fento', 'Fento', ['Fento'], null, null],
+        ['fento', 'Fento', ['Fento'], 'images/brands/fento.png', null],
         ['dickies', 'Dickies', ['Dickies'], 'images/brands/dickies.png', null],
         ['herschel-bags', 'Herschel Bags', ['Herschel Bags'], 'images/brands/herschel-bags.png', null],
-        ['heydude', 'HEYDUDE', ['HEYDUDE'], null, null],
+        ['heydude', 'HEYDUDE', ['HEYDUDE'], 'images/brands/heydude.png', null],
         ['ted-baker', 'Ted Baker', ['Ted Baker', 'Ted Baker Sport'], 'images/brands/ted-baker.png', null],
         ['castore', 'Castore', ['Castore'], 'images/brands/castore.png', null],
         ['mascot', 'Mascot', ['Mascot'], 'images/brands/mascot.png', '000000'],
@@ -98,9 +97,17 @@ final class StorefrontBrandSeeder extends Seeder
         ['aigle', 'Aigle', ['Aigle'], 'images/brands/aigle.png', null],
         ['bearpaw', 'Bearpaw', ['Bearpaw'], 'images/brands/bearpaw.png', null],
         ['cruyff-shoes', 'Cruyff Shoes', ['Cruyff Shoes'], 'images/brands/cruyff-shoes.png', null],
-        ['zavetti-canada', 'Zavetti Canada', ['Zavetti Canada'], null, null],
+        ['zavetti-canada', 'Zavetti Canada', ['Zavetti Canada'], 'images/brands/zavetti-canada.png', null],
         ['dewalt', 'Dewalt', ['Dewalt'], 'images/brands/dewalt.png', null],
     ];
+
+    /**
+     * Tiles that were folded into another tile; removed once their members
+     * have moved, so a database seeded earlier loses the empty tile.
+     *
+     * @var list<string>
+     */
+    private const array RETIRED = ['safety-workwear'];
 
     public function run(): void
     {
@@ -129,6 +136,8 @@ final class StorefrontBrandSeeder extends Seeder
                     );
                 }
             }
+
+            StorefrontBrand::query()->whereIn('slug', self::RETIRED)->delete();
         });
     }
 }
