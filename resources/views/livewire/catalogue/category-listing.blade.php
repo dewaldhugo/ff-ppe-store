@@ -83,12 +83,7 @@
                                 <p class="mt-3 flex flex-wrap justify-center gap-1.5" data-swatches>
                                     <span class="sr-only">Colours: {{ implode(', ', array_column($swatches, 'name')) }}</span>
                                     @foreach ($swatches as $swatch)
-                                        <span
-                                            data-swatch
-                                            aria-hidden="true"
-                                            class="inline-block h-4 w-4 rounded-full border border-border-strong bg-disabled-surface"
-                                            @if ($swatch['hex']) style="background-color: #{{ $swatch['hex'] }}" @endif
-                                        ></span>
+                                        <x-ui.swatch :hexes="$swatch['hexes']" data-swatch aria-hidden="true" class="h-4 w-4" />
                                     @endforeach
                                 </p>
                             @endif

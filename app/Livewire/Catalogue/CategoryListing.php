@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Catalogue;
 
 use App\Domain\Catalogue\Features\FeatureLabels;
+use App\Domain\Catalogue\Options\ColourSwatch;
 use App\Domain\Catalogue\Search\CatalogueSearch;
 use App\Domain\Catalogue\Search\FacetValue;
 use App\Domain\Catalogue\Search\ListingQuery;
@@ -315,7 +316,7 @@ final class CategoryListing extends Component
      * The distinct colours a product comes in, for the swatches on its card.
      * Display only: the swatches are not links and show no selection.
      *
-     * @return list<array{name: string, hex: ?string}>
+     * @return list<array{name: string, hexes: list<string>}>
      */
     public function swatches(Product $product): array
     {
@@ -333,7 +334,7 @@ final class CategoryListing extends Component
 
             $swatches[$name] ??= [
                 'name' => $name,
-                'hex' => is_string($hex) && preg_match('/^[0-9a-fA-F]{3,8}$/', $hex) === 1 ? $hex : null,
+                'hexes' => ColourSwatch::hexes($name, is_string($hex) ? $hex : null),
             ];
         }
 
@@ -345,7 +346,7 @@ final class CategoryListing extends Component
      * value a customer-facing label.
      *
      * @param  array<string, list<FacetValue>>  $facets
-     * @return list<array{name: string, title: string, values: list<array{value: string, label: string, tooltip: ?string, hex: ?string, count: int, selected: bool}>}>
+     * @return list<array{name: string, title: string, values: list<array{value: string, label: string, tooltip: ?string, hexes: list<string>, count: int, selected: bool}>}>
      */
     private function facetGroups(array $facets): array
     {
@@ -373,7 +374,9 @@ final class CategoryListing extends Component
                         default => $value->value,
                     },
                     'tooltip' => $name === 'features' ? FeatureLabels::tooltip($value->value) : null,
-                    'hex' => $name === 'colour' ? ($colours[$value->value]['hex'] ?? null) : null,
+                    'hexes' => $name === 'colour'
+                        ? ColourSwatch::hexes($colours[$value->value]['name'] ?? $value->value, $colours[$value->value]['hex'] ?? null)
+                        : [],
                     'count' => $value->count,
                     'selected' => $value->selected,
                 ];
