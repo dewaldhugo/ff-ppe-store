@@ -10,6 +10,8 @@ use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\BrandIndexController;
+use App\Http\Controllers\CardReturnController;
+use App\Http\Controllers\FavouriteController;
 use App\Http\Controllers\OrderConfirmationController;
 use App\Http\Middleware\RedirectTrailingSlash;
 use App\Http\Middleware\ResolveBrandSlugs;
@@ -102,9 +104,19 @@ Route::middleware(RedirectTrailingSlash::class)->group(function () use ($placeho
     // email address is not needed to shop, as it is not needed to see prices.
     Route::get('/cart', CartPage::class)->middleware('auth:web')->name('cart');
 
+    // Favourites: saved products, for signed-in customers (a guest has no account to save them to).
+    Route::get('/favourites', [FavouriteController::class, 'index'])->middleware('auth:web')->name('favourites');
+    // The parameter is not called `product`: Lunar binds that name to its Product model, by its own key.
+    Route::post('/favourites/{productId}', [FavouriteController::class, 'toggle'])
+        ->where('productId', '[0-9]+')
+        ->middleware('auth:web')
+        ->name('favourites.toggle');
+
     // Checkout: signed-in customers with something in their cart (an empty cart goes back to /cart).
     // The confirmation shows an order only to the customer who placed it.
     Route::get('/checkout', CheckoutPage::class)->middleware('auth:web')->name('checkout');
+    // Stripe sends the customer back here after the card form, with the payment intent in the query.
+    Route::get('/checkout/card-return', CardReturnController::class)->middleware('auth:web')->name('checkout.card-return');
     Route::get('/checkout/complete/{reference}', OrderConfirmationController::class)
         ->where('reference', '[A-Za-z0-9\-]+')
         ->middleware('auth:web')

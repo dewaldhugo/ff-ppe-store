@@ -98,8 +98,13 @@ it('shows a guest no price and a registered customer the list price', function (
         'password' => 'a-good-password-1',
         'password_confirmation' => 'a-good-password-1',
     ]);
-    $this->assertAuthenticated('web');
+    $this->assertGuest('web');
     expect(User::firstOrFail()->customers->first()->customerGroups->pluck('id')->all())->toBe([CustomerGroup::getDefault()->id]);
+
+    // Staff activate the login, then the customer signs in.
+    User::firstOrFail()->forceFill(['approved_at' => now()])->save();
+    $this->post(route('login'), ['email' => 'jo@builder.example', 'password' => 'a-good-password-1']);
+    $this->assertAuthenticated('web');
 
     expect(implode(' ', pagePrices($this->get(route('product', 'safety-jogger-ligero'))->assertOk()->getContent())))
         ->toContain('£68.90 ex VAT');

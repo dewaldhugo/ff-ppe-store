@@ -17,6 +17,7 @@
         "laravel/tinker": "^3.0",
         "livewire/livewire": "^3.8.7",
         "lunarphp/lunar": "^1.5",
+        "lunarphp/stripe": "1.5.0",
         "meilisearch/meilisearch-php": "^1.17"
     },
     "require-dev": {

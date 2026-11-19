@@ -10,7 +10,9 @@ use App\Domain\Cart\CartLineViews;
 use App\Domain\Cart\CartSummary;
 use App\Domain\Cart\CustomerCart;
 use App\Domain\Cart\Delivery\DeliveryPolicy;
+use App\Domain\Checkout\CardPayments;
 use App\Domain\Checkout\CheckoutRejected;
+use App\Domain\Checkout\PaymentMethods;
 use App\Domain\Checkout\PlaceOrder;
 use App\Domain\Pricing\DisplayPrice;
 use Closure;
@@ -69,7 +71,8 @@ final class CheckoutPage extends Component
 
     public string $bill_postcode = '';
 
-    public string $payment_method = PlaceOrder::PAYMENT_TYPE;
+    /** One of PaymentMethods::available() for this customer, or empty when none can be used. */
+    public string $payment_method = '';
 
     public string $promo_code = '';
 
@@ -92,10 +95,14 @@ final class CheckoutPage extends Component
 
         $this->promo_applied = $current->coupon_code;
 
+        // A card payment that did not go through sends the customer back here with the reason.
+        $this->formError = session()->pull('checkout_error');
+
         $user = Auth::guard('web')->user();
         $customer = $user->latestCustomer();
         $address = $customer?->addresses()->where('billing_default', true)->first() ?? $customer?->addresses()->first();
 
+        $this->payment_method = PaymentMethods::default($user);
         $this->full_name = (string) $user->name;
         $this->email = (string) $user->email;
         $this->phone = (string) ($user->phone ?? '');
@@ -166,15 +173,86 @@ final class CheckoutPage extends Component
         $this->promoError = null;
     }
 
+    /**
+     * Places an order on 30 day account terms. Card orders go through startCardPayment() instead:
+     * the Place order button runs it for them, so this is only reached by a form posted without it.
+     */
     public function placeOrder(PlaceOrder $placeOrder): mixed
     {
         $this->formError = null;
-        $this->ship_postcode = Postcode::normalise($this->ship_postcode) ?? '';
-        $this->bill_postcode = Postcode::normalise($this->bill_postcode) ?? '';
-        $this->vat_number = VatNumber::normalise($this->vat_number) ?? '';
+        $this->tidy();
 
         $this->validate();
 
+        if ($this->payment_method !== PaymentMethods::ACCOUNT) {
+            $this->formError = 'Please use the Pay by card button to pay for this order.';
+
+            return null;
+        }
+
+        try {
+            $order = $placeOrder(Auth::guard('web')->user(), $this->details());
+        } catch (CheckoutRejected $rejected) {
+            $this->formError = $rejected->getMessage();
+
+            return null;
+        }
+
+        return $this->redirectRoute('checkout.complete', $order->reference);
+    }
+
+    /**
+     * Step one of a card payment, called by the browser after the card form has validated: checks
+     * the checkout, builds the draft order and the Stripe payment intent, and hands back what Stripe
+     * needs to take the payment. Null when something needs fixing (the errors are shown on the page).
+     *
+     * @return array{client_secret: string, return_url: string, order_reference: string}|null
+     */
+    public function startCardPayment(PlaceOrder $placeOrder): ?array
+    {
+        $this->formError = null;
+        $this->tidy();
+
+        $this->validate();
+
+        try {
+            return $placeOrder->startCard(Auth::guard('web')->user(), $this->details());
+        } catch (CheckoutRejected $rejected) {
+            $this->formError = $rejected->getMessage();
+
+            return null;
+        }
+    }
+
+    /**
+     * The cart's current total in pence, so the card form shows the right amount for wallets
+     * before the payment is confirmed.
+     */
+    public function cardAmount(CustomerCart $customerCart, CartSummary $summary, CardPayments $card): int
+    {
+        $cart = $customerCart->current();
+
+        if ($cart === null || $cart->lines->isEmpty()) {
+            return 0;
+        }
+
+        return $card->amount($this->deliveryReady() ? $summary->withDelivery($cart) : $cart->recalculate());
+    }
+
+    private function tidy(): void
+    {
+        $this->ship_postcode = Postcode::normalise($this->ship_postcode) ?? '';
+        $this->bill_postcode = Postcode::normalise($this->bill_postcode) ?? '';
+        $this->vat_number = VatNumber::normalise($this->vat_number) ?? '';
+    }
+
+    /**
+     * What PlaceOrder needs, from the fields on the page.
+     *
+     * @return array<string, mixed>
+     */
+    private function details(): array
+    {
         $shipping = [
             'line_one' => $this->ship_line_one,
             'line_two' => $this->ship_line_two,
@@ -183,32 +261,25 @@ final class CheckoutPage extends Component
             'postcode' => $this->ship_postcode,
         ];
 
-        try {
-            $order = $placeOrder(Auth::guard('web')->user(), [
-                'full_name' => $this->full_name,
-                'email' => $this->email,
-                'phone' => $this->phone,
-                'company_name' => $this->company_name,
-                'vat_number' => $this->vat_number !== '' ? $this->vat_number : null,
-                'po_number' => $this->po_number !== '' ? $this->po_number : null,
-                'notes' => $this->notes !== '' ? $this->notes : null,
-                'site_type' => $this->site_type,
-                'shipping' => $shipping,
-                'billing' => $this->billing_same ? $shipping : [
-                    'line_one' => $this->bill_line_one,
-                    'line_two' => $this->bill_line_two,
-                    'city' => $this->bill_city,
-                    'county' => $this->bill_county,
-                    'postcode' => $this->bill_postcode,
-                ],
-            ]);
-        } catch (CheckoutRejected $rejected) {
-            $this->formError = $rejected->getMessage();
-
-            return null;
-        }
-
-        return $this->redirectRoute('checkout.complete', $order->reference);
+        return [
+            'payment_method' => $this->payment_method,
+            'full_name' => $this->full_name,
+            'email' => $this->email,
+            'phone' => $this->phone,
+            'company_name' => $this->company_name,
+            'vat_number' => $this->vat_number !== '' ? $this->vat_number : null,
+            'po_number' => $this->po_number !== '' ? $this->po_number : null,
+            'notes' => $this->notes !== '' ? $this->notes : null,
+            'site_type' => $this->site_type,
+            'shipping' => $shipping,
+            'billing' => $this->billing_same ? $shipping : [
+                'line_one' => $this->bill_line_one,
+                'line_two' => $this->bill_line_two,
+                'city' => $this->bill_city,
+                'county' => $this->bill_county,
+                'postcode' => $this->bill_postcode,
+            ],
+        ];
     }
 
     public function render(CustomerCart $customerCart, CartLineViews $views, CartSummary $summary, DeliveryPolicy $delivery): View
@@ -230,6 +301,11 @@ final class CheckoutPage extends Component
             'totals' => $hasLines ? $summary->totals($cart) : null,
             'deliveryOption' => $ready ? $this->deliveryOption($delivery, $cart) : null,
             'canOrder' => $views->canCheckout($lines),
+            'accountTerms' => Auth::guard('web')->user()->hasAccountTerms(),
+            'cardLive' => PaymentMethods::cardLive(),
+            'stripeKey' => (string) config('services.stripe.public_key'),
+            'cardAmount' => $hasLines ? app(CardPayments::class)->amount($cart) : 0,
+            'canPay' => $this->payment_method !== '',
             'suffix' => DisplayPrice::SUFFIX,
         ])->layout('components.layouts.checkout', ['title' => 'Checkout']);
     }
@@ -288,7 +364,7 @@ final class CheckoutPage extends Component
             'bill_city' => $billing(['required', 'string', 'max:100']),
             'bill_county' => ['nullable', 'string', 'max:100'],
             'bill_postcode' => $billing(['required', $postcode]),
-            'payment_method' => ['required', Rule::in([PlaceOrder::PAYMENT_TYPE])],
+            'payment_method' => ['required', Rule::in(PaymentMethods::available(Auth::guard('web')->user()))],
         ];
     }
 
@@ -320,6 +396,8 @@ final class CheckoutPage extends Component
     {
         return [
             'phone.regex' => 'Enter a phone number the courier can call.',
+            'payment_method.required' => 'There is no payment method available on your account yet.',
+            'payment_method.in' => 'That payment method is not available on your account.',
         ];
     }
 }

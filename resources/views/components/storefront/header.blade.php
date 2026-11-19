@@ -104,13 +104,27 @@
 
             {{-- Guests cannot see prices or order, so they get no cart. --}}
             @if ($customer)
+            {{-- Saved products. The count is kept current by the heart buttons (favourites-updated). --}}
+            <a
+                href="{{ route('favourites') }}"
+                class="relative ml-auto inline-flex h-11 w-11 items-center justify-center rounded-md text-brand-blue hover:bg-surface-muted lg:ml-0"
+                aria-label="Favourites, {{ $favouriteCount }} saved"
+                data-favourites-link
+                x-data="{ count: {{ $favouriteCount }} }"
+                x-on:favourites-updated.window="count = $event.detail.count"
+                x-bind:aria-label="'Favourites, ' + count + ' saved'"
+            >
+                <svg aria-hidden="true" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7c0 5.6-7.5 10.2-7.5 10.2Z"/></svg>
+                <span aria-hidden="true" data-favourites-count x-show="count > 0" x-text="count" @if ($favouriteCount === 0) style="display: none" @endif class="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-teal px-1 text-xs font-bold text-brand-navy">{{ $favouriteCount }}</span>
+            </a>
+
             {{--
                 Hovering or focusing the icon drops down the mini cart (large screens; on a touch screen
                 the icon is simply a link). The panel sits flush against the icon, so the pointer can
                 cross to it without the wrapper's mouseleave firing.
             --}}
             <div
-                class="relative ml-auto lg:ml-0"
+                class="relative lg:ml-0"
                 x-data="{ open: false }"
                 x-on:mouseenter="open = true; Livewire.dispatch('mini-cart-open')"
                 x-on:mouseleave="open = false"

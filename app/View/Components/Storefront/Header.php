@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\View\Components\Storefront;
 
 use App\Domain\Catalogue\Menu\CategoryMenu;
+use App\Domain\Favourites\Favourites;
 use App\Support\CartCount;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
@@ -24,6 +25,7 @@ final class Header extends Component
             'categories' => $this->menu->tree(),
             'categoryCounts' => $this->menu->counts(),
             'cartCount' => CartCount::get(),
+            'favouriteCount' => app(Favourites::class)->count(),
             'customer' => $customer,
             // Shown after the customer's name; a user with no Lunar customer or no company shows the name alone.
             'companyName' => filled($company) ? (string) $company : null,

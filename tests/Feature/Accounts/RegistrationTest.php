@@ -5,11 +5,11 @@ declare(strict_types=1);
 use App\Domain\Accounts\RegisterCustomer;
 use App\Domain\Accounts\VatNumber;
 use App\Models\User;
+use App\Notifications\CustomerRegistrationReceived;
 use App\Notifications\CustomerVerifyEmail;
-use Illuminate\Auth\Events\Registered;
+use Illuminate\Contracts\Notifications\Dispatcher;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\Notification;
 use Laravel\Scout\EngineManager;
@@ -76,7 +76,7 @@ it('shows the register form with every field, the honeypot and the terms line', 
 });
 
 it('creates a user and a Lunar customer attached to it, with the default customer group', function (): void {
-    $this->post(route('register'), registration())->assertRedirect(route('shop'));
+    $this->post(route('register'), registration())->assertRedirect(route('home'));
 
     $user = User::query()->where('email', 'jo@builder.example')->firstOrFail();
     $customer = $user->customers()->firstOrFail();
@@ -128,15 +128,29 @@ it('accepts the postcode however it is typed, and leaves the optional address li
     'already tidy' => ['EC1A 1BB', 'EC1A 1BB'],
 ]);
 
-it('logs the new customer in on the web guard only and regenerates the session', function (): void {
+it('does not log the new customer in, and starts them unapproved with card payment only', function (): void {
     $this->get(route('register'));
     $before = session()->getId();
 
-    $this->post(route('register'), registration());
+    $this->post(route('register'), registration())
+        ->assertRedirect(route('home'))
+        ->assertSessionHas('status', 'Your registration was successful. We will contact you shortly.');
 
-    $this->assertAuthenticated('web');
+    // The home page shows it once, in the storefront's notice banner.
+    $this->get(route('home'))->assertOk()
+        ->assertSee('data-flash', false)
+        ->assertSee('Your registration was successful. We will contact you shortly.');
+    $this->get(route('home'))->assertDontSee('data-flash', false);
+
+    $this->assertGuest('web');
     $this->assertGuest('staff');
     expect(session()->getId())->not->toBe($before);
+
+    $user = User::query()->where('email', 'jo@builder.example')->firstOrFail();
+    expect($user->isApproved())->toBeFalse()
+        ->and($user->approved_at)->toBeNull()
+        ->and($user->hasAccountTerms())->toBeFalse()
+        ->and($user->email_verified_at)->toBeNull();
 });
 
 it('registers with only the required fields', function (): void {
@@ -267,7 +281,7 @@ it('still registers the customer when the search engine is down, and indexes aft
 
     $baseline = DB::transactionLevel();
 
-    $this->post(route('register'), registration())->assertRedirect(route('shop'));
+    $this->post(route('register'), registration())->assertRedirect(route('home'));
 
     expect(User::query()->where('email', 'jo@builder.example')->exists())->toBeTrue()
         ->and($engine->levels)->toBe([$baseline]);
@@ -278,7 +292,7 @@ it('completes registration and reports the problem when no default customer grou
     Exceptions::fake();
     CustomerGroup::query()->update(['default' => false]);
 
-    $this->post(route('register'), registration())->assertRedirect(route('shop'));
+    $this->post(route('register'), registration())->assertRedirect(route('home'));
 
     $customer = User::query()->where('email', 'jo@builder.example')->firstOrFail()->customers()->firstOrFail();
 
@@ -286,30 +300,43 @@ it('completes registration and reports the problem when no default customer grou
     Exceptions::assertReported(fn (RuntimeException $e): bool => str_contains($e->getMessage(), 'No default customer group exists'));
 });
 
-it('queues the verification email when verification is on', function (): void {
+it('emails the new customer that they will be told when their login is activated', function (): void {
     $this->post(route('register'), registration());
 
     $user = User::query()->where('email', 'jo@builder.example')->firstOrFail();
-    Notification::assertSentTo($user, CustomerVerifyEmail::class);
+    Notification::assertSentToTimes($user, CustomerRegistrationReceived::class, 1);
+
+    $html = (string) (new CustomerRegistrationReceived)->toMail($user)->render();
+    expect($html)->toContain('as soon as your login has been activated');
 });
 
-it('sends no verification email when verification is off, and still registers', function (): void {
-    config()->set('store.require_email_verification', false);
+it('sends no verification email at registration, whatever the verification switch says', function (bool $required): void {
+    config()->set('store.require_email_verification', $required);
 
-    $this->post(route('register'), registration())->assertRedirect(route('shop'));
+    $this->post(route('register'), registration())->assertRedirect(route('home'));
 
-    expect(User::query()->where('email', 'jo@builder.example')->exists())->toBeTrue();
-    Notification::assertNothingSent();
-});
+    Notification::assertNotSentTo(User::query()->firstOrFail(), CustomerVerifyEmail::class);
+})->with([true, false]);
 
 it('does not fail the registration when the email cannot be queued', function (): void {
     Exceptions::fake();
-    Event::listen(Registered::class, fn () => throw new RuntimeException('Mailer is down'));
+    app()->instance(Dispatcher::class, new class implements Dispatcher
+    {
+        public function send($notifiables, $notification): void
+        {
+            throw new RuntimeException('Mailer is down');
+        }
 
-    $this->post(route('register'), registration())->assertRedirect(route('shop'));
+        public function sendNow($notifiables, $notification, ?array $channels = null): void
+        {
+            throw new RuntimeException('Mailer is down');
+        }
+    });
+
+    $this->post(route('register'), registration())->assertRedirect(route('home'));
 
     expect(User::query()->where('email', 'jo@builder.example')->exists())->toBeTrue();
-    $this->assertAuthenticated('web');
+    $this->assertGuest('web');
     Exceptions::assertReported(fn (RuntimeException $e): bool => $e->getMessage() === 'Mailer is down');
 });
 

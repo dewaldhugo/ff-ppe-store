@@ -28,6 +28,18 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    // Card payments (docs/cart.md, Card payments). Used by lunarphp/stripe, which reads these exact
+    // keys: `key` is the secret key, `public_key` the publishable key, and `webhooks.lunar` the
+    // signing secret of the webhook endpoint (/stripe/webhook). Card payment is off until the
+    // secret and publishable keys are both set (App\Domain\Checkout\PaymentMethods).
+    'stripe' => [
+        'key' => env('STRIPE_SECRET_KEY'),
+        'public_key' => env('STRIPE_PUBLISHABLE_KEY'),
+        'webhooks' => [
+            'lunar' => env('STRIPE_WEBHOOK_SECRET'),
+        ],
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),
