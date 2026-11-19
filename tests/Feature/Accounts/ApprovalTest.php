@@ -7,6 +7,7 @@ use App\Domain\Accounts\SetCustomerAccess;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Models\User;
 use App\Notifications\CustomerAccountActivated;
+use App\Notifications\CustomerRegistrationReceived;
 use App\Support\Queues;
 use Illuminate\Contracts\Notifications\Dispatcher;
 use Illuminate\Support\Facades\Exceptions;
@@ -112,7 +113,7 @@ it('puts the login URL and username in the activation email, and never a passwor
 
 it('queues the registration and activation emails on the default queue', function (): void {
     expect((new CustomerAccountActivated)->queue)->toBe(Queues::DEFAULT)
-        ->and((new \App\Notifications\CustomerRegistrationReceived)->queue)->toBe(Queues::DEFAULT);
+        ->and((new CustomerRegistrationReceived)->queue)->toBe(Queues::DEFAULT);
 });
 
 it('keeps the activation when the email cannot be sent, and reports the failure', function (): void {
