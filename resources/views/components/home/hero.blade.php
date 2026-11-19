@@ -18,9 +18,9 @@
         silently stops looks broken.
     --}}
     @php
-        // The photos in the slideshow, by number (public/images/hero-bg-N.jpg). 4, 5 and 6 are left out;
+        // The photos in the slideshow, by number (public/images/hero-bg-N.jpg). 3, 4, 5 and 6 are left out;
         // their files are still in public/images.
-        $heroImages = [1, 2, 3, 7, 8, 9];
+        $heroImages = [1, 2, 7, 8, 9, 10];
         $heroCount = count($heroImages);
         $heroStart = random_int(0, $heroCount - 1);
         $heroOrder = array_map(fn (int $step): int => $heroImages[($heroStart + $step) % $heroCount], range(0, $heroCount - 1));
