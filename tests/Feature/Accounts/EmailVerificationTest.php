@@ -217,23 +217,21 @@ describe('the account.verified gate', function (): void {
 });
 
 it('reads the switch from STORE_REQUIRE_EMAIL_VERIFICATION, true unless it is a false value', function (): void {
+    // env() reads Laravel's env repository, which a local .env also fills, so set and clear it there.
     $read = function (?string $value): bool {
-        $previous = $_SERVER['STORE_REQUIRE_EMAIL_VERIFICATION'] ?? null;
+        $repository = Illuminate\Support\Env::getRepository();
+        $previous = $repository->get('STORE_REQUIRE_EMAIL_VERIFICATION');
 
-        if ($value === null) {
-            unset($_SERVER['STORE_REQUIRE_EMAIL_VERIFICATION'], $_ENV['STORE_REQUIRE_EMAIL_VERIFICATION']);
-        } else {
-            $_SERVER['STORE_REQUIRE_EMAIL_VERIFICATION'] = $_ENV['STORE_REQUIRE_EMAIL_VERIFICATION'] = $value;
-        }
+        $value === null
+            ? $repository->clear('STORE_REQUIRE_EMAIL_VERIFICATION')
+            : $repository->set('STORE_REQUIRE_EMAIL_VERIFICATION', $value);
 
         try {
             return (require config_path('store.php'))['require_email_verification'];
         } finally {
-            unset($_SERVER['STORE_REQUIRE_EMAIL_VERIFICATION'], $_ENV['STORE_REQUIRE_EMAIL_VERIFICATION']);
-
-            if ($previous !== null) {
-                $_SERVER['STORE_REQUIRE_EMAIL_VERIFICATION'] = $previous;
-            }
+            $previous === null
+                ? $repository->clear('STORE_REQUIRE_EMAIL_VERIFICATION')
+                : $repository->set('STORE_REQUIRE_EMAIL_VERIFICATION', $previous);
         }
     };
 

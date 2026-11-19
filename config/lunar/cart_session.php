@@ -42,7 +42,10 @@ return [
     |--------------------------------------------------------------------------
     |
     | Determines whether the cart should be soft deleted when the user logs out.
+    | False here: customers are repeat business buyers, so the cart is kept and
+    | comes back when they log in again. Logging out still clears the cart from
+    | the session, so the next visitor on that browser does not see it.
     |
     */
-    'delete_on_forget' => true,
+    'delete_on_forget' => false,
 ];

@@ -17,10 +17,11 @@ The ingestion module writes data in exactly this shape. The storefront depends o
 
 ## VAT
 
-- Specified, not yet built (checkout is a placeholder page): the storefront asks at checkout whether the customer is buying for employees. If yes, `zero-protective` lines are charged at 20%; otherwise at 0%. Store the answer on the order (meta `buying_for_employees`). Until then the product page only flags that VAT may apply for employers.
+- **Decision (2026-11-19): every customer is a vetted business buying for its employees**, so `zero-protective` lines are charged at 20%, always. There is no checkout question; the order records `buying_for_employees = true` in its meta. Only `zero-childrens` lines are zero-rated: the cart, the checkout and the confirmation label them "Zero-rated: 0% VAT", and every line shows its VAT rate and amount. The product page still carries the `vatAppliesForEmployers` flag on `DisplayPrice`; it has no visible effect.
+- **Delivery** is one flat charge, free once the goods reach the free-from amount: GBP 50 ex VAT, free from GBP 1,000 ex VAT of goods (before discounts, before delivery). Both amounts are in `config/store.php` (`delivery`, pence) and the rule is `App\Domain\Cart\Delivery\DeliveryPolicy`. Delivery is standard rated (20%): an assumption, not confirmed with the accountant.
 - The storefront displays, sorts and filters every price ex VAT, with an `ex VAT` suffix (`DisplayPrice::SUFFIX`). There is no inc/ex VAT toggle: the store sells to business buyers. Structured data states each offer ex VAT explicitly (`priceSpecification` with `valueAddedTaxIncluded: false`).
 - The compare price is the manufacturer's RRP, ex VAT, and is always labelled as that: never a bare struck-through amount.
-- In Lunar the `zero-protective` class carries the individual-use rate (0%). The 20% employer rate is to be applied by the tax driver at checkout (not yet built), not by a second tax class.
+- In Lunar the `zero-protective` class keeps the individual-use rate (0%), so the ingestion module's tax class assignment is untouched. The 20% rate is applied by `App\Domain\Pricing\Vat\StoreTaxDriver` (`lunar.taxes.driver` is `store`), which charges a `zero-protective` variant at the `standard` class's rate in the zone, not by a second tax class.
 
 ## Contract handles (key registry)
 
@@ -123,6 +124,6 @@ Every variant has exactly one `colour` value and exactly one of `shoe_size` or `
 
 ## Orders and fulfilment
 
-Specified, not yet built: there is no order snapshot code and no admin fulfilment view in the repository yet (checkout is a placeholder page).
+Built: the snapshot (`App\Domain\Orders\SnapshotVendorOffers`, a step in Lunar's order creation pipeline in `config/lunar/orders.php`, placed after `CleanUpOrderLines`) and the checkout that creates orders (docs/cart.md). Not built: the admin fulfilment view.
 
 Orders are placed with vendors manually at launch (no vendor API ordering). When an order is created, the storefront copies from the variant's `vendor_offers` row (and its vendor) onto each order line's meta: `vendor_code`, `vendor_sku`, `vendor_product_name`, `vendor_colour`, `vendor_size`, `ean`, and `cost_price` (pence, ex VAT, at the time of the order, may be null). This is the one permitted storefront read of the vendor tables. The snapshot is the record of what was ordered from the vendor and must not change when vendor data changes later. The admin needs a per-vendor view of unfulfilled order lines showing product name, colour, size and quantity, with CSV export.

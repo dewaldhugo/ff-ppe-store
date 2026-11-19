@@ -231,9 +231,14 @@
                 </button>
 
                 @if ($added)
-                    <p role="status" class="rounded border border-success bg-success-surface p-3 text-sm text-success">
-                        Online ordering opens soon. Your selection is available.
+                    <p role="status" class="rounded border border-success bg-success-surface p-3 text-sm text-success" data-added-to-cart>
+                        {{ $addedQuantity }} added to your cart.
+                        <a href="{{ route('cart') }}" class="font-semibold underline">View cart</a>
                     </p>
+                @endif
+
+                @if ($cartError !== null)
+                    <p role="alert" class="rounded border border-danger bg-surface-muted p-3 text-sm font-semibold text-danger" data-cart-error>{{ $cartError }}</p>
                 @endif
                 @endif
             </form>

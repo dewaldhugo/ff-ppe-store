@@ -48,7 +48,7 @@ it('reads every identity value from config, with TBC as the default', function (
         return array_keys($file);
     })();
 
-    expect($defaults)->toBe(['name', 'legal_name', 'company_number', 'registered_office', 'address', 'vat_number', 'phone', 'email', 'enquiry_email', 'noindex', 'require_email_verification'])
+    expect($defaults)->toBe(['name', 'legal_name', 'company_number', 'registered_office', 'address', 'vat_number', 'phone', 'email', 'enquiry_email', 'delivery', 'noindex', 'require_email_verification'])
         ->and(file_get_contents(config_path('store.php')))->not->toContain("'The Bridge Group'");
 
     $example = (string) file_get_contents(base_path('.env.example'));

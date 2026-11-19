@@ -53,10 +53,11 @@ it('pins the View product button to the bottom of every card, so cards match in 
     // A guest sees no price, which is what used to leave the buttons floating.
     $html = $this->get($page === 'home' ? route('home') : route('category', 'safety-footwear'))->assertOk()->getContent();
 
-    $cards = substr_count($html, 'data-view-product');
+    // Blade renders the attribute as data-view-product="data-view-product", so count the buttons, not the word.
+    $cards = preg_match_all('#<span[^>]*data-view-product#', $html);
 
     expect($cards)->toBeGreaterThan(0)
-        ->and(preg_match_all('#<div class="mt-auto flex flex-col">\s*(?:<p[^>]*data-price.*?</p>\s*)?<span[^>]*data-view-product#s', $html))->toBe($cards);
+        ->and(preg_match_all('#<div class="mt-auto flex flex-col">(?:\s|<!--.*?-->)*(?:<p[^>]*data-price.*?</p>(?:\s|<!--.*?-->)*)?<span[^>]*data-view-product#s', $html))->toBe($cards);
 })->with(['home', 'listing']);
 
 it('shows an autoplaying, muted, looping video across the full width of the container, above the featured products', function (): void {

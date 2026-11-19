@@ -12,9 +12,8 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Password;
 
 it('requires email verification by default', function (): void {
-    $config = require config_path('store.php');
-
-    expect($config['require_email_verification'])->toBeTrue();
+    // The default in the file, whatever a local .env sets (it may switch verification off while there is no mailer).
+    expect(file_get_contents(config_path('store.php')))->toContain("env('STORE_REQUIRE_EMAIL_VERIFICATION', true)");
 });
 
 it('adds a nullable phone column to users', function (): void {

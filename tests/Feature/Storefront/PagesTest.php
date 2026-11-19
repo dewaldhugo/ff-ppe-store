@@ -17,8 +17,6 @@ beforeEach(function (): void {
 
 /** Route name => [URI, heading]. Placeholder pages: noindex until they have real content. */
 const PLACEHOLDERS = [
-    'cart' => ['/cart', 'Cart'],
-    'checkout' => ['/checkout', 'Checkout'],
     'terms' => ['/terms', 'Terms and Conditions of Sale'],
     'privacy' => ['/privacy', 'Privacy Policy'],
     'cookies' => ['/cookies', 'Cookie Policy'],
@@ -30,7 +28,7 @@ const PLACEHOLDERS = [
 it('has a named route for every page', function (string $name, string $uri): void {
     expect(route($name, absolute: false))->toBe($uri);
 })->with(array_merge(
-    [['home', '/'], ['shop', '/shop'], ['register', '/register'], ['login', '/login'], ['account', '/account']],
+    [['home', '/'], ['shop', '/shop'], ['register', '/register'], ['login', '/login'], ['account', '/account'], ['cart', '/cart'], ['checkout', '/checkout']],
     array_map(fn (string $name, array $page): array => [$name, $page[0]], array_keys(PLACEHOLDERS), PLACEHOLDERS),
 ));
 
@@ -114,7 +112,7 @@ it('uses route names for every link in the header and footer', function (): void
     preg_match_all('#<(?:header|footer).*?</(?:header|footer)>#s', $html, $shell);
     preg_match_all('~href="([^"#]+)"~', implode('', $shell[0]), $hrefs);
 
-    $known = collect(['home', 'shop', 'about', 'contact', 'login', 'register', 'account', 'cart', 'checkout', 'terms', 'privacy', 'cookies', 'returns', 'delivery', 'accessibility', 'search', 'size-guide', 'technical-features'])
+    $known = collect(['home', 'shop', 'brands', 'about', 'contact', 'login', 'register', 'account', 'cart', 'checkout', 'terms', 'privacy', 'cookies', 'returns', 'delivery', 'accessibility', 'search', 'size-guide', 'technical-features'])
         ->map(fn (string $name): string => route($name));
 
     $categories = collect(app(CategoryMenu::class)->tree())
@@ -157,11 +155,11 @@ it('gives the size guide and technical features the same h1 and divider as the o
     }
 });
 
-it('gives the main menu a light grey background, with the products panel staying white', function (): void {
+it('gives the main menu and its products panel the same light grey background', function (): void {
     $html = $this->get(route('about'))->assertOk()->getContent();
 
     expect($html)->toMatch('#<nav aria-label="Main"[^>]*bg-surface-nav#')
-        ->and($html)->toMatch('#id="products-menu"[^>]*bg-white#');
+        ->and($html)->toMatch('#id="products-menu"[^>]*bg-surface-nav#');
 });
 
 it('marks the current page in the main menu with brand-blue text and a teal underline, and no other', function (): void {

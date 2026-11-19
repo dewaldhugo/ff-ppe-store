@@ -47,7 +47,7 @@ The data contract in [docs/data-contract.md](docs/data-contract.md) is binding. 
 - Contract records without a native Lunar handle (tax classes, product types, tax zones, collections) are resolved by handle through `App\Domain\Catalogue\Keys\CatalogueKeys`. Never match on name.
 - Product slugs come from `App\Domain\Catalogue\Urls\GenerateProductSlug` and never change once set.
 - Listings and facets query Meilisearch only, through `App\Domain\Catalogue\Search\CatalogueSearch`.
-- Specified, not yet built: the order line vendor snapshot, the per-vendor fulfilment view and the checkout `buying_for_employees` question.
+- Built: the order line vendor snapshot and the checkout (docs/cart.md). Not built: the per-vendor fulfilment view in the admin, order emails, card payments and account terms. There is no `buying_for_employees` question: every customer is treated as buying for employees (data contract, VAT).
 
 ## Docs
 
@@ -57,6 +57,7 @@ Read the matching file before you start the work it covers.
 - Read [docs/vendorsync.md](docs/vendorsync.md) before any ingestion phase work, or before reading or writing the vendor tables.
 - Read [docs/search.md](docs/search.md) before changing the search indexer, index settings, listings or facets, or any bulk write that affects products.
 - Read [docs/accounts.md](docs/accounts.md) before touching registration, login, password reset, email verification, My Account, the `login`/`register`/`account` routes, the customer and staff guards, or the mail those send.
+- Read [docs/cart.md](docs/cart.md) before touching the cart, add to cart, the header cart badge, VAT on lines, delivery, the checkout, orders or `config/lunar/{cart*,orders,payments,taxes}.php`.
 - Read [docs/launch-checklist.md](docs/launch-checklist.md) before any deploy or go-live task.
 
 ## Conventions
@@ -65,7 +66,7 @@ Read the matching file before you start the work it covers.
 - Domain code under `app/Domain/{Area}`, Livewire components under `app/Livewire/{Area}`. Small cross-cutting helpers live in `app/Support`; Blade components under `resources/views/components/{ui,home,storefront,layouts}`.
 - Money is never a float. Use Lunar's `Price` and `Money` objects or integers in pence.
 - Use Lunar's models, actions, pipelines and events. Do not duplicate cart, pricing, tax or order logic that Lunar already provides. If Lunar cannot do something, explain why before writing custom logic.
-- Pest for tests, in `tests/Feature/{Accounts,Catalogue,Deployment,Pricing,Storefront,VendorSync}` and `tests/Unit`. Every feature ships with feature tests. Use the fixture seeder, never live vendor data.
+- Pest for tests, in `tests/Feature/{Accounts,Cart,Catalogue,Deployment,Pricing,Storefront,VendorSync}` and `tests/Unit`. Every feature ships with feature tests. Use the fixture seeder, never live vendor data.
 - Run `./vendor/bin/pint` and `./vendor/bin/pest` before declaring a task done.
 - No new composer or npm packages without stating why and asking first.
 - UK English in all customer-facing copy (colour, catalogue, favourite). Never use em dashes in copy, comments or docs.
@@ -91,7 +92,9 @@ Current routes (`routes/web.php`):
 | `logout` | POST `/logout` | `LoginController@destroy` (regenerates the session, never invalidates it) |
 | `verification.notice`, `verification.verify`, `verification.send` | `/email/verify`, `/email/verify/{id}/{hash}`, POST `/email/verification-notification` | `EmailVerificationController` (`auth:web`) |
 | `account`, `account.profile.update`, `account.password.update` | `/account`, PUT `/account/profile`, PUT `/account/password` | `AccountController` (`auth:web`, `account.verified`, noindex) |
-| placeholders | `/cart`, `/checkout`, `/terms`, `/privacy`, `/cookies`, `/returns`, `/delivery`, `/accessibility` | `pages.placeholder` (noindex) |
+| `cart` | `/cart` | `CartPage` (`auth:web`, noindex; docs/cart.md) |
+| `checkout`, `checkout.complete` | `/checkout`, `/checkout/complete/{reference}` | `CheckoutPage` (`auth:web`, noindex, own clean layout), `OrderConfirmationController` (the customer's own placed order only; docs/cart.md) |
+| placeholders | `/terms`, `/privacy`, `/cookies`, `/returns`, `/delivery`, `/accessibility` | `pages.placeholder` (noindex) |
 
 Rules:
 
