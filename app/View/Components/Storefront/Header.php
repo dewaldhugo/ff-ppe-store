@@ -22,6 +22,7 @@ final class Header extends Component
 
         return view('components.storefront.header', [
             'categories' => $this->menu->tree(),
+            'categoryCounts' => $this->menu->counts(),
             'cartCount' => CartCount::get(),
             'customer' => $customer,
             // Shown after the customer's name; a user with no Lunar customer or no company shows the name alone.

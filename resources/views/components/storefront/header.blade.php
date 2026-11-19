@@ -192,11 +192,23 @@
                 <ul class="grid gap-x-5 gap-y-5 sm:grid-cols-2 lg:grid-cols-5" data-menu-categories>
                     @foreach ($categories as $category)
                         <li>
-                            <a href="{{ $category['url'] }}" class="text-sm font-semibold text-ink hover:text-brand-blue hover:underline">{{ $category['name'] }}</a>
+                            <a href="{{ $category['url'] }}" class="flex items-baseline justify-between gap-3 text-sm font-semibold text-ink hover:text-brand-blue hover:underline">
+                                <span>{{ $category['name'] }}</span>
+                                @if (isset($categoryCounts[$category['id']]))
+                                    <span class="text-xs font-normal text-ink-muted" data-count>{{ $categoryCounts[$category['id']] }}</span>
+                                @endif
+                            </a>
                             @if ($category['children'] !== [])
                                 <ul class="mt-1.5 space-y-1">
                                     @foreach ($category['children'] as $child)
-                                        <li><a href="{{ $child['url'] }}" class="text-sm text-ink-muted hover:text-brand-blue hover:underline">{{ $child['name'] }}</a></li>
+                                        <li>
+                                            <a href="{{ $child['url'] }}" class="flex items-baseline justify-between gap-3 text-sm text-ink-muted hover:text-brand-blue hover:underline">
+                                                <span>{{ $child['name'] }}</span>
+                                                @if (isset($categoryCounts[$child['id']]))
+                                                    <span class="text-xs" data-count>{{ $categoryCounts[$child['id']] }}</span>
+                                                @endif
+                                            </a>
+                                        </li>
                                     @endforeach
                                 </ul>
                             @endif
