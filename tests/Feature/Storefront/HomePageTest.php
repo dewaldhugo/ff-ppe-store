@@ -6,7 +6,10 @@ use App\Domain\Catalogue\Home\HeroImage;
 use App\Domain\Catalogue\Home\HomeFeaturedProducts;
 use App\Domain\Catalogue\Keys\CatalogueKeys;
 use App\Models\User;
+use Illuminate\Support\Facades\Storage;
+use Lunar\Models\Product;
 use Lunar\Models\Url;
+use Tests\Support\CatalogueFactory;
 
 function heroSection(string $html): string
 {
@@ -60,24 +63,82 @@ it('pins the View product button to the bottom of every card, so cards match in 
         ->and(preg_match_all('#<div class="mt-auto flex flex-col">(?:\s|<!--.*?-->)*(?:<p[^>]*data-price.*?</p>(?:\s|<!--.*?-->)*)?<span[^>]*data-view-product#s', $html))->toBe($cards);
 })->with(['home', 'listing']);
 
-it('shows an autoplaying, muted, looping video across the full width of the container, above the featured products', function (): void {
+it('shows one autoplaying, muted video across the full width of the container, above the featured products', function (): void {
     $html = $this->get(route('home'))->assertOk()->getContent();
 
     preg_match('#<section[^>]*data-home-video.*?</section>#s', $html, $section);
     preg_match('#<video[^>]*>#s', $section[0] ?? '', $video);
+    preg_match('#<source[^>]*src="([^"]+)"[^>]*type="video/mp4"#', $section[0] ?? '', $source);
 
     expect($section)->not->toBeEmpty()
-        ->and($video[0])->toContain('src="https://frontline-footwear.com/shop/datasheets/CADOR%20Colours%20that%20work.mp4"')
+        ->and(substr_count($html, '<video'))->toBe(1)
+        ->and(array_column(config('homepage.videos'), 'src'))->toContain(html_entity_decode($source[1]))
         ->and($video[0])->toMatch('/\sautoplay\s/')
         ->and($video[0])->toMatch('/\smuted\s/')
         ->and($video[0])->toMatch('/\splaysinline\s/')
-        ->and($video[0])->toMatch('/\sloop\s/')
         ->and($video[0])->toMatch('/\scontrols\s/')
         ->and($video[0])->toContain('w-full')
         // The width of the page container (the same one as the sections around it), not the screen.
         ->and($section[0])->toContain('max-w-7xl')
         // Directly above the Featured products section.
         ->and(strpos($html, 'data-home-video'))->toBeLessThan(strpos($html, 'data-home-products'));
+});
+
+it('has the thirteen videos, each a distinct https mp4 with a label', function (): void {
+    $videos = config('homepage.videos');
+
+    expect($videos)->toHaveCount(13)
+        ->and(array_unique(array_column($videos, 'src')))->toHaveCount(13)
+        ->and(array_unique(array_column($videos, 'label')))->toHaveCount(13);
+
+    foreach ($videos as $video) {
+        expect($video['src'])->toStartWith('https://frontline-footwear.com/shop/datasheets/')
+            ->and($video['src'])->toMatch('/\.mp4(#t=0\.5)?$/')
+            ->and($video['label'])->not->toBe('');
+    }
+});
+
+it('picks a different video from page load to page load, and each one is from the list', function (): void {
+    $labels = array_column(config('homepage.videos'), 'label');
+    $seen = [];
+
+    foreach (range(1, 60) as $ignored) {
+        preg_match('#data-video-label="([^"]+)"#', $this->get(route('home'))->assertOk()->getContent(), $m);
+
+        expect($labels)->toContain(html_entity_decode($m[1]));
+        $seen[$m[1]] = true;
+    }
+
+    expect(count($seen))->toBeGreaterThan(3);
+});
+
+it('gives a video its own poster, loop and preload only when the list says so', function (): void {
+    config(['homepage.videos' => [[
+        'label' => 'CADOR colours that work',
+        'src' => 'https://frontline-footwear.com/shop/datasheets/CADOR%20Colours%20that%20work.mp4',
+        'poster' => 'https://frontline-footwear.com/v1.jpg',
+        'loop' => true,
+        'preload' => 'metadata',
+    ]]]);
+
+    preg_match('#<video[^>]*>#s', $this->get(route('home'))->getContent(), $with);
+
+    expect($with[0])->toMatch('/\sloop\s/')
+        ->and($with[0])->toContain('poster="https://frontline-footwear.com/v1.jpg"')
+        ->and($with[0])->toContain('preload="metadata"')
+        ->and($with[0])->toContain('aria-label="CADOR colours that work"');
+
+    config(['homepage.videos' => [['label' => 'Midsoles', 'src' => 'https://frontline-footwear.com/shop/datasheets/MIDSOLES_360p.mp4#t=0.5']]]);
+
+    preg_match('#<video[^>]*>#s', $this->get(route('home'))->getContent(), $without);
+
+    expect($without[0])->not->toMatch('/\sloop\s/')->and($without[0])->not->toContain('poster=');
+});
+
+it('shows no video section when the list is empty', function (): void {
+    config(['homepage.videos' => []]);
+
+    $this->get(route('home'))->assertOk()->assertDontSee('data-home-video', false);
 });
 
 it('shows Open a trade account to guests only', function (): void {
@@ -191,7 +252,7 @@ it('replaces the shop by type tiles with a Featured products section of linked p
         ->and($html)->not->toContain('Shop by type')
         ->and($section)->toMatch('#<h2[^>]*id="home-products"[^>]*>Featured products</h2>#')
         ->and($cards)->toBeGreaterThan(0)
-        ->and($cards)->toBeLessThanOrEqual(10);
+        ->and($cards)->toBeLessThanOrEqual(8);
 
     preg_match_all('#<li[^>]*data-home-product>.*?</li>#s', $section, $items);
 
@@ -204,19 +265,19 @@ it('replaces the shop by type tiles with a Featured products section of linked p
     }
 });
 
-it('shows ten products when the catalogue has at least ten that can be shown', function (): void {
+it('shows eight products when the catalogue has at least eight that can be shown', function (): void {
     $eligible = (new HomeFeaturedProducts)->pick(100)->count();
 
     $shown = substr_count(productPicksOf($this->get(route('home'))->getContent()), 'data-home-product>');
 
-    expect($shown)->toBe(min(10, $eligible));
+    expect($shown)->toBe(min(8, $eligible));
 });
 
 it('picks a different set of products from page load to page load', function (): void {
     $eligible = (new HomeFeaturedProducts)->pick(100)->count();
 
-    if ($eligible <= 10) {
-        $this->markTestSkipped('The fixture catalogue has ten or fewer products to pick from.');
+    if ($eligible <= 8) {
+        $this->markTestSkipped('The fixture catalogue has eight or fewer products to pick from.');
     }
 
     $sets = [];
@@ -294,6 +355,113 @@ it('only picks products from the Safety Footwear and PPE & Gear categories', fun
 
     foreach ($picks as $product) {
         expect($product->collections->pluck('id')->intersect($allowed))->not->toBeEmpty();
+    }
+});
+
+/**
+ * Leaves exactly these products eligible for the home page: $footwear published, priced, imaged products
+ * in Safety Footwear and $gear in PPE & Gear, and every other product a draft. The fixture catalogue is
+ * too small to test the 4 + 4 pick, so these are made here.
+ *
+ * @return array{footwear: list<int>, gear: list<int>}
+ */
+function homePickCatalogue(int $footwear, int $gear): array
+{
+    Storage::fake('products');
+
+    $image = imagecreatetruecolor(40, 40);
+    ob_start();
+    imagepng($image);
+    $png = (string) ob_get_clean();
+
+    $made = ['footwear' => [], 'gear' => []];
+
+    foreach (['footwear' => [$footwear, 'safety-footwear'], 'gear' => [$gear, 'ppe-gear']] as $key => [$count, $handle]) {
+        for ($i = 1; $i <= $count; $i++) {
+            $product = CatalogueFactory::product("Pick {$key} {$i}", [['stock' => 5]], 'published', 5000);
+            $product->collections()->attach(CatalogueKeys::collection($handle)->id, ['position' => 1]);
+            $product->addMediaFromString($png)->usingFileName("{$key}-{$i}.png")->toMediaCollection(config('lunar.media.collection'));
+            $made[$key][] = $product->id;
+        }
+    }
+
+    Product::query()->whereNotIn('id', [...$made['footwear'], ...$made['gear']])->update(['status' => 'draft']);
+
+    return $made;
+}
+
+it('shows four products from Safety Footwear and four from PPE & Gear, eight in all, with none repeated', function (): void {
+    $made = homePickCatalogue(footwear: 6, gear: 6);
+
+    foreach (range(1, 25) as $ignored) {
+        $pick = (new HomeFeaturedProducts)->pick();
+        $keys = $pick->modelKeys();
+
+        expect($pick)->toHaveCount(8)
+            ->and($keys)->toBe(array_values(array_unique($keys)))
+            ->and(count(array_intersect($keys, $made['footwear'])))->toBe(4)
+            ->and(count(array_intersect($keys, $made['gear'])))->toBe(4);
+    }
+});
+
+it('takes four from each category from different products over time', function (): void {
+    $made = homePickCatalogue(footwear: 8, gear: 8);
+    $footwearSeen = [];
+    $gearSeen = [];
+
+    foreach (range(1, 40) as $ignored) {
+        $keys = (new HomeFeaturedProducts)->pick()->modelKeys();
+        $footwearSeen = [...$footwearSeen, ...array_intersect($keys, $made['footwear'])];
+        $gearSeen = [...$gearSeen, ...array_intersect($keys, $made['gear'])];
+    }
+
+    // Eight to choose from, four taken each time: over 40 loads more than four different ones appear.
+    expect(count(array_unique($footwearSeen)))->toBeGreaterThan(4)
+        ->and(count(array_unique($gearSeen)))->toBeGreaterThan(4);
+});
+
+it('shows the eight in random order, so footwear does not always come first', function (): void {
+    $made = homePickCatalogue(footwear: 4, gear: 4);
+    $firstIsFootwear = [];
+    $orders = [];
+
+    foreach (range(1, 40) as $ignored) {
+        $keys = (new HomeFeaturedProducts)->pick()->modelKeys();
+        $firstIsFootwear[] = in_array($keys[0], $made['footwear'], true);
+        $orders[implode(',', $keys)] = true;
+    }
+
+    // Always the same eight products, but both kinds lead the row at times and the order keeps changing.
+    expect(array_unique($firstIsFootwear))->toHaveCount(2)
+        ->and(count($orders))->toBeGreaterThan(5);
+});
+
+it('fills the gap from the other category when PPE & Gear has too few products', function (): void {
+    $made = homePickCatalogue(footwear: 8, gear: 1);
+
+    $keys = (new HomeFeaturedProducts)->pick()->modelKeys();
+
+    expect($keys)->toHaveCount(8)
+        ->and($keys)->toBe(array_values(array_unique($keys)))
+        ->and(count(array_intersect($keys, $made['gear'])))->toBe(1)
+        ->and(count(array_intersect($keys, $made['footwear'])))->toBe(7);
+});
+
+it('shows fewer than eight, never padding, when the catalogue has fewer to show', function (): void {
+    homePickCatalogue(footwear: 2, gear: 1);
+
+    expect((new HomeFeaturedProducts)->pick())->toHaveCount(3);
+});
+
+it('shows each product once when it is in both categories', function (): void {
+    $made = homePickCatalogue(footwear: 5, gear: 5);
+    $shared = Product::query()->findOrFail($made['footwear'][0]);
+    $shared->collections()->attach(CatalogueKeys::collection('ppe-gear')->id, ['position' => 2]);
+
+    foreach (range(1, 20) as $ignored) {
+        $keys = (new HomeFeaturedProducts)->pick()->modelKeys();
+
+        expect($keys)->toBe(array_values(array_unique($keys)));
     }
 });
 

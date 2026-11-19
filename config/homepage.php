@@ -34,4 +34,27 @@ return [
         '',
     ],
 
+    /*
+     * The video above the featured products. One is picked at random on every page load. `src` is
+     * the full file URL (a #t=0.5 fragment makes the browser show a frame from half a second in
+     * instead of a black box). Optional: `poster` (an image shown before it plays), `loop` and
+     * `preload`. The files are hosted by frontline-footwear.com, not by this site, so a video that
+     * is moved or removed there stops playing here: check them now and then.
+     */
+    'videos' => [
+        ['label' => 'Professional applications', 'src' => 'https://frontline-footwear.com/shop/datasheets/PROFESSIONAL%20APPLICATIONS_360p.mp4#t=0.5'],
+        ['label' => 'Industrial applications', 'src' => 'https://frontline-footwear.com/shop/datasheets/INDUSTRIAL%20APPLICATIONS_360p.mp4#t=0.5'],
+        ['label' => 'Eye protection', 'src' => 'https://frontline-footwear.com/shop/datasheets/EYE%20PROTECTION_360p.mp4#t=0.5'],
+        ['label' => 'Head protection', 'src' => 'https://frontline-footwear.com/shop/datasheets/HEAD%20PROTECTION_360p.mp4#t=0.5'],
+        ['label' => 'High visibility clothing', 'src' => 'https://frontline-footwear.com/shop/datasheets/HIGH%20VISIBILITY%20CLOTHING_360p.mp4#t=0.5'],
+        ['label' => 'Tiger Grip technology', 'src' => 'https://frontline-footwear.com/shop/datasheets/TIGER%20GRIP%20TECHNOLOGY_360p.mp4#t=0.5'],
+        ['label' => 'Midsoles', 'src' => 'https://frontline-footwear.com/shop/datasheets/MIDSOLES_360p.mp4#t=0.5'],
+        ['label' => 'Toecaps', 'src' => 'https://frontline-footwear.com/shop/datasheets/TOECAPS_360p.mp4#t=0.5'],
+        ['label' => 'Slip resistance', 'src' => 'https://frontline-footwear.com/shop/datasheets/SLIP%20RESISTANCE_360p.mp4#t=0.5'],
+        ['label' => 'Work jackets', 'src' => 'https://frontline-footwear.com/shop/datasheets/WORK%20JACKETS_360p%20(1).mp4#t=0.5'],
+        ['label' => 'Tiger Grip', 'src' => 'https://frontline-footwear.com/shop/datasheets/TIGERGRIP_540p%20.mp4#t=0.5', 'preload' => 'metadata'],
+        ['label' => 'Taman', 'src' => 'https://frontline-footwear.com/shop/datasheets/TAMAN.mp4#t=0.5', 'preload' => 'metadata'],
+        ['label' => 'CADOR colours that work', 'src' => 'https://frontline-footwear.com/shop/datasheets/CADOR%20Colours%20that%20work.mp4', 'poster' => 'https://frontline-footwear.com/v1.jpg', 'loop' => true, 'preload' => 'metadata'],
+    ],
+
 ];

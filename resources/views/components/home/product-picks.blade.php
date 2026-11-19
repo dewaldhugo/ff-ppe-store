@@ -1,10 +1,10 @@
-{{-- Ten random published products from the Safety Footwear and PPE & Gear categories (two rows of five on desktop), a new pick on every page load. Each card is one link. --}}
+{{-- Eight published products, four random ones from Safety Footwear and four from PPE & Gear, shown in random order (two rows of four on desktop, four of two on mobile, so no row is ever a single product), a new pick on every page load. Each card is one link. --}}
 @if ($products->isNotEmpty())
     <section class="py-12 sm:py-16" aria-labelledby="home-products" data-home-products>
         <x-ui.container>
             <x-ui.section-heading id="home-products" title="Featured products" />
 
-            <ul class="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+            <ul class="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4">
                 @foreach ($products as $product)
                     @php
                         $price = $priceDisplay->fromPrice($product);
