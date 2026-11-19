@@ -147,11 +147,11 @@
                                         ])
                                     >
                                         @if ($option['handle'] === 'colour')
-                                            <span
+                                            <x-ui.swatch
+                                                :hexes="\App\Domain\Catalogue\Options\ColourSwatch::hexes($value['name'], $value['meta']['hex'] ?? null)"
                                                 aria-hidden="true"
-                                                class="inline-block h-4 w-4 rounded-full border border-border-strong"
-                                                @if (filled($value['meta']['hex'] ?? null)) style="background-color: #{{ $value['meta']['hex'] }}" @endif
-                                            ></span>
+                                                class="h-4 w-4"
+                                            />
                                         @endif
 
                                         <span>{{ $value['name'] }}</span>

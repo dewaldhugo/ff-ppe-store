@@ -6,6 +6,7 @@ namespace App\Domain\Catalogue\Menu;
 
 use App\Domain\Catalogue\Keys\CatalogueKeys;
 use App\Domain\Catalogue\Keys\KeyType;
+use App\Domain\Catalogue\Search\CatalogueSearch;
 use App\Domain\Catalogue\Urls\CategoryUrl;
 use Illuminate\Support\Facades\Cache;
 use Lunar\Models\Collection;
@@ -24,12 +25,32 @@ use Lunar\Models\CollectionGroup;
 final class CategoryMenu
 {
     /** Bump the suffix whenever the shape of `tree()` changes, so a stale cached copy is never read. */
-    public const string CACHE_KEY = 'storefront.category_menu.v2';
+    public const string CACHE_KEY = 'storefront.category_menu.v3';
+
+    public const string COUNTS_KEY = 'storefront.category_counts.v1';
 
     public function __construct(private readonly CategoryUrl $urls) {}
 
     /**
-     * @return list<array{name: string, url: string, handle: string|null, children: list<array{name: string, url: string, handle: string|null}>}>
+     * Published products per collection id, for the counters in the menu.
+     * Cached briefly because products change far more often than the tree;
+     * a search outage gives no counts rather than a broken page.
+     *
+     * @return array<int, int>
+     */
+    public function counts(): array
+    {
+        try {
+            return Cache::remember(self::COUNTS_KEY, now()->addMinutes(10), fn (): array => app(CatalogueSearch::class)->collectionCounts());
+        } catch (\Throwable $e) {
+            report($e);
+
+            return [];
+        }
+    }
+
+    /**
+     * @return list<array{id: int, name: string, url: string, handle: string|null, children: list<array{id: int, name: string, url: string, handle: string|null}>}>
      */
     public function tree(): array
     {
@@ -66,6 +87,7 @@ final class CategoryMenu
             $url = $this->urls->for($collection);
 
             return $url === null ? null : [
+                'id' => $collection->id,
                 'name' => (string) $collection->translateAttribute('name'),
                 'url' => $url,
                 'handle' => CatalogueKeys::handleFor(KeyType::Collection, $collection),

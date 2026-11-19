@@ -93,6 +93,29 @@ final class CatalogueSearch
     }
 
     /**
+     * Published products per collection id. A product counts towards its
+     * collections and all their ancestors (the index stores both).
+     *
+     * @return array<int, int>
+     */
+    public function collectionCounts(): array
+    {
+        $response = $this->client->index((new Product)->searchableAs())->search('', [
+            'filter' => $this->filters(new ListingQuery),
+            'facets' => ['collection_ids'],
+            'limit' => 0,
+        ])->getRaw();
+
+        $counts = [];
+
+        foreach ($response['facetDistribution']['collection_ids'] ?? [] as $id => $count) {
+            $counts[(int) $id] = (int) $count;
+        }
+
+        return $counts;
+    }
+
+    /**
      * A query that returns no hits, only the distribution of one field,
      * with one facet's (or the price range's) own filter left out.
      */

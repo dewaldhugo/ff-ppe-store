@@ -31,6 +31,15 @@ it('shows every brand with published products as a link to its products', functi
         ->toContain('href="'.route('brands.show', 'safety-jogger').'"');
 });
 
+it('lists brands with the most products first', function (): void {
+    $html = $this->get(route('brands'))->assertOk()->getContent();
+
+    preg_match_all('#<li[^>]*data-brand="[^"]+".*?data-brand-count[^>]*>\s*(\d+)\s*</span>#s', $html, $matches);
+    $counts = array_map(intval(...), $matches[1]);
+
+    expect($counts)->not->toBeEmpty()->and($counts)->toBe(collect($counts)->sortDesc()->values()->all());
+});
+
 it('shows a Lunar brand under the storefront brand it belongs to', function (): void {
     // The fixture brand "Amblers Safety" is a member of the storefront brand Amblers.
     expect(StorefrontBrand::query()->where('slug', 'amblers')->sole()->members->pluck('name')->all())

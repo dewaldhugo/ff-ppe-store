@@ -28,11 +28,7 @@
                                 class="h-4 w-4"
                             >
                             @if ($group['name'] === 'colour')
-                                <span
-                                    aria-hidden="true"
-                                    class="inline-block h-4 w-4 rounded-full border border-border-strong"
-                                    @if ($value['hex']) style="background-color: #{{ $value['hex'] }}" @endif
-                                ></span>
+                                <x-ui.swatch :hexes="$value['hexes']" aria-hidden="true" class="h-4 w-4" />
                             @endif
                             <span>{{ $value['label'] }}</span>
                             <span class="ml-auto text-ink-muted" data-count>({{ $value['count'] }})</span>

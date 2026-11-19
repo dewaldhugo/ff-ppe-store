@@ -88,6 +88,12 @@
                             <svg viewBox="0 0 20 20" fill="currentColor" class="h-3.5 w-3.5"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 0 1 0 1.4l-8 8a1 1 0 0 1-1.4 0l-4-4a1 1 0 1 1 1.4-1.4L8 12.6l7.3-7.3a1 1 0 0 1 1.4 0Z" clip-rule="evenodd"/></svg>
                         </span>
 
+                        <span
+                            aria-hidden="true"
+                            class="absolute bottom-1 right-1 min-w-5 rounded-full bg-surface-muted px-1.5 text-center text-[0.6875rem] font-semibold leading-5 tabular-nums text-ink-muted group-hover:bg-white"
+                            data-brand-count
+                        >{{ $tile->productCount }}</span>
+
                         {{-- No visible label for logos: the name is for screen readers (and the tooltip). --}}
                         <span class="sr-only">{{ $tile->name }}, {{ $tile->productCount }} {{ Str::plural('product', $tile->productCount) }}</span>
                     </a>
