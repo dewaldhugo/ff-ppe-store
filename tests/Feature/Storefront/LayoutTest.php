@@ -107,7 +107,7 @@ it('links the phone and email once they are real', function (): void {
 });
 
 it('shows a phone icon and an email icon in the top bar, hidden from screen readers', function (): void {
-    config()->set('store.phone', '+276 7360 7260');
+    config()->set('store.phone', '+44 7557 687679');
     config()->set('store.email', 'info@frontlinesafetygear.com');
 
     $html = $this->get(route('shop'))->getContent();
@@ -119,8 +119,8 @@ it('shows a phone icon and an email icon in the top bar, hidden from screen read
         // The icon comes before its text, and the number and address are still real links.
         ->and(strpos($contact[0], 'data-top-bar-icon="phone"'))->toBeLessThan(strpos($contact[0], 'href="tel:'))
         ->and(strpos($contact[0], 'data-top-bar-icon="email"'))->toBeLessThan(strpos($contact[0], 'href="mailto:'))
-        ->and($contact[0])->toContain('href="tel:+27673607260"')
-        ->and($contact[0])->toContain('>+276 7360 7260</a>')
+        ->and($contact[0])->toContain('href="tel:+447557687679"')
+        ->and($contact[0])->toContain('>+44 7557 687679</a>')
         ->and($html)->toContain('<div class="surface-dark bg-brand-charcoal');
 });
 
