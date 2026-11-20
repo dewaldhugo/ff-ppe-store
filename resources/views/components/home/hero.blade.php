@@ -99,10 +99,16 @@
         @endforeach
     </div>
 
+    @php
+        // One of the headings in config/homepage.php, at random on each page load.
+        $heroHeadings = array_values(array_filter((array) config('homepage.hero_headings'), fn ($heading): bool => is_string($heading) && trim($heading) !== ''));
+        $heroHeading = $heroHeadings === [] ? '' : $heroHeadings[random_int(0, count($heroHeadings) - 1)];
+    @endphp
+
     <x-ui.container class="w-full py-14 sm:py-20">
         <div @class(['items-center gap-12', 'md:grid md:grid-cols-2' => $image])>
             <div data-hero-text class="sm:translate-y-[3.3rem]">
-                <h1 id="home-hero-title" class="text-[1.753rem] text-white sm:text-[2.475rem] lg:text-[2.75rem]">When safety slips, everyone pays.<br>Quality safety gear isn&rsquo;t optional, it&rsquo;s essential.</h1>
+                <h1 id="home-hero-title" class="text-[1.753rem] text-white sm:text-[2.475rem] lg:text-[2.75rem]" data-hero-heading>{{ $heroHeading }}</h1>
                 {{-- Not shown on a phone (below the sm breakpoint, 640px): the heading and the buttons are enough there. --}}
                 <p class="mt-4 hidden max-w-2xl text-[1.2375rem] text-white/90 sm:block" data-hero-subheading>EN-compliant safety footwear, head, eye, and hearing protection ready for immediate dispatch. Bulk trade pricing available.</p>
 
