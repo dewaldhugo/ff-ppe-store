@@ -11,7 +11,7 @@ final class RestructureCategories extends Command
 {
     protected $signature = 'catalogue:restructure-categories {--dry-run : List what would change without writing anything}';
 
-    protected $description = 'Move the contract categories into the category tree of the data contract (one-off, after the foundation seeder)';
+    protected $description = 'Move the contract categories into the category tree of the data contract and retire the ones it dropped (after the foundation seeder)';
 
     public function handle(Restructure $restructure): int
     {

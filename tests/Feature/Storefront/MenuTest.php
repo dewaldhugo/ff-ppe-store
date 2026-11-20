@@ -39,12 +39,17 @@ it('lists the categories collection tree, with children, in the Products menu', 
     $paths = [
         'safety-footwear', 'safety-footwear/safety-boots', 'safety-footwear/safety-shoes', 'safety-footwear/safety-trainers',
         'safety-footwear/safety-wellingtons', 'safety-footwear/occupational-footwear', 'safety-footwear/metal-free-metatarsal',
-        'non-safety-footwear', 'non-safety-footwear/slippers', 'non-safety-footwear/plimsolls', 'non-safety-footwear/casual-footwear', 'non-safety-footwear/wellingtons',
+        'non-safety-footwear', 'non-safety-footwear/casual-footwear', 'non-safety-footwear/wellingtons',
         'apparel', 'ppe-gear', 'accessories',
     ];
 
     foreach ($paths as $path) {
         expect($menu)->toContain('href="'.route('category', $path).'"');
+    }
+
+    // The retired categories are gone from the menu.
+    foreach (['slippers', 'plimsolls', 'sandals-summer-shoes'] as $retired) {
+        expect($menu)->not->toContain('non-safety-footwear/'.$retired);
     }
 
     // Children sit under their parent; ranges are not categories.
