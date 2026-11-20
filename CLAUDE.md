@@ -2,14 +2,14 @@
 
 ## Project
 
-UK ecommerce store selling personal protective equipment (PPE) to UK customers in GBP. Products are dropshipped from two UK vendors (Safety Jogger, Footsure). Safety footwear is the launch category; workwear, gloves and head protection will follow.
+UK ecommerce store for Frontline Safety Gear (frontlinesafetygear.com), selling personal protective equipment (PPE) to UK customers in GBP. This repository started as a copy of the ppe-store project and is now independent of it: its own repository, databases, Redis and search prefixes, and server site. Products are dropshipped from two UK vendors (Safety Jogger, Footsure). Safety footwear is the launch category; workwear, gloves and head protection will follow.
 
 Stack: PHP 8.4, Laravel 13, Lunar 1.5 (headless commerce, with its Filament 4 admin panel), MySQL 8, Redis, Laravel Horizon, Meilisearch via Laravel Scout, Livewire 3 and Tailwind CSS 4 (Vite 7) for the storefront, Spatie Media Library for images, Pest and Pint for tests and style. Hosted on a manually configured Debian 13 VPS (no Forge): this repository does not automate deployment.
 
 ## Local environment (Windows)
 
-- Windows 11, Laravel Herd (free), PHP 8.4 set as Herd's global version, site served at http://ppe-store.test.
-- MySQL 8.4 LTS runs natively (same major version as production): databases `ppe_store` and `ppe_store_testing`, user `ppe`.
+- Windows 11, Laravel Herd (free), PHP 8.4 set as Herd's global version, site served at https://ff-ppe-store.test (Herd names the site after the folder).
+- MySQL 8.4 LTS runs natively (same major version as production): databases `ff_ppe_store` and `ff_ppe_store_testing`, user `ppe` (granted on both). Never point this project at the `ppe_store` databases or the unprefixed search index: they belong to the other site.
 - Meilisearch 1.56.2 runs natively at http://localhost:7700 with a master key (same version as production).
 - No Redis locally. Use `QUEUE_CONNECTION=database`, `CACHE_STORE=database` and `SESSION_DRIVER=database` in `.env`. Production uses Redis and Horizon, so code must work with both drivers: never call Redis directly.
 - Horizon cannot run on Windows (no pcntl). Install it, configure it for production, and use `php artisan queue:work --queue=default,images,conversions` locally (`composer dev` does). Queue names are in `App\Support\Queues` (the one definition; configs and jobs use the constants); each has its own Horizon supervisor in production. A batch ignores its jobs' own `onQueue()`, so name the queue on the batch (`ImageRun` does); a test fails when a queueable class does not set its queue from `Queues`. `composer.json` fakes `ext-pcntl` and `ext-posix` under `config.platform` so Horizon installs on Windows: do not remove it.
