@@ -4,6 +4,7 @@ New enquiry from the website.
 Name: {!! $name !!}
 Email: {!! $email !!}
 Phone: {!! $phone ?: 'Not given' !!}
+Industry: {!! \App\Domain\Accounts\Industries::label($industry) ?? 'Not given' !!}
 Subject: {!! $enquirySubject !!}
 
 {!! $body !!}

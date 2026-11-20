@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domain\Accounts\Industries;
 use App\Livewire\Contact\EnquiryForm;
 use App\Mail\EnquiryReceived;
 use Illuminate\Support\Facades\Mail;
@@ -122,6 +123,44 @@ it('sends without a phone number', function (): void {
     fillEnquiry(Livewire::test(EnquiryForm::class), enquiry(['phone' => '']))->call('submit')->assertHasNoErrors()->assertSet('sent', true);
 
     Mail::assertSent(EnquiryReceived::class, fn (EnquiryReceived $mail): bool => $mail->phone === null);
+});
+
+it('has an optional industry drop-down with every industry, before the subject', function (): void {
+    $html = $this->get(route('contact'))->assertOk()->getContent();
+
+    preg_match('#<label for="enquiry-industry"[^>]*>(.*?)</label>#s', $html, $label);
+    preg_match('#<select id="enquiry-industry"[^>]*>(.*?)</select>#s', $html, $select);
+
+    expect(trim(strip_tags($label[1] ?? '')))->toBe('Industry (optional)')
+        ->and($html)->toMatch('#<select id="enquiry-industry"[^>]*wire:model="industry"#')
+        ->and($select[0] ?? '')->not->toContain(' required')
+        ->and($select[1] ?? '')->toContain('<option value="">Choose your industry</option>')
+        ->and(strpos($html, 'id="enquiry-industry"'))->toBeLessThan(strpos($html, 'id="enquiry-subject"'));
+
+    foreach (Industries::all() as $slug => $name) {
+        expect($select[1] ?? '')->toContain('<option value="'.$slug.'">'.htmlspecialchars($name, ENT_QUOTES).'</option>');
+    }
+});
+
+it('puts the chosen industry in the email, and says Not given when there is none', function (): void {
+    fillEnquiry(Livewire::test(EnquiryForm::class), enquiry(['industry' => 'construction']))->call('submit')->assertHasNoErrors()->assertSet('sent', true)->assertSet('industry', '');
+
+    Mail::assertSent(EnquiryReceived::class, fn (EnquiryReceived $mail): bool => $mail->industry === 'construction' && str_contains($mail->render(), 'Industry: Construction'));
+
+    Mail::fake();
+
+    fillEnquiry(Livewire::test(EnquiryForm::class), enquiry())->call('submit')->assertHasNoErrors();
+
+    Mail::assertSent(EnquiryReceived::class, fn (EnquiryReceived $mail): bool => $mail->industry === null && str_contains($mail->render(), 'Industry: Not given'));
+});
+
+it('only accepts an industry from the list', function (): void {
+    fillEnquiry(Livewire::test(EnquiryForm::class), enquiry(['industry' => 'pirates']))
+        ->call('submit')
+        ->assertHasErrors('industry')
+        ->assertSet('sent', false);
+
+    Mail::assertNothingSent();
 });
 
 it('renders the plain text email with the details and no HTML escaping', function (): void {

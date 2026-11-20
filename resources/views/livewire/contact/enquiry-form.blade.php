@@ -36,6 +36,17 @@
             </div>
 
             <div>
+                <label for="enquiry-industry" class="{{ $label }}">Industry <span class="font-normal text-ink-muted">(optional)</span></label>
+                <select id="enquiry-industry" wire:model="industry" @error('industry') aria-invalid="true" aria-describedby="enquiry-industry-error" @enderror class="{{ $field }}" data-enquiry-industry>
+                    <option value="">Choose your industry</option>
+                    @foreach (\App\Domain\Accounts\Industries::all() as $slug => $industryName)
+                        <option value="{{ $slug }}">{{ $industryName }}</option>
+                    @endforeach
+                </select>
+                @error('industry') <p id="enquiry-industry-error" class="{{ $error }}">{{ $message }}</p> @enderror
+            </div>
+
+            <div class="sm:col-span-2">
                 <label for="enquiry-subject" class="{{ $label }}">Enquiry subject</label>
                 <input id="enquiry-subject" type="text" wire:model="enquirySubject" maxlength="150" required @error('enquirySubject') aria-invalid="true" aria-describedby="enquiry-subject-error" @enderror class="{{ $field }}">
                 @error('enquirySubject') <p id="enquiry-subject-error" class="{{ $error }}">{{ $message }}</p> @enderror

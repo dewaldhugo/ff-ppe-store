@@ -21,6 +21,8 @@ final class EnquiryReceived extends Mailable
         public readonly ?string $phone,
         public readonly string $enquirySubject,
         public readonly string $body,
+        /** An Industries slug, or null when none was chosen. */
+        public readonly ?string $industry = null,
     ) {}
 
     public function envelope(): Envelope
