@@ -23,6 +23,18 @@ return [
     // Where Contact page enquiries are emailed: the store email, unless STORE_ENQUIRY_EMAIL is set.
     'enquiry_email' => env('STORE_ENQUIRY_EMAIL') ?: 'info@frontlinesafetygear.com',
 
+    // The bank account customers pay 30 day account invoices into. Printed on an unpaid account invoice
+    // and its payment advice slip (docs/accounts.md, Invoices). Fixed here, with no environment variable,
+    // like the address, phone and email: it never changes. Taken from the client's sample invoice.
+    'bank' => [
+        'account_name' => 'Frontline Holdings Limited',
+        'bank_name' => 'Wise Bank',
+        'sort_code' => '23-08-01',
+        'account_number' => '63606297',
+        'iban' => 'GB90 TRWI 2308 0163 6062 97',
+        'address' => '56 Shoreditch High Street, London, E1 6JJ, United Kingdom',
+    ],
+
     // Delivery: a flat charge, free once the goods come to MORE than the free-over amount (exactly that
     // amount still pays). Pence, ex VAT, goods before discounts. The rule itself is
     // App\Domain\Cart\Delivery\DeliveryPolicy, which also words the note customers see.

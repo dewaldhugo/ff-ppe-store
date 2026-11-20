@@ -18,6 +18,7 @@ use App\Domain\Catalogue\Urls\Redirects\CollectionRedirectObserver;
 use App\Domain\Checkout\CardPayments;
 use App\Domain\Checkout\StripeCardPayments;
 use App\Domain\Favourites\Favourites;
+use App\Domain\Orders\InvoiceNumbers;
 use App\Domain\Pricing\Vat\StoreTaxDriver;
 use App\Support\Store;
 use Filament\Panel;
@@ -35,7 +36,9 @@ use Lunar\Facades\Taxes;
 use Lunar\Facades\Telemetry;
 use Lunar\Models\Collection;
 use Lunar\Models\CollectionGroup;
+use Lunar\Models\Order;
 use Lunar\Models\Url;
+use Throwable;
 
 final class AppServiceProvider extends ServiceProvider
 {
@@ -91,6 +94,25 @@ final class AppServiceProvider extends ServiceProvider
                 $model::{$event}(fn () => CategoryMenu::forget());
             }
         }
+
+        // An order gets its invoice number the moment it is placed, whoever places it (the checkout,
+        // the Stripe webhook, staff). A failure here must never stop an order being placed: the
+        // number is then given the first time the invoice is looked at (InvoiceNumbers::for).
+        Order::saved(function (Order $order): void {
+            if ($order->placed_at === null) {
+                return;
+            }
+
+            try {
+                $numbers = app(InvoiceNumbers::class);
+
+                if (! $numbers->has($order)) {
+                    $numbers->assign($order);
+                }
+            } catch (Throwable $exception) {
+                report($exception);
+            }
+        });
 
         // A category URL change (rename, move, new parent) records a redirect
         // from the old path. See CollectionRedirectObserver.

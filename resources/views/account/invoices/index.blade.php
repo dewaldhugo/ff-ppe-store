@@ -2,7 +2,7 @@
     $money = fn ($price): string => (string) $price->formatted(trimTrailingZeros: false);
 @endphp
 
-<x-layouts.member title="Your invoices" heading="Your invoices" intro="One VAT invoice for each order. Open one to print it or save it as a PDF.">
+<x-layouts.member title="Your invoices" heading="Your invoices" intro="One tax invoice for each order. Open one to print it or save it as a PDF.">
     @if ($orders->isEmpty())
         <div class="rounded border border-border bg-surface-muted p-6" data-invoices-empty>
             <p class="font-semibold">You have no invoices yet.</p>

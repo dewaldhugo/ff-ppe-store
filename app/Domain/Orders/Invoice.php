@@ -6,13 +6,16 @@ namespace App\Domain\Orders;
 
 use App\Domain\Checkout\PaymentMethods;
 use Carbon\CarbonInterface;
+use Illuminate\Support\Collection;
+use Lunar\DataTypes\Price;
 use Lunar\Models\Order;
+use Lunar\Models\OrderLine;
 
 /**
  * The invoice for a placed order. There is no invoices table: an order has exactly one invoice, so its
- * number, date and payment state are worked out from the order. The number is the order reference with
- * an INV- prefix (stable, unique and traceable), the date is when the order was placed, and a 30 day
- * account order is due 30 days later.
+ * date and payment state are worked out from the order. The number is kept apart (InvoiceNumbers: the
+ * date placed and a daily sequence, such as 10102026/001), the date is when the order was placed, and a
+ * 30 day account order is due 30 days later.
  */
 final readonly class Invoice
 {
@@ -23,7 +26,7 @@ final readonly class Invoice
 
     public function number(): string
     {
-        return 'INV-'.$this->order->reference;
+        return app(InvoiceNumbers::class)->for($this->order);
     }
 
     public function date(): ?CarbonInterface
@@ -47,6 +50,12 @@ final readonly class Invoice
         return ! $this->onAccount() || $this->order->status === 'payment-received';
     }
 
+    /** Still to be paid by bank transfer: the bank details and the payment advice slip go with it. */
+    public function needsPayment(): bool
+    {
+        return ! $this->isPaid();
+    }
+
     /** An unpaid account invoice is overdue once its due day has passed. */
     public function isOverdue(): bool
     {
@@ -67,5 +76,59 @@ final readonly class Invoice
         $due = $this->dueDate()?->format('j F Y');
 
         return $this->isOverdue() ? 'Overdue, was due by '.$due : 'Payment due by '.$due;
+    }
+
+    /** The goods, in the order they were added. */
+    public function goodsLines(): Collection
+    {
+        return $this->order->lines->where('type', 'physical')->values();
+    }
+
+    /** The delivery charge lines (one, or none). */
+    public function deliveryLines(): Collection
+    {
+        return $this->order->lines->where('type', 'shipping')->values();
+    }
+
+    /** Delivery, ex VAT. */
+    public function delivery(): Price
+    {
+        return $this->price((int) $this->deliveryLines()->sum(fn (OrderLine $line): int => $line->sub_total->value));
+    }
+
+    /** What the order comes to ex VAT after discounts and with delivery. */
+    public function netTotal(): Price
+    {
+        return $this->price($this->order->total->value - $this->order->tax_total->value);
+    }
+
+    /**
+     * The goods ex VAT before any discount. Worked out from the net total, so the rows
+     * (subtotal, discount, delivery, VAT, total) always add up to the total.
+     */
+    public function subtotal(): Price
+    {
+        return $this->price($this->netTotal()->value - $this->delivery()->value + $this->order->discount_total->value);
+    }
+
+    /**
+     * The VAT rate of a line as a plain number (20, 0, 5.5).
+     */
+    public function rate(OrderLine $line): float
+    {
+        return (float) $line->tax_breakdown->amounts->sum('percentage');
+    }
+
+    /** The one VAT rate on every line, for the "TOTAL VAT 20%" row, or null when the rates are mixed. */
+    public function singleRate(): ?float
+    {
+        $rates = $this->order->lines->map(fn (OrderLine $line): float => $this->rate($line))->unique()->values();
+
+        return $rates->count() === 1 ? (float) $rates->first() : null;
+    }
+
+    private function price(int $value): Price
+    {
+        return new Price($value, $this->order->currency, 1);
     }
 }
