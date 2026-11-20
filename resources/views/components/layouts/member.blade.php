@@ -23,6 +23,8 @@
 
 <x-layouts.storefront :title="$title" :noindex="true">
     <div class="py-4">
+        <x-account.company-heading class="mb-6" />
+
         <x-ui.section-heading :title="$heading" tag="h1">{{ $intro }}</x-ui.section-heading>
 
         @if (session('status'))

@@ -36,6 +36,15 @@ A new registration cannot sign in until staff activate it in the admin panel.
 - **Password reset** still works for a pending customer, but they still cannot sign in.
 - Payment options per customer are in docs/cart.md (Payment).
 
+## Company logo
+
+Staff can give a member a company logo, which the member sees, with their company name, in a small heading at the top of every account page. Customers cannot change it.
+
+- **Where staff set it.** Admin panel, Customers, Edit: a "Company logo" section with an upload (`CustomerLogoResourceExtension` and `CustomerLogoEditExtension`, registered beside the access extensions in `AppServiceProvider`). PNG, JPG or WebP, up to 2 MB; SVG is refused on purpose (an SVG opened on its own can run scripts). Like the access section it shows on the edit page only, and only for a customer that has a login. Removing the file in the form clears the logo.
+- **Storage.** The image is on the `public` disk in `customer-logos/` (random file names), and its path is in the Lunar customer's `meta` under `logo`, beside `industry`. No Lunar table changes. It needs the `public/storage` link (`storage:link --force`, already a deploy step). `App\Domain\Accounts\CustomerLogo` is the one place that reads and writes it: it accepts only a path inside `customer-logos/`, and replacing or removing a logo deletes the old file.
+- **Display.** The company heading is `<x-account.company-heading>` (`data-account-company`): the logo (`data-account-logo`, at most 2.5rem tall) beside the company name (`data-account-company-name`), above the page title. It is in `components/layouts/member` (My details, Orders, an order, Invoices, Addresses and the address form) and on the Favourites page. It reads the signed-in `web` customer itself, so a page cannot show another customer's company. The logo comes from `CustomerLogo::url()` (null when none is set or the file has gone); the picture has empty alt text when the name is beside it, and "Company logo" when there is no name. With neither a name nor a logo nothing is shown. It is not on login, register, the printable invoice, the cart or the checkout.
+- **Not covered.** No resizing or cropping (the image is scaled to fit), and the logo is not on invoices or emails.
+
 ## Favourites
 
 One "Add to favourites" button, on the product page only (`<x-storefront.favourite-button>`, under the cart form). There is no heart on product cards in listings, search, brand pages, the home page, related products or the favourites page: a customer removes a favourite from its product page.
@@ -177,7 +186,7 @@ Over a route limit the response is a plain 429. Limits and constants are in `App
 
 ## Tests
 
-`tests/Feature/Accounts/`: `ApprovalTest` (pending login, activation and its email, switching off, the admin Edit Customer page), `AccountFoundationTest`, `AccountMailQueueTest`, `RegistrationTest`, `LoginTest`, `PasswordResetTest`, `EmailVerificationTest`, `AccountPageTest`, `GuardSeparationTest`, `HeaderAuthTest`. Mail is faked; nothing is sent. Search tests that need a real index are not involved: the Customer index uses the null Scout driver in tests, and a test installs a failing engine to prove registration survives a Meilisearch outage.
+`tests/Feature/Accounts/`: `ApprovalTest` (pending login, activation and its email, switching off, the admin Edit Customer page), `AccountFoundationTest`, `AccountMailQueueTest`, `RegistrationTest`, `LoginTest`, `PasswordResetTest`, `EmailVerificationTest`, `AccountPageTest`, `CustomerLogoTest` (company logo), `GuardSeparationTest`, `HeaderAuthTest`. Mail is faked; nothing is sent. Search tests that need a real index are not involved: the Customer index uses the null Scout driver in tests, and a test installs a failing engine to prove registration survives a Meilisearch outage.
 
 ## Known gaps
 

@@ -3,6 +3,8 @@
 @endphp
 
 <x-layouts.storefront title="Favourites" :noindex="true">
+    <x-account.company-heading class="mb-6" />
+
     <x-ui.section-heading title="Your favourites" tag="h1">Products you have saved. Use the heart on a product to add or remove it.</x-ui.section-heading>
 
     @if ($products->isEmpty())
