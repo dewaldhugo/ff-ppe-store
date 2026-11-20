@@ -179,3 +179,31 @@
 /* Without JavaScript (the no-js class is removed by a script in the layout head)
    the menus cannot open, so navigation falls back to plain links. */
 @custom-variant no-js (html.no-js &);
+
+/*
+ * The industries row on the home page (resources/views/components/industry-slider.blade.php).
+ * It drifts left at a steady speed with no JavaScript: the list is there twice, and the track
+ * slides by exactly one copy (-50%) and starts again, so the loop has no visible jump. It stops
+ * while the pointer is over it. It keeps moving whatever the visitor's "reduce motion" setting says,
+ * as the home hero slideshow does: a row that silently stands still, with a scrollbar, looks broken.
+ */
+@keyframes industry-drift {
+    to {
+        transform: translateX(-50%);
+    }
+}
+
+.industry-row {
+    overflow: hidden;
+    /* Fade the cards in and out at both edges. */
+    mask-image: linear-gradient(to right, transparent, black 4%, black 96%, transparent);
+}
+
+.industry-row-track {
+    animation: industry-drift 90s linear infinite;
+    will-change: transform;
+}
+
+.industry-row:hover .industry-row-track {
+    animation-play-state: paused;
+}
