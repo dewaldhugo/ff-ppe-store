@@ -196,9 +196,9 @@ it('lays the money stack out in order: subtotal, delivery, net total, VAT, total
         ->and($positions)->toBe(collect($positions)->sort()->values()->all());
 
     expect($html)->toMatch('#data-total-subtotal>\s*£50\.00#')
-        ->toMatch('#data-total-ex-vat>\s*£100\.00#')
-        ->toMatch('#data-total-vat>\s*£20\.00#')
-        ->toMatch('#data-total-grand>\s*£120\.00#');
+        ->toMatch('#data-total-ex-vat>\s*£80\.00#')
+        ->toMatch('#data-total-vat>\s*£16\.00#')
+        ->toMatch('#data-total-grand>\s*£96\.00#');
 });
 
 it('asks for an address before it prices delivery, then shows the option with its ex VAT price', function (): void {
@@ -213,17 +213,17 @@ it('asks for an address before it prices delivery, then shows the option with it
         ->set('ship_postcode', 'BR5 3QX')
         ->assertSeeHtml('data-delivery-option')
         ->assertSee('Standard delivery')
-        ->assertSee('£50.00')
+        ->assertSee('£30.00')
         ->assertDontSeeHtml('data-delivery-pending');
 });
 
-it('shows free delivery from GBP 1,000 ex VAT, and says why', function (): void {
+it('shows free delivery over GBP 500 ex VAT, and says why', function (): void {
     checkoutCart($this->customer, checkoutVariant('Pricey Boot', 100_000));
 
     $html = fillCheckout(Livewire::test(CheckoutPage::class))->html();
 
     expect($html)->toMatch('#data-delivery-price>\s*Free#')
-        ->toContain('Free: your goods come to £1,000.00 or more ex VAT.')
+        ->toContain('Free: your goods come to over £500.00 ex VAT.')
         ->toMatch('#data-total-grand>\s*£1,200\.00#');
 });
 
@@ -325,16 +325,16 @@ it('places a 30 day account order through Lunar and goes to the confirmation pag
         ->and($order->meta['site_type'])->toBe('residential')
         ->and($order->meta['payment_method'])->toBe('account-30-day')
         ->and($order->meta['contact_email'])->toBe('jo@builder.example')
-        // £50.00 goods + £50.00 delivery, and £20.00 VAT on both.
+        // £50.00 goods + £30.00 delivery, and £16.00 VAT on both.
         ->and($order->sub_total->value)->toBe(5000)
-        ->and($order->shipping_total->value)->toBe(6000)
-        ->and($order->tax_total->value)->toBe(2000)
-        ->and($order->total->value)->toBe(12_000)
+        ->and($order->shipping_total->value)->toBe(3600)
+        ->and($order->tax_total->value)->toBe(1600)
+        ->and($order->total->value)->toBe(9600)
         ->and($order->shippingAddress->postcode)->toBe('BR5 3QX')
         ->and($order->shippingAddress->delivery_instructions)->toBe('Deliver to Receiving Bay 2')
         ->and($order->billingAddress->tax_identifier)->toBe('GB123456789')
         ->and($order->billingAddress->company_name)->toBe('Builder Ltd')
-        ->and($order->lines->where('type', 'shipping')->sole()->sub_total->value)->toBe(5000);
+        ->and($order->lines->where('type', 'shipping')->sole()->sub_total->value)->toBe(3000);
 
     // The cart now belongs to the order: the next visit starts a new one.
     expect(session()->get('lunar_cart'))->toBeNull();

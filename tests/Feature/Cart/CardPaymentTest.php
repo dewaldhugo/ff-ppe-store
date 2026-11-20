@@ -132,9 +132,9 @@ it('builds a draft order and a payment intent for its total, and leaves the cart
         ->and($order->placed_at)->toBeNull()
         ->and($order->customer_reference)->toBe('PO-77')
         ->and($order->meta['payment_method'])->toBe('card')
-        // £50.00 goods + £50.00 delivery, and £20.00 VAT on both.
-        ->and($order->total->value)->toBe(12_000)
-        ->and($this->fake->intents)->toBe([['cart' => $cart->id, 'order' => $order->reference, 'total' => 12_000]])
+        // £50.00 goods + £30.00 delivery, and £16.00 VAT on both.
+        ->and($order->total->value)->toBe(9600)
+        ->and($this->fake->intents)->toBe([['cart' => $cart->id, 'order' => $order->reference, 'total' => 9600]])
         ->and(session()->get('lunar_cart'))->toBe($cart->id);
 });
 

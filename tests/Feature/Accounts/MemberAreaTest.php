@@ -175,8 +175,8 @@ it('shows one order with its lines, VAT, totals, address and payment', function 
         ->toContain('30 day account')
         ->toContain('Awaiting Payment')
         ->toContain('1 High Street')
-        // £50.00 goods + £50.00 delivery, £20.00 VAT, £120.00 total.
-        ->toContain('£120.00')
+        // £50.00 goods + £30.00 delivery, £16.00 VAT, £96.00 total.
+        ->toContain('£96.00')
         ->toContain('href="'.route('account.invoices.show', $order->reference).'"');
 });
 
@@ -213,7 +213,7 @@ it('lists one invoice per order with its number, date and payment state', functi
     expect($html)->toContain('INV-'.$order->reference)
         ->toContain($order->placed_at->format('j M Y'))
         ->toContain('Payment due by '.$order->placed_at->copy()->addDays(30)->format('j F Y'))
-        ->toContain('£120.00');
+        ->toContain('£96.00');
 });
 
 it('shows a VAT invoice with the supplier, customer, lines and totals', function (): void {
@@ -234,11 +234,11 @@ it('shows a VAT invoice with the supplier, customer, lines and totals', function
         ->toContain('Customer VAT number GB123456789')
         ->toContain('Your PO number')
         ->toContain('PO-5')
-        // The goods and the delivery, then the totals: £100.00 net, £20.00 VAT, £120.00 to pay.
+        // The goods and the delivery, then the totals: £80.00 net, £16.00 VAT, £96.00 to pay.
         ->and(substr_count($html, 'data-invoice-line>'))->toBe(2)
-        ->and($html)->toContain('£100.00')
-        ->toContain('£20.00')
-        ->toContain('data-invoice-total>£120.00')
+        ->and($html)->toContain('£80.00')
+        ->toContain('£16.00')
+        ->toContain('data-invoice-total>£96.00')
         // On account and unpaid: the due date, 30 days on.
         ->toContain('Payable within 30 days, by '.$order->placed_at->copy()->addDays(30)->format('j F Y'))
         ->toContain('data-print-invoice');
