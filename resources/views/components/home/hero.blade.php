@@ -7,7 +7,7 @@
     column from md up, and only exists while resources/images/hero/hero.webp does.
     Without it the text spans the full width, with no placeholder.
 --}}
-<section class="surface-dark relative isolate flex items-center overflow-hidden bg-brand-navy text-white sm:min-h-[33rem]" aria-labelledby="home-hero-title" data-home-hero>
+<section class="surface-dark relative isolate flex items-center overflow-hidden bg-brand-navy text-white sm:min-h-[33rem] lg:min-h-[39.6rem]" aria-labelledby="home-hero-title" data-home-hero>
     {{--
         Decorative background photos: the six hero-bg images in use, starting at a random one on each page
         load and fading into the next every 6 seconds, centred, no overlay. Only the first photo is in
@@ -72,15 +72,16 @@
     <x-ui.container class="w-full py-14 sm:py-20">
         <div @class(['items-center gap-12', 'md:grid md:grid-cols-2' => $image])>
             <div data-hero-text class="sm:translate-y-[3.3rem]">
-                <x-ui.eyebrow class="text-brand-teal">UK TRADE PPE SUPPLIER</x-ui.eyebrow>
-                <h1 id="home-hero-title" class="mt-3 text-[2.0625rem] text-white sm:text-[2.475rem] lg:text-[2.75rem]">When safety slips, everyone pays.<br>Quality safety gear isn&rsquo;t optional, it&rsquo;s essential.</h1>
-                <p class="mt-4 max-w-2xl text-[1.2375rem] text-white/90">EN-compliant safety footwear, head, eye, and hearing protection ready for immediate dispatch. Bulk trade pricing available.</p>
+                <h1 id="home-hero-title" class="text-[1.753rem] text-white sm:text-[2.475rem] lg:text-[2.75rem]">When safety slips, everyone pays.<br>Quality safety gear isn&rsquo;t optional, it&rsquo;s essential.</h1>
+                {{-- Not shown on a phone (below the sm breakpoint, 640px): the heading and the buttons are enough there. --}}
+                <p class="mt-4 hidden max-w-2xl text-[1.2375rem] text-white/90 sm:block" data-hero-subheading>EN-compliant safety footwear, head, eye, and hearing protection ready for immediate dispatch. Bulk trade pricing available.</p>
 
                 <div class="mt-8 flex flex-wrap gap-4">
                     {{-- The primary (dark grey) button, with a thin light border so it stands out against the dark photos. --}}
                     <x-ui.button :href="route('shop')" class="border border-white/40">View all products</x-ui.button>
                     @guest('web')
-                        <x-ui.button-outline :href="route('register')" :on-dark="true" shape="md">Open a trade account</x-ui.button-outline>
+                        {{-- Not shown on a phone (below 640px). max-sm:hidden, not hidden + sm:inline-flex: the button's own inline-flex would fight a plain hidden. --}}
+                        <x-ui.button-outline :href="route('register')" :on-dark="true" shape="md" class="max-sm:hidden">Open a trade account</x-ui.button-outline>
                     @endguest
                 </div>
             </div>

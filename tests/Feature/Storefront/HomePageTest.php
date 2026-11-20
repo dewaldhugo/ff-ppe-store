@@ -32,12 +32,40 @@ function fakeHeroFile(): string
     return $path;
 }
 
+it('hides the hero sub-heading on a phone and shows it from the sm breakpoint up', function (): void {
+    $hero = heroSection($this->get(route('home'))->assertOk()->getContent());
+
+    preg_match('#<p[^>]*data-hero-subheading[^>]*>(.*?)</p>#s', $hero, $sub);
+    preg_match('#<p([^>]*)data-hero-subheading#', $hero, $attributes);
+
+    expect($sub[1] ?? '')->toBe('EN-compliant safety footwear, head, eye, and hearing protection ready for immediate dispatch. Bulk trade pricing available.')
+        ->and($attributes[1] ?? '')->toContain(' hidden ')
+        ->and($attributes[1] ?? '')->toContain('sm:block');
+});
+
+it('makes the hero 20% taller on desktop and the heading 15% smaller on a phone', function (): void {
+    $hero = heroSection($this->get(route('home'))->assertOk()->getContent());
+
+    preg_match('#<section[^>]*data-home-hero#', $hero, $section);
+    preg_match('#<h1[^>]*class="([^"]*)"#', $hero, $heading);
+
+    // Tablet height is unchanged (33rem); from lg it is 33rem x 1.2 = 39.6rem.
+    expect($section[0] ?? '')->toContain('sm:min-h-[33rem]')->toContain('lg:min-h-[39.6rem]')
+        // Phone heading: 2.0625rem x 0.85 = 1.753rem. Tablet and desktop sizes are unchanged.
+        ->and($heading[1] ?? '')->toContain('text-[1.753rem]')
+        ->toContain('sm:text-[2.475rem]')
+        ->toContain('lg:text-[2.75rem]')
+        ->not->toContain('text-[2.0625rem]');
+});
+
 it('has the new hero copy, with one h1 and no placeholder text', function (): void {
     $html = $this->get(route('home'))->assertOk()->getContent();
     $hero = heroSection($html);
 
     expect(substr_count($html, '<h1'))->toBe(1)
-        ->and($hero)->toContain('UK TRADE PPE SUPPLIER')
+        // No eyebrow line above the heading.
+        ->and($hero)->not->toContain('UK TRADE PPE SUPPLIER')
+        ->and(preg_match('#data-hero-text[^>]*>\s*<h1#', $hero))->toBe(1)
         ->and($hero)->toMatch('#<h1[^>]*>When safety slips, everyone pays\.<br>Quality safety gear isn&rsquo;t optional, it&rsquo;s essential\.</h1>#')
         ->and($hero)->toContain('EN-compliant safety footwear, head, eye, and hearing protection ready for immediate dispatch. Bulk trade pricing available.')
         ->and($html)->not->toContain('Content coming soon.')
@@ -140,6 +168,17 @@ it('shows no video section when the list is empty', function (): void {
     config(['homepage.videos' => []]);
 
     $this->get(route('home'))->assertOk()->assertDontSee('data-home-video', false);
+});
+
+it('hides the second hero button on a phone, and keeps the first', function (): void {
+    $hero = heroSection($this->get(route('home'))->assertOk()->getContent());
+
+    preg_match('#<a href="'.preg_quote(route('register'), '#').'"([^>]*)>Open a trade account</a>#', $hero, $second);
+    preg_match('#<a href="'.preg_quote(route('shop'), '#').'"([^>]*)>View all products</a>#', $hero, $first);
+
+    expect($second[1] ?? '')->toContain('max-sm:hidden')
+        ->and($first[1] ?? '')->not->toContain('max-sm:hidden')
+        ->and($first[1] ?? '')->not->toContain('hidden');
 });
 
 it('shows Open a trade account to guests only', function (): void {
