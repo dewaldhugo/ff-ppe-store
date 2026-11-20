@@ -93,6 +93,8 @@ Current routes (`routes/web.php`):
 | `verification.notice`, `verification.verify`, `verification.send` | `/email/verify`, `/email/verify/{id}/{hash}`, POST `/email/verification-notification` | `EmailVerificationController` (`auth:web`) |
 | `account`, `account.profile.update`, `account.password.update` | `/account`, PUT `/account/profile`, PUT `/account/password` | `AccountController` (`auth:web`, `account.verified`, noindex) |
 | `favourites`, `favourites.toggle` | `/favourites`, POST `/favourites/{product}` | `FavouriteController` (`auth:web`, noindex; docs/accounts.md, Favourites) |
+| `account.orders`, `account.orders.show`, `account.invoices`, `account.invoices.show` | `/account/orders`, `/account/orders/{reference}`, `/account/invoices`, `/account/invoices/{reference}` | `Account\OrderController`, `Account\InvoiceController` (`auth:web`, `account.verified`, noindex; docs/accounts.md, Member area) |
+| `account.orders.reorder`, `account.addresses`, `account.addresses.*` | POST `/account/orders/{reference}/reorder`, `/account/addresses` (create, edit, default, delete) | `Account\OrderController@reorder`, `Account\AddressController` (`auth:web`, `account.verified`; docs/accounts.md, Member area) |
 | `cart` | `/cart` | `CartPage` (`auth:web`, noindex; docs/cart.md) |
 | `checkout`, `checkout.complete` | `/checkout`, `/checkout/complete/{reference}` | `CheckoutPage` (`auth:web`, noindex, own clean layout), `OrderConfirmationController` (the customer's own placed order only; docs/cart.md) |
 | placeholders | `/terms`, `/privacy`, `/cookies`, `/returns`, `/delivery`, `/accessibility` | `pages.placeholder` (noindex) |

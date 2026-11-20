@@ -3,6 +3,9 @@
 declare(strict_types=1);
 
 use App\Domain\Catalogue\Urls\CollectionPath;
+use App\Http\Controllers\Account\AddressController;
+use App\Http\Controllers\Account\InvoiceController;
+use App\Http\Controllers\Account\OrderController;
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\Auth\EmailVerificationController;
 use App\Http\Controllers\Auth\LoginController;
@@ -98,6 +101,28 @@ Route::middleware(RedirectTrailingSlash::class)->group(function () use ($placeho
         Route::get('/account', [AccountController::class, 'show'])->name('account');
         Route::put('/account/profile', [AccountController::class, 'updateProfile'])->name('account.profile.update');
         Route::put('/account/password', [AccountController::class, 'updatePassword'])->name('account.password.update');
+
+        // Order history and invoices: the customer's own placed orders only (404 for anyone else's).
+        Route::get('/account/orders', [OrderController::class, 'index'])->name('account.orders');
+        Route::get('/account/orders/{reference}', [OrderController::class, 'show'])
+            ->where('reference', '[A-Za-z0-9\-]+')
+            ->name('account.orders.show');
+        Route::post('/account/orders/{reference}/reorder', [OrderController::class, 'reorder'])
+            ->where('reference', '[A-Za-z0-9\-]+')
+            ->name('account.orders.reorder');
+        Route::get('/account/invoices', [InvoiceController::class, 'index'])->name('account.invoices');
+        Route::get('/account/invoices/{reference}', [InvoiceController::class, 'show'])
+            ->where('reference', '[A-Za-z0-9\-]+')
+            ->name('account.invoices.show');
+
+        // Saved delivery addresses. The id is looked up in the customer's own address book, so another customer's id is a 404.
+        Route::get('/account/addresses', [AddressController::class, 'index'])->name('account.addresses');
+        Route::get('/account/addresses/create', [AddressController::class, 'create'])->name('account.addresses.create');
+        Route::post('/account/addresses', [AddressController::class, 'store'])->name('account.addresses.store');
+        Route::get('/account/addresses/{addressId}/edit', [AddressController::class, 'edit'])->whereNumber('addressId')->name('account.addresses.edit');
+        Route::put('/account/addresses/{addressId}', [AddressController::class, 'update'])->whereNumber('addressId')->name('account.addresses.update');
+        Route::delete('/account/addresses/{addressId}', [AddressController::class, 'destroy'])->whereNumber('addressId')->name('account.addresses.destroy');
+        Route::post('/account/addresses/{addressId}/default', [AddressController::class, 'makeDefault'])->whereNumber('addressId')->name('account.addresses.default');
     });
 
     // The cart is for signed-in customers: guests see no prices and cannot order. Verifying the

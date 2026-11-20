@@ -59,6 +59,16 @@ final class Store
         return filter_var(self::email(), FILTER_VALIDATE_EMAIL) === false ? null : 'mailto:'.self::email();
     }
 
+    public static function companyNumber(): string
+    {
+        return (string) config('store.company_number');
+    }
+
+    public static function vatNumber(): string
+    {
+        return (string) config('store.vat_number');
+    }
+
     /**
      * The UK trading disclosure shown in the footer.
      */

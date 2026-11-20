@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Domain\Accounts\UpdateCustomerProfile;
+use App\Domain\Orders\OpenInvoices;
 use App\Http\Requests\Account\UpdatePasswordRequest;
 use App\Http\Requests\Account\UpdateProfileRequest;
 use App\Models\User;
@@ -27,6 +28,8 @@ final class AccountController extends Controller
         return view('account.show', [
             'user' => $user,
             'customer' => $user->latestCustomer(),
+            'termsOn' => $user->hasAccountTerms(),
+            'openInvoices' => app(OpenInvoices::class)->for($user),
         ]);
     }
 

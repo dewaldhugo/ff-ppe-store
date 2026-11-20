@@ -37,6 +37,21 @@
 
                 <section aria-labelledby="delivery-heading" class="rounded border border-border bg-white p-5" data-section="delivery-address">
                     <h2 id="delivery-heading" class="text-lg font-bold">Delivery address</h2>
+
+                    {{-- Saved addresses: picking one fills the fields below. Manage them in My Account, Addresses. --}}
+                    @if ($savedAddresses->isNotEmpty())
+                        <div class="mt-4" data-saved-addresses>
+                            <label for="saved-address" class="block text-sm font-semibold">Use a saved address</label>
+                            <select id="saved-address" wire:model.live="saved_address" class="mt-1 block w-full rounded-md border border-border-strong bg-white px-3 py-2.5 text-ink focus:border-brand-blue focus:outline-none focus:ring-2 focus:ring-brand-blue/30">
+                                <option value="">A different address</option>
+                                @foreach ($savedAddresses as $saved)
+                                    <option value="{{ $saved->id }}">{{ \App\Domain\Accounts\AddressBook::label($saved) }}@if ($saved->shipping_default) (default)@endif</option>
+                                @endforeach
+                            </select>
+                            <p class="mt-1 text-sm text-ink-muted"><a href="{{ route('account.addresses') }}" class="underline" target="_blank" rel="noopener">Manage saved addresses</a></p>
+                        </div>
+                    @endif
+
                     <div class="mt-4 grid gap-4 sm:grid-cols-2">
                         <x-checkout.field name="ship_line_one" label="Address line 1" autocomplete="shipping address-line1" class="sm:col-span-2" />
                         <x-checkout.field name="ship_line_two" label="Address line 2" :optional="true" autocomplete="shipping address-line2" class="sm:col-span-2" />
@@ -47,6 +62,13 @@
                             <span class="block text-sm font-semibold">Country</span>
                             <p class="mt-1 rounded-md border border-border bg-surface-muted px-3 py-2.5 text-ink-muted" data-country>United Kingdom</p>
                         </div>
+
+                        @if ($saved_address === '')
+                            <label class="inline-flex items-center gap-2 text-sm sm:col-span-2" data-save-address>
+                                <input type="checkbox" wire:model="save_address" class="h-4 w-4">
+                                Save this address to my address book
+                            </label>
+                        @endif
                     </div>
 
                     <fieldset class="mt-5">

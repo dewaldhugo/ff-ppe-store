@@ -1,8 +1,63 @@
-<x-layouts.account title="My account" heading="My account">
+<x-layouts.member title="My account" heading="My account">
     <p class="text-ink-muted" data-account-summary>
-        Signed in as <strong class="font-semibold text-ink">{{ $user->email }}</strong>.
-        Orders, addresses and checkout are coming soon.
+        Signed in as <strong class="font-semibold text-ink">{{ $user->email }}</strong>. Your orders and invoices are in the menu.
     </p>
+
+    {{-- Payment terms: how this customer can pay, and what is still owed on account. --}}
+    <section class="mt-8 rounded border border-border bg-white p-5" aria-labelledby="terms-heading" data-payment-terms>
+        <h2 id="terms-heading" class="text-xl font-semibold text-ink">Payment terms</h2>
+
+        <ul class="mt-3 space-y-2 text-sm">
+            <li class="flex flex-wrap items-center gap-2"><span class="font-semibold">Card</span><span class="text-ink-muted">Pay by debit or credit card at checkout.</span></li>
+            <li class="flex flex-wrap items-center gap-2" data-terms-account>
+                <span class="font-semibold">30 day account</span>
+                @if ($termsOn)
+                    <span class="rounded border border-success bg-success-surface px-2 py-0.5 text-xs font-bold text-success" data-terms-on>Enabled</span>
+                    <span class="text-ink-muted">Orders on account are invoiced and payable within 30 days.</span>
+                @else
+                    <span class="rounded border border-border bg-surface-muted px-2 py-0.5 text-xs font-bold text-ink-muted" data-terms-off>Not enabled</span>
+                    <span class="text-ink-muted">To buy on 30 day terms, please <a href="{{ route('contact') }}" class="font-semibold text-brand-blue underline">contact us</a>.</span>
+                @endif
+            </li>
+        </ul>
+
+        @if ($termsOn)
+            <h3 class="mt-5 text-base font-semibold text-ink">Invoices still to pay</h3>
+
+            @if ($openInvoices->isEmpty())
+                <p class="mt-2 text-sm text-ink-muted" data-no-open-invoices>You have nothing to pay on account.</p>
+            @else
+                <div class="mt-2 overflow-x-auto rounded border border-border">
+                    <table class="w-full min-w-[26rem] text-left text-sm" data-open-invoices>
+                        <thead class="bg-surface-muted text-xs uppercase tracking-wide text-ink-muted">
+                            <tr>
+                                <th scope="col" class="px-3 py-2">Invoice</th>
+                                <th scope="col" class="px-3 py-2">Due</th>
+                                <th scope="col" class="px-3 py-2 text-right">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-border">
+                            @foreach ($openInvoices as $open)
+                                <tr data-open-invoice>
+                                    <th scope="row" class="px-3 py-2 font-semibold"><a href="{{ route('account.invoices.show', $open->order->reference) }}" class="text-brand-blue underline">{{ $open->number() }}</a></th>
+                                    <td class="px-3 py-2">
+                                        {{ $open->dueDate()->format('j M Y') }}
+                                        @if ($open->isOverdue())
+                                            <span class="ml-1 rounded border border-danger px-1.5 py-0.5 text-xs font-bold text-danger" data-overdue>Overdue</span>
+                                        @endif
+                                    </td>
+                                    <td class="px-3 py-2 text-right font-semibold">{{ $open->order->total->formatted(trimTrailingZeros: false) }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                <p class="mt-2 text-sm" data-open-total>
+                    Total to pay: <strong>{{ (new \Lunar\DataTypes\Price((int) $openInvoices->sum(fn ($open) => $open->order->total->value), $openInvoices->first()->order->currency, 1))->formatted(trimTrailingZeros: false) }}</strong>
+                </p>
+            @endif
+        @endif
+    </section>
 
     <section class="mt-8" aria-labelledby="profile-heading">
         <h2 id="profile-heading" class="text-xl font-semibold text-ink">Your details</h2>
@@ -46,4 +101,4 @@
         @csrf
         <x-ui.button-outline type="submit">Log out</x-ui.button-outline>
     </form>
-</x-layouts.account>
+</x-layouts.member>
