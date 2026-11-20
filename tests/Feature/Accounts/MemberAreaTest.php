@@ -210,37 +210,40 @@ it('lists one invoice per order with its number, date and payment state', functi
 
     $html = $this->get(route('account.invoices'))->assertOk()->getContent();
 
-    expect($html)->toContain('INV-'.$order->reference)
+    expect($html)->toContain((new Invoice($order))->number())
         ->toContain($order->placed_at->format('j M Y'))
         ->toContain('Payment due by '.$order->placed_at->copy()->addDays(30)->format('j F Y'))
         ->toContain('£96.00');
 });
 
-it('shows a VAT invoice with the supplier, customer, lines and totals', function (): void {
+it('shows a tax invoice with the supplier, customer, lines and totals', function (): void {
     $order = memberOrder($this->member, 'PO-5');
 
     $html = $this->get(route('account.invoices.show', $order->reference))->assertOk()->getContent();
 
-    expect($html)->toContain('VAT invoice')
-        ->toContain('INV-'.$order->reference)
-        ->toContain($order->placed_at->format('j F Y'))
+    expect($html)->toContain('Tax invoice')
+        ->toContain('data-invoice-number>'.(new Invoice($order))->number())
+        ->toContain('data-invoice-date>'.$order->placed_at->format('j M Y'))
         // The supplier's details, from the store identity.
         ->toContain(e(Store::legalName()))
         ->toContain('data-supplier-vat')
-        ->toContain('VAT number '.Store::vatNumber())
+        ->toContain('VAT Number: '.Store::vatNumber())
         // The customer's, with the VAT number they gave at checkout.
         ->toContain('data-invoice-billing')
         ->toContain('Builder Ltd')
-        ->toContain('Customer VAT number GB123456789')
-        ->toContain('Your PO number')
+        ->toContain('data-invoice-customer-vat>GB123456789')
+        ->toContain('Purchase Order Number')
         ->toContain('PO-5')
-        // The goods and the delivery, then the totals: £80.00 net, £16.00 VAT, £96.00 to pay.
-        ->and(substr_count($html, 'data-invoice-line>'))->toBe(2)
-        ->and($html)->toContain('£80.00')
-        ->toContain('£16.00')
+        // One goods line, with delivery in the totals: £50.00 goods, £30.00 delivery, £16.00 VAT, £96.00 to pay.
+        ->and(substr_count($html, 'data-invoice-line>'))->toBe(1)
+        ->and($html)->toContain('data-invoice-subtotal><dt>Subtotal</dt><dd class="font-semibold">£50.00')
+        ->toContain('data-invoice-delivery-total><dt>Delivery</dt><dd class="font-semibold">£30.00')
+        ->toContain('<dt>TOTAL VAT 20%</dt><dd class="font-semibold">£16.00')
         ->toContain('data-invoice-total>£96.00')
-        // On account and unpaid: the due date, 30 days on.
-        ->toContain('Payable within 30 days, by '.$order->placed_at->copy()->addDays(30)->format('j F Y'))
+        // On account and unpaid: the due date 30 days on, the bank details and the payment advice slip.
+        ->toContain('<span class="font-bold">Due Date:</span> <span data-invoice-status>'.$order->placed_at->copy()->addDays(30)->format('j M Y').'</span>')
+        ->toContain('data-invoice-bank')
+        ->toContain('data-payment-advice')
         ->toContain('data-print-invoice');
 });
 
@@ -251,7 +254,9 @@ it('marks an invoice paid once staff move the order to Payment Received', functi
     $this->get(route('account.invoices.show', $order->reference))
         ->assertOk()
         ->assertSee('data-invoice-status>Paid', false)
-        ->assertDontSee('Payable within');
+        ->assertDontSee('Due Date:')
+        ->assertDontSee('data-invoice-bank', false)
+        ->assertDontSee('data-payment-advice', false);
 
     $this->get(route('account.invoices'))->assertSee('data-invoice-payment>Paid', false);
 });
@@ -260,7 +265,7 @@ it('works out an invoice from the order: number, date, due date and paid state',
     $order = memberOrder($this->member);
     $invoice = new Invoice($order);
 
-    expect($invoice->number())->toBe('INV-'.$order->reference)
+    expect($invoice->number())->toBe($order->placed_at->format('dmY').'/001')
         ->and($invoice->onAccount())->toBeTrue()
         ->and($invoice->isPaid())->toBeFalse()
         ->and($invoice->dueDate()->toDateString())->toBe($order->placed_at->copy()->addDays(30)->toDateString())

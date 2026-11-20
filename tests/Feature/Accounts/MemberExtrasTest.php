@@ -430,14 +430,17 @@ it('lists the unpaid account invoices, soonest due first, with the total and an 
     $paid = extrasOrder($this->member);
     $paid->update(['status' => 'payment-received']);
 
+    // Numbers are given when an order is placed and stay put when its date is edited later.
+    $number = fn (Order $order): string => (new Invoice($order->refresh()))->number();
+
     $html = $this->get(route('account'))->assertOk()->getContent();
 
     expect(substr_count($html, 'data-open-invoice>'))->toBe(2)
-        ->and($html)->toContain('INV-'.$old->reference)
-        ->toContain('INV-'.$recent->reference)
-        ->not->toContain('INV-'.$paid->reference)
+        ->and($html)->toContain($number($old))
+        ->toContain($number($recent))
+        ->not->toContain($number($paid))
         // The older invoice is due first, and is overdue; the recent one is not.
-        ->and(strpos($html, 'INV-'.$old->reference))->toBeLessThan(strpos($html, 'INV-'.$recent->reference))
+        ->and(strpos($html, $number($old)))->toBeLessThan(strpos($html, $number($recent)))
         ->and(substr_count($html, 'data-overdue'))->toBe(1)
         ->and($html)->toContain($old->placed_at->copy()->addDays(30)->format('j M Y'))
         // £96.00 each.

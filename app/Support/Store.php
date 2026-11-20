@@ -72,6 +72,28 @@ final class Store
     /**
      * The UK trading disclosure shown in the footer.
      */
+    /**
+     * The bank details printed on an unpaid account invoice, label to value, in print order. A value
+     * that is not set reads TBC.
+     *
+     * @return array<string, string>
+     */
+    public static function bankDetails(): array
+    {
+        $bank = (array) config('store.bank');
+
+        $value = fn (string $key): string => filled($bank[$key] ?? null) ? (string) $bank[$key] : 'TBC';
+
+        return [
+            'Account name' => $value('account_name'),
+            'Bank' => $value('bank_name'),
+            'Sort code' => $value('sort_code'),
+            'Account number' => $value('account_number'),
+            'IBAN' => $value('iban'),
+            'Bank address' => $value('address'),
+        ];
+    }
+
     public static function disclosure(): string
     {
         return sprintf(

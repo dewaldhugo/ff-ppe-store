@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 /**
- * My Account, Invoices: one invoice per placed order, listed and shown as a printable VAT invoice page
+ * My Account, Invoices: one invoice per placed order, listed and shown as a printable tax invoice page
  * (the browser's Print / Save as PDF). Scoped to the signed-in customer exactly like the orders.
  */
 final class InvoiceController extends Controller
