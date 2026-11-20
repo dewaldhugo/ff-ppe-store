@@ -14,7 +14,12 @@
             <p class="mt-4"><x-ui.button :href="route('shop')">Browse products</x-ui.button></p>
         </div>
     @else
-        <ul class="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5" data-favourites-list>
+        <p class="mt-6" data-quick-order-link>
+            <x-ui.button :href="route('favourites.quick-order')">Quick order</x-ui.button>
+            <span class="ml-2 text-sm text-ink-muted">Pick a colour and size for each favourite and add it to your order.</span>
+        </p>
+
+        <ul class="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5" data-favourites-list>
             @foreach ($products as $product)
                 @php
                     $price = $priceDisplay->fromPrice($product);
