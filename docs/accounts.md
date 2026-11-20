@@ -118,10 +118,10 @@ Optional. Spaces and hyphens are stripped and the value is upper-cased (`App\Dom
 |---|---|---|
 | Table and model | `users`, `App\Models\User` | `lunar_staff`, `Lunar\Admin\Models\Staff` |
 | Guard | `web` | `staff` (Lunar injects it at runtime in `LunarPanelProvider`; it is not in `config/auth.php`) |
-| Where they sign in | `/login` | `/lunar/login` |
-| What they can open | storefront, My Account | `/lunar` (admin panel) and `/horizon` |
+| Where they sign in | `/login` | `/admin/login` |
+| What they can open | storefront, My Account | `/admin` (admin panel) and `/horizon` |
 
-The admin panel is at `/lunar`, not `/admin`. The panel and the Horizon gate both check the `staff` guard, so a customer session is never enough, even when a customer and a staff member share an email address (different tables, never linked). `App\Models\User` is not a Filament user and has no panel access.
+The admin panel is at `/admin` (Lunar's default is `/lunar`; `AppServiceProvider` sets the path, and `/lunar` is a 404). The panel and the Horizon gate both check the `staff` guard, so a customer session is never enough, even when a customer and a staff member share an email address (different tables, never linked). `App\Models\User` is not a Filament user and has no panel access.
 
 Rules that keep it that way:
 
@@ -130,7 +130,7 @@ Rules that keep it that way:
 - Both guards share one session store. Customer logout regenerates the session (`session()->regenerate()`) and never calls `invalidate()`, which would also end a staff member's admin session in the same browser. A test pins this.
 - The password broker only knows `users`: a staff email cannot be reset from the storefront.
 
-`tests/Feature/Accounts/GuardSeparationTest.php` proves customer to `/lunar` and `/horizon`, and staff to My Account.
+`tests/Feature/Accounts/GuardSeparationTest.php` proves customer to `/admin` and `/horizon`, and staff to My Account.
 
 ## Email verification and the env switch
 

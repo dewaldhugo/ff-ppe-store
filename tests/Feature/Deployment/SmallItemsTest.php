@@ -34,7 +34,7 @@ it('keeps crawlers out of the admin, Horizon, cart, checkout and account, and no
 
     expect($lines)->toBe([
         'User-agent: *',
-        'Disallow: /lunar',
+        'Disallow: /admin',
         'Disallow: /horizon',
         'Disallow: /cart',
         'Disallow: /checkout',

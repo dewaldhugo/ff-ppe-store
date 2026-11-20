@@ -1,5 +1,5 @@
 User-agent: *
-Disallow: /lunar
+Disallow: /admin
 Disallow: /horizon
 Disallow: /cart
 Disallow: /checkout
