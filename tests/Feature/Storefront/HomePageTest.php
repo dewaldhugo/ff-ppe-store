@@ -192,8 +192,8 @@ it('shows Open a trade account to guests only', function (): void {
         ->and($hero)->toContain('View all products');
 });
 
-it('uses one of the six hero-bg photos in the slideshow as the hero background, centred, with no overlay', function (): void {
-    foreach ([1, 2, 7, 8, 9, 10] as $n) {
+it('uses one of the eight hero-bg photos in the slideshow as the hero background, centred, with no overlay', function (): void {
+    foreach ([1, 2, 7, 8, 9, 10, 11, 12] as $n) {
         expect(is_file(public_path("images/hero-bg-{$n}.jpg")))->toBeTrue();
     }
 
@@ -211,12 +211,13 @@ it('uses one of the six hero-bg photos in the slideshow as the hero background, 
             ->and($hero)->not->toContain('data-hero-overlay')
             ->and($hero)->not->toContain('from-brand-navy/');
 
-        preg_match('#hero-bg-(\d+)\.jpg#', $hero, $m);
-        expect([1, 2, 7, 8, 9, 10])->toContain((int) $m[1]); // 3, 4, 5 and 6 are out of the slideshow
+        // The first photo is the first <img> (the <source> before it is the phone photo).
+        preg_match('#<img[^>]*src="[^"]*hero-bg-(\d+)\.jpg"[^>]*data-hero-bg#', $hero, $m);
+        expect([1, 2, 7, 8, 9, 10, 11, 12])->toContain((int) $m[1]); // 3, 4, 5 and 6 are out of the slideshow
         $seen[$m[1]] = true;
     }
 
-    // Random per page load: 40 loads showing a single image has odds of 6^-39.
+    // Random per page load: 40 loads showing a single image has odds of 8^-39.
     expect(count($seen))->toBeGreaterThan(1);
 });
 
@@ -546,12 +547,12 @@ it('puts an intro h3 under the industries heading and a light grey band above th
         ->and($serviceClass[0] ?? '')->toContain('bg-surface-muted');
 });
 
-it('fades through the six hero photos in use every six seconds, starting at a random one', function (): void {
+it('fades through the eight hero photos in use every six seconds, starting at a random one', function (): void {
     $hero = heroSection($this->get(route('home'))->getContent());
 
     preg_match_all('#<img[^>]*data-hero-slide[^>]*>#s', $hero, $slides);
 
-    expect($slides[0])->toHaveCount(6)
+    expect($slides[0])->toHaveCount(8)
         ->and($hero)->toContain('data-hero-slides')
         ->and($hero)->toContain('data-interval="6000"')
         ->and($hero)->toContain('}, 6000);')
@@ -562,7 +563,7 @@ it('fades through the six hero photos in use every six seconds, starting at a ra
         ->and($hero)->not->toContain('hero-bg-5.jpg')
         ->and($hero)->not->toContain('hero-bg-6.jpg');
 
-    // The first photo is in the page; the other five wait in data-src until their turn.
+    // The first photo is in the page; the other seven wait in data-src until their turn.
     expect($slides[0][0])->toContain(' src="')->toContain('data-hero-bg')->toContain('data-state="current"');
 
     $files = [];
@@ -577,10 +578,33 @@ it('fades through the six hero photos in use every six seconds, starting at a ra
     }
 
     // Every photo once, in a fixed cycle that starts wherever the page began.
-    expect(collect($files)->sort()->values()->all())->toBe([1, 2, 7, 8, 9, 10]);
+    expect(collect($files)->sort()->values()->all())->toBe([1, 2, 7, 8, 9, 10, 11, 12]);
 
     foreach ($files as $i => $n) {
-        expect($files[($i + 1) % 6])->toBe([1 => 2, 2 => 7, 7 => 8, 8 => 9, 9 => 10, 10 => 1][$n]);
+        expect($files[($i + 1) % 8])->toBe([1 => 2, 2 => 7, 7 => 8, 8 => 9, 9 => 10, 10 => 11, 11 => 12, 12 => 1][$n]);
+    }
+});
+
+it('shows a phone only hero-bg-9, with no rotation, and the two new photos only in the desktop slideshow', function (): void {
+    $hero = heroSection($this->get(route('home'))->getContent());
+
+    // The phone photo is the <source> of the first slide, in front of its <img>.
+    preg_match('#<picture>\s*<source media="\(max-width: 639px\)" srcset="([^"]+)">\s*<img[^>]*data-hero-bg#', $hero, $picture);
+
+    expect($picture[1] ?? '')->toBe(asset('images/hero-bg-9.jpg'))
+        // Only that one <picture>: no other slide has a phone source, and none but the first has a src to load.
+        ->and(substr_count($hero, '<picture>'))->toBe(1)
+        ->and(substr_count($hero, 'media="(max-width: 639px)"'))->toBe(1)
+        // The script rotates only from 640px up and stops below it.
+        ->and($hero)->toContain("window.matchMedia('(min-width: 640px)')")
+        ->and($hero)->toContain('stop()')
+        ->and($hero)->toContain('start()')
+        // The two new photos are in the slideshow and are real files at the same size as the others.
+        ->and($hero)->toContain('hero-bg-11.jpg')
+        ->and($hero)->toContain('hero-bg-12.jpg');
+
+    foreach ([11, 12] as $n) {
+        expect(getimagesize(public_path("images/hero-bg-{$n}.jpg")))->toMatchArray([0 => 1920, 1 => 882]);
     }
 });
 
