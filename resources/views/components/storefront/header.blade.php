@@ -54,7 +54,27 @@
                         <svg aria-hidden="true" class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6.75a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.5 20.25a7.5 7.5 0 0 1 15 0"/></svg>
                         <span class="truncate font-semibold" title="{{ $customer->name }}{{ $companyName ? ' ['.$companyName.']' : '' }}">{{ $customer->name }}@if ($companyName) <span class="font-normal">[{{ $companyName }}]</span>@endif</span>
                     </li>
-                    <li><a href="{{ route('account') }}" class="{{ $barOutline }}" data-account-link>My account</a></li>
+                    {{-- The account menu. Without JavaScript "My account" is a plain link to the account page, which has the same menu. --}}
+                    <li class="relative" x-data="{ open: false }" x-on:keydown.escape="open = false" x-on:click.outside="open = false" data-account-menu>
+                        <a
+                            href="{{ route('account') }}"
+                            class="{{ $barOutline }} after:ml-1.5 after:content-['▾']"
+                            aria-haspopup="menu"
+                            x-bind:aria-expanded="open.toString()"
+                            x-on:click.prevent="open = ! open"
+                            data-account-link>My account</a>
+                        {{-- A div, not a list: the top bar is a list of lists. --}}
+                        <div x-show="open" x-cloak role="menu" class="absolute right-0 top-full z-50 mt-2 w-48 rounded-md border border-border bg-white py-1 text-sm text-ink shadow-lg" data-account-menu-list>
+                            <a role="menuitem" href="{{ route('account') }}" class="block px-4 py-2 hover:bg-surface-muted" data-menu-details>My details</a>
+                            <a role="menuitem" href="{{ route('account.orders') }}" class="block px-4 py-2 hover:bg-surface-muted" data-menu-orders>Orders</a>
+                            <a role="menuitem" href="{{ route('account.invoices') }}" class="block px-4 py-2 hover:bg-surface-muted" data-menu-invoices>Invoices</a>
+                            <a role="menuitem" href="{{ route('account.addresses') }}" class="block px-4 py-2 hover:bg-surface-muted" data-menu-addresses>Addresses</a>
+                            <a role="menuitem" href="{{ route('favourites') }}" class="block px-4 py-2 hover:bg-surface-muted" data-menu-favourites>Favourites</a>
+                            <div class="my-1 border-t border-border"></div>
+                            <a role="menuitem" href="{{ route('delivery') }}" class="block px-4 py-2 text-ink-muted hover:bg-surface-muted" data-menu-delivery>Delivery information</a>
+                            <a role="menuitem" href="{{ route('returns') }}" class="block px-4 py-2 text-ink-muted hover:bg-surface-muted" data-menu-returns>Returns and refunds</a>
+                        </div>
+                    </li>
                     <li>
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf

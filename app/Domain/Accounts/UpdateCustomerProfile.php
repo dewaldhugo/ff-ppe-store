@@ -7,7 +7,6 @@ namespace App\Domain\Accounts;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Lunar\Models\Customer;
-use Lunar\Models\CustomerGroup;
 use Throwable;
 
 /**
@@ -40,7 +39,7 @@ final class UpdateCustomerProfile
             $user->save();
 
             $customer = CustomerSearch::withoutIndexing(function () use ($user, $data): Customer {
-                $customer = $user->latestCustomer() ?? $this->createCustomer($user);
+                $customer = app(EnsureCustomer::class)($user);
 
                 $customer->forceFill([
                     'first_name' => $data['first_name'],
@@ -64,22 +63,5 @@ final class UpdateCustomerProfile
         }
 
         return $emailChanged;
-    }
-
-    /**
-     * A user created outside registration (for example by a seeder or a developer) may have
-     * no customer yet. Give them one so their company details have somewhere to live.
-     */
-    private function createCustomer(User $user): Customer
-    {
-        $customer = Customer::create(['first_name' => $user->name, 'last_name' => '-']);
-
-        $user->customers()->attach($customer);
-
-        if ($group = CustomerGroup::getDefault()) {
-            $customer->customerGroups()->attach($group);
-        }
-
-        return $customer;
     }
 }

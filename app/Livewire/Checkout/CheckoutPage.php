@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Checkout;
 
+use App\Domain\Accounts\AddressBook;
 use App\Domain\Accounts\Postcode;
 use App\Domain\Accounts\VatNumber;
 use App\Domain\Cart\CartLineViews;
@@ -21,6 +22,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
 use Lunar\Models\Cart;
+use Throwable;
 
 /**
  * The checkout (/checkout), for signed-in customers with something in their cart.
@@ -72,6 +74,12 @@ final class CheckoutPage extends Component
     public string $bill_postcode = '';
 
     /** One of PaymentMethods::available() for this customer, or empty when none can be used. */
+    /** The id of a saved address picked from the address book, or empty. */
+    public string $saved_address = '';
+
+    /** Save the delivery address to the address book when the order goes through. */
+    public bool $save_address = false;
+
     public string $payment_method = '';
 
     public string $promo_code = '';
@@ -100,7 +108,8 @@ final class CheckoutPage extends Component
 
         $user = Auth::guard('web')->user();
         $customer = $user->latestCustomer();
-        $address = $customer?->addresses()->where('billing_default', true)->first() ?? $customer?->addresses()->first();
+        // The default delivery address from the address book, else the company (billing) address, else the first saved.
+        $address = app(AddressBook::class)->defaultFor($user);
 
         $this->payment_method = PaymentMethods::default($user);
         $this->full_name = (string) $user->name;
@@ -109,8 +118,9 @@ final class CheckoutPage extends Component
         $this->company_name = (string) ($customer?->company_name ?? '');
         $this->vat_number = (string) ($customer?->tax_identifier ?? '');
 
-        // The company address given at registration is where most orders go: a starting point to confirm.
+        // Where most orders go: a starting point to confirm, and the saved address shown as chosen.
         if ($address !== null) {
+            $this->saved_address = (string) $address->id;
             $this->ship_line_one = (string) $address->line_one;
             $this->ship_line_two = (string) $address->line_two;
             $this->ship_city = (string) $address->city;
@@ -127,8 +137,14 @@ final class CheckoutPage extends Component
             'ship_postcode' => $this->ship_postcode = Postcode::normalise($this->ship_postcode) ?? '',
             'bill_postcode' => $this->bill_postcode = Postcode::normalise($this->bill_postcode) ?? '',
             'vat_number' => $this->vat_number = VatNumber::normalise($this->vat_number) ?? '',
+            'saved_address' => $this->applySavedAddress(),
             default => null,
         };
+
+        // Typing over a saved address makes it a different address: the list steps back and the save box returns.
+        if (str_starts_with($property, 'ship_')) {
+            $this->saved_address = '';
+        }
 
         if (array_key_exists($property, $this->rules())) {
             $this->validateOnly($property);
@@ -198,6 +214,8 @@ final class CheckoutPage extends Component
             return null;
         }
 
+        $this->rememberAddress();
+
         return $this->redirectRoute('checkout.complete', $order->reference);
     }
 
@@ -216,12 +234,16 @@ final class CheckoutPage extends Component
         $this->validate();
 
         try {
-            return $placeOrder->startCard(Auth::guard('web')->user(), $this->details());
+            $started = $placeOrder->startCard(Auth::guard('web')->user(), $this->details());
         } catch (CheckoutRejected $rejected) {
             $this->formError = $rejected->getMessage();
 
             return null;
         }
+
+        $this->rememberAddress();
+
+        return $started;
     }
 
     /**
@@ -237,6 +259,60 @@ final class CheckoutPage extends Component
         }
 
         return $card->amount($this->deliveryReady() ? $summary->withDelivery($cart) : $cart->recalculate());
+    }
+
+    /**
+     * Fills the delivery address from the saved address picked in the list. The id is looked up in the
+     * customer's own address book, so an id from the browser cannot fill in anyone else's address.
+     */
+    private function applySavedAddress(): void
+    {
+        $address = $this->saved_address === '' ? null : app(AddressBook::class)->find(Auth::guard('web')->user(), (int) $this->saved_address);
+
+        if ($address === null) {
+            $this->saved_address = '';
+
+            return;
+        }
+
+        $this->ship_line_one = (string) $address->line_one;
+        $this->ship_line_two = (string) $address->line_two;
+        $this->ship_city = (string) $address->city;
+        $this->ship_county = (string) $address->state;
+        $this->ship_postcode = (string) $address->postcode;
+        $this->save_address = false;
+    }
+
+    /**
+     * Saves the delivery address to the address book when the customer ticked the box and it is not already
+     * there. It runs after the order or the card payment has started, and never makes either fail.
+     */
+    private function rememberAddress(): void
+    {
+        if (! $this->save_address) {
+            return;
+        }
+
+        try {
+            app(AddressBook::class)->rememberFromCheckout(
+                Auth::guard('web')->user(),
+                [
+                    'line_one' => $this->ship_line_one,
+                    'line_two' => $this->ship_line_two,
+                    'city' => $this->ship_city,
+                    'county' => $this->ship_county,
+                    'postcode' => $this->ship_postcode,
+                ],
+                [
+                    'full_name' => $this->full_name,
+                    'company_name' => $this->company_name,
+                    'phone' => $this->phone,
+                    'notes' => $this->notes !== '' ? $this->notes : null,
+                ],
+            );
+        } catch (Throwable $e) {
+            report($e);
+        }
     }
 
     private function tidy(): void
@@ -303,6 +379,7 @@ final class CheckoutPage extends Component
             'canOrder' => $views->canCheckout($lines),
             'accountTerms' => Auth::guard('web')->user()->hasAccountTerms(),
             'cardLive' => PaymentMethods::cardLive(),
+            'savedAddresses' => app(AddressBook::class)->all(Auth::guard('web')->user()),
             'stripeKey' => (string) config('services.stripe.public_key'),
             'cardAmount' => $hasLines ? app(CardPayments::class)->amount($cart) : 0,
             'canPay' => $this->payment_method !== '',
