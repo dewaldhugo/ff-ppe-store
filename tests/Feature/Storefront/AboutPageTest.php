@@ -11,25 +11,25 @@ it('serves the about page at /about in the standard layout', function (): void {
 
     $html = $this->get(route('about'))->assertOk()->getContent();
 
-    expect($html)->toContain('<title>About The Bridge Group | ')
+    expect($html)->toContain('<title>About us | ')
         ->and($html)->toContain('id="main"')
         ->and($html)->toContain('<footer')
         ->and($html)->toContain('<nav aria-label="Main"')
         ->and(substr_count($html, '<h1'))->toBe(1)
-        ->and($html)->toContain('About The Bridge Group</h1>');
+        ->and($html)->toContain('About Frontline</h1>');
 });
 
-it('has the real content and no longer the placeholder text', function (): void {
+it('has the supplied Frontline copy and nothing from the previous company', function (): void {
     $html = $this->get(route('about'))->assertOk()->getContent();
 
-    expect($html)->not->toContain('Content coming soon.');
+    expect($html)->not->toContain('Content coming soon.')
+        ->and($html)->toContain('we draw inspiration from the people who matter most')
+        ->and($html)->toContain('nationwide distribution network with robust stockholding and rigorous quality control')
+        ->and($html)->toContain('we now also offer a lifestyle range that blends safety, comfort, and practicality for everyday use.')
+        ->and($html)->toContain('Frontline: Innovative safety gear, designed for those who keep the UK moving.');
 
-    foreach (['Our Story', 'One Group, Working Together', 'Our People', 'How We Work', 'Our Standards &amp; Commitments', 'Talk To Our Team'] as $heading) {
-        expect($html)->toContain('>'.$heading.'</h2>');
-    }
-
-    foreach (['Quality', 'Care', 'Ownership', 'Passion', 'Service'] as $value) {
-        expect($html)->toContain('>'.$value.'</dt>');
+    foreach (['Bridge', 'Greenwich', 'Thames Water', 'Siemens', 'scaffolding'] as $old) {
+        expect($html)->not->toContain($old);
     }
 });
 
@@ -52,16 +52,16 @@ it('uses UK English and no em dashes in its copy', function (): void {
         ->and($text)->not->toMatch('/\b(organization|program|center|color|behavior)\b/i');
 });
 
-it('shows the team photo with descriptive alt text in the Our People section', function (): void {
+it('shows the team photo with descriptive alt text and its real size', function (): void {
     $html = $this->get(route('about'))->assertOk()->getContent();
 
-    preg_match('#<section[^>]*aria-labelledby="about-people".*?</section>#s', $html, $section);
-    preg_match('#<img[^>]*data-about-people-image[^>]*>#s', $section[0] ?? '', $img);
+    preg_match('#<img[^>]*data-about-image[^>]*>#s', $html, $img);
 
-    expect($img[0] ?? '')->toContain(asset('images/about/our-people.webp'))
+    expect($img[0] ?? '')->toContain(asset('images/about/frontline-team.jpg'))
         ->toMatch('#alt="[^"]{20,}"#')
-        ->toContain('width="763"')
-        ->toContain('height="500"')
-        ->toContain('loading="lazy"')
-        ->and(is_file(public_path('images/about/our-people.webp')))->toBeTrue();
+        ->toContain('width="2000"')
+        ->toContain('height="877"')
+        ->and(is_file(public_path('images/about/frontline-team.jpg')))->toBeTrue()
+        ->and(is_file(public_path('images/about/our-people.webp')))->toBeFalse()
+        ->and(getimagesize(public_path('images/about/frontline-team.jpg'))[0])->toBe(2000);
 });
