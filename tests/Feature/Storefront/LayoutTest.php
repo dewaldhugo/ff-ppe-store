@@ -43,16 +43,39 @@ it('shows the logo in the header, linked to the home page, with the store name a
     preg_match('#<a href="'.preg_quote(route('home'), '#').'"[^>]*data-site-logo[^>]*>.*?</a>#s', $html, $link);
 
     expect($link)->not->toBeEmpty()
-        ->and($link[0])->toContain('src="'.asset('images/the-bridge-group-logo.svg').'"')
+        ->and($link[0])->toContain('src="'.asset('images/frontline-logo.png').'"')
         ->and($link[0])->toContain('alt="Frontline Safety Gear"')
-        ->and(is_file(public_path('images/the-bridge-group-logo.svg')))->toBeTrue()
-        ->and(is_file(public_path('images/the-bridge-group-logo-white.svg')))->toBeTrue();
+        ->and(is_file(public_path('images/frontline-logo.png')))->toBeTrue()
+        ->and(is_file(public_path('images/frontline-logo-white.png')))->toBeTrue()
+        ->and(is_file(public_path('images/the-bridge-group-logo.svg')))->toBeFalse()
+        ->and(is_file(public_path('images/the-bridge-group-logo-white.svg')))->toBeFalse();
+});
+
+it('has the favicon and touch icon on the storefront and the checkout, and the files exist', function (): void {
+    $storefront = $this->get(route('shop'))->assertOk()->getContent();
+
+    foreach (['favicon.ico', 'favicon.png', 'apple-touch-icon.png'] as $file) {
+        expect($storefront)->toContain(asset($file))
+            ->and(filesize(public_path($file)))->toBeGreaterThan(0);
+    }
+
+    expect($storefront)->toContain('rel="apple-touch-icon"')
+        // The checkout has its own <head>, so it includes the same component.
+        ->and(file_get_contents(resource_path('views/components/layouts/checkout.blade.php')))->toContain('<x-storefront.favicons />');
+});
+
+it('uses the Frontline logos and favicon in the admin panel', function (): void {
+    $panel = \Filament\Facades\Filament::getPanel('lunar');
+
+    expect($panel->getBrandLogo())->toBe(asset('images/frontline-logo.png'))
+        ->and($panel->getDarkModeBrandLogo())->toBe(asset('images/frontline-logo-white.png'))
+        ->and($panel->getFavicon())->toBe(asset('favicon.png'));
 });
 
 it('has a top bar with the contact details on the left and the Log in and Register buttons on the right', function (): void {
     $html = $this->get(route('shop'))->getContent();
 
-    preg_match('#<div class="surface-dark bg-brand-navy.*?</ul>\s*<ul.*?</ul>#s', $html, $bar);
+    preg_match('#<div class="surface-dark bg-brand-charcoal.*?</ul>\s*<ul.*?</ul>#s', $html, $bar);
 
     expect($bar[0])->not->toContain('Trade supplier')
         // Contact first (left), account buttons after it (right).
@@ -83,6 +106,24 @@ it('links the phone and email once they are real', function (): void {
         ->and(Store::phoneHref())->toBe('tel:02079460000');
 });
 
+it('shows a phone icon and an email icon in the top bar, hidden from screen readers', function (): void {
+    config()->set('store.phone', '+276 7360 7260');
+    config()->set('store.email', 'info@frontlinesafetygear.com');
+
+    $html = $this->get(route('shop'))->getContent();
+
+    preg_match('#<ul[^>]*data-top-bar-contact.*?</ul>#s', $html, $contact);
+
+    expect($contact[0])->toMatch('#<svg aria-hidden="true"[^>]*data-top-bar-icon="phone"#')
+        ->and($contact[0])->toMatch('#<svg aria-hidden="true"[^>]*data-top-bar-icon="email"#')
+        // The icon comes before its text, and the number and address are still real links.
+        ->and(strpos($contact[0], 'data-top-bar-icon="phone"'))->toBeLessThan(strpos($contact[0], 'href="tel:'))
+        ->and(strpos($contact[0], 'data-top-bar-icon="email"'))->toBeLessThan(strpos($contact[0], 'href="mailto:'))
+        ->and($contact[0])->toContain('href="tel:+27673607260"')
+        ->and($contact[0])->toContain('>+276 7360 7260</a>')
+        ->and($html)->toContain('<div class="surface-dark bg-brand-charcoal');
+});
+
 it('has no cart link for a guest', function (): void {
     $html = $this->get(route('shop'))->assertOk()->getContent();
 
@@ -106,7 +147,7 @@ it('has a cart link with an item count badge of zero for a signed-in customer', 
 it('has Log in and Register in the top bar, in place of Account', function (): void {
     $html = $this->get(route('shop'))->getContent();
 
-    preg_match('#<div class="surface-dark bg-brand-navy.*?</ul>\s*<ul.*?</ul>#s', $html, $bar);
+    preg_match('#<div class="surface-dark bg-brand-charcoal.*?</ul>\s*<ul.*?</ul>#s', $html, $bar);
 
     expect($bar[0])->toMatch('#<a href="'.preg_quote(route('login'), '#').'"[^>]*data-login-link>Log in</a>#')
         ->and($bar[0])->toMatch('#<a href="'.preg_quote(route('register'), '#').'"[^>]*data-register-link>Register</a>#')

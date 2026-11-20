@@ -93,8 +93,8 @@ it('uses the white logo on the brand-blue footer', function (): void {
     preg_match('#<a href="'.preg_quote(route('home'), '#').'"[^>]*data-footer-logo.*?</a>#s', $footer, $logo);
 
     expect($footer)->toContain('bg-brand-blue')
-        ->and($logo[0])->toContain(asset('images/the-bridge-group-logo-white.svg'))
-        ->and($logo[0])->not->toContain('the-bridge-group-logo.svg');
+        ->and($logo[0])->toContain(asset('images/frontline-logo-white.png'))
+        ->and($logo[0])->not->toContain('frontline-logo.png');
 });
 
 it('shows the customer address in the footer', function (): void {
