@@ -23,11 +23,12 @@ return [
     // Where Contact page enquiries are emailed: the store email, unless STORE_ENQUIRY_EMAIL is set.
     'enquiry_email' => env('STORE_ENQUIRY_EMAIL') ?: 'info@frontlinesafetygear.com',
 
-    // Delivery: a flat charge, free once the goods reach the free-from amount. Pence, ex VAT,
-    // goods before discounts. The rule itself is App\Domain\Cart\Delivery\DeliveryPolicy.
+    // Delivery: a flat charge, free once the goods come to MORE than the free-over amount (exactly that
+    // amount still pays). Pence, ex VAT, goods before discounts. The rule itself is
+    // App\Domain\Cart\Delivery\DeliveryPolicy, which also words the note customers see.
     'delivery' => [
-        'free_from' => 100_000, // GBP 1,000.00
-        'charge' => 5_000,      // GBP 50.00
+        'free_over' => 50_000, // GBP 500.00
+        'charge' => 3_000,     // GBP 30.00
     ],
 
     // One switch for search engines. While true, every page of the site carries

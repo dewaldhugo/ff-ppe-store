@@ -18,8 +18,8 @@ use Tests\Support\CatalogueFactory;
 
 // VAT and delivery (docs/cart.md): worked out and shown at the checkout only, never on the cart page or
 // the mini cart. Every customer is a vetted business buying for its employees, so protective boots and
-// helmets carry 20%; only children's footwear is zero-rated. Delivery: free once the goods reach
-// GBP 1,000 ex VAT, otherwise GBP 50.
+// helmets carry 20%; only children's footwear is zero-rated. Delivery: free when the goods come to
+// more than GBP 500 ex VAT, otherwise GBP 30.
 
 beforeEach(function (): void {
     $this->customer = User::factory()->create();
@@ -93,46 +93,84 @@ it('labels children\'s footwear as zero-rated and charges it no VAT', function (
 
     expect($html)->toContain('data-zero-rated')
         ->and(dataText($html, 'data-zero-rated'))->toBe('Zero-rated: 0% VAT')
-        ->and(dataText($html, 'data-total-vat'))->toBe('£10.00'); // the delivery charge's VAT only
+        ->and(dataText($html, 'data-total-vat'))->toBe('£6.00'); // the delivery charge's VAT only
 });
 
 // --- Delivery and the money stack ------------------------------------------------
 
-it('adds GBP 50 delivery under GBP 1,000 and shows the whole stack', function (): void {
+it('adds GBP 30 delivery to an order of GBP 500 or less and shows the whole stack', function (): void {
     $html = checkoutFor($this->customer, [[5000]]);
 
     expect(dataText($html, 'data-total-subtotal'))->toBe('£50.00')
-        ->and(dataText($html, 'data-total-delivery'))->toBe('£50.00')
-        ->and(dataText($html, 'data-total-ex-vat'))->toBe('£100.00')
-        // 20% of the goods (£10.00) and of the delivery (£10.00).
-        ->and(dataText($html, 'data-total-vat'))->toBe('£20.00')
-        ->and(dataText($html, 'data-total-grand'))->toBe('£120.00');
+        ->and(dataText($html, 'data-total-delivery'))->toBe('£30.00')
+        ->and(dataText($html, 'data-total-ex-vat'))->toBe('£80.00')
+        // 20% of the goods (£10.00) and of the delivery (£6.00).
+        ->and(dataText($html, 'data-total-vat'))->toBe('£16.00')
+        ->and(dataText($html, 'data-total-grand'))->toBe('£96.00');
 });
 
-it('makes delivery free from exactly GBP 1,000 ex VAT', function (): void {
-    $html = checkoutFor($this->customer, [[100_000]]);
+it('makes delivery free when the goods come to more than GBP 500 ex VAT', function (): void {
+    $html = checkoutFor($this->customer, [[60_000]]);
 
     expect(dataText($html, 'data-total-delivery'))->toBe('Free')
-        ->and(dataText($html, 'data-total-ex-vat'))->toBe('£1,000.00')
-        ->and(dataText($html, 'data-total-vat'))->toBe('£200.00')
-        ->and(dataText($html, 'data-total-grand'))->toBe('£1,200.00');
+        ->and(dataText($html, 'data-total-ex-vat'))->toBe('£600.00')
+        ->and(dataText($html, 'data-total-vat'))->toBe('£120.00')
+        ->and(dataText($html, 'data-total-grand'))->toBe('£720.00');
 });
 
-it('charges delivery one penny under GBP 1,000', function (): void {
-    expect(dataText(checkoutFor($this->customer, [[99_999]]), 'data-total-delivery'))->toBe('£50.00');
+it('still charges delivery on exactly GBP 500 ex VAT, and makes it free one penny over', function (): void {
+    expect(dataText(checkoutFor($this->customer, [[50_000]]), 'data-total-delivery'))->toBe('£30.00')
+        ->and(dataText(checkoutFor($this->customer, [[50_001]]), 'data-total-delivery'))->toBe('Free');
 });
 
 it('judges the threshold on the goods across all lines', function (): void {
-    expect(dataText(checkoutFor($this->customer, [[25_000, 4]]), 'data-total-delivery'))->toBe('Free'); // 4 x £250.00
+    expect(dataText(checkoutFor($this->customer, [[20_000, 3]]), 'data-total-delivery'))->toBe('Free') // 3 x £200.00
+        ->and(dataText(checkoutFor($this->customer, [[20_000, 2]]), 'data-total-delivery'))->toBe('£30.00'); // 2 x £200.00
 });
 
 it('reads the amounts from config, in one place', function (): void {
-    config()->set('store.delivery.free_from', 2_000);
+    config()->set('store.delivery.free_over', 2_000);
     config()->set('store.delivery.charge', 700);
 
     expect(dataText(checkoutFor($this->customer, [[1_500]]), 'data-total-delivery'))->toBe('£7.00')
-        ->and(app(DeliveryPolicy::class)->freeFrom())->toBe(2_000)
+        ->and(app(DeliveryPolicy::class)->freeOver())->toBe(2_000)
         ->and(app(DeliveryPolicy::class)->charge())->toBe(700);
+});
+
+it('has the delivery amounts the client gave: GBP 30, free over GBP 500, in config/store.php', function (): void {
+    $file = require config_path('store.php');
+
+    expect($file['delivery'])->toBe(['free_over' => 50_000, 'charge' => 3_000]);
+});
+
+it('words the delivery note from the same amounts, so it cannot disagree with the charge', function (): void {
+    $policy = app(DeliveryPolicy::class);
+
+    expect($policy->notice())->toBe('Orders over £500.00 ex VAT get free delivery. Otherwise delivery is £30.00 ex VAT.');
+
+    config()->set('store.delivery.free_over', 75_000);
+    config()->set('store.delivery.charge', 4_500);
+
+    expect($policy->notice())->toBe('Orders over £750.00 ex VAT get free delivery. Otherwise delivery is £45.00 ex VAT.');
+});
+
+it('shows the delivery note on the checkout, with and without a delivery address', function (): void {
+    $note = 'Orders over £500.00 ex VAT get free delivery. Otherwise delivery is £30.00 ex VAT.';
+
+    $withAddress = checkoutFor($this->customer, [[5000]]);
+
+    expect($withAddress)->toContain('data-delivery-note>'.$note);
+
+    $cart = Cart::query()->create([
+        'currency_id' => Currency::getDefault()->id,
+        'channel_id' => Channel::getDefault()->id,
+        'user_id' => $this->customer->id,
+    ]);
+    $variant = CatalogueFactory::product('Note Boot', [['stock' => 50]], 'published', 5000, 'standard')->variants->sole();
+    $cart->lines()->create(['purchasable_type' => $variant->getMorphClass(), 'purchasable_id' => $variant->id, 'quantity' => 1, 'meta' => []]);
+    CartSession::use($cart);
+
+    expect(Livewire::test(CheckoutPage::class)->html())->toContain('data-delivery-pending')->toContain('data-delivery-note>'.$note);
 });
 
 it('prices delivery standard rated', function (): void {
@@ -141,8 +179,8 @@ it('prices delivery standard rated', function (): void {
 });
 
 it('prices paid delivery at 20% even when every goods line is zero-rated', function (): void {
-    // £50.00 of delivery at 20%, on a goods line with no VAT at all.
-    expect(dataText(checkoutFor($this->customer, [[5000, 1, 'zero-childrens', 'Kids Boot']]), 'data-total-vat'))->toBe('£10.00');
+    // £30.00 of delivery at 20%, on a goods line with no VAT at all.
+    expect(dataText(checkoutFor($this->customer, [[5000, 1, 'zero-childrens', 'Kids Boot']]), 'data-total-vat'))->toBe('£6.00');
 });
 
 // --- The VAT breakdown in the summary ---------------------------------------------------
@@ -157,13 +195,13 @@ it('breaks the VAT down by rate in the checkout summary, naming the zero-rated g
     preg_match_all('#<tr data-vat-row[^>]*>(.*?)</tr>#s', $html, $rows);
     $text = array_map(fn (string $row): string => trim((string) preg_replace('/\s+/', ' ', strip_tags($row))), $rows[1]);
 
-    // 20%: £50.00 + £100.00 of boots + £50.00 delivery = £200.00 net, £40.00 VAT. Zero-rated: £30.00.
+    // 20%: £50.00 + £100.00 of boots + £30.00 delivery = £180.00 net, £36.00 VAT. Zero-rated: £30.00.
     expect($text)->toBe([
-        'VAT 20% £200.00 £40.00',
+        'VAT 20% £180.00 £36.00',
         'Zero-rated (0%) £30.00 £0.00',
     ])
         ->and($html)->toContain('data-zero-rated-row')
-        ->and(dataText($html, 'data-total-vat'))->toBe('£40.00');
+        ->and(dataText($html, 'data-total-vat'))->toBe('£36.00');
 });
 
 // --- Not on the cart page or the mini cart ------------------------------------------------
@@ -183,6 +221,8 @@ it('shows no VAT and no delivery on the cart page', function (): void {
     expect($html)->toContain('Price')->toContain('Qty')->toContain('Line total')
         ->toMatch('#data-cart-subtotal>\s*£100\.00#')
         ->toContain('VAT and delivery are worked out at checkout.')
+        // The delivery rule is a note, not a price: nothing is worked out for this cart.
+        ->toContain('data-delivery-note>Orders over £500.00 ex VAT get free delivery. Otherwise delivery is £30.00 ex VAT.')
         ->not->toContain('data-line-vat')
         ->not->toContain('data-zero-rated')
         ->not->toContain('data-vat-breakdown')
@@ -190,5 +230,5 @@ it('shows no VAT and no delivery on the cart page', function (): void {
         ->not->toContain('Standard delivery')
         ->not->toContain('Net Total')
         ->not->toContain('incl. VAT')
-        ->not->toContain('£120.00');
+        ->not->toContain('£96.00');
 });

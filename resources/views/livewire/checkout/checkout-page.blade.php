@@ -101,6 +101,7 @@
 
                 <section aria-labelledby="method-heading" class="rounded border border-border bg-white p-5" data-section="delivery-method">
                     <h2 id="method-heading" class="text-lg font-bold">Delivery method</h2>
+                    <x-storefront.delivery-note class="mt-1" />
 
                     @if ($deliveryOption)
                         <label class="mt-3 flex items-start gap-3 rounded border border-brand-blue p-3" data-delivery-option>

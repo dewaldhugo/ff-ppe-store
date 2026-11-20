@@ -440,8 +440,8 @@ it('lists the unpaid account invoices, soonest due first, with the total and an 
         ->and(strpos($html, 'INV-'.$old->reference))->toBeLessThan(strpos($html, 'INV-'.$recent->reference))
         ->and(substr_count($html, 'data-overdue'))->toBe(1)
         ->and($html)->toContain($old->placed_at->copy()->addDays(30)->format('j M Y'))
-        // £120.00 each.
-        ->toContain('Total to pay: <strong>£240.00</strong>');
+        // £96.00 each.
+        ->toContain('Total to pay: <strong>£192.00</strong>');
 });
 
 it('keeps card orders off the open invoices, and orders them by due date', function (): void {

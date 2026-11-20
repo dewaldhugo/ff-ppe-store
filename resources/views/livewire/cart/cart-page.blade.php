@@ -143,6 +143,7 @@
                 </dl>
 
                 <p class="mt-3 text-xs text-ink-muted" data-checkout-note>VAT and delivery are worked out at checkout.</p>
+                <x-storefront.delivery-note class="mt-2 text-xs" />
 
                 @if ($canCheckout)
                     <x-ui.button :href="route('checkout')" class="mt-5 w-full" data-checkout-link>Proceed to checkout</x-ui.button>

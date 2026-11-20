@@ -33,7 +33,7 @@ final class CartSummary
      * `vatRows` is the VAT by rate: the goods (and delivery) at each rate, ex VAT, and the VAT on them.
      * Its VAT amounts add up to `vat`.
      *
-     * @return array{subtotal: string, discount: ?string, delivery: ?string, deliveryFree: bool, totalExVat: string, vat: string, vatRows: list<array{label: string, net: string, vat: string, zeroRated: bool}>, total: string, freeFrom: string, deliveryCharge: string}
+     * @return array{subtotal: string, discount: ?string, delivery: ?string, deliveryFree: bool, totalExVat: string, vat: string, vatRows: list<array{label: string, net: string, vat: string, zeroRated: bool}>, total: string, freeOver: string, deliveryCharge: string}
      */
     public function totals(Cart $cart): array
     {
@@ -50,7 +50,7 @@ final class CartSummary
             'totalExVat' => $this->format(new Price((int) $cart->subTotalDiscounted->value + $delivery, $cart->currency, 1)),
             'vat' => $this->format($cart->taxTotal),
             'total' => $this->format($cart->total),
-            'freeFrom' => $this->delivery->freeFromFormatted($cart),
+            'freeOver' => $this->delivery->freeOverFormatted($cart->currency),
             'deliveryCharge' => $this->format(new Price($this->delivery->charge(), $cart->currency, 1)),
         ];
     }
