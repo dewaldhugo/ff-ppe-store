@@ -197,11 +197,11 @@ it('stays out of search engines only while STORE_NOINDEX is true, with no noinde
 });
 
 it('shows the address on the contact page', function (): void {
-    config()->set('store.address', 'Stamford House, 2a Lagoon Road, Orpington, BR5 3QX');
+    config()->set('store.address', '7 Lynnwood Court, Priestlands Place, Lymington, Hampshire, SO41 9GA');
 
     $html = $this->get(route('contact'))->assertOk()->getContent();
 
-    expect($html)->toMatch('#<address[^>]*data-contact-address[^>]*>Stamford House, 2a Lagoon Road, Orpington, BR5 3QX</address>#');
+    expect($html)->toMatch('#<address[^>]*data-contact-address[^>]*>7 Lynnwood Court, Priestlands Place, Lymington, Hampshire, SO41 9GA</address>#');
 
     config()->set('store.address', 'TBC');
 
