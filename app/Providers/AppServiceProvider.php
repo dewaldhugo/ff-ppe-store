@@ -50,6 +50,7 @@ final class AppServiceProvider extends ServiceProvider
         // The storefront's logo on a transparent background: the white file in dark mode, the
         // standard file in light mode (a white logo would vanish on the light sidebar).
         LunarPanel::panel(fn (Panel $panel): Panel => $panel
+            ->path('admin')
             ->brandName(Store::name())
             ->brandLogo(asset('images/frontline-logo.png'))
             ->darkModeBrandLogo(asset('images/frontline-logo-white.png'))
