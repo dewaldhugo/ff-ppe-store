@@ -99,7 +99,11 @@
  *   surfaces, where brand-blue would not be readable).
  */
 @theme {
-    --color-brand-blue: #0F2E99;
+    /* The primary brand colour. The name is historical: the colour is now dark grey, to sit with
+       the black and white Frontline logo. Renaming the token means touching every template. */
+    --color-brand-blue: #343A40;
+    /* Darker than brand-blue: the top bar above the logo. */
+    --color-brand-charcoal: #1F2327;
     --color-brand-teal: #44BAB1;
     --color-brand-navy: #001227;
     --color-ink: #222222;

@@ -11,11 +11,11 @@ beforeEach(function (): void {
 });
 
 /**
- * The top bar of the header: the navy strip above the logo.
+ * The top bar of the header: the dark grey strip above the logo.
  */
 function topBar(string $html): string
 {
-    preg_match('#<div class="surface-dark bg-brand-navy.*?</ul>\s*<ul.*?</ul>#s', $html, $bar);
+    preg_match('#<div class="surface-dark bg-brand-charcoal.*?</ul>\s*<ul.*?</ul>#s', $html, $bar);
 
     return $bar[0];
 }

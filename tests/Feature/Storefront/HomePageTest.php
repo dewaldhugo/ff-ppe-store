@@ -47,7 +47,8 @@ it('has the new hero copy, with one h1 and no placeholder text', function (): vo
 it('links the primary button to the shop and the secondary button to registration, with the same corner radius', function (): void {
     $hero = heroSection($this->get(route('home'))->getContent());
 
-    expect($hero)->toMatch('#<a href="'.preg_quote(route('shop'), '#').'"[^>]*rounded-md[^>]*bg-brand-teal[^>]*text-brand-navy[^>]*>View all products</a>#')
+    expect($hero)->toMatch('#<a href="'.preg_quote(route('shop'), '#').'"[^>]*rounded-md[^>]*bg-brand-blue[^>]*text-white[^>]*>View all products</a>#')
+        ->and($hero)->not->toMatch('#<a href="'.preg_quote(route('shop'), '#').'"[^>]*bg-brand-teal[^>]*>View all products</a>#')
         ->and($hero)->toMatch('#<a href="'.preg_quote(route('register'), '#').'"[^>]*rounded-md[^>]*border-brand-teal[^>]*>Open a trade account</a>#')
         ->and($hero)->not->toContain('rounded-full');
 });

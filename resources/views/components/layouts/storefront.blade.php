@@ -24,6 +24,8 @@
         <meta name="robots" content="noindex">
     @endif
 
+    <x-storefront.favicons />
+
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
 

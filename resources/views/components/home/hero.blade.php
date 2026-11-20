@@ -77,7 +77,8 @@
                 <p class="mt-4 max-w-2xl text-[1.2375rem] text-white/90">EN-compliant safety footwear, head, eye, and hearing protection ready for immediate dispatch. Bulk trade pricing available.</p>
 
                 <div class="mt-8 flex flex-wrap gap-4">
-                    <x-ui.button variant="accent" :href="route('shop')">View all products</x-ui.button>
+                    {{-- The primary (dark grey) button, with a thin light border so it stands out against the dark photos. --}}
+                    <x-ui.button :href="route('shop')" class="border border-white/40">View all products</x-ui.button>
                     @guest('web')
                         <x-ui.button-outline :href="route('register')" :on-dark="true" shape="md">Open a trade account</x-ui.button-outline>
                     @endguest

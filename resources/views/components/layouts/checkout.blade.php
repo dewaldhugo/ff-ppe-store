@@ -11,6 +11,8 @@
     {{-- Checkout is never indexed, whatever STORE_NOINDEX says. --}}
     <meta name="robots" content="noindex">
 
+    <x-storefront.favicons />
+
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
 

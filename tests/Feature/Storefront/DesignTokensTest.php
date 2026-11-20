@@ -43,9 +43,11 @@ function contrast(string $foreground, string $background): float
 it('defines the brand tokens with the agreed colours', function (): void {
     $tokens = themeTokens();
 
-    expect(strtoupper($tokens['brand-blue']))->toBe('#0F2E99')
+    expect(strtoupper($tokens['brand-blue']))->toBe('#343A40')
         ->and(strtoupper($tokens['brand-teal']))->toBe('#44BAB1')
         ->and(strtoupper($tokens['brand-navy']))->toBe('#001227')
+        ->and(strtoupper($tokens['brand-charcoal']))->toBe('#1F2327')
+        ->and(contrast($tokens['brand-charcoal'], $tokens['white']))->toBeGreaterThan(contrast($tokens['brand-blue'], $tokens['white']))
         ->and(strtoupper($tokens['ink']))->toBe('#222222')
         ->and(strtoupper($tokens['surface-muted']))->toBe('#F8F8F8')
         ->and(strtoupper($tokens['white']))->toBe('#FFFFFF');
@@ -67,6 +69,9 @@ it('meets WCAG AA (4.5:1) for every text and background pair the templates use',
     'primary button' => ['white', 'brand-blue'],
     'footer text' => ['white', 'brand-blue'],
     'top bar and hero text' => ['white', 'brand-navy'],
+    'top bar text' => ['white', 'brand-charcoal'],
+    'teal accents on the top bar' => ['brand-teal', 'brand-charcoal'],
+    'text on the top bar Register button' => ['brand-navy', 'brand-teal'],
     'teal accents on the navy bars' => ['brand-teal', 'brand-navy'],
     'teal accents on the blue footer' => ['brand-teal', 'brand-blue'],
     'text on teal fills' => ['brand-navy', 'brand-teal'],

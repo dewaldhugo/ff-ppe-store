@@ -51,8 +51,9 @@ final class AppServiceProvider extends ServiceProvider
         // standard file in light mode (a white logo would vanish on the light sidebar).
         LunarPanel::panel(fn (Panel $panel): Panel => $panel
             ->brandName(Store::name())
-            ->brandLogo(asset('images/the-bridge-group-logo.svg'))
-            ->darkModeBrandLogo(asset('images/the-bridge-group-logo-white.svg'))
+            ->brandLogo(asset('images/frontline-logo.png'))
+            ->darkModeBrandLogo(asset('images/frontline-logo-white.png'))
+            ->favicon(asset('favicon.png'))
             ->brandLogoHeight('1.8rem')
             ->maxContentWidth(Width::Full)
             ->renderHook(PanelsRenderHook::HEAD_END, fn (): View => view('admin.density')),
