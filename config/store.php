@@ -17,8 +17,7 @@ return [
     // from the registered office, which only appears in the trading disclosure.
     'address' => '7 Lynnwood Court, Priestlands Place, Lymington, Hampshire, SO41 9GA',
     'vat_number' => env('STORE_VAT_NUMBER', 'TBC'),
-    // TBC until the client supplies a number: it is shown as plain text, never as a tel: link.
-    'phone' => 'TBC',
+    'phone' => '+276 7360 7260',
     'email' => 'info@frontlinesafetygear.com',
 
     // Where Contact page enquiries are emailed: the store email, unless STORE_ENQUIRY_EMAIL is set.
