@@ -66,10 +66,60 @@ it('has the new hero copy, with one h1 and no placeholder text', function (): vo
         // No eyebrow line above the heading.
         ->and($hero)->not->toContain('UK TRADE PPE SUPPLIER')
         ->and(preg_match('#data-hero-text[^>]*>\s*<h1#', $hero))->toBe(1)
-        ->and($hero)->toMatch('#<h1[^>]*>When safety slips, everyone pays\.<br>Quality safety gear isn&rsquo;t optional, it&rsquo;s essential\.</h1>#')
+        ->and($hero)->not->toContain('When safety slips')
         ->and($hero)->toContain('EN-compliant safety footwear, head, eye, and hearing protection ready for immediate dispatch. Bulk trade pricing available.')
         ->and($html)->not->toContain('Content coming soon.')
         ->and($html)->not->toContain('full size runs');
+});
+
+it('has the three Frontline hero headings in the config', function (): void {
+    expect(config('homepage.hero_headings'))->toBe([
+        'Designed for the People Who Keep Everything Moving.',
+        'Trusted protection for every shift.',
+        'Certified gear built for the toughest sites.',
+    ]);
+});
+
+/** The hero heading text on one page load. */
+function heroHeadingText(object $test): string
+{
+    preg_match('#<h1[^>]*data-hero-heading[^>]*>(.*?)</h1>#s', $test->get(route('home'))->assertOk()->getContent(), $heading);
+
+    return html_entity_decode(trim($heading[1] ?? ''), ENT_QUOTES);
+}
+
+it('shows one of the configured headings as the h1, and all of them turn up over many loads', function (): void {
+    $headings = config('homepage.hero_headings');
+    $seen = [];
+
+    // With three headings, the chance that 40 loads miss one is 3 x (2/3)^40, under one in a million.
+    foreach (range(1, 40) as $load) {
+        $text = heroHeadingText($this);
+
+        expect($headings)->toContain($text);
+
+        $seen[$text] = true;
+    }
+
+    expect(array_keys($seen))->toEqualCanonicalizing($headings);
+});
+
+it('shows the only heading when one is configured, and escapes it', function (): void {
+    config()->set('homepage.hero_headings', ['Only <b>this</b> one']);
+
+    $html = $this->get(route('home'))->assertOk()->getContent();
+
+    expect(heroHeadingText($this))->toBe('Only <b>this</b> one')
+        ->and($html)->toContain('Only &lt;b&gt;this&lt;/b&gt; one');
+});
+
+it('still renders one empty h1 when no heading is configured', function (): void {
+    config()->set('homepage.hero_headings', []);
+
+    $html = $this->get(route('home'))->assertOk()->getContent();
+
+    expect(substr_count($html, '<h1'))->toBe(1)
+        ->and(heroHeadingText($this))->toBe('');
 });
 
 it('links the primary button to the shop and the secondary button to registration, with the same corner radius', function (): void {

@@ -5,6 +5,16 @@ declare(strict_types=1);
 return [
 
     /*
+     * The hero heading. One is picked at random on every page load. Plain text only (it is
+     * escaped when shown), so write an apostrophe as a plain ' and not an HTML entity.
+     */
+    'hero_headings' => [
+        'Designed for the People Who Keep Everything Moving.',
+        'Trusted protection for every shift.',
+        'Certified gear built for the toughest sites.',
+    ],
+
+    /*
      * The "Shop by standard" chips on the home page. Each links to the
      * safety-footwear listing filtered by one facet value. `facet` is a
      * ListingQuery facet (safety_class or features). The label is the
