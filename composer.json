@@ -1,6 +1,6 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "ppe-store/storefront",
+    "name": "ff-ppe-store/storefront",
     "type": "project",
     "description": "UK PPE ecommerce store built on Laravel and Lunar.",
     "keywords": [
