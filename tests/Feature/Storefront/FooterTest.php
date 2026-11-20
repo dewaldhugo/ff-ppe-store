@@ -114,7 +114,7 @@ it('fixes the address, phone and email in config/store.php, with no environment 
     $source = (string) file_get_contents(config_path('store.php'));
 
     expect($file['address'])->toBe('7 Lynnwood Court, Priestlands Place, Lymington, Hampshire, SO41 9GA')
-        ->and($file['phone'])->toBe('TBC')
+        ->and($file['phone'])->toBe('+276 7360 7260')
         ->and($file['email'])->toBe('info@frontlinesafetygear.com')
         ->and($file['enquiry_email'])->toBe(env('STORE_ENQUIRY_EMAIL') ?: 'info@frontlinesafetygear.com')
         ->and($source)->not->toContain('STORE_ADDRESS')
