@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Livewire\Contact;
 
+use App\Domain\Accounts\Industries;
 use App\Mail\EnquiryReceived;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Validation\Rule;
 use Livewire\Component;
 use Throwable;
 
@@ -29,6 +31,9 @@ final class EnquiryForm extends Component
 
     public string $phone = '';
 
+    /** An Industries slug, or empty when the visitor did not choose one. */
+    public string $industry = '';
+
     public string $enquirySubject = '';
 
     public string $body = '';
@@ -47,6 +52,7 @@ final class EnquiryForm extends Component
             'name' => ['required', 'string', 'max:100'],
             'email' => ['required', 'email:rfc', 'max:255'],
             'phone' => ['nullable', 'string', 'max:30', 'regex:/^[0-9+()\-\s.]*$/'],
+            'industry' => ['nullable', 'string', Rule::in(Industries::slugs())],
             'enquirySubject' => ['required', 'string', 'max:150'],
             'body' => ['required', 'string', 'min:10', 'max:5000'],
         ];
@@ -61,6 +67,7 @@ final class EnquiryForm extends Component
             'name' => 'full name',
             'email' => 'email address',
             'phone' => 'phone number',
+            'industry' => 'industry',
             'enquirySubject' => 'enquiry subject',
             'body' => 'message',
         ];
@@ -102,6 +109,7 @@ final class EnquiryForm extends Component
                 phone: ($data['phone'] ?? '') === '' ? null : $data['phone'],
                 enquirySubject: $data['enquirySubject'],
                 body: $data['body'],
+                industry: ($data['industry'] ?? '') === '' ? null : $data['industry'],
             ));
         } catch (Throwable $e) {
             report($e);
@@ -116,7 +124,7 @@ final class EnquiryForm extends Component
 
     private function finish(): void
     {
-        $this->reset('name', 'email', 'phone', 'enquirySubject', 'body', 'website');
+        $this->reset('name', 'email', 'phone', 'industry', 'enquirySubject', 'body', 'website');
         $this->sent = true;
     }
 
