@@ -111,7 +111,7 @@ final class Favourites
             ->where('favourites.user_id', $user->id)
             ->orderByDesc('favourites.id')
             ->select('lunar_products.*')
-            ->with(['brand', 'defaultUrl', 'thumbnail', 'variants.prices'])
+            ->with(['brand', 'defaultUrl', 'thumbnail', 'variants.prices', 'variants.values.option'])
             ->get();
     }
 }

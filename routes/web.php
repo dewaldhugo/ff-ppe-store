@@ -21,6 +21,7 @@ use App\Http\Middleware\ResolveBrandSlugs;
 use App\Http\Middleware\ResolveCategoryPath;
 use App\Http\Middleware\ResolveProductSlug;
 use App\Livewire\Cart\CartPage;
+use App\Livewire\Favourites\QuickOrder;
 use App\Livewire\Catalogue\CategoryListing;
 use App\Livewire\Catalogue\ProductPage;
 use App\Livewire\Checkout\CheckoutPage;
@@ -131,6 +132,8 @@ Route::middleware(RedirectTrailingSlash::class)->group(function () use ($placeho
 
     // Favourites: saved products, for signed-in customers (a guest has no account to save them to).
     Route::get('/favourites', [FavouriteController::class, 'index'])->middleware('auth:web')->name('favourites');
+    // The quick order form: pick a colour and size for each favourite and add it to the order.
+    Route::get('/favourites/quick-order', QuickOrder::class)->middleware('auth:web')->name('favourites.quick-order');
     // The parameter is not called `product`: Lunar binds that name to its Product model, by its own key.
     Route::post('/favourites/{productId}', [FavouriteController::class, 'toggle'])
         ->where('productId', '[0-9]+')
