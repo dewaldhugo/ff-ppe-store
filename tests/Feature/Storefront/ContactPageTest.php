@@ -52,9 +52,29 @@ it('serves the contact page at /contact in the standard layout', function (): vo
         ->and($html)->toContain('<footer')
         ->and(substr_count($html, '<h1'))->toBe(1)
         ->and($html)->toContain('>Enquire Now</h2>')
-        ->and($html)->toContain('Your next challenge. Our next solution.')
+        ->and($html)->toMatch('#<p[^>]*data-contact-tagline[^>]*>Safety Starts With the Right Gear\. Talk to Our Specialists\.</p>#')
+        ->and($html)->not->toContain('Your next challenge')
         ->and($html)->not->toContain('Content coming soon.')
         ->and($html)->toContain('data-enquiry-form');
+});
+
+it('has the Frontline intro copy and nothing from the previous company', function (): void {
+    $html = $this->get(route('contact'))->assertOk()->getContent();
+
+    $copy = 'Whether you need a bulk quote, compliance documentation, or help choosing the right gear for your site, our safety specialists are ready to assist.';
+
+    expect($html)->toMatch('#<p[^>]*data-contact-intro[^>]*>'.preg_quote($copy, '#').'</p>#')
+        // The same sentence is the meta description.
+        ->and($html)->toContain('<meta name="description" content="'.$copy.'">')
+        ->and($html)->not->toContain('Bridge')
+        ->and($html)->not->toContain('security, property');
+});
+
+it('uses UK English and no em dashes in its copy', function (): void {
+    $text = file_get_contents(resource_path('views/pages/contact.blade.php'));
+
+    expect($text)->not->toContain('—')
+        ->and($text)->not->toMatch('/\b(organization|program|center|color|behavior)\b/i');
 });
 
 it('shows the store email as a mailto link once it is a real address', function (): void {

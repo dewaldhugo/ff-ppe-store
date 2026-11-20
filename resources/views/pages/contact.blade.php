@@ -9,15 +9,15 @@
 --}}
 @php($emailHref = \App\Support\Store::emailHref())
 
-<x-layouts.storefront title="Contact us" description="Tell us what you need and we will recommend a practical solution. Send an enquiry to The Bridge Group.">
+<x-layouts.storefront title="Contact us" description="Whether you need a bulk quote, compliance documentation, or help choosing the right gear for your site, our safety specialists are ready to assist.">
     <x-ui.section-heading title="Contact us" tag="h1" />
 
     <div class="mt-10 grid gap-10 md:grid-cols-2 md:gap-16">
         <section aria-labelledby="enquire-now">
             <h2 id="enquire-now" class="text-2xl text-brand-navy sm:text-3xl">Enquire Now</h2>
-            <p class="mt-2 font-semibold text-brand-blue">Your next challenge. Our next solution.</p>
+            <p class="mt-2 font-semibold text-brand-blue" data-contact-tagline>Safety Starts With the Right Gear. Talk to Our Specialists.</p>
 
-            <p class="mt-6 leading-relaxed text-ink">Whatever your security, property or business support needs, we'll take the time to understand what matters to you and recommend a practical solution. Tell us what you need, and let's explore how Bridge can help.</p>
+            <p class="mt-6 leading-relaxed text-ink" data-contact-intro>Whether you need a bulk quote, compliance documentation, or help choosing the right gear for your site, our safety specialists are ready to assist.</p>
 
             <p class="mt-6 text-xl font-semibold" data-contact-email>
                 @if ($emailHref)
