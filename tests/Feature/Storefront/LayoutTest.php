@@ -7,7 +7,7 @@ use App\Support\Store;
 use Illuminate\Support\Facades\Route;
 
 beforeEach(function (): void {
-    config()->set('store.name', 'The Bridge Group');
+    config()->set('store.name', 'Frontline Safety Gear');
     config()->set('store.phone', 'TBC');
     config()->set('store.email', 'TBC');
 });
@@ -44,7 +44,7 @@ it('shows the logo in the header, linked to the home page, with the store name a
 
     expect($link)->not->toBeEmpty()
         ->and($link[0])->toContain('src="'.asset('images/the-bridge-group-logo.svg').'"')
-        ->and($link[0])->toContain('alt="The Bridge Group"')
+        ->and($link[0])->toContain('alt="Frontline Safety Gear"')
         ->and(is_file(public_path('images/the-bridge-group-logo.svg')))->toBeTrue()
         ->and(is_file(public_path('images/the-bridge-group-logo-white.svg')))->toBeTrue();
 });

@@ -15,13 +15,14 @@ return [
 
     // The address customers see in the footer and on the Contact page. It may differ
     // from the registered office, which only appears in the trading disclosure.
-    'address' => 'Stamford House, 2a Lagoon Road, Orpington, BR5 3QX',
+    'address' => '7 Lynnwood Court, Priestlands Place, Lymington, Hampshire, SO41 9GA',
     'vat_number' => env('STORE_VAT_NUMBER', 'TBC'),
-    'phone' => '+44 20 8289 5858',
-    'email' => 'info@thebridgegroup.uk.com',
+    // TBC until the client supplies a number: it is shown as plain text, never as a tel: link.
+    'phone' => 'TBC',
+    'email' => 'info@frontlinesafetygear.com',
 
     // Where Contact page enquiries are emailed: the store email, unless STORE_ENQUIRY_EMAIL is set.
-    'enquiry_email' => env('STORE_ENQUIRY_EMAIL') ?: 'info@thebridgegroup.uk.com',
+    'enquiry_email' => env('STORE_ENQUIRY_EMAIL') ?: 'info@frontlinesafetygear.com',
 
     // Delivery: a flat charge, free once the goods reach the free-from amount. Pence, ex VAT,
     // goods before discounts. The rule itself is App\Domain\Cart\Delivery\DeliveryPolicy.

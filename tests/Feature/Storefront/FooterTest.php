@@ -5,9 +5,9 @@ declare(strict_types=1);
 use App\Support\Store;
 
 beforeEach(function (): void {
-    config()->set('store.name', 'The Bridge Group');
-    config()->set('store.legal_name', 'The Bridge Group Ltd');
-    config()->set('store.company_number', '01234567');
+    config()->set('store.name', 'Frontline Safety Gear');
+    config()->set('store.legal_name', 'Frontline Holdings Ltd');
+    config()->set('store.company_number', '13184904');
     config()->set('store.registered_office', '1 Example Street, London, EC1A 1AA');
     config()->set('store.address', 'TBC');
     config()->set('store.vat_number', 'GB123456789');
@@ -31,7 +31,7 @@ it('has only the copyright line in the lower footer, with no TBC placeholders', 
 
     preg_match('#<div class="border-t border-white/20">(.*?)</div>#s', $footer, $lower);
 
-    expect(trim(html_entity_decode(strip_tags($lower[1]))))->toBe('© '.date('Y').' The Bridge Group')
+    expect(trim(html_entity_decode(strip_tags($lower[1]))))->toBe('© '.date('Y').' Frontline Safety Gear')
         ->and(substr_count($lower[1], '<p'))->toBe(1)
         ->and($lower[1])->toContain('data-copyright')
         ->and($lower[1])->not->toContain('TBC')
@@ -49,7 +49,7 @@ it('reads every identity value from config, with TBC as the default', function (
     })();
 
     expect($defaults)->toBe(['name', 'legal_name', 'company_number', 'registered_office', 'address', 'vat_number', 'phone', 'email', 'enquiry_email', 'delivery', 'noindex', 'require_email_verification'])
-        ->and(file_get_contents(config_path('store.php')))->not->toContain("'The Bridge Group'");
+        ->and(file_get_contents(config_path('store.php')))->not->toContain("'Frontline Safety Gear'");
 
     $example = (string) file_get_contents(base_path('.env.example'));
 
@@ -98,14 +98,14 @@ it('uses the white logo on the brand-blue footer', function (): void {
 });
 
 it('shows the customer address in the footer', function (): void {
-    config()->set('store.address', 'Stamford House, 2a Lagoon Road, Orpington, BR5 3QX');
+    config()->set('store.address', '7 Lynnwood Court, Priestlands Place, Lymington, Hampshire, SO41 9GA');
 
     $footer = footer($this->get(route('shop'))->getContent());
 
     preg_match('#<address[^>]*>(.*?)</address>#s', $footer, $address);
 
-    expect($address[1])->toBe('Stamford House, 2a Lagoon Road, Orpington, BR5 3QX')
-        ->and(Store::contactAddress())->toBe('Stamford House, 2a Lagoon Road, Orpington, BR5 3QX')
+    expect($address[1])->toBe('7 Lynnwood Court, Priestlands Place, Lymington, Hampshire, SO41 9GA')
+        ->and(Store::contactAddress())->toBe('7 Lynnwood Court, Priestlands Place, Lymington, Hampshire, SO41 9GA')
         ->and($footer)->not->toContain('Registered office');
 });
 
@@ -113,9 +113,10 @@ it('fixes the address, phone and email in config/store.php, with no environment 
     $file = require config_path('store.php');
     $source = (string) file_get_contents(config_path('store.php'));
 
-    expect($file['address'])->toBe('Stamford House, 2a Lagoon Road, Orpington, BR5 3QX')
-        ->and($file['phone'])->toBe('+44 20 8289 5858')
-        ->and($file['email'])->toBe('info@thebridgegroup.uk.com')
+    expect($file['address'])->toBe('7 Lynnwood Court, Priestlands Place, Lymington, Hampshire, SO41 9GA')
+        ->and($file['phone'])->toBe('TBC')
+        ->and($file['email'])->toBe('info@frontlinesafetygear.com')
+        ->and($file['enquiry_email'])->toBe(env('STORE_ENQUIRY_EMAIL') ?: 'info@frontlinesafetygear.com')
         ->and($source)->not->toContain('STORE_ADDRESS')
         ->and($source)->not->toContain('STORE_PHONE')
         ->and($source)->not->toContain("env('STORE_EMAIL'");
