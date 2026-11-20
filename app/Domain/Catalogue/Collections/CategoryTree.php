@@ -32,12 +32,9 @@ final class CategoryTree
             'non-safety-footwear' => ['Non-Safety Footwear', [
                 'casual-footwear' => ['Casual, Formal & Work Shoes', []],
                 'boots' => ['Boots', []],
-                'sandals-summer-shoes' => ['Sandals & Summer Shoes', []],
                 'sports-trainers' => ['Sports & Trainers', []],
                 'hiking-outdoor' => ['Hiking & Outdoor', []],
                 'wellingtons' => ['Wellingtons & Waders', []],
-                'slippers' => ['Slippers', []],
-                'plimsolls' => ['Plimsolls', []],
             ]],
             'apparel' => ['Apparel', [
                 'jackets-fleeces' => ['Jackets, Body Warmers & Fleeces', []],
@@ -80,6 +77,19 @@ final class CategoryTree
     public const array RENAMED_FROM = [
         'wellingtons' => 'Wellingtons',
         'casual-footwear' => 'Casual Footwear',
+    ];
+
+    /**
+     * Categories the contract no longer has. A database seeded before they were dropped still holds
+     * them, and `catalogue:restructure-categories` deletes them: it detaches their products, drafts
+     * those left in no category and removes the registry row. The seeder never recreates them.
+     *
+     * @var list<string>
+     */
+    public const array RETIRED = [
+        'slippers',
+        'plimsolls',
+        'sandals-summer-shoes',
     ];
 
     /**

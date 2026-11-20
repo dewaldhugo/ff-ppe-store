@@ -70,7 +70,7 @@ it('imports one product per ProductID with a colour per family', function (): vo
     expect($audrey->translateAttribute('name'))->toBe('Audrey Slipper')
         ->and($audrey->defaultUrl->slug)->toBe('gbs-audrey-slipper')
         ->and($audrey->variants->flatMap->values->where('option.handle', 'colour')->map->translate('name')->unique()->count())->toBe(10)
-        ->and($audrey->collections->pluck('id')->all())->toContain(CatalogueKeys::collection('slippers')->id)
+        ->and($audrey->collections->pluck('id')->all())->toContain(CatalogueKeys::collection('casual-footwear')->id)
         // Clearance on any colour puts the product in the clearance range.
         ->and($audrey->collections->pluck('id')->all())->toContain(CatalogueKeys::collection('clearance')->id);
 });
@@ -124,7 +124,7 @@ it('gives children\'s plimsolls the zero-childrens class and names sizes by scal
         ->and(array_map(strval(...), array_keys($sizes('570'))))->toContain('1')->not->toContain('Kids 1')->not->toContain('Kids 2')
         // Sorted by EU size: infant sizes before 1, before 2.
         ->and($sizes('320')['Kids 13'])->toBeLessThan($sizes('320')['2'])
-        ->and(VendorSync::product('FS', '570')->collections->pluck('id')->all())->toContain(CatalogueKeys::collection('plimsolls')->id)
+        ->and(VendorSync::product('FS', '570')->collections->pluck('id')->all())->toContain(CatalogueKeys::collection('casual-footwear')->id)
         // The placeholder brand is never customer-facing.
         ->and(VendorSync::product('FS', '570')->brand_id)->toBeNull();
 });

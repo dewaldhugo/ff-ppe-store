@@ -131,7 +131,7 @@ it('excludes out of stock products when in stock only is selected', function ():
 });
 
 it('only offers sizes and colours that are in stock, sizes in numeric order', function (): void {
-    $result = listing(collection: 'slippers');
+    $result = listing(collection: 'casual-footwear');
 
     // Eva: only UK 3 in stock. Exeter: 6, 7, 9, 11, 12, 13.
     expect(array_column($result->facets['size'], 'value'))->toBe(['3', '6', '7', '9', '11', '12', '13'])

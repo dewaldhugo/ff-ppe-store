@@ -4,13 +4,17 @@ declare(strict_types=1);
 
 namespace App\Domain\Catalogue\Collections;
 
+use App\Domain\Catalogue\Keys\CatalogueKey;
 use App\Domain\Catalogue\Keys\CatalogueKeys;
 use App\Domain\Catalogue\Keys\KeyType;
 use App\Domain\Catalogue\Menu\CategoryMenu;
+use App\Models\CollectionPathSnapshot;
 use Illuminate\Support\Facades\DB;
 use Lunar\FieldTypes\Text;
 use Lunar\FieldTypes\TranslatedText;
 use Lunar\Models\Collection;
+use Lunar\Models\CollectionGroup;
+use Lunar\Models\Product;
 
 /**
  * Moves a database that was seeded with an earlier category tree into the
@@ -26,6 +30,12 @@ use Lunar\Models\Collection;
  *
  * A moved category's old path is recorded as a 301 by the redirect observer,
  * because every move here goes through the Collection model.
+ *
+ * It also retires the categories the contract dropped (CategoryTree::RETIRED):
+ * each is deleted with its URLs and registry row, its products are detached,
+ * a product left in no category is drafted, and every product it touched is
+ * reindexed once the transaction has committed. A retired path is not
+ * redirected: it is a 404. Running it again finds nothing to retire.
  */
 final class RestructureCategories
 {
@@ -46,10 +56,12 @@ final class RestructureCategories
         $this->missing = [];
 
         $tree = CategoryTree::GROUPS[CategoryTree::CATEGORIES][1];
+        $touched = [];
 
-        Collection::withoutSyncingToSearch(function () use ($tree, $dryRun): void {
-            DB::transaction(function () use ($tree, $dryRun): void {
+        Collection::withoutSyncingToSearch(function () use ($tree, $dryRun, &$touched): void {
+            DB::transaction(function () use ($tree, $dryRun, &$touched): void {
                 $this->level($tree, null, $dryRun);
+                $touched = $this->retire($dryRun);
             });
         });
 
@@ -58,7 +70,82 @@ final class RestructureCategories
             CatalogueKeys::flush();
         }
 
+        // After the commit, so the index is never ahead of the database.
+        if (! $dryRun && $touched !== []) {
+            Product::query()->whereIn('id', $touched)->get()->searchable();
+        }
+
         return ['changes' => $this->changes, 'missing' => $this->missing];
+    }
+
+    /**
+     * Delete every retired category that still exists.
+     *
+     * @return list<int> The ids of the products that were in one, to reindex.
+     */
+    private function retire(bool $dryRun): array
+    {
+        $groupId = CollectionGroup::query()->where('handle', CategoryTree::CATEGORIES)->value('id');
+        $touched = [];
+
+        foreach (CategoryTree::RETIRED as $handle) {
+            $key = CatalogueKey::query()->where('key_type', KeyType::Collection->value)->where('handle', $handle)->first();
+            $collection = $this->collection($handle);
+
+            if ($collection === null) {
+                // A registry row whose record is already gone: tidy it away, nothing else to do.
+                if ($key !== null && ! $dryRun) {
+                    $key->delete();
+                }
+
+                continue;
+            }
+
+            $productIds = $collection->products()->allRelatedIds()->map(fn ($id): int => (int) $id)->all();
+
+            // Products whose only category is a retired one are left in no category.
+            $retiredIds = array_values(array_filter(array_map(
+                fn (string $retired): ?int => $this->collection($retired)?->id,
+                CategoryTree::RETIRED,
+            )));
+
+            $orphans = $productIds === [] ? [] : Product::query()
+                ->whereIn('id', $productIds)
+                ->where('status', '!=', 'draft')
+                ->whereDoesntHave('collections', fn ($query) => $query
+                    ->where('collection_group_id', $groupId)
+                    ->whereNotIn($query->getModel()->getQualifiedKeyName(), $retiredIds))
+                ->pluck('id')
+                ->all();
+
+            $this->changes[] = sprintf(
+                'Retired %s: deleted the category (%d product link(s))%s',
+                $handle,
+                count($productIds),
+                $orphans === [] ? '' : sprintf(', drafted %d product(s) left in no category', count($orphans)),
+            );
+
+            if ($dryRun) {
+                continue;
+            }
+
+            $touched = [...$touched, ...$productIds];
+
+            if ($orphans !== []) {
+                // A query update, so no model event runs; the products are reindexed together afterwards.
+                Product::query()->whereIn('id', $orphans)->update(['status' => 'draft']);
+            }
+
+            $collection->products()->detach();
+            $collection->customerGroups()->detach();
+            $collection->discounts()->detach();
+            $collection->urls()->delete();
+            CollectionPathSnapshot::query()->where('collection_id', $collection->id)->delete();
+            $key?->delete();
+            $collection->delete();
+        }
+
+        return array_values(array_unique($touched));
     }
 
     /**

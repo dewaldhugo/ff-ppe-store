@@ -45,7 +45,7 @@ function fsRow(array $template, array $set): array
         'Family Product Reference' => '900001-1',
         'Short Product Name' => 'Test Plimsoll',
         'Long Product Name' => 'Test Plimsoll',
-        'Group Class' => 'Lace Plimsolls',
+        'Group Class' => 'Mens Classic Lace Shoes',
         'Brand' => 'Mirak',
         'Colour Code' => 'WHITE',
         'Colour Extention' => 'White',
@@ -118,8 +118,8 @@ it('names sizes by the EU scale and sorts them by EU size', function (): void {
 
 it('shows a zero rated ladies product in plain sizes', function (): void {
     importRows(fn (array $t): array => [
-        fsRow($t, ['Product Reference' => 'B-1', 'UK Size' => '2', 'EU Size' => '35', 'Group Class' => 'Classic Ladies Slippers', 'Gender' => 'Female']),
-        fsRow($t, ['Product Reference' => 'B-2', 'UK Size' => '3', 'EU Size' => '36', 'Group Class' => 'Classic Ladies Slippers', 'Gender' => 'Female']),
+        fsRow($t, ['Product Reference' => 'B-1', 'UK Size' => '2', 'EU Size' => '35', 'Group Class' => 'Slip On Ladies Shoes', 'Gender' => 'Female']),
+        fsRow($t, ['Product Reference' => 'B-2', 'UK Size' => '3', 'EU Size' => '36', 'Group Class' => 'Slip On Ladies Shoes', 'Gender' => 'Female']),
     ]);
 
     expect(array_map(strval(...), array_keys(sizesOf('900001'))))->toBe(['2', '3']);
@@ -249,12 +249,12 @@ it('maps every Group Class seen in the real feed to its collection, and still dr
     // Childrens Wellingtons and Boys BTS are children's Group Classes: out of
     // scope entirely, checked separately below, not in this collection map.
     $classes = [
-        'Mule Ladies Slippers' => 'slippers', 'Mens Mule Slippers' => 'slippers', 'Touch Fastening Mens Slippers' => 'slippers',
+        'Slip On Ladies Shoes' => 'casual-footwear', 'Mens Classic Slip On Shoes' => 'casual-footwear', 'Mens Classic Lace Shoes' => 'casual-footwear',
         'Trainers Safety' => 'safety-trainers', 'Ladies Safety Shoes' => 'safety-shoes', 'Waterproof Safety Footwear' => 'safety-boots',
         // A non-safety Group Class, but genuinely uncertified: no override.
         'Mens Classic Lace Shoes' => 'casual-footwear',
         'Plain PVC Wellingtons' => 'wellingtons', 'Plain Rubber Wellingtons' => 'wellingtons', 'Waders' => 'wellingtons',
-        'Canvas Ladies Summer' => 'sandals-summer-shoes', 'Garden Shoes' => 'wellingtons',
+        'Garden Shoes' => 'wellingtons',
         'A Class Nobody Mapped' => null,
     ];
 
@@ -299,6 +299,41 @@ it('maps every Group Class seen in the real feed to its collection, and still dr
         // The children's Group Classes were never created at all.
         ->and($report->tallies['out_of_scope']['children'])->toBe(count($childrensClasses))
         ->and(VendorProduct::query()->whereIn('vendor_product_id', [(string) (910000 + count($classes) + 1), (string) (910000 + count($classes) + 2)])->count())->toBe(0);
+});
+
+it('drafts a product in a retired Group Class (slippers, plimsolls, summer shoes) as unmapped and gives it no collection', function (): void {
+    $retired = ['Mule Ladies Slippers', 'Mens Mule Slippers', 'Lace Plimsolls', 'Gusset Plimsolls', 'Canvas Ladies Summer', 'Mens Beach'];
+
+    $report = importRows(function (array $t) use ($retired): array {
+        $rows = [];
+
+        foreach ($retired as $index => $class) {
+            $n = $index + 1;
+            $rows[] = fsRow($t, [
+                'ProductID' => (string) (940000 + $n), 'Family Product Reference' => (940000 + $n).'-1',
+                'Product Reference' => "T-{$n}", 'Short Product Name' => "Retired {$n}", 'Group Class' => $class,
+                'UK Size' => '5', 'EU Size' => '38', 'VAT' => '0.2000',
+            ]);
+        }
+
+        return $rows;
+    });
+
+    expect($report->errors)->toBe(0)
+        ->and($report->tallies['draft_reason'][DraftReason::UNMAPPED_CATEGORY])->toBe(count($retired))
+        ->and(config('vendorsync.footsure.categories'))->not->toHaveKeys($retired);
+
+    foreach ($retired as $index => $class) {
+        $product = VendorSync::product('FS', (string) (940001 + $index));
+
+        expect($product->status)->toBe('draft', $class)
+            ->and($product->collections->pluck('id')->all())->toBe([], $class)
+            ->and(VendorProduct::query()->where('vendor_product_id', (string) (940001 + $index))->sole()->draft_reasons)->toContain(DraftReason::UNMAPPED_CATEGORY);
+    }
+
+    expect(array_values(config('vendorsync.footsure.categories')))->not->toContain('slippers')
+        ->and(array_values(config('vendorsync.footsure.categories')))->not->toContain('plimsolls')
+        ->and(array_values(config('vendorsync.footsure.categories')))->not->toContain('sandals-summer-shoes');
 });
 
 it('excludes children\'s, boys\' and girls\' lines by Group Class or by name, keeping small adult sizes', function (): void {

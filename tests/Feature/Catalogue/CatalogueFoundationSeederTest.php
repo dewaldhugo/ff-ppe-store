@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domain\Catalogue\Collections\CategoryTree;
 use App\Domain\Catalogue\Keys\CatalogueKey;
 use App\Domain\Catalogue\Keys\CatalogueKeys;
 use App\Domain\Catalogue\Keys\KeyType;
@@ -114,12 +115,9 @@ it('resolves every collection handle in the contract', function (string $handle,
     ['non-safety-footwear', 'categories', null],
     ['casual-footwear', 'categories', 'non-safety-footwear'],
     ['boots', 'categories', 'non-safety-footwear'],
-    ['sandals-summer-shoes', 'categories', 'non-safety-footwear'],
     ['sports-trainers', 'categories', 'non-safety-footwear'],
     ['hiking-outdoor', 'categories', 'non-safety-footwear'],
     ['wellingtons', 'categories', 'non-safety-footwear'],
-    ['slippers', 'categories', 'non-safety-footwear'],
-    ['plimsolls', 'categories', 'non-safety-footwear'],
     ['apparel', 'categories', null],
     ['jackets-fleeces', 'categories', 'apparel'],
     ['trousers-shorts', 'categories', 'apparel'],
@@ -147,7 +145,7 @@ it('resolves every collection handle in the contract', function (string $handle,
     ['clearance', 'ranges', null],
 ]);
 
-it('seeds the five top-level categories and 35 leaves in menu order', function (): void {
+it('seeds the five top-level categories and 32 leaves in menu order', function (): void {
     $tree = Collection::query()
         ->where('collection_group_id', CollectionGroup::query()->where('handle', 'categories')->sole()->id)
         ->defaultOrder()
@@ -160,7 +158,10 @@ it('seeds the five top-level categories and 35 leaves in menu order', function (
         ->and($tree->first()->children->map($handle)->all())->toBe([
             'safety-boots', 'safety-shoes', 'safety-trainers', 'safety-wellingtons', 'occupational-footwear', 'metal-free-metatarsal',
         ])
-        ->and($tree->sum(fn (Collection $top): int => $top->children->count()))->toBe(35);
+        ->and($tree->get(1)->children->map($handle)->all())->toBe([
+            'casual-footwear', 'boots', 'sports-trainers', 'hiking-outdoor', 'wellingtons',
+        ])
+        ->and($tree->sum(fn (Collection $top): int => $top->children->count()))->toBe(32);
 });
 
 it('creates both collection groups', function (): void {
@@ -270,7 +271,17 @@ it('throws when a registered record has been deleted', function (): void {
 })->throws(UnknownCatalogueKey::class, 'no longer exists');
 
 it('reports the handle registered for a record', function (): void {
-    $collection = CatalogueKeys::collection('slippers');
+    $collection = CatalogueKeys::collection('casual-footwear');
 
-    expect(CatalogueKeys::handleFor(KeyType::Collection, $collection))->toBe('slippers');
+    expect(CatalogueKeys::handleFor(KeyType::Collection, $collection))->toBe('casual-footwear');
+});
+
+it('does not create the retired categories', function (): void {
+    foreach (CategoryTree::RETIRED as $handle) {
+        expect(fn () => CatalogueKeys::collection($handle))->toThrow(UnknownCatalogueKey::class)
+            ->and(CatalogueKey::query()->where('handle', $handle)->exists())->toBeFalse()
+            ->and(array_keys(CategoryTree::parents()))->not->toContain($handle);
+    }
+
+    expect(CategoryTree::RETIRED)->toBe(['slippers', 'plimsolls', 'sandals-summer-shoes']);
 });

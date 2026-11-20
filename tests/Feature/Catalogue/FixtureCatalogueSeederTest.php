@@ -124,7 +124,7 @@ describe('catalogue.json', function (): void {
         ['magnum-classic', ['occupational-footwear']],
         ['amblers-safety-fs9', ['clearance', 'safety-boots']],
         ['amblers-safety-fs65', ['clearance', 'safety-shoes']],
-        ['gbs-eva', ['clearance', 'slippers']],
+        ['gbs-eva', ['casual-footwear', 'clearance']],
     ]);
 
     it('writes vendor identity to vendor_products, not to Lunar', function (): void {
