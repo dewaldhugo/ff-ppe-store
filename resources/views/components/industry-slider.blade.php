@@ -1,9 +1,16 @@
 {{--
-    Industry tiles slider. Place at resources/views/components/industry-slider.blade.php
-    Usage: <x-industry-slider />
+    The industries row: photo cards that drift sideways at a steady, slow speed. Usage: <x-industry-slider />
 
-    Images are expected at resources/images/industries/{slug}.webp and {slug}.jpg
-    and must be registered with Vite (see import.meta.glob note in the hand-over).
+    - Pure CSS, no JavaScript and no buttons (the styles are at the end of resources/css/app.css). The
+      list is rendered twice; the track slides by one copy and starts again, so it loops without a jump.
+      The second copy is hidden from assistive technology.
+    - It fills the page container, not the full width of the page, and has no scrollbar.
+    - It stops while the pointer is over it. It keeps moving whatever the "reduce motion" setting
+      says, as the home hero slideshow does.
+    - The cards are not links: the catalogue has no industry filter to send them to yet.
+
+    Images are at resources/images/industries/{slug}.webp and {slug}.jpg (240 x 224), registered
+    with Vite through the import.meta.glob in resources/js/app.js.
 --}}
 @php
     $industries = [
@@ -22,90 +29,36 @@
         'mining'       => 'Mining',
         'oilandgas'    => 'Oil & Gas',
     ];
-
-    $tiles = collect($industries)->map(fn ($label, $slug) => [
-        'label' => $label,
-        'webp'  => Vite::asset("resources/images/industries/{$slug}.webp"),
-        'jpg'   => Vite::asset("resources/images/industries/{$slug}.jpg"),
-    ])->values()->all();
 @endphp
 
-<section
-    aria-label="Industries we supply"
-    class="w-full"
-    x-data="{
-        items: @js($tiles),
-        perView: 10,
-        index: 0,
-        animate: true,
-        timer: null,
-        paused: false,
-
-        get slides() {
-            // Clones of the first 10 tiles let the loop run past the end without a visible jump.
-            return this.items.concat(this.items.slice(0, 10));
-        },
-        calc() {
-            const w = window.innerWidth;
-            this.perView = w <= 575 ? 1 : w <= 767 ? 2 : w <= 1000 ? 3 : w <= 1199 ? 4 : w <= 1800 ? 6 : w <= 2000 ? 8 : 10;
-        },
-        init() {
-            this.calc();
-            this.timer = setInterval(() => {
-                if (this.paused || document.hidden) return;
-                this.animate = true;
-                this.index++;
-            }, 1900);
-        },
-        settle() {
-            // After sliding onto the clones, jump back to the real start with no transition.
-            if (this.index >= this.items.length) {
-                this.animate = false;
-                this.index = 0;
-            }
-        },
-        destroy() { clearInterval(this.timer); },
-    }"
-    x-on:resize.window.debounce.150ms="calc()"
-    x-on:mouseenter="paused = true"
-    x-on:mouseleave="paused = false"
-    x-on:focusin="paused = true"
-    x-on:focusout="paused = false"
->
-    <div class="overflow-hidden">
-        <ul
-            class="flex"
-            :style="{
-                transform: 'translateX(-' + (index * 100 / perView) + '%)',
-                transition: animate ? 'transform 400ms ease' : 'none',
-            }"
-            x-on:transitionend.self="settle()"
-        >
-            <template x-for="(tile, i) in slides" :key="i">
+<section aria-label="Industries we supply" class="w-full" data-industry-row>
+  <x-ui.container>
+    <div class="industry-row">
+    {{-- Each card has its own right margin (not a flex gap), so one copy is exactly half the track. --}}
+    <ul role="list" class="industry-row-track flex w-max" data-industry-track>
+        @foreach ([false, true] as $clone)
+            @foreach ($industries as $slug => $label)
                 <li
-                    class="shrink-0"
-                    style="width: 10%"
-                    :style="{ width: (100 / perView) + '%' }"
-                    :aria-hidden="i >= items.length ? 'true' : null"
+                    class="group relative mr-3 w-36 shrink-0 overflow-hidden rounded-lg bg-surface-muted sm:mr-4 sm:w-48 lg:w-56"
+                    @if ($clone) aria-hidden="true" data-industry-clone @else data-industry-card @endif
                 >
-                    <div class="h-[205px] bg-surface-muted">
-                        <picture>
-                            <source type="image/webp" :srcset="tile.webp">
-                            <img
-                                :src="tile.jpg"
-                                alt=""
-                                loading="lazy"
-                                decoding="async"
-                                class="h-[205px] w-full object-cover object-bottom"
-                            >
-                        </picture>
-                    </div>
-                    <p
-                        class="border-r border-white/20 bg-brand-blue px-2 py-2 text-center text-sm font-bold uppercase text-white"
-                        x-text="tile.label"
-                    ></p>
+                    <picture>
+                        <source type="image/webp" srcset="{{ Vite::asset("resources/images/industries/{$slug}.webp") }}">
+                        <img
+                            src="{{ Vite::asset("resources/images/industries/{$slug}.jpg") }}"
+                            alt=""
+                            width="240"
+                            height="224"
+                            loading="lazy"
+                            decoding="async"
+                            class="aspect-square w-full object-cover object-top transition-transform duration-500 motion-safe:group-hover:scale-105"
+                        >
+                    </picture>
+                    <p class="absolute inset-x-0 bottom-0 bg-linear-to-t from-brand-charcoal/90 via-brand-charcoal/60 to-transparent px-3 pb-3 pt-10 text-sm font-bold uppercase leading-tight text-white">{{ $label }}</p>
                 </li>
-            </template>
-        </ul>
+            @endforeach
+        @endforeach
+    </ul>
     </div>
+  </x-ui.container>
 </section>
