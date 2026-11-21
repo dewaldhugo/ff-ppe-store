@@ -26,6 +26,7 @@
                         <x-checkout.field name="company_name" label="Registered company name" autocomplete="organization" />
                         <x-checkout.field name="vat_number" label="VAT registration number" :optional="true" hint="For example GB123456789." />
                         <x-checkout.field name="po_number" label="Purchase order (PO) number" :optional="true" hint="Printed on your invoice." />
+                        <x-checkout.field name="supplier_number" label="Supplier number" :optional="true" hint="Your number for us in your purchasing system. Printed on your invoice." />
                     </div>
 
                     <div class="mt-4">

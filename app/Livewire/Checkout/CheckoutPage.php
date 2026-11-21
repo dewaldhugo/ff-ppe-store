@@ -46,6 +46,9 @@ final class CheckoutPage extends Component
 
     public string $po_number = '';
 
+    /** The customer's number for us in their purchasing system. Filled in from their customer record (staff set it in the admin). */
+    public string $supplier_number = '';
+
     public string $notes = '';
 
     /** `commercial` or `residential`: couriers treat them differently. */
@@ -117,6 +120,7 @@ final class CheckoutPage extends Component
         $this->phone = (string) ($user->phone ?? '');
         $this->company_name = (string) ($customer?->company_name ?? '');
         $this->vat_number = (string) ($customer?->tax_identifier ?? '');
+        $this->supplier_number = (string) ($customer?->meta['supplier_number'] ?? '');
 
         // Where most orders go: a starting point to confirm, and the saved address shown as chosen.
         if ($address !== null) {
@@ -345,6 +349,7 @@ final class CheckoutPage extends Component
             'company_name' => $this->company_name,
             'vat_number' => $this->vat_number !== '' ? $this->vat_number : null,
             'po_number' => $this->po_number !== '' ? $this->po_number : null,
+            'supplier_number' => $this->supplier_number !== '' ? $this->supplier_number : null,
             'notes' => $this->notes !== '' ? $this->notes : null,
             'site_type' => $this->site_type,
             'shipping' => $shipping,
@@ -429,6 +434,7 @@ final class CheckoutPage extends Component
             'company_name' => ['required', 'string', 'max:150'],
             'vat_number' => ['nullable', new VatNumber],
             'po_number' => ['nullable', 'string', 'max:60'],
+            'supplier_number' => ['nullable', 'string', 'max:50'],
             'notes' => ['nullable', 'string', 'max:1000'],
             'site_type' => ['required', Rule::in(['commercial', 'residential'])],
             'ship_line_one' => ['required', 'string', 'max:150'],
@@ -456,6 +462,7 @@ final class CheckoutPage extends Component
             'company_name' => 'company name',
             'vat_number' => 'VAT number',
             'po_number' => 'PO number',
+            'supplier_number' => 'supplier number',
             'ship_line_one' => 'address line 1',
             'ship_city' => 'town or city',
             'ship_postcode' => 'postcode',

@@ -23,6 +23,20 @@ return [
     // Where Contact page enquiries are emailed: the store email, unless STORE_ENQUIRY_EMAIL is set.
     'enquiry_email' => env('STORE_ENQUIRY_EMAIL') ?: 'info@frontlinesafetygear.com',
 
+    // Who the invoice comes from, printed at the top left and in the footer of every invoice
+    // (docs/accounts.md, Invoices). Fixed here, with no environment variable: it never changes. The
+    // registered office line is worded as the client gave it.
+    'invoice' => [
+        'name' => 'Frontline Holdings Ltd',
+        'trading_as' => 'Frontline Footwear Ltd',
+        'address' => '7 Lynnwood Court, Priestlands Place, Lymington, SO41 9GA',
+        'vat_number' => '377 3202 94',
+        'email' => 'accounts@frontlinesafetygear.com',
+        'website' => 'www.frontlinesafetygear.com',
+        'company_number' => '13184904',
+        'registered_office' => 'Attention: Frontline Footwear Ltd, 7 Lynnwood Court, Priestlands Place, Lymington, SO41 9GA',
+    ],
+
     // The bank account customers pay 30 day account invoices into. Printed on an unpaid account invoice
     // and its payment advice slip (docs/accounts.md, Invoices). Fixed here, with no environment variable,
     // like the address, phone and email: it never changes. Taken from the client's sample invoice.

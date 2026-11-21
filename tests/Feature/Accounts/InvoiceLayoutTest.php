@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Admin\Extensions\CustomerSupplierNumberResourceExtension;
 use App\Domain\Orders\Invoice;
 use App\Domain\Orders\InvoiceNumbers;
 use App\Livewire\Checkout\CheckoutPage;
@@ -9,17 +10,22 @@ use App\Models\User;
 use App\Support\Store;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
+use Lunar\Admin\Filament\Resources\CustomerResource\Pages\EditCustomer;
+use Lunar\Admin\Models\Staff;
 use Lunar\Facades\CartSession;
 use Lunar\FieldTypes\Text;
 use Lunar\Models\Cart;
 use Lunar\Models\Channel;
 use Lunar\Models\Currency;
+use Lunar\Models\Customer;
 use Lunar\Models\Order;
 use Tests\Support\CatalogueFactory;
 
-// The tax invoice page laid out like the client's sample (docs/accounts.md, Invoices): title and customer, the
-// invoice details, the supplier, the lines (colour, UK size, EU size), the totals, the due date, the bank details
-// and the payment advice slip. Invoice numbers are DDMMYYYY/NNN (App\Domain\Orders\InvoiceNumbers).
+// The invoice page laid out from the client's template (docs/accounts.md, Invoices): the logo and the sender top
+// left, INVOICE and its details top right, the Bill to and Deliver to boxes, the lines (colour, UK size),
+// the totals, then the payment method with the due date and bank details or "Status: Paid", and the footer.
+// Invoice numbers are DDMMYYYY/NNN (App\Domain\Orders\InvoiceNumbers). The supplier number is a customer field
+// (set by staff in the admin, filled in on the checkout) printed on the invoice.
 
 beforeEach(function (): void {
     config()->set('store.noindex', true);
@@ -32,7 +38,7 @@ beforeEach(function (): void {
  *
  * @param  list<array{0: ?string, 1: ?string, 2: ?string, 3: int}>  $variants
  */
-function invoiceOrder(User $user, array $variants = [['Light grey', '9', '43', 2]], string $po = ''): Order
+function invoiceCart(User $user, array $variants = [['Light grey', '9', '43', 2]]): Cart
 {
     $cart = Cart::query()->create([
         'currency_id' => Currency::getDefault()->id,
@@ -62,6 +68,18 @@ function invoiceOrder(User $user, array $variants = [['Light grey', '9', '43', 2
 
     CartSession::use($cart);
 
+    return $cart;
+}
+
+/**
+ * Places a real order on 30 day terms through the checkout. $variants are [colour, size, eu size, quantity].
+ *
+ * @param  list<array{0: ?string, 1: ?string, 2: ?string, 3: int}>  $variants
+ */
+function invoiceOrder(User $user, array $variants = [['Light grey', '9', '43', 2]], string $po = '', ?string $supplier = null): Order
+{
+    invoiceCart($user, $variants);
+
     Livewire::actingAs($user, 'web')->test(CheckoutPage::class)
         ->set('full_name', 'Jo Builder')
         ->set('email', 'jo@builder.example')
@@ -69,6 +87,7 @@ function invoiceOrder(User $user, array $variants = [['Light grey', '9', '43', 2
         ->set('company_name', 'Builder Ltd')
         ->set('vat_number', 'GB123456789')
         ->set('po_number', $po)
+        ->set('supplier_number', $supplier ?? '')
         ->set('ship_line_one', '1 High Street')
         ->set('ship_city', 'Bromley')
         ->set('ship_postcode', 'BR5 3QX')
@@ -165,51 +184,156 @@ it('keeps two orders from sharing a number', function (): void {
 
 // --- The page -------------------------------------------------------------------------------
 
-it('lays the invoice out like the sample: title and customer, details, then the supplier', function (): void {
-    $order = invoiceOrder($this->member, po: 'HYG/0504');
+it('lays the invoice out from the template: logo and sender top left, INVOICE and its details top right, then the two boxes', function (): void {
+    $order = invoiceOrder($this->member, po: 'HYG/0504', supplier: '38858');
     $html = invoicePage($this, $order);
 
     $positions = [
-        'Tax invoice' => strpos($html, 'Tax invoice'),
-        'customer' => strpos($html, 'data-invoice-billing'),
-        'date' => strpos($html, 'Invoice Date'),
-        'number' => strpos($html, 'Invoice Number'),
-        'po' => strpos($html, 'Purchase Order Number'),
+        'logo' => strpos($html, 'data-invoice-logo'),
+        'sender' => strpos($html, 'data-supplier-name'),
+        'title' => strpos($html, '>Invoice</h1>'),
+        'date' => strpos($html, 'Invoice Date:'),
+        'number' => strpos($html, 'Invoice Number:'),
+        'po' => strpos($html, 'Purchase Order Number:'),
         'vat' => strpos($html, 'data-invoice-customer-vat'),
-        'supplier' => strpos($html, 'data-invoice-supplier'),
+        'supplier number' => strpos($html, 'Supplier Number:'),
+        'bill to' => strpos($html, 'data-invoice-billing'),
+        'deliver to' => strpos($html, 'data-invoice-delivery'),
         'lines' => strpos($html, 'data-invoice-lines'),
     ];
 
     expect(substr_count($html, '<h1'))->toBe(1)
-        ->and($html)->toMatch('#<h1[^>]*uppercase[^>]*>Tax invoice</h1>#')
+        // INVOICE is big and bold, in capitals.
+        ->and($html)->toMatch('#<h1[^>]*text-5xl[^>]*font-extrabold[^>]*uppercase[^>]*>Invoice</h1>#')
         ->and(array_values($positions))->toBe(array_values(collect($positions)->sort()->all()))
         ->and($html)->toContain('data-invoice-date>'.$order->placed_at->format('j M Y'))
         ->toContain('data-invoice-po>HYG/0504')
         ->toContain('data-invoice-customer-vat>GB123456789')
-        ->toContain('VAT Number: '.Store::vatNumber())
-        ->toContain(e(Store::legalName()))
-        ->toContain(e(Store::email()));
+        ->toContain('data-invoice-supplier-number>38858');
 });
 
-it('has a line for each size with colour, UK size, EU size, quantity, unit price, VAT rate and amount', function (): void {
+it('prints the sender, fixed in config, under the logo, with the company name bold and bigger', function (): void {
+    $html = invoicePage($this, invoiceOrder($this->member));
+
+    preg_match('#<div[^>]*data-invoice-supplier>(.*?)</div>#s', $html, $block);
+    preg_match('#<img[^>]*data-invoice-logo[^>]*>#', $html, $logo);
+    $lines = array_values(array_filter(array_map(fn (string $line): string => trim(html_entity_decode($line)), explode("\n", trim(strip_tags(preg_replace('#</p>#', "</p>\n", $block[1])))))));
+
+    expect($logo[0])->toContain('images/frontline-logo.png')->toContain('alt="Frontline Safety Gear"')
+        ->and($lines)->toBe([
+            'Frontline Holdings Ltd',
+            'Frontline Footwear Ltd',
+            '7 Lynnwood Court, Priestlands Place, Lymington, SO41 9GA',
+            'VAT Number: 377 3202 94',
+            'accounts@frontlinesafetygear.com',
+            'www.frontlinesafetygear.com',
+        ])
+        ->and($block[1])->toMatch('#<p[^>]*text-xl[^>]*font-bold[^>]*data-supplier-name>Frontline Holdings Ltd</p>#');
+});
+
+it('has the sender fixed in config/store.php, with no environment variable', function (): void {
+    $file = require config_path('store.php');
+    $source = (string) file_get_contents(config_path('store.php'));
+
+    expect($file['invoice'])->toBe([
+        'name' => 'Frontline Holdings Ltd',
+        'trading_as' => 'Frontline Footwear Ltd',
+        'address' => '7 Lynnwood Court, Priestlands Place, Lymington, SO41 9GA',
+        'vat_number' => '377 3202 94',
+        'email' => 'accounts@frontlinesafetygear.com',
+        'website' => 'www.frontlinesafetygear.com',
+        'company_number' => '13184904',
+        'registered_office' => 'Attention: Frontline Footwear Ltd, 7 Lynnwood Court, Priestlands Place, Lymington, SO41 9GA',
+    ])
+        ->and(Store::invoice('vat_number'))->toBe('377 3202 94')
+        ->and($source)->not->toContain('INVOICE_');
+});
+
+it('puts the customer\'s name, address and VAT number in Bill to, and the delivery address in Deliver to', function (): void {
+    $html = invoicePage($this, invoiceOrder($this->member));
+
+    preg_match('#<section[^>]*data-invoice-billing.*?</section>#s', $html, $bill);
+    preg_match('#<section[^>]*data-invoice-delivery.*?</section>#s', $html, $deliver);
+
+    $bill = preg_replace('/\s+/', ' ', strip_tags($bill[0]));
+    $deliver = preg_replace('/\s+/', ' ', strip_tags($deliver[0]));
+
+    expect($bill)->toContain('Bill to')->toContain('Builder Ltd')->toContain('Jo Builder')->toContain('1 High Street')->toContain('Bromley')->toContain('BR5 3QX')->toContain('VAT Number: GB123456789')
+        ->and($deliver)->toContain('Deliver to')->toContain('1 High Street')->toContain('Bromley')->toContain('BR5 3QX')
+        ->not->toContain('VAT Number');
+});
+
+it('makes the dark bars print: backgrounds are switched off by browsers unless asked for', function (): void {
+    $html = invoicePage($this, invoiceOrder($this->member));
+
+    preg_match('#<h2[^>]*>Bill to</h2>#', $html, $bar);
+    preg_match('#<thead[^>]*>#', $html, $head);
+
+    // The Bill to and Deliver to bars are dark; the lines table's header is light grey. Both must print.
+    expect($bar[0])->toContain('bg-brand-blue')->toContain('print:[print-color-adjust:exact]')
+        ->and($head[0])->toContain('bg-surface-muted')->toContain('print:[print-color-adjust:exact]')
+        // The site header is left out of the print, so the invoice carries its own logo.
+        ->and($html)->toMatch('#<header[^>]*print:hidden[^>]*data-checkout-header#');
+});
+
+it('prints on one A4 page with no browser header or footer: no page margin, a smaller root size, tighter spacing', function (): void {
+    $html = invoicePage($this, invoiceOrder($this->member));
+
+    preg_match('#<style>(.*?)</style>#s', $html, $style);
+    preg_match('#<article[^>]*>#', $html, $article);
+    preg_match('#<div[^>]*data-invoice>#', $html, $wrapper);
+    preg_match('#<main[^>]*>\s*<div[^>]*>#', $html, $main);
+
+    // A page margin of 0 leaves the browser no room for its URL, page title, date and page numbers.
+    expect(preg_replace('/\s+/', ' ', $style[1]))->toContain('@page { size: A4; margin: 0; }')
+        // One smaller root size scales every rem-based size down together, in the print only.
+        ->toContain('@media print { html { font-size: 12px; } }')
+        // The article carries its own padding, and nothing narrows the page.
+        ->and($article[0])->toContain('print:p-[11mm]')
+        ->and($wrapper[0])->toContain('print:max-w-none')
+        ->and($main[0])->toContain('print:max-w-none')->toContain('print:p-0')
+        // Tighter in the print: the code goes on the description's line, rows and boxes are shorter.
+        ->and($html)->toContain('print:inline')
+        ->toContain('print:py-1.5')
+        ->toContain('print:min-h-0')
+        ->toContain('print:break-inside-avoid');
+});
+
+it('prints the invoice only: the site header and the buttons are left out of the print', function (): void {
+    $html = invoicePage($this, invoiceOrder($this->member));
+
+    preg_match('#<p class="[^"]*print:hidden[^"]*">.*?data-print-invoice#s', $html, $buttons);
+
+    expect($html)->toMatch('#<header[^>]*print:hidden[^>]*data-checkout-header#')
+        ->and($buttons)->not->toBeEmpty()
+        ->and($html)->toContain('print:bg-white');
+});
+
+it('prints the supplier number only when the customer gave one', function (): void {
+    $without = invoicePage($this, invoiceOrder($this->member));
+
+    expect($without)->not->toContain('Supplier Number')->not->toContain('data-invoice-supplier-number');
+});
+
+it('has a line for each size with colour, UK size, quantity, unit price, VAT rate and amount, and no EU size', function (): void {
     $order = invoiceOrder($this->member, [['Light grey', '9', '43', 2], ['Light grey', '8', '42', 3]]);
     $html = invoicePage($this, $order);
 
     preg_match('#<thead.*?</thead>#s', $html, $head);
     preg_match_all('#<th scope="col"[^>]*>\s*(.*?)\s*</th>#s', $head[0], $headings);
 
-    expect($headings[1])->toBe(['Description', 'Colour', 'UK Size', 'EU Size', 'Quantity', 'Unit Price', 'VAT', 'Amount'])
+    expect($headings[1])->toBe(['Description', 'Colour', 'UK Size', 'Quantity', 'Unit Price', 'VAT', 'Amount'])
         ->and(substr_count($html, 'data-invoice-line>'))->toBe(2);
 
-    preg_match_all('#<tr data-invoice-line>(.*?)</tr>#s', $html, $rows);
+    preg_match_all('#<tr[^>]*data-invoice-line>(.*?)</tr>#s', $html, $rows);
     $first = preg_replace('/\s+/', ' ', strip_tags($rows[1][0]));
 
     // £27.90 a pair ex VAT, 20% VAT, 2 pairs: £55.80.
     expect($rows[1][0])->toContain('data-line-colour>Light grey')
         ->toContain('data-line-size>9')
-        ->toContain('data-line-eu>43')
-        ->and($first)->toContain('2')->toContain('£27.90')->toContain('20%')->toContain('£55.80')
-        ->and($rows[1][1])->toContain('data-line-size>8')->toContain('data-line-eu>42')->toContain('£83.70');
+        ->and($first)->toContain('2')->toContain('27.90')->toContain('20%')->toContain('55.80')
+        ->and($rows[1][1])->toContain('data-line-size>8')->toContain('83.70')
+        ->and($html)->not->toContain('data-line-eu')->not->toContain('EU Size')->not->toContain('(EU');
 });
 
 it('shows the totals as subtotal, delivery, total VAT and total', function (): void {
@@ -217,16 +341,43 @@ it('shows the totals as subtotal, delivery, total VAT and total', function (): v
     $order = invoiceOrder($this->member, [['Light grey', '9', '43', 5]]);
     $html = invoicePage($this, $order);
 
-    preg_match('#<dl[^>]*data-invoice-totals.*?</dl>#s', $html, $totals);
+    preg_match('#<tbody[^>]*data-invoice-totals.*?</tbody>#s', $html, $totals);
     $text = preg_replace('/\s+/', ' ', strip_tags($totals[0]));
 
-    expect($text)->toContain('Subtotal £139.50')
-        ->toContain('Delivery £30.00')
-        ->toContain('TOTAL VAT 20% £33.90')
+    expect($text)->toContain('Subtotal 139.50')
+        ->toContain('Delivery 30.00')
+        ->toContain('TOTAL VAT 20% 33.90')
         ->toContain('TOTAL £203.40')
         ->and(strpos($text, 'Subtotal'))->toBeLessThan(strpos($text, 'Delivery'))
         ->and(strpos($text, 'Delivery'))->toBeLessThan(strpos($text, 'TOTAL VAT'))
         ->and($html)->toContain('data-invoice-total>£203.40');
+});
+
+it('shows the pound sign on the total only: every other amount is a plain number', function (): void {
+    foreach ([invoiceOrder($this->member, [['Light grey', '9', '43', 5]]), invoiceOrder($this->member, [['Light grey', '9', '43', 25]])] as $order) {
+        $html = invoicePage($this, $order);
+
+        preg_match('#<article.*?</article>#s', $html, $article);
+        preg_match('#<table[^>]*data-invoice-lines.*?</table>#s', $article[0], $table);
+
+        // One pound sign in the whole invoice, and it is on the TOTAL.
+        expect(substr_count($article[0], '£'))->toBe(1)
+            ->and($article[0])->toMatch('#data-invoice-total>£[0-9,]+\.[0-9]{2}</td>#')
+            // The line amounts and the other totals rows are numbers.
+            ->and($table[0])->toMatch('#<td[^>]*>27\.90</td>#')
+            ->toMatch('#data-invoice-subtotal>\s*<th[^>]*>Subtotal</th>\s*<td[^>]*>[0-9,]+\.[0-9]{2}</td>#');
+    }
+});
+
+it('words an amount as a plain number from whole pence', function (): void {
+    $price = fn (int $pence): Lunar\DataTypes\Price => new Lunar\DataTypes\Price($pence, Lunar\Models\Currency::getDefault(), 1);
+
+    expect(Invoice::amount($price(2790)))->toBe('27.90')
+        ->and(Invoice::amount($price(5)))->toBe('0.05')
+        ->and(Invoice::amount($price(0)))->toBe('0.00')
+        ->and(Invoice::amount($price(100_000)))->toBe('1,000.00')
+        ->and(Invoice::amount($price(123_456)))->toBe('1,234.56')
+        ->and(Invoice::amount($price(-500)))->toBe('-5.00');
 });
 
 it('adds up: subtotal plus delivery plus VAT is the total, and the delivery is not a line', function (): void {
@@ -250,11 +401,68 @@ it('leaves the colour and size columns out when no line has them', function (): 
         ->and($html)->toContain('Quantity')->toContain('Unit Price')->toContain('Amount');
 });
 
-it('shows a size with no EU size without an EU column', function (): void {
-    $order = invoiceOrder($this->member, [['Black', '9', null, 1]]);
+it('never shows an EU size on the invoice, with or without one on the variant', function (): void {
+    foreach ([['Black', '9', null, 1], ['Black', '9', '43', 1]] as $variant) {
+        $html = invoicePage($this, invoiceOrder($this->member, [$variant]));
+
+        expect($html)->toContain('data-line-size>9')->not->toContain('data-line-eu')->not->toContain('EU Size')->not->toContain('43');
+    }
+});
+
+it('borders the lines table like the sample: grey header with a thick black rule, thin grey rule under each line, no box', function (): void {
+    $html = invoicePage($this, invoiceOrder($this->member, [['Light grey', '9', '43', 2], ['Light grey', '8', '42', 3]]));
+
+    preg_match('#<table[^>]*data-invoice-lines[^>]*>#', $html, $table);
+    preg_match('#<thead[^>]*>#', $html, $head);
+    preg_match_all('#<tr class="([^"]*)" data-invoice-line>#', $html, $lines);
+    preg_match('#<tr[^>]*data-invoice-subtotal[^>]*>#', $html, $subtotal);
+    preg_match('#<tr[^>]*data-invoice-grand[^>]*>#', $html, $grand);
+
+    expect($table[0])->not->toContain('border')
+        // Light grey header, bold, with a thick black rule under it.
+        ->and($head[0])->toContain('bg-surface-muted')->toContain('font-bold')->toContain('border-b-[3px]')->toContain('border-ink')
+        // A thin grey rule under every line, the last one too.
+        ->and($lines[1])->toHaveCount(2)
+        ->and($lines[1][0])->toContain('border-b border-border')
+        ->and($lines[1][1])->toContain('border-b border-border')
+        // The totals have no rules between them, and a thick black rule above TOTAL.
+        ->and($subtotal[0])->not->toContain('border')
+        ->and($grand[0])->toContain('border-t-[3px]')->toContain('border-ink')->toContain('font-bold');
+});
+
+it('carries the totals on as rows of the lines table', function (): void {
+    $order = invoiceOrder($this->member, [['Light grey', '9', '43', 5]]);
     $html = invoicePage($this, $order);
 
-    expect($html)->toContain('data-line-size>9')->not->toContain('data-line-eu');
+    preg_match('#<table[^>]*data-invoice-lines.*?</table>#s', $html, $table);
+    preg_match('#<thead.*?</thead>#s', $table[0], $head);
+    preg_match('#<tbody[^>]*data-invoice-totals[^>]*>.*?</tbody>#s', $table[0], $totals);
+    preg_match_all('#<th scope="col"#', $head[0], $columns);
+    preg_match_all('#<tr[^>]*>(.*?)</tr>#s', $totals[0], $rows);
+
+    $columnCount = count($columns[0]);
+
+    // Inside the table, not a separate block under it.
+    expect($totals)->not->toBeEmpty()
+        ->and($html)->not->toContain('<dl')
+        // Four rows (subtotal, delivery, VAT, total, no discount): each label spans every column but the last, which is Amount.
+        ->and($rows[1])->toHaveCount(4);
+
+    foreach ($rows[1] as $row) {
+        expect($row)->toContain('colspan="'.($columnCount - 1).'"');
+    }
+
+    // The amounts sit in the Amount column, under the line amounts.
+    expect(array_sum(array_map(fn (string $row): int => substr_count($row, '<td'), $rows[1])))->toBe(4);
+});
+
+it('spans every column but the last in the totals, whichever columns are shown', function (): void {
+    // No colour or size: Description, Quantity, Unit Price, VAT and Amount.
+    $html = invoicePage($this, invoiceOrder($this->member, [[null, null, null, 1]]));
+
+    preg_match('#<tbody[^>]*data-invoice-totals[^>]*>.*?</tbody>#s', $html, $totals);
+
+    expect($totals[0])->toContain('colspan="4"')->not->toContain('colspan="6"');
 });
 
 it('keeps the colour and sizes as they were when the order was placed', function (): void {
@@ -273,7 +481,7 @@ it('keeps the colour and sizes as they were when the order was placed', function
 
     $html = invoicePage($this, $order);
 
-    expect($html)->toContain('data-line-colour>Light grey')->toContain('data-line-eu>43')->not->toContain('>99<');
+    expect($html)->toContain('data-line-colour>Light grey')->toContain('data-line-size>9')->not->toContain('>99<');
 });
 
 it('shows the code and the option text for a line with no snapshot', function (): void {
@@ -287,44 +495,32 @@ it('shows the code and the option text for a line with no snapshot', function ()
         ->not->toContain('data-line-colour');
 });
 
-it('has the due date, the bank details and the payment advice slip while an account invoice is unpaid', function (): void {
-    config()->set('store.bank', [
-        'account_name' => 'Test Holdings Limited',
-        'bank_name' => 'Test Bank',
-        'sort_code' => '00-00-00',
-        'account_number' => '12345678',
-        'iban' => 'GB00 TEST 0000 0012 3456 78',
-        'address' => '1 Test Street, London',
-    ]);
-
+it('shows Payment Method, the due date and the bank details while a 30 day account invoice is unpaid', function (): void {
     $order = invoiceOrder($this->member);
     $html = invoicePage($this, $order);
-    $number = (new Invoice($order))->number();
     $due = $order->placed_at->copy()->addDays(30)->format('j M Y');
 
-    preg_match('#<section[^>]*data-invoice-bank.*?</section>#s', $html, $bank);
-    preg_match('#<section[^>]*data-payment-advice.*?</section>#s', $html, $advice);
+    preg_match('#<div[^>]*data-invoice-bank.*?</div>#s', $html, $bank);
+    $lines = array_values(array_filter(array_map(fn (string $line): string => trim(html_entity_decode($line)), explode("\n", trim(strip_tags(preg_replace('#</p>#', "</p>\n", $bank[0])))))));
 
-    expect($html)->toContain('<span class="font-bold">Due Date:</span> <span data-invoice-status>'.$due.'</span>')
-        ->and($bank[0])->toContain('Test Holdings Limited')
-        ->toContain('Test Bank')
-        ->toContain('00-00-00')
-        ->toContain('12345678')
-        ->toContain('GB00 TEST 0000 0012 3456 78')
-        ->toContain('1 Test Street, London')
-        ->and($advice[0])->toContain('Payment advice')
-        ->toContain('Builder Ltd')
-        ->toContain('data-advice-number>'.$number)
-        ->toContain('data-advice-amount>£'.number_format($order->total->value / 100, 2))
-        ->toContain('data-advice-due>'.$due)
-        ->toContain('Amount Enclosed')
-        ->toContain('Enter the amount you are paying above')
-        // The slip prints on its own page, below the bank details.
-        ->and($advice[0])->toContain('print:break-before-page')
-        ->and(strpos($html, 'data-invoice-bank'))->toBeLessThan(strpos($html, 'data-payment-advice'));
+    expect($html)->toContain('<span class="font-bold">Payment Method:</span> <span data-invoice-method>30 Day Account</span>')
+        ->toContain('<span class="font-bold">Due Date:</span> <span data-invoice-status>'.$due.'</span>')
+        // The bank details as the client worded them.
+        ->and($lines)->toBe([
+            'Frontline Holdings Limited',
+            'Wise Bank',
+            'Sort code: 23-08-01',
+            'Account number: 63606297',
+            'IBAN: GB90 TRWI 2308 0163 6062 97',
+            "Wise's address: 56 Shoreditch High Street, London, E1 6JJ, United Kingdom",
+        ])
+        // A rule above the payment section, and no payment advice slip.
+        ->and($html)->toMatch('#<hr[^>]*>\s*<section[^>]*data-invoice-payment#')
+        ->not->toContain('data-payment-advice')
+        ->not->toContain('Payment advice');
 });
 
-it('prints TBC for a bank detail that is not set yet', function (): void {
+it('prints TBC for a bank detail that is not set', function (): void {
     config()->set('store.bank', ['account_name' => 'Test Holdings Limited']);
 
     expect(Store::bankDetails())->toBe([
@@ -333,7 +529,7 @@ it('prints TBC for a bank detail that is not set yet', function (): void {
         'Sort code' => 'TBC',
         'Account number' => 'TBC',
         'IBAN' => 'TBC',
-        'Bank address' => 'TBC',
+        "Wise's address" => 'TBC',
     ]);
 });
 
@@ -360,41 +556,154 @@ it('has the bank details fixed in config/store.php, with no environment variable
         ->and(Store::bankDetails()['Sort code'])->toBe('23-08-01');
 });
 
-it('shows a paid invoice with its status and no bank details or payment advice slip', function (): void {
+it('shows a paid account invoice with Status: Paid and no bank details', function (): void {
     $order = invoiceOrder($this->member);
     $order->update(['status' => 'payment-received']);
 
     $html = invoicePage($this, $order);
 
-    expect($html)->toContain('<span class="font-bold">Status:</span> <span data-invoice-status>Paid</span>')
+    expect($html)->toContain('<span data-invoice-method>30 Day Account</span>')
+        ->toContain('<span class="font-bold">Status:</span> <span data-invoice-status>Paid</span>')
         ->not->toContain('Due Date')
-        ->not->toContain('data-invoice-bank')
-        ->not->toContain('data-payment-advice');
+        ->not->toContain('data-invoice-bank');
 });
 
-it('shows a card invoice as paid, with no bank details or payment advice slip', function (): void {
+it('shows a credit card invoice as Payment Method: Credit Card and Status: Paid, with no bank details', function (): void {
     $order = invoiceOrder($this->member);
     $order->update(['meta' => array_merge((array) $order->meta, ['payment_method' => 'card'])]);
 
     $html = invoicePage($this, $order);
 
-    expect($html)->toContain('data-invoice-status>Paid')
+    expect($html)->toContain('<span class="font-bold">Payment Method:</span> <span data-invoice-method>Credit Card</span>')
+        ->toContain('<span class="font-bold">Status:</span> <span data-invoice-status>Paid</span>')
+        ->not->toContain('Due Date')
         ->not->toContain('data-invoice-bank')
         ->not->toContain('data-payment-advice');
 });
 
-it('ends with the company registration number and registered office', function (): void {
-    config()->set('store.company_number', '13184904');
-    config()->set('store.registered_office', '7 Lynnwood Court, Priestlands Place, Lymington, Hampshire, SO41 9GA');
-
+it('ends with the footer as the client worded it', function (): void {
     $html = invoicePage($this, invoiceOrder($this->member));
 
     preg_match('#<footer[^>]*data-invoice-footer[^>]*>(.*?)</footer>#s', $html, $footer);
-    $text = trim(preg_replace('/\s+/', ' ', $footer[1]));
 
-    expect($text)->toContain('Company Registration No: 13184904.')
-        ->toContain('registered in England and Wales')
-        ->toContain('Registered Office: 7 Lynnwood Court, Priestlands Place, Lymington, Hampshire, SO41 9GA.');
+    expect(trim(preg_replace('/\s+/', ' ', $footer[1])))->toBe('Company Registration No: 13184904. Registered Office: Attention: Frontline Footwear Ltd, 7 Lynnwood Court, Priestlands Place, Lymington, SO41 9GA');
+});
+
+// --- The supplier number ----------------------------------------------------------------------
+
+it('fills the supplier number in on the checkout from the customer record', function (): void {
+    $customer = Customer::query()->create(['first_name' => 'Jo', 'last_name' => 'Builder', 'company_name' => 'Builder Ltd', 'meta' => ['supplier_number' => '38858']]);
+    $this->member->customers()->attach($customer);
+
+    invoiceCart($this->member);
+
+    Livewire::actingAs($this->member, 'web')->test(CheckoutPage::class)
+        ->assertSet('supplier_number', '38858')
+        ->assertSeeHtml('name="supplier_number"')
+        ->assertSee('Supplier number');
+});
+
+it('leaves the supplier number empty when the customer has none', function (): void {
+    invoiceCart($this->member);
+
+    Livewire::actingAs($this->member, 'web')->test(CheckoutPage::class)->assertSet('supplier_number', '');
+});
+
+it('puts the supplier number on the order and the invoice, and leaves the customer record alone', function (): void {
+    $customer = Customer::query()->create(['first_name' => 'Jo', 'last_name' => 'Builder', 'company_name' => 'Builder Ltd']);
+    $this->member->customers()->attach($customer);
+
+    $order = invoiceOrder($this->member, supplier: 'SUP-42');
+
+    expect($order->meta['supplier_number'])->toBe('SUP-42')
+        ->and((new Invoice($order))->supplierNumber())->toBe('SUP-42')
+        ->and(invoicePage($this, $order))->toContain('Supplier Number:')->toContain('data-invoice-supplier-number>SUP-42')
+        // Only staff change the customer's own number.
+        ->and($customer->refresh()->meta['supplier_number'] ?? null)->toBeNull();
+});
+
+it('lets the customer change a prefilled supplier number for one order', function (): void {
+    $customer = Customer::query()->create(['first_name' => 'Jo', 'last_name' => 'Builder', 'company_name' => 'Builder Ltd', 'meta' => ['supplier_number' => '38858']]);
+    $this->member->customers()->attach($customer);
+
+    $order = invoiceOrder($this->member, supplier: '99999');
+
+    expect($order->meta['supplier_number'])->toBe('99999')
+        ->and($customer->refresh()->meta['supplier_number'])->toBe('38858');
+});
+
+it('records no supplier number on an order when the field is left empty', function (): void {
+    $order = invoiceOrder($this->member);
+
+    expect($order->meta)->not->toHaveKey('supplier_number')
+        ->and((new Invoice($order))->supplierNumber())->toBeNull();
+});
+
+it('keeps the payment method and other order details when the supplier number is added', function (): void {
+    $order = invoiceOrder($this->member, supplier: 'SUP-1');
+
+    expect($order->meta['payment_method'])->toBe('account-30-day')
+        ->and($order->meta['buying_for_employees'])->toBeTrue();
+});
+
+it('limits the supplier number to 50 characters', function (): void {
+    invoiceCart($this->member);
+
+    Livewire::actingAs($this->member, 'web')->test(CheckoutPage::class)
+        ->set('supplier_number', str_repeat('9', 51))
+        ->call('placeOrder')
+        ->assertHasErrors(['supplier_number']);
+});
+
+it('lets staff set and clear the supplier number on the Edit Customer page', function (): void {
+    $customer = Customer::query()->create(['first_name' => 'Jo', 'last_name' => 'Builder', 'company_name' => 'Builder Ltd', 'meta' => ['industry' => 'construction']]);
+    $this->member->customers()->attach($customer);
+
+    $this->actingAs(Staff::factory()->create(['admin' => true]), 'staff');
+
+    Livewire::test(EditCustomer::class, ['record' => $customer->getRouteKey()])
+        ->assertFormSet([CustomerSupplierNumberResourceExtension::FIELD => ''])
+        ->fillForm([CustomerSupplierNumberResourceExtension::FIELD => ' 38858 '])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    expect($customer->refresh()->meta['supplier_number'])->toBe('38858')
+        // The rest of the meta is kept.
+        ->and($customer->meta['industry'])->toBe('construction');
+
+    Livewire::test(EditCustomer::class, ['record' => $customer->getRouteKey()])
+        ->assertFormSet([CustomerSupplierNumberResourceExtension::FIELD => '38858'])
+        ->fillForm([CustomerSupplierNumberResourceExtension::FIELD => ''])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    expect($customer->refresh()->meta)->not->toHaveKey('supplier_number')
+        ->and($customer->meta['industry'])->toBe('construction');
+});
+
+it('refuses a supplier number over 50 characters in the admin', function (): void {
+    $customer = Customer::query()->create(['first_name' => 'Jo', 'last_name' => 'Builder', 'company_name' => 'Builder Ltd']);
+    $this->member->customers()->attach($customer);
+
+    $this->actingAs(Staff::factory()->create(['admin' => true]), 'staff');
+
+    Livewire::test(EditCustomer::class, ['record' => $customer->getRouteKey()])
+        ->fillForm([CustomerSupplierNumberResourceExtension::FIELD => str_repeat('9', 51)])
+        ->call('save')
+        ->assertHasFormErrors([CustomerSupplierNumberResourceExtension::FIELD]);
+});
+
+it('leaves the supplier number alone when staff save a customer that has no login', function (): void {
+    $customer = Customer::query()->create(['first_name' => 'Pat', 'last_name' => 'Walker', 'company_name' => 'Walker Ltd', 'meta' => ['supplier_number' => '777']]);
+
+    $this->actingAs(Staff::factory()->create(['admin' => true]), 'staff');
+
+    Livewire::test(EditCustomer::class, ['record' => $customer->getRouteKey()])
+        ->fillForm(['company_name' => 'Walker & Co'])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    expect($customer->refresh()->meta['supplier_number'])->toBe('777');
 });
 
 it('only ever shows a customer their own invoice', function (): void {

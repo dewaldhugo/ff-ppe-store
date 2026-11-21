@@ -21,13 +21,13 @@
         <x-checkout.stripe-scripts />
     @endif
 </head>
-<body class="min-h-screen bg-surface-muted text-ink antialiased">
+<body class="min-h-screen bg-surface-muted text-ink antialiased print:bg-white">
     <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded focus:bg-white focus:px-4 focus:py-2 focus:shadow">
         Skip to main content
     </a>
 
     {{-- A clean header: the logo and a way to reach a person. No store navigation to lead the buyer away. --}}
-    <header class="border-b border-border bg-white" data-checkout-header>
+    <header class="border-b border-border bg-white print:hidden" data-checkout-header>
         <x-ui.container class="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 py-4">
             <a href="{{ route('home') }}" data-site-logo><x-storefront.logo /></a>
 
@@ -44,7 +44,7 @@
     </header>
 
     <main id="main">
-        <x-ui.container class="py-8">
+        <x-ui.container class="py-8 print:max-w-none print:p-0">
             {{ $slot }}
         </x-ui.container>
     </main>
