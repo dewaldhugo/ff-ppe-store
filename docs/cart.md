@@ -107,6 +107,16 @@ Staff are emailed when a customer places an order. `App\Domain\Orders\NotifyStaf
 - **Contact page enquiries go to the same people.** `Store::enquiryRecipients()` returns the same list, so one set of addresses gets both orders and enquiries, each person in an email of their own. The customer is told the enquiry was sent if it reached at least one person; each failure is reported, and only a failure for everyone shows the error. Only while the list is empty does an enquiry go to the single address in `config/store.php` (`enquiry_email`: `STORE_ENQUIRY_EMAIL`, or the store email), so an enquiry is never lost. That email stays plain text, sent at once, with the customer as its reply-to.
 - **Tests.** `tests/Feature/Cart/OrderNotificationTest.php` and `tests/Feature/Storefront/ContactPageTest.php`, with made-up addresses.
 
+## Deleting an order
+
+Admin staff can delete an order. Lunar has no delete for one, so the storefront adds it (`App\Admin\Extensions\DeleteOrderAction`, registered for the orders list and the order page in `AppServiceProvider`): a **Delete order** button on each row of the orders list and in the header of the order page, and **Delete selected** as a bulk action. Each asks first, naming the order and what is lost.
+
+- **Admin only.** The buttons are hidden from staff who are not admins (`Staff::$admin`), and the action refuses if one is reached anyway.
+- **What goes.** `App\Domain\Orders\DeleteOrder` removes the order with its lines, addresses, transactions, tags and activity log in one transaction: all of it or none of it. Its search index entry goes with it. The cart that made the order is kept, with its link to the order cleared. The customer's orders and invoices lists, and the confirmation page, stop showing it.
+- **The invoice number is kept.** A placed order has an invoice number (`invoice_numbers`). Deleting the order keeps the number on record with no order (`order_id` null, migration `keep_invoice_numbers_of_deleted_orders`), so the next order that day carries on from it and the number is never given to a second invoice. The gap is deliberate.
+- **A card payment is not refunded.** If a payment was taken for the order, the confirmation says so: deleting the order does not give the money back, and the refund is done in Stripe first.
+- **Tests.** `tests/Feature/Cart/DeleteOrderTest.php`.
+
 ## Known gaps
 
 - A variant with no GBP price breaks Lunar's calculation (`MissingCurrencyPriceException`, as on the product page, see CLAUDE.md). Only draft products can have one, and a draft product cannot be added; a cart line that goes this way after a product is withdrawn is not handled.
