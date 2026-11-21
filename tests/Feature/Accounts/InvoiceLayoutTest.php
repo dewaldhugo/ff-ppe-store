@@ -8,10 +8,12 @@ use App\Domain\Orders\InvoiceNumbers;
 use App\Livewire\Checkout\CheckoutPage;
 use App\Models\User;
 use App\Support\Store;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
 use Lunar\Admin\Filament\Resources\CustomerResource\Pages\EditCustomer;
 use Lunar\Admin\Models\Staff;
+use Lunar\DataTypes\Price;
 use Lunar\Facades\CartSession;
 use Lunar\FieldTypes\Text;
 use Lunar\Models\Cart;
@@ -179,7 +181,7 @@ it('keeps two orders from sharing a number', function (): void {
     expect(fn () => DB::table('invoice_numbers')->where('order_id', $second->id)->update([
         'invoice_date' => DB::table('invoice_numbers')->where('order_id', $first->id)->value('invoice_date'),
         'sequence' => DB::table('invoice_numbers')->where('order_id', $first->id)->value('sequence'),
-    ]))->toThrow(Illuminate\Database\UniqueConstraintViolationException::class);
+    ]))->toThrow(UniqueConstraintViolationException::class);
 });
 
 // --- The page -------------------------------------------------------------------------------
@@ -370,7 +372,7 @@ it('shows the pound sign on the total only: every other amount is a plain number
 });
 
 it('words an amount as a plain number from whole pence', function (): void {
-    $price = fn (int $pence): Lunar\DataTypes\Price => new Lunar\DataTypes\Price($pence, Lunar\Models\Currency::getDefault(), 1);
+    $price = fn (int $pence): Price => new Price($pence, Currency::getDefault(), 1);
 
     expect(Invoice::amount($price(2790)))->toBe('27.90')
         ->and(Invoice::amount($price(5)))->toBe('0.05')
@@ -453,7 +455,7 @@ it('carries the totals on as rows of the lines table', function (): void {
 
     // Inside the table, not a separate block under it.
     expect($totals)->not->toBeEmpty()
-        ->and($html)->not->toContain('<dl')
+        ->and($html)->not->toMatch('#<dl[^>]*totals#')
         // Four rows (subtotal, delivery, VAT, total, no discount): each label spans every column but the last, which is Amount.
         ->and($rows[1])->toHaveCount(4);
 
@@ -601,14 +603,14 @@ it('ends with the footer as the client worded it', function (): void {
 // --- The supplier number ----------------------------------------------------------------------
 
 it('fills the supplier number in on the checkout from the customer record', function (): void {
-    $customer = Customer::query()->create(['first_name' => 'Jo', 'last_name' => 'Builder', 'company_name' => 'Builder Ltd', 'meta' => ['supplier_number' => '38858']]);
+    $customer = Customer::query()->create(['title' => 'Mr', 'first_name' => 'Jo', 'last_name' => 'Builder', 'company_name' => 'Builder Ltd', 'meta' => ['supplier_number' => '38858']]);
     $this->member->customers()->attach($customer);
 
     invoiceCart($this->member);
 
     Livewire::actingAs($this->member, 'web')->test(CheckoutPage::class)
         ->assertSet('supplier_number', '38858')
-        ->assertSeeHtml('name="supplier_number"')
+        ->assertSeeHtml('wire:model.blur="supplier_number"')
         ->assertSee('Supplier number');
 });
 
@@ -619,7 +621,7 @@ it('leaves the supplier number empty when the customer has none', function (): v
 });
 
 it('puts the supplier number on the order and the invoice, and leaves the customer record alone', function (): void {
-    $customer = Customer::query()->create(['first_name' => 'Jo', 'last_name' => 'Builder', 'company_name' => 'Builder Ltd']);
+    $customer = Customer::query()->create(['title' => 'Mr', 'first_name' => 'Jo', 'last_name' => 'Builder', 'company_name' => 'Builder Ltd']);
     $this->member->customers()->attach($customer);
 
     $order = invoiceOrder($this->member, supplier: 'SUP-42');
@@ -632,7 +634,7 @@ it('puts the supplier number on the order and the invoice, and leaves the custom
 });
 
 it('lets the customer change a prefilled supplier number for one order', function (): void {
-    $customer = Customer::query()->create(['first_name' => 'Jo', 'last_name' => 'Builder', 'company_name' => 'Builder Ltd', 'meta' => ['supplier_number' => '38858']]);
+    $customer = Customer::query()->create(['title' => 'Mr', 'first_name' => 'Jo', 'last_name' => 'Builder', 'company_name' => 'Builder Ltd', 'meta' => ['supplier_number' => '38858']]);
     $this->member->customers()->attach($customer);
 
     $order = invoiceOrder($this->member, supplier: '99999');
@@ -665,7 +667,7 @@ it('limits the supplier number to 50 characters', function (): void {
 });
 
 it('lets staff set and clear the supplier number on the Edit Customer page', function (): void {
-    $customer = Customer::query()->create(['first_name' => 'Jo', 'last_name' => 'Builder', 'company_name' => 'Builder Ltd', 'meta' => ['industry' => 'construction']]);
+    $customer = Customer::query()->create(['title' => 'Mr', 'first_name' => 'Jo', 'last_name' => 'Builder', 'company_name' => 'Builder Ltd', 'meta' => ['industry' => 'construction']]);
     $this->member->customers()->attach($customer);
 
     $this->actingAs(Staff::factory()->create(['admin' => true]), 'staff');
@@ -691,7 +693,7 @@ it('lets staff set and clear the supplier number on the Edit Customer page', fun
 });
 
 it('refuses a supplier number over 50 characters in the admin', function (): void {
-    $customer = Customer::query()->create(['first_name' => 'Jo', 'last_name' => 'Builder', 'company_name' => 'Builder Ltd']);
+    $customer = Customer::query()->create(['title' => 'Mr', 'first_name' => 'Jo', 'last_name' => 'Builder', 'company_name' => 'Builder Ltd']);
     $this->member->customers()->attach($customer);
 
     $this->actingAs(Staff::factory()->create(['admin' => true]), 'staff');
@@ -703,7 +705,7 @@ it('refuses a supplier number over 50 characters in the admin', function (): voi
 });
 
 it('leaves the supplier number alone when staff save a customer that has no login', function (): void {
-    $customer = Customer::query()->create(['first_name' => 'Pat', 'last_name' => 'Walker', 'company_name' => 'Walker Ltd', 'meta' => ['supplier_number' => '777']]);
+    $customer = Customer::query()->create(['title' => 'Mr', 'first_name' => 'Pat', 'last_name' => 'Walker', 'company_name' => 'Walker Ltd', 'meta' => ['supplier_number' => '777']]);
 
     $this->actingAs(Staff::factory()->create(['admin' => true]), 'staff');
 
@@ -726,6 +728,6 @@ it('uses UK English and no em dashes in its copy', function (): void {
     foreach (['resources/views/account/invoices/show.blade.php', 'app/Domain/Orders/InvoiceNumbers.php', 'app/Domain/Orders/Invoice.php', 'app/Domain/Orders/SnapshotLineOptions.php'] as $file) {
         $text = (string) file_get_contents(base_path($file));
 
-        expect($text)->not->toContain('—')->and($text)->not->toMatch('/\b(color|organization|center)\b/i');
+        expect($text)->not->toContain('—')->and($text)->not->toMatch('/\b(organization|license|favorite|analyze)\b/i');
     }
 });

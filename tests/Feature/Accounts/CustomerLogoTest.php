@@ -26,7 +26,7 @@ beforeEach(function (): void {
 function logoMember(string $company = 'Builder & Sons Ltd', string $email = 'jo@builder.example'): array
 {
     $user = User::factory()->create(['email' => $email, 'name' => 'Jo Builder']);
-    $customer = Customer::query()->create(['first_name' => 'Jo', 'last_name' => 'Builder', 'company_name' => $company]);
+    $customer = Customer::query()->create(['title' => 'Mr', 'first_name' => 'Jo', 'last_name' => 'Builder', 'company_name' => $company]);
     $user->customers()->attach($customer);
 
     return [$user, $customer];
@@ -248,26 +248,43 @@ it('lets staff upload a logo on the Edit Customer page, and replace and remove i
     expect($first)->not->toBeNull()->and($first)->toStartWith(CustomerLogo::DIRECTORY.'/');
     Storage::disk(CustomerLogo::DISK)->assertExists($first);
 
-    // The page loads it back into the form.
+    // The page loads it back into the form, and removing it clears the logo and deletes the file.
     Livewire::test(EditCustomer::class, ['record' => $customer->getRouteKey()])
         ->assertFormSet([CustomerLogoResourceExtension::FIELD => $first])
+        ->fillForm([CustomerLogoResourceExtension::FIELD => null])
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    expect($logo->path($customer->refresh()))->toBeNull();
+    Storage::disk(CustomerLogo::DISK)->assertMissing($first);
+
+    // A new one can then be uploaded.
+    Livewire::test(EditCustomer::class, ['record' => $customer->getRouteKey()])
         ->fillForm([CustomerLogoResourceExtension::FIELD => UploadedFile::fake()->image('new.jpg', 300, 100)])
         ->call('save')
         ->assertHasNoFormErrors();
 
     $second = $logo->path($customer->refresh());
 
-    expect($second)->not->toBeNull()->and($second)->not->toBe($first);
-    Storage::disk(CustomerLogo::DISK)->assertMissing($first);
+    expect($second)->not->toBeNull()->and($second)->not->toBe($first)->and($second)->toEndWith('.jpg');
     Storage::disk(CustomerLogo::DISK)->assertExists($second);
+});
 
-    Livewire::test(EditCustomer::class, ['record' => $customer->getRouteKey()])
-        ->fillForm([CustomerLogoResourceExtension::FIELD => null])
-        ->call('save')
-        ->assertHasNoFormErrors();
+it('deletes the old file when a logo is replaced in one step', function (): void {
+    // The upload widget replaces a file in one step: the form hands over the new path. (The Livewire test helper
+    // cannot show that, because it adds a file beside the old one.)
+    [, $customer] = logoMember();
+    $logo = app(CustomerLogo::class);
 
-    expect($logo->path($customer->refresh()))->toBeNull();
-    Storage::disk(CustomerLogo::DISK)->assertMissing($second);
+    $old = logoFile('old.png');
+    $new = logoFile('new.png');
+
+    $logo->set($customer, $old);
+    $logo->set($customer->refresh(), $new);
+
+    expect($logo->path($customer->refresh()))->toBe($new);
+    Storage::disk(CustomerLogo::DISK)->assertMissing($old);
+    Storage::disk(CustomerLogo::DISK)->assertExists($new);
 });
 
 it('refuses a logo that is not a PNG, JPG or WebP', function (string $name, string $mime): void {
@@ -298,7 +315,7 @@ it('refuses a logo over 2 MB', function (): void {
 
 it('leaves the logo alone when staff save a customer that has no login', function (): void {
     // A customer made in the admin has no login, so the logo section is not shown and not saved.
-    $customer = Customer::query()->create(['first_name' => 'Pat', 'last_name' => 'Walker', 'company_name' => 'Walker Ltd']);
+    $customer = Customer::query()->create(['title' => 'Mr', 'first_name' => 'Pat', 'last_name' => 'Walker', 'company_name' => 'Walker Ltd']);
     $path = logoFile();
     app(CustomerLogo::class)->set($customer, $path);
 

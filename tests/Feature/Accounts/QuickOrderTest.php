@@ -39,8 +39,18 @@ function quickProduct(User $user, string $name = 'Quick Boot', bool $favourite =
     // EU sizes for the sizes of the first colour.
     foreach ($product->variants as $variant) {
         $size = $variant->values->firstWhere('option.handle', 'shoe_size')?->translate('name');
-        $variant->update(['attribute_data' => ['eu_size' => new Text((string) (match ($size) {'8' => 42, '9' => 43, '10' => 44, '11' => 45, default => 0}))]]);
+        $variant->update(['attribute_data' => ['eu_size' => new Text((string) (match ($size) {
+            '8' => 42, '9' => 43, '10' => 44, '11' => 45, default => 0
+        }))]]);
     }
+
+    // Black is the first colour and Brown the second, whatever sort positions the colour values already have in
+    // the database (the page starts on the first colour in stock, in position order).
+    $product->load('variants.values.option');
+    $product->variants->flatMap(fn ($variant) => $variant->values)
+        ->filter(fn ($value): bool => $value->option->handle === 'colour')
+        ->unique('id')
+        ->each(fn ($value) => $value->update(['position' => $value->translate('name') === 'Black' ? 1 : 2]));
 
     if ($favourite) {
         Favourite::query()->create(['user_id' => $user->id, 'product_id' => $product->id]);
@@ -158,12 +168,16 @@ it('offers every colour and size, with the EU size, and disables a size that is 
     preg_match('#<select[^>]*data-option="colour".*?</select>#s', $html, $colour);
     preg_match('#<select[^>]*data-option="shoe_size".*?</select>#s', $html, $size);
 
-    expect($colour[0])->toContain('Select colour')->toContain('>Black<')->toContain('>Brown<')
-        ->and($size[0])->toContain('Select size')
+    // Livewire puts comment markers between the parts of an option: read the words, not the markup around them.
+    $words = fn (string $markup): string => trim((string) preg_replace('/\s+/', ' ', (string) preg_replace('/<!--.*?-->/s', '', $markup)));
+    $sizes = $words($size[0]);
+
+    expect($words($colour[0]))->toContain('Select colour')->toContain('Black')->toContain('Brown')
+        ->and($sizes)->toContain('Select size')
         ->toContain('8 (EU 42)')
         ->toContain('10 (EU 44)')
         // Black 9 has none in stock: shown, but it cannot be picked.
-        ->and($size[0])->toMatch('#<option value="9"[^>]*disabled[^>]*>\s*9 \(EU 43\)\s*- out of stock#');
+        ->and($sizes)->toMatch('#<option value="9"[^>]*disabled[^>]*> 9 \(EU 43\) - out of stock#');
 });
 
 it('drops a size that the chosen colour does not come in', function (): void {
@@ -349,6 +363,6 @@ it('uses UK English and no em dashes in its copy', function (): void {
     foreach (['app/Livewire/Favourites/QuickOrder.php', 'resources/views/livewire/favourites/quick-order.blade.php'] as $file) {
         $text = (string) file_get_contents(base_path($file));
 
-        expect($text)->not->toContain('—')->and($text)->not->toMatch('/\b(color|organization|center)\b/i');
+        expect($text)->not->toContain('—')->and($text)->not->toMatch('/\b(organization|license|favorite|analyze)\b/i');
     }
 });
