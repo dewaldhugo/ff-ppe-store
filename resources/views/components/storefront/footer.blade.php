@@ -68,7 +68,9 @@
 
     <div class="border-t border-white/20">
         <x-ui.container class="space-y-2 py-6 text-sm text-white/90">
-            <p data-copyright>&copy; {{ date('Y') }} {{ \App\Support\Store::name() }}</p>
+            {{-- Fixed wording from the client: it names the company and a year, and does not follow the .env or the date. --}}
+            <p data-copyright>Copyright &copy; Frontline Holdings Ltd. 2021. All rights reserved.</p>
+            <p data-company-number>Company Registration Number: 13184904.</p>
         </x-ui.container>
     </div>
 </footer>
