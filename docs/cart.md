@@ -96,6 +96,15 @@ Card payment uses the Lunar Stripe addon (`lunarphp/stripe` 1.5.0, which brings 
 
 `App\Domain\Orders\SnapshotVendorOffers` is a step in Lunar's order creation pipeline (`config/lunar/orders.php`). It copies `vendor_code`, `vendor_sku`, `vendor_product_name`, `vendor_colour`, `vendor_size`, `ean` and `cost_price` from `vendor_offers` onto each physical order line's meta, as docs/data-contract.md requires; it is the one place the storefront reads the vendor tables. **It must stay after `CleanUpOrderLines`**: that step deletes any order line whose meta differs from its cart line's, so a snapshot taken earlier makes every product line disappear. A variant with no offer gets no snapshot. Stock is not decremented when an order is placed: the vendors' feeds are the stock authority.
 
+## Order notification
+
+Staff are emailed when a customer places an order. `App\Domain\Orders\NotifyStaffOfNewOrder` sends `App\Mail\OrderPlaced` (plain text, view `mail/order-placed`) to the addresses in `STORE_ORDER_NOTIFICATION_EMAILS` in `.env` (`config/store.php`, `order_notification_emails`; `Store::orderNotificationEmails()` takes the valid, distinct addresses, separated by commas, semicolons or spaces). The list is empty by default, so nothing is sent until it is set, and the addresses live in `.env`, not in the repository.
+
+- **When.** Once per order, by an `Order::saved` hook in `AppServiceProvider`: the save that gives an order its placed date, from none to a date. An account order is placed at the checkout, a card order when Stripe confirms the payment (never at the draft stage), and a later change to a placed order, even its date, sends nothing more. The hook runs after the invoice number is given, so the email carries it.
+- **What.** Subject "New order {reference} from {company} ({total})", then the order, invoice number, when it was placed, how it is paid (30 Day Account with the due date, or Credit Card, paid), PO and supplier number when given, the customer (company, contact, email, phone, VAT number), Deliver to and Bill to addresses, delivery instructions, each item (quantity, description, colour and sizes, code, unit price and amount ex VAT), subtotal, discount, delivery, VAT, the total and a link to the order in the admin.
+- **Queue.** `ShouldQueue` on the `default` queue, so a slow or failing mail server never holds up the customer. It needs a queue worker (`composer dev` locally, Horizon in production) and a working mailer (`MAIL_*`). One email goes to every recipient. A failure to queue it is reported and never stops the order.
+- **Tests.** `tests/Feature/Cart/OrderNotificationTest.php`, with made-up addresses.
+
 ## Known gaps
 
 - A variant with no GBP price breaks Lunar's calculation (`MissingCurrencyPriceException`, as on the product page, see CLAUDE.md). Only draft products can have one, and a draft product cannot be added; a cart line that goes this way after a product is withdrawn is not handled.
