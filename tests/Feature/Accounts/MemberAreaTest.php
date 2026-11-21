@@ -221,7 +221,7 @@ it('shows a tax invoice with the supplier, customer, lines and totals', function
 
     $html = $this->get(route('account.invoices.show', $order->reference))->assertOk()->getContent();
 
-    expect($html)->toContain('>Invoice</h1>')
+    expect($html)->toContain('>Tax invoice</h1>')
         ->toContain('data-invoice-number>'.(new Invoice($order))->number())
         ->toContain('data-invoice-date>'.$order->placed_at->format('j M Y'))
         // The supplier's details, from the store identity.

@@ -13,10 +13,11 @@
     // Colour and size columns show only when some line has one. "UK Size" unless a line has another kind of size.
     $showColour = $goods->contains(fn ($line): bool => $meta($line, 'colour') !== null);
     $showSize = $goods->contains(fn ($line): bool => $meta($line, 'size') !== null);
+    $showEu = $goods->contains(fn ($line): bool => $meta($line, 'eu_size') !== null);
     $sizeHeading = $goods->contains(fn ($line): bool => $meta($line, 'size') !== null && ! ($line->meta['size_is_uk'] ?? false)) ? 'Size' : 'UK Size';
 
-    // Description, Quantity, Unit Price and VAT, plus Colour and Size when shown: the totals' labels span them.
-    $labelSpan = 4 + ($showColour ? 1 : 0) + ($showSize ? 1 : 0);
+    // Description, Quantity, Unit Price and VAT, plus Colour, Size and EU Size when shown: the totals' labels span them.
+    $labelSpan = 4 + ($showColour ? 1 : 0) + ($showSize ? 1 : 0) + ($showEu ? 1 : 0);
     $vatRate = $invoice->singleRate();
     $dueDate = $invoice->dueDate();
     $customerName = $billing?->company_name ?: $contact($billing);
@@ -65,7 +66,7 @@
                 </div>
 
                 <div class="sm:text-right">
-                    <h1 class="text-5xl font-extrabold uppercase tracking-tight">Invoice</h1>
+                    <h1 class="text-5xl font-extrabold uppercase tracking-tight">Tax invoice</h1>
 
                     <dl class="mt-4 space-y-1 text-sm" data-invoice-details>
                         <div><dt class="inline font-bold">Invoice Date:</dt> <dd class="inline" data-invoice-date>{{ $invoice->date()->format('j M Y') }}</dd></div>
@@ -129,6 +130,7 @@
                             <th scope="col" class="px-3 py-2 print:py-1">Description</th>
                             @if ($showColour)<th scope="col" class="px-3 py-2 print:py-1">Colour</th>@endif
                             @if ($showSize)<th scope="col" class="px-3 py-2 print:py-1">{{ $sizeHeading }}</th>@endif
+                            @if ($showEu)<th scope="col" class="px-3 py-2 print:py-1">EU Size</th>@endif
                             <th scope="col" class="px-3 py-2 print:py-1 text-right">Quantity</th>
                             <th scope="col" class="px-3 py-2 print:py-1 text-right">Unit Price</th>
                             <th scope="col" class="px-3 py-2 print:py-1 text-right">VAT</th>
@@ -145,6 +147,7 @@
                                 </td>
                                 @if ($showColour)<td class="px-3 py-3 print:py-1.5" data-line-colour>{{ $meta($line, 'colour') }}</td>@endif
                                 @if ($showSize)<td class="px-3 py-3 print:py-1.5" data-line-size>{{ $meta($line, 'size') }}</td>@endif
+                                @if ($showEu)<td class="px-3 py-3 print:py-1.5" data-line-eu>{{ $meta($line, 'eu_size') }}</td>@endif
                                 <td class="px-3 py-3 print:py-1.5 text-right">{{ $line->quantity }}</td>
                                 <td class="px-3 py-3 print:py-1.5 text-right">{{ $amount($line->unit_price) }}</td>
                                 <td class="px-3 py-3 print:py-1.5 text-right">
