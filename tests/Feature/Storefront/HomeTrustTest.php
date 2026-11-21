@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use Tests\Support\HomeSpotlights;
+
 function trustStrip(string $html): string
 {
     preg_match('#<section[^>]*data-home-trust.*?</section>#s', $html, $section);
@@ -65,6 +67,8 @@ it('ships the fourth slot empty', function (): void {
 });
 
 it('is semantic: one h1, a heading for every section, and lazy images below the fold', function (): void {
+    HomeSpotlights::seed();
+
     $html = $this->get(route('home'))->assertOk()->getContent();
 
     expect(substr_count($html, '<h1'))->toBe(1);
@@ -92,6 +96,8 @@ it('has no hard-coded paths in the home templates', function (): void {
 });
 
 it('ends the home page with the service strip, just above the footer', function (): void {
+    HomeSpotlights::seed();
+
     $html = $this->get(route('home'))->assertOk()->getContent();
 
     preg_match('#<section[^>]*data-home-service.*?</section>#s', $html, $section);

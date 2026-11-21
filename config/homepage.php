@@ -45,26 +45,74 @@ return [
     ],
 
     /*
-     * The video above the featured products. One is picked at random on every page load. `src` is
-     * the full file URL (a #t=0.5 fragment makes the browser show a frame from half a second in
-     * instead of a black box). Optional: `poster` (an image shown before it plays), `loop` and
-     * `preload`. The files are hosted by frontline-footwear.com, not by this site, so a video that
-     * is moved or removed there stops playing here: check them now and then.
+     * The video section under the industries slider. The heading and intro frame it; one of the videos below is
+     * picked at random on every page load. `src` is the full file URL (a #t=0.5 fragment makes the browser show a
+     * frame from half a second in instead of a black box). Optional: `caption` (a line under the player, the label
+     * is used when there is none), `link` (a `route` name and a `label`, shown beside the caption), `poster`
+     * (an image shown before it plays), `loop` and `preload`. The files are hosted by frontline-footwear.com, not by
+     * this site, so a video that is moved or removed there stops playing here: check them now and then.
+     *
+     * Only footwear and technology clips rotate for now. The others are kept in `videos_held` until their
+     * categories launch (workwear, gloves, head protection): move one up to `videos` then. The captions are worded
+     * from each clip's own title: the client should confirm them.
      */
+    'video_section' => [
+        'title' => 'See how it works',
+        'intro' => 'Short films on the features that matter on site, from toe caps and midsoles to slip resistance.',
+    ],
+
     'videos' => [
-        ['label' => 'Professional applications', 'src' => 'https://frontline-footwear.com/shop/datasheets/PROFESSIONAL%20APPLICATIONS_360p.mp4#t=0.5'],
-        ['label' => 'Industrial applications', 'src' => 'https://frontline-footwear.com/shop/datasheets/INDUSTRIAL%20APPLICATIONS_360p.mp4#t=0.5'],
+        ['label' => 'Professional applications', 'src' => 'https://frontline-footwear.com/shop/datasheets/PROFESSIONAL%20APPLICATIONS_360p.mp4#t=0.5', 'caption' => 'Safety footwear for professional workplaces.', 'link' => ['route' => 'shop', 'label' => 'Shop safety footwear']],
+        ['label' => 'Industrial applications', 'src' => 'https://frontline-footwear.com/shop/datasheets/INDUSTRIAL%20APPLICATIONS_360p.mp4#t=0.5', 'caption' => 'Safety footwear for industrial workplaces.', 'link' => ['route' => 'shop', 'label' => 'Shop safety footwear']],
+        ['label' => 'Tiger Grip technology', 'src' => 'https://frontline-footwear.com/shop/datasheets/TIGER%20GRIP%20TECHNOLOGY_360p.mp4#t=0.5', 'caption' => 'How the Tiger Grip technology works.', 'link' => ['route' => 'technical-features', 'label' => 'See the technical features']],
+        ['label' => 'Midsoles', 'src' => 'https://frontline-footwear.com/shop/datasheets/MIDSOLES_360p.mp4#t=0.5', 'caption' => 'What the midsole does in safety footwear.', 'link' => ['route' => 'technical-features', 'label' => 'See the technical features']],
+        ['label' => 'Toecaps', 'src' => 'https://frontline-footwear.com/shop/datasheets/TOECAPS_360p.mp4#t=0.5', 'caption' => 'The toe caps used in safety footwear.', 'link' => ['route' => 'technical-features', 'label' => 'See the technical features']],
+        ['label' => 'Slip resistance', 'src' => 'https://frontline-footwear.com/shop/datasheets/SLIP%20RESISTANCE_360p.mp4#t=0.5', 'caption' => 'How slip resistance is built into safety footwear.', 'link' => ['route' => 'technical-features', 'label' => 'See the technical features']],
+        ['label' => 'Tiger Grip', 'src' => 'https://frontline-footwear.com/shop/datasheets/TIGERGRIP_540p%20.mp4#t=0.5', 'preload' => 'metadata', 'caption' => 'Tiger Grip in use.', 'link' => ['route' => 'technical-features', 'label' => 'See the technical features']],
+        ['label' => 'Taman', 'src' => 'https://frontline-footwear.com/shop/datasheets/TAMAN.mp4#t=0.5', 'preload' => 'metadata', 'link' => ['route' => 'shop', 'label' => 'Shop safety footwear']],
+        ['label' => 'CADOR colours that work', 'src' => 'https://frontline-footwear.com/shop/datasheets/CADOR%20Colours%20that%20work.mp4', 'poster' => 'https://frontline-footwear.com/v1.jpg', 'loop' => true, 'preload' => 'metadata', 'caption' => 'The CADOR range, in a choice of colours.', 'link' => ['route' => 'shop', 'label' => 'Shop safety footwear']],
+    ],
+
+    // Clips for products that are not on the site yet. Not shown: move one to `videos` when its category launches.
+    'videos_held' => [
         ['label' => 'Eye protection', 'src' => 'https://frontline-footwear.com/shop/datasheets/EYE%20PROTECTION_360p.mp4#t=0.5'],
         ['label' => 'Head protection', 'src' => 'https://frontline-footwear.com/shop/datasheets/HEAD%20PROTECTION_360p.mp4#t=0.5'],
         ['label' => 'High visibility clothing', 'src' => 'https://frontline-footwear.com/shop/datasheets/HIGH%20VISIBILITY%20CLOTHING_360p.mp4#t=0.5'],
-        ['label' => 'Tiger Grip technology', 'src' => 'https://frontline-footwear.com/shop/datasheets/TIGER%20GRIP%20TECHNOLOGY_360p.mp4#t=0.5'],
-        ['label' => 'Midsoles', 'src' => 'https://frontline-footwear.com/shop/datasheets/MIDSOLES_360p.mp4#t=0.5'],
-        ['label' => 'Toecaps', 'src' => 'https://frontline-footwear.com/shop/datasheets/TOECAPS_360p.mp4#t=0.5'],
-        ['label' => 'Slip resistance', 'src' => 'https://frontline-footwear.com/shop/datasheets/SLIP%20RESISTANCE_360p.mp4#t=0.5'],
         ['label' => 'Work jackets', 'src' => 'https://frontline-footwear.com/shop/datasheets/WORK%20JACKETS_360p%20(1).mp4#t=0.5'],
-        ['label' => 'Tiger Grip', 'src' => 'https://frontline-footwear.com/shop/datasheets/TIGERGRIP_540p%20.mp4#t=0.5', 'preload' => 'metadata'],
-        ['label' => 'Taman', 'src' => 'https://frontline-footwear.com/shop/datasheets/TAMAN.mp4#t=0.5', 'preload' => 'metadata'],
-        ['label' => 'CADOR colours that work', 'src' => 'https://frontline-footwear.com/shop/datasheets/CADOR%20Colours%20that%20work.mp4', 'poster' => 'https://frontline-footwear.com/v1.jpg', 'loop' => true, 'preload' => 'metadata'],
+    ],
+
+    /*
+     * The Product Spotlight, below the featured products: one campaign picked at random on every page load,
+     * shown as its image beside the brand, the product's name, the product's own long description (read from the
+     * catalogue, not written here), the price for signed-in customers and a button to the product page. `slug` is
+     * the product's URL slug. A campaign whose product is not in the catalogue, or is not published, is left out,
+     * and with none left the section is not shown. Images are in public/images/home.
+     */
+    'spotlights' => [
+        [
+            'slug' => 'safety-jogger-cador',
+            'file' => 'cador-colours-that-work',
+            'webp' => true,
+            'alt' => 'CADOR S1 P safety trainer in yellow, green, blue, pink, red and grey, with its AirBlaze ventilation, SRC slip resistance, ESD, SJ Foam footbed and steel toe cap and midsole.',
+            'width' => 1200,
+            'height' => 1563,
+        ],
+        [
+            'slug' => 'safety-jogger-topskate-s3s-low',
+            'file' => 'topskate-s3s-safety-sneaker',
+            'webp' => false,
+            'alt' => 'TOPSKATE S3S, the safety sneaker you can lean on, in light grey, dark grey and blue.',
+            'width' => 1200,
+            'height' => 1518,
+        ],
+        [
+            'slug' => 'safety-jogger-maximus',
+            'file' => 'maximus-helmet',
+            'webp' => false,
+            'alt' => 'MAXIMUS safety helmet with ERT Energy Reduction Technology, in yellow, white and blue.',
+            'width' => 1200,
+            'height' => 1508,
+        ],
     ],
 
 ];

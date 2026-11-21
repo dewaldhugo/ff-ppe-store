@@ -163,14 +163,15 @@ it('shows one autoplaying, muted video across the full width of the container, a
         ->and(strpos($html, 'data-home-video'))->toBeLessThan(strpos($html, 'data-home-products'));
 });
 
-it('has the thirteen videos, each a distinct https mp4 with a label', function (): void {
+it('has the nine footwear and technology videos, each a distinct https mp4 with a label', function (): void {
     $videos = config('homepage.videos');
 
-    expect($videos)->toHaveCount(13)
-        ->and(array_unique(array_column($videos, 'src')))->toHaveCount(13)
-        ->and(array_unique(array_column($videos, 'label')))->toHaveCount(13);
+    expect($videos)->toHaveCount(9)
+        ->and(array_unique(array_column($videos, 'src')))->toHaveCount(9)
+        ->and(array_unique(array_column($videos, 'label')))->toHaveCount(9);
 
-    foreach ($videos as $video) {
+    // The four held back (HomeContextTest) are the same kind of file.
+    foreach (array_merge($videos, config('homepage.videos_held')) as $video) {
         expect($video['src'])->toStartWith('https://frontline-footwear.com/shop/datasheets/')
             ->and($video['src'])->toMatch('/\.mp4(#t=0\.5)?$/')
             ->and($video['label'])->not->toBe('');
@@ -405,34 +406,6 @@ it('shows the industry slider under the hero, with its heading', function (): vo
         ->and($html)->toContain('Solutions for every workplace')
         ->and($html)->toContain('aria-label="Industries we supply"')
         ->and(substr_count($html, '<h1'))->toBe(1);
-});
-
-it('shows the Product Spotlight as one image picked at random from three, in place of the videos and the standards chips', function (): void {
-    $files = ['cador-colours-that-work', 'topskate-s3s-safety-sneaker', 'maximus-helmet'];
-    $seen = [];
-
-    foreach (range(1, 40) as $ignored) {
-        $html = $this->get(route('home'))->assertOk()->getContent();
-
-        preg_match('#<section[^>]*data-home-featured.*?</section>#s', $html, $section);
-
-        expect($section[0] ?? '')->toMatch('#<h2[^>]*id="home-featured"[^>]*>Product Spotlight</h2>#')
-            ->and($section[0])->not->toContain('<video')
-            ->and(substr_count($section[0], '<img'))->toBe(1)
-            ->and($section[0])->toContain('width="1200"')
-            ->and($html)->not->toContain('data-home-standards');
-
-        preg_match('#images/home/([a-z0-9-]+)\.jpg#', $section[0], $m);
-        expect($files)->toContain($m[1]);
-        $seen[$m[1]] = true;
-    }
-
-    foreach ($files as $file) {
-        expect(file_exists(public_path("images/home/{$file}.jpg")))->toBeTrue();
-    }
-
-    expect(file_exists(public_path('images/home/cador-colours-that-work.webp')))->toBeTrue()
-        ->and(count($seen))->toBeGreaterThan(1);
 });
 
 it('only picks products from the Safety Footwear and PPE & Gear categories', function (): void {
