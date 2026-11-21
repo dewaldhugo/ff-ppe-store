@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Mail;
 
 use App\Domain\Orders\Invoice;
+use App\Support\EmailColours;
 use App\Support\Queues;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -20,7 +21,8 @@ use Throwable;
 /**
  * Tells the store's staff that a customer has placed an order (`STORE_ORDER_NOTIFICATION_EMAILS`,
  * docs/cart.md): who, what, how it is paid and a link to the order in the admin. Plain text, queued
- * on the default queue, so a slow or failing mail server never holds up the customer's checkout.
+ * on the default queue, so a slow or failing mail server never holds up the customer's checkout. It is
+ * sent as HTML with a plain text part (`mail.order-placed` and `mail.order-placed-text`).
  */
 final class OrderPlaced extends Mailable implements ShouldQueue
 {
@@ -51,8 +53,11 @@ final class OrderPlaced extends Mailable implements ShouldQueue
         $shipping = $order->shippingAddress;
         $onAccount = $invoice->onAccount();
 
+        $lines = $this->lines($order);
+
         return new Content(
-            text: 'mail.order-placed',
+            html: 'mail.order-placed',
+            text: 'mail.order-placed-text',
             with: [
                 'reference' => $order->reference,
                 'invoiceNumber' => $invoice->number(),
@@ -70,13 +75,18 @@ final class OrderPlaced extends Mailable implements ShouldQueue
                 'deliverTo' => $this->addressLines($shipping),
                 'billTo' => $this->addressLines($billing),
                 'instructions' => filled($order->notes) ? (string) $order->notes : null,
-                'items' => $this->items($order),
+                'items' => $this->items($lines),
+                'lines' => $lines,
                 'subtotal' => Invoice::amount($invoice->subtotal()),
                 'discount' => $order->discount_total->value > 0 ? Invoice::amount($order->discount_total) : null,
                 'delivery' => Invoice::amount($invoice->delivery()),
                 'vat' => Invoice::amount($order->tax_total),
                 'total' => $order->total->formatted(trimTrailingZeros: false),
                 'adminUrl' => $this->adminUrl($order),
+                // For the HTML part only: the site's design tokens as hex values, its name and its logo.
+                'colours' => EmailColours::all(),
+                'siteName' => (string) config('app.name'),
+                'logoUrl' => asset('images/frontline-logo-white.png'),
             ],
         );
     }
@@ -117,13 +127,14 @@ final class OrderPlaced extends Mailable implements ShouldQueue
     }
 
     /**
-     * One line per goods line: quantity, description, colour and sizes, code, unit price and amount ex VAT.
+     * The goods lines, one row each: quantity, description, colour and sizes as one string, code, unit price
+     * and amount ex VAT. The HTML part lays them out as a table and the text part (items()) as one line each.
      *
-     * @return list<string>
+     * @return list<array{quantity: int, description: string, details: string, code: string, unit: string, amount: string}>
      */
-    private function items(Order $order): array
+    private function lines(Order $order): array
     {
-        $items = [];
+        $rows = [];
 
         foreach ($order->lines->where('type', 'physical') as $line) {
             $details = array_values(array_filter([
@@ -132,18 +143,36 @@ final class OrderPlaced extends Mailable implements ShouldQueue
                 filled($line->meta['eu_size'] ?? null) ? 'EU '.$line->meta['eu_size'] : null,
             ], fn (mixed $detail): bool => filled($detail)));
 
-            $items[] = sprintf(
-                '%d x %s%s (code %s): %s each, %s',
-                $line->quantity,
-                $line->description,
-                $details === [] ? '' : ', '.implode(', ', $details),
-                $line->identifier,
-                Invoice::amount($line->unit_price),
-                Invoice::amount($line->sub_total),
-            );
+            $rows[] = [
+                'quantity' => (int) $line->quantity,
+                'description' => (string) $line->description,
+                'details' => implode(', ', $details),
+                'code' => (string) $line->identifier,
+                'unit' => Invoice::amount($line->unit_price),
+                'amount' => Invoice::amount($line->sub_total),
+            ];
         }
 
-        return $items;
+        return $rows;
+    }
+
+    /**
+     * The same rows as single lines of text, for the plain text part.
+     *
+     * @param  list<array{quantity: int, description: string, details: string, code: string, unit: string, amount: string}>  $lines
+     * @return list<string>
+     */
+    private function items(array $lines): array
+    {
+        return array_map(fn (array $line): string => sprintf(
+            '%d x %s%s (code %s): %s each, %s',
+            $line['quantity'],
+            $line['description'],
+            $line['details'] === '' ? '' : ', '.$line['details'],
+            $line['code'],
+            $line['unit'],
+            $line['amount'],
+        ), $lines);
     }
 
     /** The order in the admin panel, or the admin's front page if the link cannot be built. */
