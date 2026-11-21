@@ -70,6 +70,22 @@ final class Store
     }
 
     /**
+     * Who is emailed when a customer places an order: the valid, distinct addresses in
+     * `STORE_ORDER_NOTIFICATION_EMAILS` (comma, semicolon or space separated). An empty list means
+     * no notification is sent.
+     *
+     * @return list<string>
+     */
+    public static function orderNotificationEmails(): array
+    {
+        $addresses = preg_split('/[\s,;]+/', (string) config('store.order_notification_emails'), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+        $valid = array_filter($addresses, fn (string $address): bool => filter_var($address, FILTER_VALIDATE_EMAIL) !== false);
+
+        return array_values(array_unique(array_map('strtolower', $valid)));
+    }
+
+    /**
      * One of the fixed details printed at the top and in the footer of an invoice (`config/store.php`,
      * `invoice`): name, trading_as, address, vat_number, email, website, company_number, registered_office.
      */

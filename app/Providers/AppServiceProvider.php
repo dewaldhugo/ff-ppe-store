@@ -21,6 +21,7 @@ use App\Domain\Checkout\CardPayments;
 use App\Domain\Checkout\StripeCardPayments;
 use App\Domain\Favourites\Favourites;
 use App\Domain\Orders\InvoiceNumbers;
+use App\Domain\Orders\NotifyStaffOfNewOrder;
 use App\Domain\Pricing\Vat\StoreTaxDriver;
 use App\Support\Store;
 use Filament\Panel;
@@ -111,6 +112,22 @@ final class AppServiceProvider extends ServiceProvider
                 if (! $numbers->has($order)) {
                     $numbers->assign($order);
                 }
+            } catch (Throwable $exception) {
+                report($exception);
+            }
+        });
+
+        // Staff are emailed once, when an order is placed: this save is the one that gave it a placed
+        // date (an account order at checkout, a card order when Stripe confirms the payment). It runs
+        // after the invoice number is given, so the email carries it. A failure is reported and never
+        // stops the order.
+        Order::saved(function (Order $order): void {
+            if ($order->placed_at === null || ! $order->wasChanged('placed_at') || $order->getOriginal('placed_at') !== null) {
+                return;
+            }
+
+            try {
+                app(NotifyStaffOfNewOrder::class)($order);
             } catch (Throwable $exception) {
                 report($exception);
             }

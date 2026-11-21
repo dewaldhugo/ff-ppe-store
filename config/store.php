@@ -23,6 +23,11 @@ return [
     // Where Contact page enquiries are emailed: the store email, unless STORE_ENQUIRY_EMAIL is set.
     'enquiry_email' => env('STORE_ENQUIRY_EMAIL') ?: 'info@frontlinesafetygear.com',
 
+    // Who is emailed when a customer places an order: addresses separated by commas, in .env
+    // (STORE_ORDER_NOTIFICATION_EMAILS). Empty by default, so nothing is sent until it is set.
+    // App\Domain\Orders\NotifyStaffOfNewOrder, docs/cart.md.
+    'order_notification_emails' => env('STORE_ORDER_NOTIFICATION_EMAILS', ''),
+
     // Who the invoice comes from, printed at the top left and in the footer of every invoice
     // (docs/accounts.md, Invoices). Fixed here, with no environment variable: it never changes. The
     // registered office line is worded as the client gave it.
