@@ -11,6 +11,8 @@ use App\Admin\Extensions\CustomerLogoEditExtension;
 use App\Admin\Extensions\CustomerLogoResourceExtension;
 use App\Admin\Extensions\CustomerSupplierNumberEditExtension;
 use App\Admin\Extensions\CustomerSupplierNumberResourceExtension;
+use App\Admin\Extensions\OrderDeleteResourceExtension;
+use App\Admin\Extensions\OrderDeleteViewExtension;
 use App\Domain\Accounts\RateLimits;
 use App\Domain\Cart\Delivery\StoreShippingModifier;
 use App\Domain\Catalogue\Keys\CatalogueKeys;
@@ -33,6 +35,8 @@ use Illuminate\Validation\Rules\Password;
 use Lunar\Admin\Filament\Resources\CustomerResource;
 use Lunar\Admin\Filament\Resources\CustomerResource\Pages\EditCustomer;
 use Lunar\Admin\Filament\Resources\CustomerResource\Pages\ViewCustomer;
+use Lunar\Admin\Filament\Resources\OrderResource;
+use Lunar\Admin\Filament\Resources\OrderResource\Pages\ManageOrder;
 use Lunar\Admin\Support\Facades\LunarPanel;
 use Lunar\Base\ShippingModifiers;
 use Lunar\Facades\Taxes;
@@ -52,6 +56,9 @@ final class AppServiceProvider extends ServiceProvider
             CustomerResource::class => [CustomerAccessResourceExtension::class, CustomerLogoResourceExtension::class, CustomerSupplierNumberResourceExtension::class],
             EditCustomer::class => [CustomerAccessEditExtension::class, CustomerLogoEditExtension::class, CustomerSupplierNumberEditExtension::class],
             ViewCustomer::class => CustomerAccessViewExtension::class,
+            // Delete order, which Lunar does not have: on the orders list (row and bulk) and on the order page.
+            OrderResource::class => OrderDeleteResourceExtension::class,
+            ManageOrder::class => OrderDeleteViewExtension::class,
         ]);
 
         // A denser admin: root font size x .85 and tighter rows (resources/views/admin/density.blade.php).
