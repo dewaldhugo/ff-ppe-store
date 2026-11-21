@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\User;
+use Filament\Facades\Filament;
 use Filament\Models\Contracts\FilamentUser;
 use Illuminate\Support\Facades\Auth;
 use Lunar\Admin\Models\Staff;
@@ -18,7 +19,7 @@ it('keeps a signed-in customer out of the Lunar admin panel', function (string $
 })->with(['/admin', '/admin/products', '/admin/customers', '/admin/staff']);
 
 it('serves the admin panel at /admin and nothing at the old /lunar address', function (): void {
-    expect(\Filament\Facades\Filament::getPanel('lunar')->getPath())->toBe('admin');
+    expect(Filament::getPanel('lunar')->getPath())->toBe('admin');
 
     $this->get('/admin/login')->assertOk();
     $this->get('/lunar')->assertNotFound();

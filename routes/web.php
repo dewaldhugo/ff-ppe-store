@@ -21,10 +21,10 @@ use App\Http\Middleware\ResolveBrandSlugs;
 use App\Http\Middleware\ResolveCategoryPath;
 use App\Http\Middleware\ResolveProductSlug;
 use App\Livewire\Cart\CartPage;
-use App\Livewire\Favourites\QuickOrder;
 use App\Livewire\Catalogue\CategoryListing;
 use App\Livewire\Catalogue\ProductPage;
 use App\Livewire\Checkout\CheckoutPage;
+use App\Livewire\Favourites\QuickOrder;
 use Illuminate\Support\Facades\Route;
 
 // Policy pages with their own views (resources/views/pages/legal). They carry no noindex of their

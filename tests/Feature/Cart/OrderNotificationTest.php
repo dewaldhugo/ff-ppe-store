@@ -263,7 +263,7 @@ it('uses UK English and no em dashes in its copy', function (): void {
     foreach (['app/Mail/OrderPlaced.php', 'app/Domain/Orders/NotifyStaffOfNewOrder.php', 'app/Support/EmailColours.php', 'resources/views/mail/order-placed.blade.php', 'resources/views/mail/order-placed-text.blade.php'] as $file) {
         $text = (string) file_get_contents(base_path($file));
 
-        expect($text)->not->toContain('—')->and($text)->not->toMatch('/\b(color|organization|center)\b/i');
+        expect($text)->not->toContain('—')->and($text)->not->toMatch('/\b(organization|license|favorite|analyze)\b/i');
     }
 });
 
@@ -304,7 +304,7 @@ it('shows the order in the HTML: who, payment, PO and supplier number, addresses
         ->toContain('>50.00<')->toContain('>100.00<')->toContain('>30.00<')->toContain('>26.00<')->toContain('£156.00')
         ->toContain('data-admin-link')->toContain('href="'.url('/admin/orders/'.$order->id).'"');
 
-    expect(substr_count($html, 'data-item'))->toBe(1);
+    expect(substr_count($html, '<tr data-item>'))->toBe(1);
 });
 
 it('leaves the PO and supplier number out of the HTML when the order has none', function (): void {

@@ -76,7 +76,14 @@ final class QuickOrder extends Component
             return;
         }
 
-        $this->choices[$productId] = VariantSelection::forProduct($product, $this->choices[$productId] ?? [])->selected();
+        // Replay the other choices first and apply the one just made last, so it wins: choosing a colour that
+        // does not come in the chosen size keeps the colour and drops the size, and never the other way round.
+        $handle = Str::after($key, '.');
+        $others = $this->choices[$productId] ?? [];
+        $changed = $others[$handle] ?? null;
+        unset($others[$handle]);
+
+        $this->choices[$productId] = VariantSelection::forProduct($product, $others)->select($handle, $changed)->selected();
     }
 
     public function updatedQuantities(mixed $value, string $key): void

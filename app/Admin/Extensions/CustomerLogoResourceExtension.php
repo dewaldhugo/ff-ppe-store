@@ -37,10 +37,12 @@ final class CustomerLogoResourceExtension extends ResourceExtension
                         ->disk(CustomerLogo::DISK)
                         ->directory(CustomerLogo::DIRECTORY)
                         ->visibility('public')
-                        // SVG is left out on purpose: opened on its own, an SVG file can run scripts.
+                        // image() sets the accepted types to image/*, which includes SVG, so it must come BEFORE
+                        // the explicit list: the list replaces it. SVG is left out on purpose: opened on its own,
+                        // an SVG file can run scripts.
+                        ->image()
                         ->acceptedFileTypes(['image/png', 'image/jpeg', 'image/webp'])
                         ->maxSize(2048)
-                        ->image()
                         ->imagePreviewHeight('96')
                         ->helperText('Remove it to show no logo.'),
                 ]),

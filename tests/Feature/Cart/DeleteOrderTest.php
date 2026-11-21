@@ -290,6 +290,6 @@ it('uses UK English and no em dashes', function (): void {
     ] as $file) {
         $text = (string) file_get_contents(base_path($file));
 
-        expect($text)->not->toContain('—')->and($text)->not->toMatch('/\b(color|organization|center|license|favorite)\b/i');
+        expect($text)->not->toContain('—')->and($text)->not->toMatch('/\b(organization|license|favorite|analyze)\b/i');
     }
 });

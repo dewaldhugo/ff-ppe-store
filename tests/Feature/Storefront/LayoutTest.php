@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Models\User;
 use App\Support\Store;
+use Filament\Facades\Filament;
 use Illuminate\Support\Facades\Route;
 
 beforeEach(function (): void {
@@ -65,7 +66,7 @@ it('has the favicon and touch icon on the storefront and the checkout, and the f
 });
 
 it('uses the Frontline logos and favicon in the admin panel', function (): void {
-    $panel = \Filament\Facades\Filament::getPanel('lunar');
+    $panel = Filament::getPanel('lunar');
 
     expect($panel->getBrandLogo())->toBe(asset('images/frontline-logo.png'))
         ->and($panel->getDarkModeBrandLogo())->toBe(asset('images/frontline-logo-white.png'))
