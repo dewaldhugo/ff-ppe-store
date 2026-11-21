@@ -30,7 +30,8 @@ function legalText(mixed $test, string $name): string
 {
     $html = (string) $test->get(route($name))->assertOk()->getContent();
     $start = strpos($html, 'data-legal-body');
-    $end = strpos($html, '</article>');
+    // The body ends where the sidebar starts.
+    $end = strpos($html, 'data-legal-nav') ?: strpos($html, '</article>');
 
     expect($start)->not->toBeFalse()->and($end)->not->toBeFalse();
 
@@ -214,6 +215,53 @@ it('tells people how to get help and where to take a complaint', function (): vo
         ->toContain('href="'.route('contact').'"')
         ->toContain('Equality Advisory and Support Service')
         ->toContain('equalityadvisoryservice.com');
+});
+
+// --- The sidebar ------------------------------------------------------------------------------
+
+it('has a sidebar with a Legal group and a help group, in order, linking to every policy page by route', function (string $name): void {
+    $html = (string) $this->get(route($name))->assertOk()->getContent();
+
+    preg_match_all('#data-legal-nav-heading>([^<]+)#', $html, $headings);
+    preg_match_all('#href="([^"]+)"[^>]*data-legal-nav-link="([a-z]+)"[^>]*>([^<]+)</a>#s', $html, $links, PREG_SET_ORDER);
+
+    expect(array_map('trim', $headings[1]))->toBe(['Legal', 'Help with your order'])
+        ->and(array_map(fn (array $link): string => $link[2], $links))->toBe(['terms', 'privacy', 'cookies', 'accessibility', 'delivery', 'returns'])
+        ->and(array_map(fn (array $link): string => trim($link[3]), $links))->toBe(['Terms and Conditions', 'Privacy Policy', 'Cookie Policy', 'Accessibility Statement', 'Delivery Information', 'Returns and Refunds'])
+        ->and(array_map(fn (array $link): string => $link[1], $links))->toBe(array_map(fn (string $page): string => route($page), ['terms', 'privacy', 'cookies', 'accessibility', 'delivery', 'returns']));
+})->with(['terms', 'privacy', 'cookies', 'accessibility', 'delivery', 'returns']);
+
+it('marks the page you are on, and only that page', function (string $name): void {
+    $html = (string) $this->get(route($name))->assertOk()->getContent();
+
+    expect(substr_count($html, 'aria-current="page"'))->toBe(1)
+        ->and($html)->toMatch('#aria-current="page"\s*data-legal-nav-link="'.$name.'"#');
+})->with(['terms', 'privacy', 'cookies', 'accessibility', 'delivery', 'returns']);
+
+it('hides the sidebar below the large breakpoint, so a phone gets the text alone', function (): void {
+    $html = (string) $this->get(route('privacy'))->assertOk()->getContent();
+
+    preg_match('#<aside[^>]*data-legal-nav[^>]*>#', $html, $aside);
+
+    expect($aside[0])->toContain('hidden')->toContain('lg:block')->not->toMatch('#(?<![:\w-])(block|flex|grid)\b#')
+        // Two columns only from the large breakpoint, the text taking all the width the sidebar leaves.
+        ->and($html)->toContain('lg:flex lg:items-start')->toContain('legal-prose min-w-0 lg:flex-1');
+});
+
+it('keeps the sidebar out of the words of the page, and off every other page', function (): void {
+    expect(legalText($this, 'terms'))->not->toContain('Help with your order');
+
+    foreach (['home', 'about', 'contact', 'size-guide'] as $name) {
+        $this->get(route($name))->assertOk()->assertDontSee('data-legal-nav', false);
+    }
+});
+
+it('has footer links to the same six pages, which is what a phone uses', function (): void {
+    $home = (string) $this->get(route('home'))->assertOk()->getContent();
+
+    foreach (['terms', 'privacy', 'cookies', 'accessibility', 'delivery', 'returns'] as $name) {
+        expect($home)->toContain('href="'.route($name).'"');
+    }
 });
 
 // --- Delivery ---------------------------------------------------------------------------------
