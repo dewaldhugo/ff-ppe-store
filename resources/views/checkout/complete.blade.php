@@ -5,20 +5,33 @@
 
 <x-layouts.checkout title="Order placed">
     <div class="mx-auto max-w-3xl rounded border border-border bg-white p-6" data-order-complete>
-        <h1 class="text-2xl font-bold sm:text-3xl">Thank you, your order is placed</h1>
-        <p class="mt-2 text-ink-muted">
-            Order reference <strong class="text-ink" data-order-reference>{{ $order->reference }}</strong>.
-            @if ($paidByCard)
+        @if ($paidByCard)
+            <h1 class="text-2xl font-bold sm:text-3xl">Thank you, your order is placed</h1>
+            <p class="mt-2 text-ink-muted">
+                Order reference <strong class="text-ink" data-order-reference>{{ $order->reference }}</strong>.
                 Your card payment was successful and your order is being prepared.
-            @elseif ($contactEmail)
-                It is on your 30 day account: we will invoice you at {{ $contactEmail }}, and payment is due within 30 days.
-            @else
-                It is on your 30 day account: we will invoice you, and payment is due within 30 days.
-            @endif
-        </p>
+            </p>
 
-        @if ($order->customer_reference)
-            <p class="mt-2 text-sm">Your PO number: <strong>{{ $order->customer_reference }}</strong></p>
+            @if ($order->customer_reference)
+                <p class="mt-2 text-sm">Your PO number: <strong>{{ $order->customer_reference }}</strong></p>
+            @endif
+        @else
+            {{-- A 30 day account order: the reference, the PO number when there is one, and what happens next. --}}
+            <h1 class="text-2xl font-bold sm:text-3xl" data-order-heading>Thank you! Your order has been placed.</h1>
+
+            <p class="mt-4" data-order-reference-line>Order Reference: <strong data-order-reference>{{ $order->reference }}</strong></p>
+            @if ($order->customer_reference)
+                <p data-order-po>PO Number: <strong>{{ $order->customer_reference }}</strong></p>
+            @endif
+
+            <p class="mt-4" data-account-message>
+                This order has been assigned to your 30-day credit account.<br>
+                @if ($contactEmail)
+                    An invoice will be sent to {{ $contactEmail }}, with payment due within 30 days of issue.
+                @else
+                    An invoice will be sent to you, with payment due within 30 days of issue.
+                @endif
+            </p>
         @endif
 
         <x-orders.detail :order="$order" />

@@ -440,6 +440,62 @@ it('shows the customer their placed order, with VAT on each line and the totals'
         ->not->toContain('<nav aria-label="Main"');
 });
 
+/** The text of an element, tags removed and whitespace squeezed. */
+function confirmationText(string $html, string $attribute, string $tag = 'p'): string
+{
+    preg_match('#<'.$tag.'[^>]*'.preg_quote($attribute, '#').'[^>]*>(.*?)</'.$tag.'>#s', $html, $match);
+
+    return trim((string) preg_replace('/\s+/', ' ', strip_tags(str_replace('<br>', ' ', $match[1] ?? ''))));
+}
+
+it('words the confirmation of a 30 day account order: thanks, reference, PO number, credit account, invoice email', function (): void {
+    checkoutCart($this->customer, checkoutVariant());
+    fillCheckout(Livewire::test(CheckoutPage::class))->set('po_number', 'PO-99986')->call('placeOrder');
+
+    $order = Order::query()->sole();
+    $html = $this->get(route('checkout.complete', $order->reference))->assertOk()->getContent();
+
+    expect(confirmationText($html, 'data-order-heading', 'h1'))->toBe('Thank you! Your order has been placed.')
+        ->and(confirmationText($html, 'data-order-reference-line'))->toBe('Order Reference: '.$order->reference)
+        ->and(confirmationText($html, 'data-order-po'))->toBe('PO Number: PO-99986')
+        ->and(confirmationText($html, 'data-account-message'))->toBe('This order has been assigned to your 30-day credit account. An invoice will be sent to jo@builder.example, with payment due within 30 days of issue.')
+        // The two sentences are on two lines.
+        ->and($html)->toContain('30-day credit account.<br>')
+        ->and($html)->not->toContain('Thank you, your order is placed')
+        ->not->toContain('Your PO number');
+});
+
+it('leaves the PO number line out of a 30 day account confirmation when there is none', function (): void {
+    checkoutCart($this->customer, checkoutVariant());
+    fillCheckout(Livewire::test(CheckoutPage::class))->call('placeOrder');
+
+    $html = $this->get(route('checkout.complete', Order::query()->sole()->reference))->assertOk()->getContent();
+
+    expect($html)->toContain('data-order-reference-line')->not->toContain('data-order-po')->not->toContain('PO Number');
+});
+
+it('says an invoice will be sent to the customer when the order has no contact email', function (): void {
+    checkoutCart($this->customer, checkoutVariant());
+    fillCheckout(Livewire::test(CheckoutPage::class))->call('placeOrder');
+
+    $order = Order::query()->sole();
+    $order->update(['meta' => collect((array) $order->meta)->except('contact_email')->all()]);
+
+    $html = $this->get(route('checkout.complete', $order->reference))->assertOk()->getContent();
+
+    expect(confirmationText($html, 'data-account-message'))->toBe('This order has been assigned to your 30-day credit account. An invoice will be sent to you, with payment due within 30 days of issue.');
+});
+
+it('escapes the invoice email in the confirmation', function (): void {
+    checkoutCart($this->customer, checkoutVariant());
+    fillCheckout(Livewire::test(CheckoutPage::class))->call('placeOrder');
+
+    $order = Order::query()->sole();
+    $order->update(['meta' => array_merge((array) $order->meta, ['contact_email' => '<b>x</b>@example.test'])]);
+
+    $this->get(route('checkout.complete', $order->reference))->assertOk()->assertDontSee('<b>x</b>@example.test', false)->assertSee('&lt;b&gt;x&lt;/b&gt;@example.test', false);
+});
+
 it('shows an order only to the customer who placed it, and only once it is placed', function (): void {
     checkoutCart($this->customer, checkoutVariant());
     fillCheckout(Livewire::test(CheckoutPage::class))->call('placeOrder');
