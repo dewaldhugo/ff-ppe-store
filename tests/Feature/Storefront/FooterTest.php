@@ -22,7 +22,7 @@ function footer(string $html): string
     return $footer[0];
 }
 
-it('has only the copyright line in the lower footer, with no TBC placeholders', function (): void {
+it('has only the copyright and company number lines in the lower footer, hardcoded, with no TBC placeholders', function (): void {
     foreach (['legal_name', 'company_number', 'registered_office', 'vat_number'] as $key) {
         config()->set('store.'.$key, 'TBC');
     }
@@ -31,9 +31,14 @@ it('has only the copyright line in the lower footer, with no TBC placeholders', 
 
     preg_match('#<div class="border-t border-white/20">(.*?)</div>#s', $footer, $lower);
 
-    expect(trim(html_entity_decode(strip_tags($lower[1]))))->toBe('© '.date('Y').' Frontline Safety Gear')
-        ->and(substr_count($lower[1], '<p'))->toBe(1)
+    // The wording is fixed: the client's company name, the year 2021 and the company number, whatever the
+    // date, the config or the .env say.
+    preg_match_all('#<p[^>]*>(.*?)</p>#s', $lower[1], $lines);
+
+    expect(array_map(fn (string $line): string => trim(html_entity_decode(strip_tags($line))), $lines[1]))
+        ->toBe(['Copyright © Frontline Holdings Ltd. 2021. All rights reserved.', 'Company Registration Number: 13184904.'])
         ->and($lower[1])->toContain('data-copyright')
+        ->and($lower[1])->toContain('data-company-number')
         ->and($lower[1])->not->toContain('TBC')
         ->and($footer)->not->toContain('data-disclosure')
         ->and($footer)->not->toContain('data-business-notice')
