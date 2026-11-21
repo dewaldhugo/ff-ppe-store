@@ -98,7 +98,7 @@ Current routes (`routes/web.php`):
 | `account.orders.reorder`, `account.addresses`, `account.addresses.*` | POST `/account/orders/{reference}/reorder`, `/account/addresses` (create, edit, default, delete) | `Account\OrderController@reorder`, `Account\AddressController` (`auth:web`, `account.verified`; docs/accounts.md, Member area) |
 | `cart` | `/cart` | `CartPage` (`auth:web`, noindex; docs/cart.md) |
 | `checkout`, `checkout.complete` | `/checkout`, `/checkout/complete/{reference}` | `CheckoutPage` (`auth:web`, noindex, own clean layout), `OrderConfirmationController` (the customer's own placed order only; docs/cart.md) |
-| `terms`, `privacy`, `cookies`, `accessibility`, `delivery`, `returns` | `/terms`, `/privacy`, `/cookies`, `/accessibility`, `/delivery`, `/returns` | views `pages.legal.*` in `x-storefront.legal-page`: a first draft from how the store works, company details from `config/store.php`, delivery charge from `DeliveryPolicy`, return periods from `config/store.php` (`returns`), no noindex of their own (docs/launch-checklist.md: needs a solicitor's review) |
+| `terms`, `privacy`, `cookies`, `accessibility`, `delivery`, `returns` | `/terms`, `/privacy`, `/cookies`, `/accessibility`, `/delivery`, `/returns` | views `pages.legal.*` in `x-storefront.legal-page` (text on the left, a `legal-nav` sidebar of the six pages on the right from the `lg` breakpoint, hidden on a phone): a first draft from how the store works, company details from `config/store.php`, delivery charge from `DeliveryPolicy`, return periods from `config/store.php` (`returns`), no noindex of their own (docs/launch-checklist.md: needs a solicitor's review) |
 
 Rules:
 
