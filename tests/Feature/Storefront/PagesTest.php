@@ -15,37 +15,15 @@ beforeEach(function (): void {
     config()->set('store.email', 'TBC');
 });
 
-/** Route name => [URI, heading]. Placeholder pages: noindex until they have real content. */
-const PLACEHOLDERS = [
-    'terms' => ['/terms', 'Terms and Conditions of Sale'],
-    'privacy' => ['/privacy', 'Privacy Policy'],
-    'cookies' => ['/cookies', 'Cookie Policy'],
-    'returns' => ['/returns', 'Returns and Refunds'],
-    'delivery' => ['/delivery', 'Delivery Information'],
-    'accessibility' => ['/accessibility', 'Accessibility Statement'],
-];
+/** Policy pages (tests/Feature/Storefront/LegalPagesTest.php): route name => URI. */
+const POLICY_PAGES = ['terms' => '/terms', 'privacy' => '/privacy', 'cookies' => '/cookies', 'accessibility' => '/accessibility', 'returns' => '/returns', 'delivery' => '/delivery'];
 
 it('has a named route for every page', function (string $name, string $uri): void {
     expect(route($name, absolute: false))->toBe($uri);
 })->with(array_merge(
     [['home', '/'], ['shop', '/shop'], ['register', '/register'], ['login', '/login'], ['account', '/account'], ['cart', '/cart'], ['checkout', '/checkout']],
-    array_map(fn (string $name, array $page): array => [$name, $page[0]], array_keys(PLACEHOLDERS), PLACEHOLDERS),
+    array_map(fn (string $name, string $uri): array => [$name, $uri], array_keys(POLICY_PAGES), POLICY_PAGES),
 ));
-
-it('renders each placeholder page with its heading, the standard layout and noindex', function (string $name, string $uri, string $heading): void {
-    $response = $this->get($uri)->assertOk();
-    $html = $response->getContent();
-
-    $response->assertSee(NOINDEX, false)
-        ->assertSee('<h1', false)
-        ->assertSee($heading)
-        ->assertSee('Content coming soon.')
-        ->assertSee('<title>'.$heading.' | ', false)
-        ->assertSee('<footer', false)
-        ->assertSee('<nav aria-label="Main"', false);
-
-    expect(substr_count($html, '<h1'))->toBe(1);
-})->with(array_map(fn (string $name, array $page): array => [$name, $page[0], $page[1]], array_keys(PLACEHOLDERS), PLACEHOLDERS));
 
 it('keeps the home page out of search engines while STORE_NOINDEX is true', function (): void {
     $this->get(route('home'))->assertOk()->assertSee(NOINDEX, false);
@@ -66,12 +44,6 @@ it('lets search engines index the real pages once STORE_NOINDEX is false', funct
     [['home']], [['shop']], [['category', 'safety-footwear']], [['product', 'safety-jogger-ligero']],
     [['search', ['q' => 'boots']]],
 ]);
-
-it('keeps a placeholder page out of search engines until it has content, even after launch', function (): void {
-    config()->set('store.noindex', false);
-
-    $this->get(route('privacy'))->assertOk()->assertSee(NOINDEX, false);
-});
 
 it('turns noindex on from a single flag that defaults to on', function (): void {
     expect(config('store.noindex'))->toBeTrue()

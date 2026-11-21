@@ -98,7 +98,7 @@ Current routes (`routes/web.php`):
 | `account.orders.reorder`, `account.addresses`, `account.addresses.*` | POST `/account/orders/{reference}/reorder`, `/account/addresses` (create, edit, default, delete) | `Account\OrderController@reorder`, `Account\AddressController` (`auth:web`, `account.verified`; docs/accounts.md, Member area) |
 | `cart` | `/cart` | `CartPage` (`auth:web`, noindex; docs/cart.md) |
 | `checkout`, `checkout.complete` | `/checkout`, `/checkout/complete/{reference}` | `CheckoutPage` (`auth:web`, noindex, own clean layout), `OrderConfirmationController` (the customer's own placed order only; docs/cart.md) |
-| placeholders | `/terms`, `/privacy`, `/cookies`, `/returns`, `/delivery`, `/accessibility` | `pages.placeholder` (noindex) |
+| `terms`, `privacy`, `cookies`, `accessibility`, `delivery`, `returns` | `/terms`, `/privacy`, `/cookies`, `/accessibility`, `/delivery`, `/returns` | views `pages.legal.*` in `x-storefront.legal-page`: a first draft from how the store works, company details from `config/store.php`, delivery charge from `DeliveryPolicy`, return periods from `config/store.php` (`returns`), no noindex of their own (docs/launch-checklist.md: needs a solicitor's review) |
 
 Rules:
 
@@ -115,7 +115,7 @@ Rules:
 - **Brands.** `storefront_brands` (slug, name, logo, tile colour) and `storefront_brand_members` (which Lunar brands it covers) are storefront-owned; the Lunar brands table is never changed. `StorefrontBrandSeeder` holds the brand list and logos (`public/images/brands`); run it after an import that adds brands. A Lunar brand with no storefront record still appears, with a slug from its name and a monogram. Product counts and brand pages query Meilisearch through `CatalogueSearch` (`ListingQuery::brandScope`).
 - **Design tokens.** Colours are tokens in the `@theme` block of `resources/css/app.css` (`brand-blue`, `brand-teal`, `brand-navy`, `ink`, `ink-muted`, `surface-muted`, `white`, `border`, `danger`, `success` and the disabled pair). Templates use only these tokens. `tests/Feature/Storefront/DesignTokensTest.php` reads the CSS and requires WCAG AA contrast (4.5:1) for every text and background pair used.
 - **Buttons.** `x-ui.button` has two variants: primary (`brand-blue` fill, white text) and `accent` (`brand-teal` fill, `brand-navy` text), which is only for navy surfaces. `x-ui.button-outline` is the secondary button (`on-dark` for navy surfaces).
-- **Noindex.** One flag, `STORE_NOINDEX` (`config/store.php`, default true), puts `<meta name="robots" content="noindex">` on every page. Placeholder pages also carry their own noindex. See docs/launch-checklist.md. Noindex works through the meta tag only.
+- **Noindex.** One flag, `STORE_NOINDEX` (`config/store.php`, default true), puts `<meta name="robots" content="noindex">` on every page. Pages can pass their own noindex too (sign-in and account pages do); the policy pages do not. See docs/launch-checklist.md. Noindex works through the meta tag only.
 - **robots.txt.** `public/robots.txt` exists and disallows `/admin`, `/horizon`, `/cart`, `/checkout` and `/account`. It is a static file: `STORE_NOINDEX` does not change it, and it does not keep the store out of search engines (a crawler must be able to fetch a page to see its noindex tag, so never Disallow the catalogue there).
 - **Config-driven home page.** `config/homepage.php` holds the hero heading choices (`hero_headings`, one picked at random per page load), the "Shop by standard" chips (`standards`) and the trust strip claims (`trust`; an empty slot is not rendered).
 - **Store identity.** `config/store.php` and `App\Support\Store` hold it. The address, phone number and email are fixed in `config/store.php` (no env variable). The other `STORE_*` values come from `.env` and each reads `TBC` until it is known (`STORE_NOINDEX` and `STORE_REQUIRE_EMAIL_VERIFICATION` are switches, not identity).
@@ -138,7 +138,7 @@ Known follow-ups, not in the current phase:
 
 Full list, with details, in [docs/launch-checklist.md](docs/launch-checklist.md). Nothing in it is done by default. Before go-live:
 
-- [ ] Lift noindex (`STORE_NOINDEX=false` in production, and the placeholder pages' own noindex).
+- [ ] Lift noindex (`STORE_NOINDEX=false` in production).
 - [ ] Verify every homepage "Shop by standard" chip returns products on real data.
 - [ ] Confirm the trust strip claims with the client.
 - [ ] Confirm `pcntl` and `posix` exist in the server's PHP CLI before starting Horizon.
