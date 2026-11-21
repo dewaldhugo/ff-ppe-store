@@ -86,7 +86,7 @@ Current routes (`routes/web.php`):
 | `brands.show` | `/brands/{brands}` | `CategoryListing` limited to the chosen brands. `{brands}` is one slug or several joined by commas; `ResolveBrandSlugs` 301s to the sorted, lower-case, de-duplicated form and 404s an unknown slug |
 | `product` | `/products/{slug}` | `ProductPage` |
 | `about` | `/about` | view `pages.about` (real content, supplied by the client) |
-| `contact` | `/contact` | view `pages.contact`: enquiry form (Livewire `EnquiryForm`) emailing the store email (`config/store.php`), or `STORE_ENQUIRY_EMAIL` when set |
+| `contact` | `/contact` | view `pages.contact`: enquiry form (Livewire `EnquiryForm`) emailing the same people as a new order (`STORE_ORDER_NOTIFICATION_EMAILS`), or the store email / `STORE_ENQUIRY_EMAIL` while none are set |
 | `login`, `register` | `/login`, `/register` | `LoginController`, `RegisterController` (`guest:web`, noindex; docs/accounts.md) |
 | `password.request`, `password.email`, `password.reset`, `password.store` | `/forgot-password`, `/reset-password/{token}` | `PasswordResetLinkController`, `NewPasswordController` (`guest:web`) |
 | `logout` | POST `/logout` | `LoginController@destroy` (regenerates the session, never invalidates it) |

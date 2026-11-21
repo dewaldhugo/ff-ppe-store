@@ -6,6 +6,7 @@ namespace App\Livewire\Contact;
 
 use App\Domain\Accounts\Industries;
 use App\Mail\EnquiryReceived;
+use App\Support\Store;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
@@ -93,26 +94,39 @@ final class EnquiryForm extends Component
             return;
         }
 
-        $recipient = (string) config('store.enquiry_email');
+        // The same people as a new order (STORE_ORDER_NOTIFICATION_EMAILS), or the enquiry address if none are set.
+        $recipients = Store::enquiryRecipients();
 
-        if (filter_var($recipient, FILTER_VALIDATE_EMAIL) === false) {
-            report(new \RuntimeException('No valid enquiry recipient: set store.enquiry_email in config/store.php.'));
+        if ($recipients === []) {
+            report(new \RuntimeException('No valid enquiry recipient: set STORE_ORDER_NOTIFICATION_EMAILS, or store.enquiry_email in config/store.php.'));
             $this->addError('form', 'Sorry, we could not send your enquiry just now. Please try again later.');
 
             return;
         }
 
-        try {
-            Mail::to($recipient)->send(new EnquiryReceived(
-                name: $data['name'],
-                email: $data['email'],
-                phone: ($data['phone'] ?? '') === '' ? null : $data['phone'],
-                enquirySubject: $data['enquirySubject'],
-                body: $data['body'],
-                industry: ($data['industry'] ?? '') === '' ? null : $data['industry'],
-            ));
-        } catch (Throwable $e) {
-            report($e);
+        // One email for each person, not one with everyone in the To field: nobody sees the others'
+        // addresses, and a failure for one does not stop the rest. The customer is told it failed only if
+        // it reached nobody; each failure is reported.
+        $delivered = 0;
+
+        foreach ($recipients as $recipient) {
+            try {
+                Mail::to($recipient)->send(new EnquiryReceived(
+                    name: $data['name'],
+                    email: $data['email'],
+                    phone: ($data['phone'] ?? '') === '' ? null : $data['phone'],
+                    enquirySubject: $data['enquirySubject'],
+                    body: $data['body'],
+                    industry: ($data['industry'] ?? '') === '' ? null : $data['industry'],
+                ));
+
+                $delivered++;
+            } catch (Throwable $e) {
+                report($e);
+            }
+        }
+
+        if ($delivered === 0) {
             $this->addError('form', 'Sorry, we could not send your enquiry just now. Please try again later.');
 
             return;

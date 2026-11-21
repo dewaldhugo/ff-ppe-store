@@ -86,6 +86,27 @@ final class Store
     }
 
     /**
+     * Who is emailed when someone sends an enquiry from the Contact page: the same people as a new order
+     * (`orderNotificationEmails()`), so staff get both in one place. Only while none are set does it fall back
+     * to the single enquiry address (`STORE_ENQUIRY_EMAIL`, or the store email), so an enquiry is never lost.
+     * Empty when neither is a valid address.
+     *
+     * @return list<string>
+     */
+    public static function enquiryRecipients(): array
+    {
+        $staff = self::orderNotificationEmails();
+
+        if ($staff !== []) {
+            return $staff;
+        }
+
+        $fallback = trim((string) config('store.enquiry_email'));
+
+        return filter_var($fallback, FILTER_VALIDATE_EMAIL) === false ? [] : [strtolower($fallback)];
+    }
+
+    /**
      * One of the fixed details printed at the top and in the footer of an invoice (`config/store.php`,
      * `invoice`): name, trading_as, address, vat_number, email, website, company_number, registered_office.
      */
