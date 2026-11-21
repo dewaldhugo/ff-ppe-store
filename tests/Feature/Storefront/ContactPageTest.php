@@ -5,6 +5,8 @@ declare(strict_types=1);
 use App\Domain\Accounts\Industries;
 use App\Livewire\Contact\EnquiryForm;
 use App\Mail\EnquiryReceived;
+use App\Support\Store;
+use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Features\SupportTesting\Testable;
@@ -14,6 +16,8 @@ beforeEach(function (): void {
     config()->set('store.noindex', true);
     config()->set('store.email', 'info@example.test');
     config()->set('store.enquiry_email', 'enquiries@example.test');
+    // No order notification recipients unless a test sets them, whatever this machine's .env says.
+    config()->set('store.order_notification_emails', '');
     RateLimiter::clear('enquiry:127.0.0.1');
     Mail::fake();
 });
@@ -224,6 +228,60 @@ it('stops one address sending more than five enquiries an hour', function (): vo
         ->assertHasErrors('form');
 
     Mail::assertSentCount(5);
+});
+
+it('sends the enquiry to the same people as a new order, each in an email of their own', function (): void {
+    config()->set('store.order_notification_emails', 'staff.one@example.test, staff.two@example.test; staff.three@example.test');
+
+    fillEnquiry(Livewire::test(EnquiryForm::class), enquiry())
+        ->call('submit')
+        ->assertHasNoErrors()
+        ->assertSet('sent', true);
+
+    // Three emails, not one with three addresses in the To field, and not to the single enquiry address.
+    Mail::assertSentCount(3);
+
+    foreach (['staff.one@example.test', 'staff.two@example.test', 'staff.three@example.test'] as $address) {
+        Mail::assertSent(EnquiryReceived::class, fn (EnquiryReceived $mail): bool => $mail->hasTo($address)
+            && count($mail->to) === 1
+            && $mail->cc === []
+            && $mail->bcc === []
+            && $mail->hasReplyTo('sam@example.test'));
+    }
+
+    Mail::assertNotSent(EnquiryReceived::class, fn (EnquiryReceived $mail): bool => $mail->hasTo('enquiries@example.test'));
+});
+
+it('resolves the recipients with the order list first and the enquiry address only as a fallback', function (): void {
+    config()->set('store.order_notification_emails', 'B@x.test, not-an-email, a@x.test, b@x.test');
+    expect(Store::enquiryRecipients())->toBe(['b@x.test', 'a@x.test']);
+
+    config()->set('store.order_notification_emails', '');
+    expect(Store::enquiryRecipients())->toBe(['enquiries@example.test']);
+
+    // A list with no valid address is no list: the fallback is used.
+    config()->set('store.order_notification_emails', 'not-an-email');
+    expect(Store::enquiryRecipients())->toBe(['enquiries@example.test']);
+
+    config()->set('store.enquiry_email', 'TBC');
+    expect(Store::enquiryRecipients())->toBe([]);
+});
+
+it('tells the customer it was sent if it reached at least one person, and reports the failure for the others', function (): void {
+    Exceptions::fake();
+    config()->set('store.order_notification_emails', 'staff.one@example.test, staff.two@example.test');
+
+    $pending = Mockery::mock();
+    $pending->shouldReceive('send')->once();
+    Mail::shouldReceive('to')->once()->with('staff.one@example.test')->andThrow(new RuntimeException('SMTP down for one'));
+    Mail::shouldReceive('to')->once()->with('staff.two@example.test')->andReturn($pending);
+
+    fillEnquiry(Livewire::test(EnquiryForm::class), enquiry())
+        ->call('submit')
+        ->assertHasNoErrors()
+        ->assertSet('sent', true);
+
+    Exceptions::assertReported(fn (RuntimeException $exception): bool => $exception->getMessage() === 'SMTP down for one');
 });
 
 it('does not pretend to send when no valid recipient is set', function (): void {

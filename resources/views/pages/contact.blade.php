@@ -3,8 +3,8 @@
     Route: /contact (route name contact), see routes/web.php.
 
     Copy is supplied by the client. The enquiry form is the Livewire component
-    App\Livewire\Contact\EnquiryForm; it emails the store email in config/store.php
-    (or STORE_ENQUIRY_EMAIL when that is set). Left out on purpose: the hero photo and
+    App\Livewire\Contact\EnquiryForm; it emails the same people as a new order
+    (STORE_ORDER_NOTIFICATION_EMAILS), or the store email / STORE_ENQUIRY_EMAIL while none are set. Left out on purpose: the hero photo and
     the sister-site buttons. The address and phone number are in the footer.
 --}}
 @php($emailHref = \App\Support\Store::emailHref())

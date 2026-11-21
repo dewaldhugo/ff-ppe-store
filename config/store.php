@@ -20,7 +20,8 @@ return [
     'phone' => '+44 7557 687679',
     'email' => 'info@frontlinesafetygear.com',
 
-    // Where Contact page enquiries are emailed: the store email, unless STORE_ENQUIRY_EMAIL is set.
+    // Contact page enquiries go to the same people as a new order (order_notification_emails, below). This
+    // address is only the fallback while that list is empty: the store email, unless STORE_ENQUIRY_EMAIL is set.
     'enquiry_email' => env('STORE_ENQUIRY_EMAIL') ?: 'info@frontlinesafetygear.com',
 
     // Who is emailed when a customer places an order: addresses separated by commas, in .env
