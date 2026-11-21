@@ -191,7 +191,7 @@ it('lays the invoice out from the template: logo and sender top left, INVOICE an
     $positions = [
         'logo' => strpos($html, 'data-invoice-logo'),
         'sender' => strpos($html, 'data-supplier-name'),
-        'title' => strpos($html, '>Invoice</h1>'),
+        'title' => strpos($html, '>Tax invoice</h1>'),
         'date' => strpos($html, 'Invoice Date:'),
         'number' => strpos($html, 'Invoice Number:'),
         'po' => strpos($html, 'Purchase Order Number:'),
@@ -203,8 +203,8 @@ it('lays the invoice out from the template: logo and sender top left, INVOICE an
     ];
 
     expect(substr_count($html, '<h1'))->toBe(1)
-        // INVOICE is big and bold, in capitals.
-        ->and($html)->toMatch('#<h1[^>]*text-5xl[^>]*font-extrabold[^>]*uppercase[^>]*>Invoice</h1>#')
+        // TAX INVOICE is big and bold, in capitals.
+        ->and($html)->toMatch('#<h1[^>]*text-5xl[^>]*font-extrabold[^>]*uppercase[^>]*>Tax invoice</h1>#')
         ->and(array_values($positions))->toBe(array_values(collect($positions)->sort()->all()))
         ->and($html)->toContain('data-invoice-date>'.$order->placed_at->format('j M Y'))
         ->toContain('data-invoice-po>HYG/0504')
@@ -315,14 +315,14 @@ it('prints the supplier number only when the customer gave one', function (): vo
     expect($without)->not->toContain('Supplier Number')->not->toContain('data-invoice-supplier-number');
 });
 
-it('has a line for each size with colour, UK size, quantity, unit price, VAT rate and amount, and no EU size', function (): void {
+it('has a line for each size with colour, UK size, EU size, quantity, unit price, VAT rate and amount', function (): void {
     $order = invoiceOrder($this->member, [['Light grey', '9', '43', 2], ['Light grey', '8', '42', 3]]);
     $html = invoicePage($this, $order);
 
     preg_match('#<thead.*?</thead>#s', $html, $head);
     preg_match_all('#<th scope="col"[^>]*>\s*(.*?)\s*</th>#s', $head[0], $headings);
 
-    expect($headings[1])->toBe(['Description', 'Colour', 'UK Size', 'Quantity', 'Unit Price', 'VAT', 'Amount'])
+    expect($headings[1])->toBe(['Description', 'Colour', 'UK Size', 'EU Size', 'Quantity', 'Unit Price', 'VAT', 'Amount'])
         ->and(substr_count($html, 'data-invoice-line>'))->toBe(2);
 
     preg_match_all('#<tr[^>]*data-invoice-line>(.*?)</tr>#s', $html, $rows);
@@ -331,9 +331,9 @@ it('has a line for each size with colour, UK size, quantity, unit price, VAT rat
     // £27.90 a pair ex VAT, 20% VAT, 2 pairs: £55.80.
     expect($rows[1][0])->toContain('data-line-colour>Light grey')
         ->toContain('data-line-size>9')
+        ->toContain('data-line-eu>43')
         ->and($first)->toContain('2')->toContain('27.90')->toContain('20%')->toContain('55.80')
-        ->and($rows[1][1])->toContain('data-line-size>8')->toContain('83.70')
-        ->and($html)->not->toContain('data-line-eu')->not->toContain('EU Size')->not->toContain('(EU');
+        ->and($rows[1][1])->toContain('data-line-size>8')->toContain('data-line-eu>42')->toContain('83.70');
 });
 
 it('shows the totals as subtotal, delivery, total VAT and total', function (): void {
@@ -401,12 +401,21 @@ it('leaves the colour and size columns out when no line has them', function (): 
         ->and($html)->toContain('Quantity')->toContain('Unit Price')->toContain('Amount');
 });
 
-it('never shows an EU size on the invoice, with or without one on the variant', function (): void {
-    foreach ([['Black', '9', null, 1], ['Black', '9', '43', 1]] as $variant) {
-        $html = invoicePage($this, invoiceOrder($this->member, [$variant]));
+it('shows the EU size only when some line has one', function (): void {
+    $with = invoicePage($this, invoiceOrder($this->member, [['Black', '9', '43', 1]]));
+    $without = invoicePage($this, invoiceOrder($this->member, [['Black', '9', null, 1]]));
 
-        expect($html)->toContain('data-line-size>9')->not->toContain('data-line-eu')->not->toContain('EU Size')->not->toContain('43');
-    }
+    expect($with)->toContain('>EU Size<')->toContain('data-line-eu>43')
+        ->and($without)->not->toContain('>EU Size<')->not->toContain('data-line-eu')
+        ->and($without)->toContain('data-line-size>9');
+});
+
+it('fills the EU size cell for the lines that have one and leaves it empty for the rest', function (): void {
+    $html = invoicePage($this, invoiceOrder($this->member, [['Black', '9', '43', 1], ['Black', '8', null, 1]]));
+
+    preg_match_all('#<td[^>]*data-line-eu>(.*?)</td>#s', $html, $cells);
+
+    expect($cells[1])->toBe(['43', '']);
 });
 
 it('borders the lines table like the sample: grey header with a thick black rule, thin grey rule under each line, no box', function (): void {
@@ -481,7 +490,7 @@ it('keeps the colour and sizes as they were when the order was placed', function
 
     $html = invoicePage($this, $order);
 
-    expect($html)->toContain('data-line-colour>Light grey')->toContain('data-line-size>9')->not->toContain('>99<');
+    expect($html)->toContain('data-line-colour>Light grey')->toContain('data-line-size>9')->toContain('data-line-eu>43')->not->toContain('>99<');
 });
 
 it('shows the code and the option text for a line with no snapshot', function (): void {
