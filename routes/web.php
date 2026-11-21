@@ -27,19 +27,19 @@ use App\Livewire\Catalogue\ProductPage;
 use App\Livewire\Checkout\CheckoutPage;
 use Illuminate\Support\Facades\Route;
 
-// Pages without content yet. Each renders the standard layout with a heading,
-// "Content coming soon" and noindex.
-$placeholders = [
-    'terms' => ['/terms', 'Terms and Conditions of Sale'],
-    'privacy' => ['/privacy', 'Privacy Policy'],
-    'cookies' => ['/cookies', 'Cookie Policy'],
-    'returns' => ['/returns', 'Returns and Refunds'],
-    'delivery' => ['/delivery', 'Delivery Information'],
-    'accessibility' => ['/accessibility', 'Accessibility Statement'],
+// Policy pages with their own views (resources/views/pages/legal). They carry no noindex of their
+// own: STORE_NOINDEX decides, like every other real page.
+$policies = [
+    'terms' => '/terms',
+    'privacy' => '/privacy',
+    'cookies' => '/cookies',
+    'accessibility' => '/accessibility',
+    'returns' => '/returns',
+    'delivery' => '/delivery',
 ];
 
 // Only the storefront gets the trailing slash redirect.
-Route::middleware(RedirectTrailingSlash::class)->group(function () use ($placeholders): void {
+Route::middleware(RedirectTrailingSlash::class)->group(function () use ($policies): void {
     Route::view('/', 'home')->name('home');
 
     Route::view(CollectionPath::index(), 'pages.shop')->name('shop');
@@ -161,7 +161,7 @@ Route::middleware(RedirectTrailingSlash::class)->group(function () use ($placeho
             ->name('verification.send');
     });
 
-    foreach ($placeholders as $name => [$uri, $heading]) {
-        Route::view($uri, 'pages.placeholder', ['heading' => $heading])->name($name);
+    foreach ($policies as $name => $uri) {
+        Route::view($uri, 'pages.legal.'.$name)->name($name);
     }
 });

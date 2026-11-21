@@ -62,6 +62,17 @@ return [
         'charge' => 3_000,     // GBP 30.00
     ],
 
+    // Returns, in days: how long after delivery a customer can return goods they do not want
+    // (window_days), how soon they must report goods that arrive damaged, wrong or short
+    // (report_days), and how long a refund takes once we have checked the return (refund_days).
+    // Written from general good practice, not from the client: confirm with them before launch
+    // (docs/launch-checklist.md). The Returns and Refunds page reads these, so it follows a change.
+    'returns' => [
+        'window_days' => 30,
+        'report_days' => 3,
+        'refund_days' => 14,
+    ],
+
     // One switch for search engines. While true, every page of the site carries
     // <meta name="robots" content="noindex">. Set STORE_NOINDEX=false at launch
     // (see the Launch checklist in CLAUDE.md). It defaults to true so a new

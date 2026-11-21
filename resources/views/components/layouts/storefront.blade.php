@@ -18,8 +18,8 @@
         <link rel="canonical" href="{{ $canonical }}">
     @endisset
 
-    {{-- The site is out of search engines while STORE_NOINDEX is true. A placeholder page
-         also stays out, once the site is live, until it has real content. --}}
+    {{-- The site is out of search engines while STORE_NOINDEX is true. A page can also stay
+         out once the site is live by passing noindex (the sign-in and account pages do). --}}
     @if (config('store.noindex') || ! empty($noindex))
         <meta name="robots" content="noindex">
     @endif
