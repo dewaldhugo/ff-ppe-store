@@ -221,13 +221,13 @@ it('shows a tax invoice with the supplier, customer, lines and totals', function
 
     $html = $this->get(route('account.invoices.show', $order->reference))->assertOk()->getContent();
 
-    expect($html)->toContain('Tax invoice')
+    expect($html)->toContain('>Invoice</h1>')
         ->toContain('data-invoice-number>'.(new Invoice($order))->number())
         ->toContain('data-invoice-date>'.$order->placed_at->format('j M Y'))
         // The supplier's details, from the store identity.
-        ->toContain(e(Store::legalName()))
+        ->toContain('data-supplier-name>Frontline Holdings Ltd')
         ->toContain('data-supplier-vat')
-        ->toContain('VAT Number: '.Store::vatNumber())
+        ->toContain('VAT Number: 377 3202 94')
         // The customer's, with the VAT number they gave at checkout.
         ->toContain('data-invoice-billing')
         ->toContain('Builder Ltd')
@@ -236,14 +236,14 @@ it('shows a tax invoice with the supplier, customer, lines and totals', function
         ->toContain('PO-5')
         // One goods line, with delivery in the totals: £50.00 goods, £30.00 delivery, £16.00 VAT, £96.00 to pay.
         ->and(substr_count($html, 'data-invoice-line>'))->toBe(1)
-        ->and($html)->toContain('data-invoice-subtotal><dt>Subtotal</dt><dd class="font-semibold">£50.00')
-        ->toContain('data-invoice-delivery-total><dt>Delivery</dt><dd class="font-semibold">£30.00')
-        ->toContain('<dt>TOTAL VAT 20%</dt><dd class="font-semibold">£16.00')
+        // No pound sign except on the total.
+        ->and($html)->toMatch('#data-invoice-subtotal>\s*<th[^>]*>Subtotal</th>\s*<td[^>]*>50\.00</td>#')
+        ->toMatch('#data-invoice-delivery-total>\s*<th[^>]*>Delivery</th>\s*<td[^>]*>30\.00</td>#')
+        ->toMatch('#<th[^>]*>TOTAL VAT 20%</th>\s*<td[^>]*>16\.00</td>#')
         ->toContain('data-invoice-total>£96.00')
-        // On account and unpaid: the due date 30 days on, the bank details and the payment advice slip.
+        // On account and unpaid: the due date 30 days on and the bank details.
         ->toContain('<span class="font-bold">Due Date:</span> <span data-invoice-status>'.$order->placed_at->copy()->addDays(30)->format('j M Y').'</span>')
         ->toContain('data-invoice-bank')
-        ->toContain('data-payment-advice')
         ->toContain('data-print-invoice');
 });
 

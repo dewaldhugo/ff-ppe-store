@@ -70,11 +70,17 @@ final class Store
     }
 
     /**
-     * The UK trading disclosure shown in the footer.
+     * One of the fixed details printed at the top and in the footer of an invoice (`config/store.php`,
+     * `invoice`): name, trading_as, address, vat_number, email, website, company_number, registered_office.
      */
+    public static function invoice(string $key): string
+    {
+        return (string) config('store.invoice.'.$key);
+    }
+
     /**
-     * The bank details printed on an unpaid account invoice, label to value, in print order. A value
-     * that is not set reads TBC.
+     * The bank details printed on an unpaid 30 day account invoice, label to value, in print order. A
+     * value that is not set reads TBC.
      *
      * @return array<string, string>
      */
@@ -90,10 +96,13 @@ final class Store
             'Sort code' => $value('sort_code'),
             'Account number' => $value('account_number'),
             'IBAN' => $value('iban'),
-            'Bank address' => $value('address'),
+            "Wise's address" => $value('address'),
         ];
     }
 
+    /**
+     * The UK trading disclosure shown in the footer.
+     */
     public static function disclosure(): string
     {
         return sprintf(

@@ -41,7 +41,7 @@ final class PlaceOrder
     /**
      * Places an order on 30 day account terms.
      *
-     * @param  array{payment_method: string, full_name: string, email: string, phone: string, company_name: string, vat_number: ?string, po_number: ?string, notes: ?string, site_type: string, shipping: array<string, ?string>, billing: array<string, ?string>}  $details  Address arrays use line_one, line_two, city, county, postcode.
+     * @param  array{payment_method: string, full_name: string, email: string, phone: string, company_name: string, vat_number: ?string, po_number: ?string, supplier_number?: ?string, notes: ?string, site_type: string, shipping: array<string, ?string>, billing: array<string, ?string>}  $details  Address arrays use line_one, line_two, city, county, postcode.
      *
      * @throws CheckoutRejected
      */
@@ -71,7 +71,7 @@ final class PlaceOrder
      * Prepares a card payment: the draft order and the Stripe payment intent for its total. The cart
      * is kept (and stays in the session) until the payment succeeds, so a failed card can be retried.
      *
-     * @param  array{payment_method: string, full_name: string, email: string, phone: string, company_name: string, vat_number: ?string, po_number: ?string, notes: ?string, site_type: string, shipping: array<string, ?string>, billing: array<string, ?string>}  $details
+     * @param  array{payment_method: string, full_name: string, email: string, phone: string, company_name: string, vat_number: ?string, po_number: ?string, supplier_number?: ?string, notes: ?string, site_type: string, shipping: array<string, ?string>, billing: array<string, ?string>}  $details
      * @return array{client_secret: string, return_url: string, order_reference: string}
      *
      * @throws CheckoutRejected
@@ -145,6 +145,8 @@ final class PlaceOrder
             $order->update([
                 'customer_reference' => $details['po_number'],
                 'notes' => $details['notes'],
+                // What the customer calls us in their own system, printed on the invoice.
+                'meta' => array_merge((array) $order->meta, array_filter(['supplier_number' => $details['supplier_number'] ?? null])),
             ]);
         } catch (CartException $exception) {
             throw new CheckoutRejected($exception->getMessage(), previous: $exception);

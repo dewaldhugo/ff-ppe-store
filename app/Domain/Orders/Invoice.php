@@ -67,6 +67,20 @@ final readonly class Invoice
         return $this->onAccount() ? '30 day account' : 'Card';
     }
 
+    /** The payment method as the invoice words it: "Credit Card" or "30 Day Account". */
+    public function paymentMethodLabel(): string
+    {
+        return $this->onAccount() ? '30 Day Account' : 'Credit Card';
+    }
+
+    /** The customer's number for the store in their own purchasing system, when they gave one. */
+    public function supplierNumber(): ?string
+    {
+        $number = $this->order->meta['supplier_number'] ?? null;
+
+        return filled($number) ? (string) $number : null;
+    }
+
     public function paymentStatus(): string
     {
         if ($this->isPaid()) {
@@ -125,6 +139,17 @@ final readonly class Invoice
         $rates = $this->order->lines->map(fn (OrderLine $line): float => $this->rate($line))->unique()->values();
 
         return $rates->count() === 1 ? (float) $rates->first() : null;
+    }
+
+    /**
+     * An amount as a plain number with no currency sign: 27.90, 1,234.50, -5.00. The invoice shows the
+     * pound sign on the total only. Worked out from whole pence, never a float.
+     */
+    public static function amount(Price $price): string
+    {
+        $pence = abs($price->value);
+
+        return ($price->value < 0 ? '-' : '').number_format(intdiv($pence, 100)).'.'.str_pad((string) ($pence % 100), 2, '0', STR_PAD_LEFT);
     }
 
     private function price(int $value): Price

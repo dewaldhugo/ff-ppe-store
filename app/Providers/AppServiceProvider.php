@@ -9,6 +9,8 @@ use App\Admin\Extensions\CustomerAccessResourceExtension;
 use App\Admin\Extensions\CustomerAccessViewExtension;
 use App\Admin\Extensions\CustomerLogoEditExtension;
 use App\Admin\Extensions\CustomerLogoResourceExtension;
+use App\Admin\Extensions\CustomerSupplierNumberEditExtension;
+use App\Admin\Extensions\CustomerSupplierNumberResourceExtension;
 use App\Domain\Accounts\RateLimits;
 use App\Domain\Cart\Delivery\StoreShippingModifier;
 use App\Domain\Catalogue\Keys\CatalogueKeys;
@@ -46,8 +48,8 @@ final class AppServiceProvider extends ServiceProvider
     {
         // The storefront access toggles on the Customer screens (docs/accounts.md).
         LunarPanel::extensions([
-            CustomerResource::class => [CustomerAccessResourceExtension::class, CustomerLogoResourceExtension::class],
-            EditCustomer::class => [CustomerAccessEditExtension::class, CustomerLogoEditExtension::class],
+            CustomerResource::class => [CustomerAccessResourceExtension::class, CustomerLogoResourceExtension::class, CustomerSupplierNumberResourceExtension::class],
+            EditCustomer::class => [CustomerAccessEditExtension::class, CustomerLogoEditExtension::class, CustomerSupplierNumberEditExtension::class],
             ViewCustomer::class => CustomerAccessViewExtension::class,
         ]);
 
