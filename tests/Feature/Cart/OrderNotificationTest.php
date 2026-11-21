@@ -2,9 +2,11 @@
 
 declare(strict_types=1);
 
+use App\Domain\Orders\NotifyStaffOfNewOrder;
 use App\Livewire\Checkout\CheckoutPage;
 use App\Mail\OrderPlaced;
 use App\Models\User;
+use App\Support\EmailColours;
 use App\Support\Queues;
 use App\Support\Store;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -67,6 +69,12 @@ function notifyOrder(User $user, string $po = '', string $supplier = '', string 
     return Order::query()->where('user_id', $user->id)->latest('id')->firstOrFail();
 }
 
+/** The plain text part of the email, as a mail client without HTML shows it. */
+function notifyText(OrderPlaced $mail): string
+{
+    return view($mail->content()->text, $mail->content()->with)->render();
+}
+
 // --- Who is emailed ---------------------------------------------------------------------------
 
 it('reads the recipients from STORE_ORDER_NOTIFICATION_EMAILS: valid, distinct, any separator', function (): void {
@@ -94,19 +102,19 @@ it('takes the recipients from the environment, with none set by default, and kee
 
 // --- When it is sent --------------------------------------------------------------------------
 
-it('emails every recipient once when an order is placed', function (): void {
+it('emails every recipient once when an order is placed, each in an email of their own', function (): void {
     $order = notifyOrder($this->customer, 'PO-99986', 'SUP-9');
 
-    Mail::assertQueuedCount(1);
-    Mail::assertQueued(OrderPlaced::class, function (OrderPlaced $mail) use ($order): bool {
-        foreach (NOTIFY_TO as $address) {
-            if (! $mail->hasTo($address)) {
-                return false;
-            }
-        }
+    // Three emails, not one with three addresses in the To field.
+    Mail::assertQueuedCount(count(NOTIFY_TO));
 
-        return $mail->order->is($order);
-    });
+    foreach (NOTIFY_TO as $address) {
+        Mail::assertQueued(OrderPlaced::class, fn (OrderPlaced $mail): bool => $mail->hasTo($address)
+            && count($mail->to) === 1
+            && $mail->cc === []
+            && $mail->bcc === []
+            && $mail->order->is($order));
+    }
 });
 
 it('sends nothing when no recipient is set', function (): void {
@@ -126,7 +134,7 @@ it('emails once per order: later changes to a placed order send nothing more', f
     // Even editing the placed date is not a new order.
     $order->update(['placed_at' => now()->subDay()]);
 
-    Mail::assertQueuedCount(1);
+    Mail::assertQueuedCount(count(NOTIFY_TO));
 });
 
 it('emails when a draft becomes placed, as a card order does when Stripe confirms the payment', function (): void {
@@ -140,11 +148,11 @@ it('emails when a draft becomes placed, as a card order does when Stripe confirm
     Mail::assertNothingQueued();
 
     $order->update(['placed_at' => now()]);
-    Mail::assertQueuedCount(1);
+    Mail::assertQueuedCount(count(NOTIFY_TO));
 
     // And only that once.
     $order->update(['status' => 'payment-received']);
-    Mail::assertQueuedCount(1);
+    Mail::assertQueuedCount(count(NOTIFY_TO));
 });
 
 it('does not stop the order when the mail cannot be sent, and reports it', function (): void {
@@ -155,6 +163,29 @@ it('does not stop the order when the mail cannot be sent, and reports it', funct
 
     expect($order->placed_at)->not->toBeNull()->and($order->status)->toBe('awaiting-payment');
     Exceptions::assertReported(RuntimeException::class);
+});
+
+it('still emails the others when the mail for one recipient fails', function (): void {
+    $order = notifyOrder($this->customer);
+    Mail::fake();
+    Exceptions::fake();
+
+    $sent = [];
+    $pending = Mockery::mock();
+    $pending->shouldReceive('send')->twice()->andReturnUsing(function (OrderPlaced $mail) use (&$sent): null {
+        $sent[] = $mail;
+
+        return null;
+    });
+
+    Mail::shouldReceive('to')->once()->with(NOTIFY_TO[0])->andThrow(new RuntimeException('SMTP down for one'));
+    Mail::shouldReceive('to')->once()->with(NOTIFY_TO[1])->andReturn($pending);
+    Mail::shouldReceive('to')->once()->with(NOTIFY_TO[2])->andReturn($pending);
+
+    app(NotifyStaffOfNewOrder::class)($order);
+
+    expect($sent)->toHaveCount(2);
+    Exceptions::assertReported(fn (RuntimeException $exception): bool => $exception->getMessage() === 'SMTP down for one');
 });
 
 // --- The email --------------------------------------------------------------------------------
@@ -170,7 +201,7 @@ it('is queued on the default queue, so the customer never waits for the mail ser
 it('carries the order: who, payment, PO and supplier number, delivery, items, totals and the admin link', function (): void {
     $order = notifyOrder($this->customer, 'PO-99986', 'SUP-9');
     $mail = new OrderPlaced($order);
-    $text = $mail->render();
+    $text = notifyText($mail);
 
     expect($mail->envelope()->subject)->toBe('New order '.$order->reference.' from Builder Ltd (£156.00)')
         ->and($text)->toContain('Order: '.$order->reference)
@@ -199,7 +230,7 @@ it('carries the order: who, payment, PO and supplier number, delivery, items, to
 
 it('leaves the PO and supplier number lines out when the order has none', function (): void {
     $order = notifyOrder($this->customer);
-    $text = (new OrderPlaced($order))->render();
+    $text = notifyText(new OrderPlaced($order));
 
     expect($text)->not->toContain('PO number')->not->toContain('Supplier number');
 });
@@ -208,12 +239,12 @@ it('says a card order is paid', function (): void {
     $order = notifyOrder($this->customer);
     $order->update(['meta' => array_merge((array) $order->meta, ['payment_method' => 'card'])]);
 
-    expect((new OrderPlaced($order->refresh()))->render())->toContain('Payment: Credit Card, paid')->not->toContain('due');
+    expect(notifyText(new OrderPlaced($order->refresh())))->toContain('Payment: Credit Card, paid')->not->toContain('due');
 });
 
-it('is plain text, so names with an ampersand are not escaped', function (): void {
+it('does not escape names in the plain text part, which is never shown as HTML', function (): void {
     $order = notifyOrder($this->customer, company: 'Smith & Sons <Ltd>');
-    $text = (new OrderPlaced($order))->render();
+    $text = notifyText(new OrderPlaced($order));
 
     expect($text)->toContain('Smith & Sons <Ltd>')->not->toContain('&amp;');
 });
@@ -229,9 +260,124 @@ it('keeps the subject on one line, so a crafted company name cannot add mail hea
 });
 
 it('uses UK English and no em dashes in its copy', function (): void {
-    foreach (['app/Mail/OrderPlaced.php', 'app/Domain/Orders/NotifyStaffOfNewOrder.php', 'resources/views/mail/order-placed.blade.php'] as $file) {
+    foreach (['app/Mail/OrderPlaced.php', 'app/Domain/Orders/NotifyStaffOfNewOrder.php', 'app/Support/EmailColours.php', 'resources/views/mail/order-placed.blade.php', 'resources/views/mail/order-placed-text.blade.php'] as $file) {
         $text = (string) file_get_contents(base_path($file));
 
         expect($text)->not->toContain('—')->and($text)->not->toMatch('/\b(color|organization|center)\b/i');
+    }
+});
+
+// --- The HTML email ---------------------------------------------------------------------------
+
+it('is an HTML email with a plain text part, in a table layout with inline styles', function (): void {
+    $order = notifyOrder($this->customer, 'PO-99986', 'SUP-9');
+    $mail = new OrderPlaced($order);
+    $html = $mail->render();
+
+    expect($mail->content()->html)->toBe('mail.order-placed')
+        ->and($mail->content()->text)->toBe('mail.order-placed-text')
+        ->and($html)->toContain('<!DOCTYPE html>')
+        ->toContain('<html lang="en-GB"')
+        ->toContain('role="presentation"')
+        ->toContain('style="')
+        // Nothing is fetched from elsewhere but the logo image: no stylesheet, no script.
+        ->not->toContain('<link')
+        ->not->toContain('<script');
+});
+
+it('shows the order in the HTML: who, payment, PO and supplier number, addresses, items, totals and the admin link', function (): void {
+    $order = notifyOrder($this->customer, 'PO-99986', 'SUP-9');
+    $html = (new OrderPlaced($order))->render();
+
+    expect($html)->toContain('<title>New order '.$order->reference.'</title>')
+        ->toContain('Builder Ltd')
+        ->toContain('30 Day Account, due '.$order->placed_at->copy()->addDays(30)->format('j M Y'))
+        ->toContain('PO number')->toContain('PO-99986')
+        ->toContain('Supplier number')->toContain('SUP-9')
+        ->toContain('Invoice number')->toContain(now()->format('dmY').'/001')
+        ->toContain('href="mailto:jo@builder.example"')
+        ->toContain('data-deliver-to')->toContain('1 High Street')->toContain('BR5 3QX')
+        ->toContain('data-bill-to')
+        ->toContain('Deliver to Receiving Bay 2')
+        // One row for the line: quantity, name, colour and sizes, code, each and amount ex VAT.
+        ->toContain('Notify Boot')->toContain('Light grey, UK 9, EU 43')
+        ->toContain('>50.00<')->toContain('>100.00<')->toContain('>30.00<')->toContain('>26.00<')->toContain('£156.00')
+        ->toContain('data-admin-link')->toContain('href="'.url('/admin/orders/'.$order->id).'"');
+
+    expect(substr_count($html, 'data-item'))->toBe(1);
+});
+
+it('leaves the PO and supplier number out of the HTML when the order has none', function (): void {
+    $html = (new OrderPlaced(notifyOrder($this->customer)))->render();
+
+    expect($html)->not->toContain('PO number')->not->toContain('Supplier number');
+});
+
+it('escapes everything it was given, so a crafted name cannot add markup', function (): void {
+    $order = notifyOrder($this->customer);
+    $order->billingAddress->update(['company_name' => 'Smith & Sons <Ltd><script>alert(1)</script>']);
+    $html = (new OrderPlaced($order->refresh()))->render();
+
+    expect($html)->toContain('Smith &amp; Sons &lt;Ltd&gt;&lt;script&gt;alert(1)&lt;/script&gt;')
+        ->not->toContain('<Ltd>')
+        ->not->toContain('<script');
+});
+
+it('keeps line breaks in the delivery instructions without letting markup through', function (): void {
+    $order = notifyOrder($this->customer);
+    $order->update(['notes' => "Bay 2\nAsk for <b>Sam</b>"]);
+    $html = (new OrderPlaced($order->refresh()))->render();
+
+    expect($html)->toContain('Bay 2<br />')->toContain('Ask for &lt;b&gt;Sam&lt;/b&gt;')->not->toContain('<b>Sam');
+});
+
+it('says a card order is paid, in the HTML too', function (): void {
+    $order = notifyOrder($this->customer);
+    $order->update(['meta' => array_merge((array) $order->meta, ['payment_method' => 'card'])]);
+    $html = (new OrderPlaced($order->refresh()))->render();
+
+    expect($html)->toContain('Credit Card, paid')->not->toContain('30 Day Account');
+});
+
+it('takes every colour from the site design tokens, and uses no other', function (): void {
+    $html = (new OrderPlaced(notifyOrder($this->customer)))->render();
+    $tokens = array_map('strtoupper', array_values(EmailColours::all()));
+
+    preg_match_all('/#[0-9A-Fa-f]{6}\b/', $html, $found);
+
+    expect($found[0])->not->toBeEmpty()
+        ->and(array_diff(array_map('strtoupper', array_unique($found[0])), $tokens))->toBe([])
+        ->and(strtoupper(EmailColours::all()['brand-navy']))->toBe('#001227')
+        ->and($html)->toContain(EmailColours::all()['brand-navy']);
+
+    // The stylesheet is the source: the helper reads the same @theme block the site uses.
+    $css = (string) file_get_contents(resource_path('css/app.css'));
+    expect($css)->toContain('--color-brand-navy: '.EmailColours::all()['brand-navy']);
+});
+
+it('has the logo by absolute URL on the brand colour, with alt text', function (): void {
+    $html = (new OrderPlaced(notifyOrder($this->customer)))->render();
+
+    expect(public_path('images/frontline-logo-white.png'))->toBeFile()
+        ->and($html)->toContain('src="'.asset('images/frontline-logo-white.png').'"')
+        ->toMatch('/<img[^>]*alt="[^"]+"/');
+});
+
+it('stacks the address columns on a phone', function (): void {
+    $html = (new OrderPlaced(notifyOrder($this->customer)))->render();
+
+    expect($html)->toContain('@media only screen and (max-width: 520px)')
+        ->toContain('class="stack"')
+        ->toContain('name="viewport"');
+});
+
+it('has the same facts in both parts, so a client that shows only text loses nothing', function (): void {
+    $order = notifyOrder($this->customer, 'PO-99986', 'SUP-9');
+    $mail = new OrderPlaced($order);
+    $html = $mail->render();
+    $text = notifyText($mail);
+
+    foreach ([$order->reference, 'PO-99986', 'SUP-9', 'Builder Ltd', 'jo@builder.example', '020 8289 5858', 'GB123456789', '1 High Street', 'Light grey, UK 9, EU 43', '£156.00'] as $fact) {
+        expect($html)->toContain($fact)->and($text)->toContain($fact);
     }
 });
