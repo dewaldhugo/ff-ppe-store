@@ -78,6 +78,9 @@
 
             <p class="mt-2 text-sm font-semibold" data-testid="stock" aria-live="polite">{{ $stockMessage }}</p>
 
+            {{-- Where it can be delivered, only while EU delivery is switched on. --}}
+            <x-storefront.ships-to :product="$product" class="mt-2" />
+
             <form wire:submit="addToCart" class="mt-6 space-y-5" novalidate>
                 @foreach ($options as $option)
                     @php $isMissing = $missingOption === $option['handle']; @endphp

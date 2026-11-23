@@ -37,7 +37,7 @@ Acceptance criteria:
 Behind `STORE_EU_DELIVERY`:
 1. A delivery country at checkout (UK by default, an allowed list of EU countries). Saved with the address and the order.
 2. Enforcement for the chosen country in the cart and at checkout: a product that does not ship there is flagged with a clear message ("not available for delivery outside the UK: remove it or deliver to a UK address"). One order has one destination, so there is no split delivery.
-3. Visible labels, only when the switch is on: a "UK delivery only" badge on product pages and cards for UK-only products, and a delivery filter on listings.
+3. Visible labels, only when the switch is on: a "UK delivery only" label on product pages and cards for UK-only products (the label is built, behind the switch), and a delivery filter on listings (not built).
 4. Delivery charge by destination (`DeliveryPolicy`, `config/store.php` `delivery`) and VAT by destination (a Lunar tax zone for the EU, `StoreTaxDriver`).
 5. Orders and invoices carry the destination and, for an export, the wording the accountant gives. Customs details (the commodity code lives in `vendor_products`) need a decision on how they reach the order, since the storefront may not read that table beyond the order line snapshot.
 6. The delivery, returns and terms pages, and the order emails.

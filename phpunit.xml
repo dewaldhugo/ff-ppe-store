@@ -37,6 +37,7 @@
         <env name="SCOUT_DRIVER" value="null"/>
         <env name="SCOUT_PREFIX" value="testing_ff_"/>
         <env name="SCOUT_QUEUE" value="false"/>
+        <env name="STORE_EU_DELIVERY" value="false"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
