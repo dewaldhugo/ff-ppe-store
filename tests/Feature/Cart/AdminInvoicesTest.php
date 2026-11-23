@@ -41,7 +41,7 @@ afterEach(fn () => Carbon::setTestNow());
  * A placed order with one goods line, a bill to and a deliver to, numbered the way the store numbers it. Account
  * terms and Payment Received by default (paid); pass $attributes to change it.
  */
-function invoiceOrder(array $attributes = [], bool $numbered = true): Order
+function adminInvoiceOrder(array $attributes = [], bool $numbered = true): Order
 {
     $customer = Customer::query()->create(['first_name' => 'Jo', 'last_name' => 'Builder', 'company_name' => $attributes['company'] ?? 'Builder Ltd']);
     unset($attributes['company']);
@@ -106,7 +106,7 @@ function invoiceStaff(bool $admin = true): Staff
 // --- The PDF ----------------------------------------------------------------------------------
 
 it('makes a real PDF of a placed order\'s invoice, named by its invoice number', function (): void {
-    $order = invoiceOrder();
+    $order = adminInvoiceOrder();
     $pdf = app(InvoicePdf::class);
 
     $bytes = $pdf->render($order);
@@ -116,7 +116,7 @@ it('makes a real PDF of a placed order\'s invoice, named by its invoice number',
 });
 
 it('shows on the PDF what the invoice page shows: number, date, parties, lines, VAT, total and payment', function (): void {
-    $order = invoiceOrder(['customer_reference' => 'LMLLP / 29095']);
+    $order = adminInvoiceOrder(['customer_reference' => 'LMLLP / 29095']);
 
     $html = view('admin.pdf.invoice', [
         'invoice' => new App\Domain\Orders\Invoice($order),
@@ -140,7 +140,7 @@ it('shows on the PDF what the invoice page shows: number, date, parties, lines, 
 });
 
 it('shows the due date and bank details on an invoice still to pay', function (): void {
-    $order = invoiceOrder(['status' => 'awaiting-payment']);
+    $order = adminInvoiceOrder(['status' => 'awaiting-payment']);
 
     $html = view('admin.pdf.invoice', [
         'invoice' => new App\Domain\Orders\Invoice($order),
@@ -154,7 +154,7 @@ it('shows the due date and bank details on an invoice still to pay', function ()
 });
 
 it('has no invoice for an order that was never placed', function (): void {
-    $order = invoiceOrder(['placed_at' => null], numbered: false);
+    $order = adminInvoiceOrder(['placed_at' => null], numbered: false);
 
     expect(app(InvoicePdf::class)->available($order))->toBeFalse();
 });
@@ -175,13 +175,47 @@ it('keeps the PDF\'s colours equal to the design tokens', function (): void {
         ->and(InvoicePdf::COLOURS['head'])->toBe($token('surface-muted'));
 });
 
+it('sorts the invoice lines by product name, then colour, then size smallest first, on the PDF and the invoice page alike', function (): void {
+    $order = adminInvoiceOrder();   // its own line: CADOR, Green, EU 41
+
+    // Added out of order on purpose. The identifier says where each belongs (ID-1 first).
+    foreach ([
+        ['LIGERO', ['colour' => 'Navy', 'size' => '10', 'size_is_uk' => true], 'ID-8'],
+        ['CADOR S3 MID', ['colour' => 'Black', 'eu_size' => '41'], 'ID-5'],
+        ['CADOR', ['colour' => 'Green', 'eu_size' => '44'], 'ID-4'],
+        ['LIGERO', ['colour' => 'Navy', 'size' => '6.5', 'size_is_uk' => true], 'ID-6'],
+        ['CADOR', ['colour' => 'Blue', 'eu_size' => '43'], 'ID-1'],
+        ['LIGERO', ['colour' => 'Navy', 'size' => '9', 'size_is_uk' => true], 'ID-7'],
+        ['CADOR', ['colour' => 'Green', 'eu_size' => '38'], 'ID-2'],
+    ] as [$description, $meta, $identifier]) {
+        OrderLine::factory()->create([
+            'order_id' => $order->id, 'purchasable_type' => null, 'purchasable_id' => null, 'type' => 'physical',
+            'description' => $description, 'identifier' => $identifier, 'quantity' => 1, 'meta' => $meta,
+        ]);
+    }
+
+    $order->lines()->where('identifier', 'SJ-1713342')->update(['identifier' => 'ID-3']);
+    $invoice = new App\Domain\Orders\Invoice($order->fresh(['lines']));
+
+    // Product name first (CADOR before CADOR S3 MID before LIGERO), then colour, then size: EU sizes 38, 41, 44, and 6.5, 9, 10 as numbers.
+    expect($invoice->goodsLines()->pluck('identifier')->all())->toBe(['ID-1', 'ID-2', 'ID-3', 'ID-4', 'ID-5', 'ID-6', 'ID-7', 'ID-8']);
+
+    $html = view('admin.pdf.invoice', [
+        'invoice' => $invoice, 'order' => $invoice->order, 'colours' => InvoicePdf::COLOURS, 'logo' => public_path('images/frontline-logo.png'),
+    ])->render();
+
+    preg_match_all('/Code (ID-\d)/', $html, $codes);
+
+    expect($codes[1])->toBe(['ID-1', 'ID-2', 'ID-3', 'ID-4', 'ID-5', 'ID-6', 'ID-7', 'ID-8']);
+});
+
 // --- The Invoices list ------------------------------------------------------------------------
 
 it('lists placed orders as invoices with number, date, company, order number, PO and total', function (): void {
     invoiceStaff();
-    $a = invoiceOrder(['reference' => 'ORD-A', 'placed_at' => '2026-03-01 10:00:00', 'customer_reference' => 'PO-1', 'total' => 140964]);
-    $b = invoiceOrder(['reference' => 'ORD-B', 'placed_at' => '2026-03-05 10:00:00']);
-    $draft = invoiceOrder(['reference' => 'ORD-DRAFT', 'placed_at' => null], numbered: false);
+    $a = adminInvoiceOrder(['reference' => 'ORD-A', 'placed_at' => '2026-03-01 10:00:00', 'customer_reference' => 'PO-1', 'total' => 140964]);
+    $b = adminInvoiceOrder(['reference' => 'ORD-B', 'placed_at' => '2026-03-05 10:00:00']);
+    $draft = adminInvoiceOrder(['reference' => 'ORD-DRAFT', 'placed_at' => null], numbered: false);
 
     Livewire::test(ListInvoices::class)
         ->assertCanSeeTableRecords([$b, $a], inOrder: true)
@@ -196,15 +230,15 @@ it('lists placed orders as invoices with number, date, company, order number, PO
 
 it('still lists a placed order whose invoice number has not been given yet', function (): void {
     invoiceStaff();
-    $order = invoiceOrder(['reference' => 'ORD-NONUM'], numbered: false);
+    $order = adminInvoiceOrder(['reference' => 'ORD-NONUM'], numbered: false);
 
     Livewire::test(ListInvoices::class)->assertCanSeeTableRecords([$order]);
 });
 
 it('searches invoices by invoice number, company, order number and PO number', function (): void {
     invoiceStaff();
-    $one = invoiceOrder(['reference' => 'ORD-ONE', 'placed_at' => '2026-03-01 10:00:00', 'company' => 'Builder Ltd', 'customer_reference' => 'PO-111']);
-    $two = invoiceOrder(['reference' => 'ORD-TWO', 'placed_at' => '2026-03-02 10:00:00', 'company' => 'Roofer Ltd', 'customer_reference' => 'PO-222']);
+    $one = adminInvoiceOrder(['reference' => 'ORD-ONE', 'placed_at' => '2026-03-01 10:00:00', 'company' => 'Builder Ltd', 'customer_reference' => 'PO-111']);
+    $two = adminInvoiceOrder(['reference' => 'ORD-TWO', 'placed_at' => '2026-03-02 10:00:00', 'company' => 'Roofer Ltd', 'customer_reference' => 'PO-222']);
 
     Livewire::test(ListInvoices::class)
         ->searchTable('02032026')->assertCanSeeTableRecords([$two])->assertCanNotSeeTableRecords([$one])
@@ -216,10 +250,10 @@ it('searches invoices by invoice number, company, order number and PO number', f
 it('filters invoices by payment: paid, not yet paid and overdue', function (): void {
     invoiceStaff();
 
-    $paid = invoiceOrder(['reference' => 'ORD-PAID', 'placed_at' => '2026-03-01 10:00:00']);
-    $card = invoiceOrder(['reference' => 'ORD-CARD', 'placed_at' => '2026-03-02 10:00:00', 'status' => 'payment-received', 'meta' => ['payment_method' => 'card']]);
-    $due = invoiceOrder(['reference' => 'ORD-DUE', 'placed_at' => '2026-03-08 10:00:00', 'status' => 'awaiting-payment']);        // 7 days old: not yet due
-    $overdue = invoiceOrder(['reference' => 'ORD-LATE', 'placed_at' => '2026-01-20 10:00:00', 'status' => 'awaiting-payment']);  // 54 days old
+    $paid = adminInvoiceOrder(['reference' => 'ORD-PAID', 'placed_at' => '2026-03-01 10:00:00']);
+    $card = adminInvoiceOrder(['reference' => 'ORD-CARD', 'placed_at' => '2026-03-02 10:00:00', 'status' => 'payment-received', 'meta' => ['payment_method' => 'card']]);
+    $due = adminInvoiceOrder(['reference' => 'ORD-DUE', 'placed_at' => '2026-03-08 10:00:00', 'status' => 'awaiting-payment']);        // 7 days old: not yet due
+    $overdue = adminInvoiceOrder(['reference' => 'ORD-LATE', 'placed_at' => '2026-01-20 10:00:00', 'status' => 'awaiting-payment']);  // 54 days old
 
     Livewire::test(ListInvoices::class)
         ->filterTable('payment', 'paid')->assertCanSeeTableRecords([$paid, $card])->assertCanNotSeeTableRecords([$due, $overdue])
@@ -229,9 +263,9 @@ it('filters invoices by payment: paid, not yet paid and overdue', function (): v
 
 it('shows each invoice\'s payment state as Paid, due by a date, or overdue', function (): void {
     invoiceStaff();
-    invoiceOrder(['reference' => 'ORD-PAID']);
-    invoiceOrder(['reference' => 'ORD-DUE', 'placed_at' => '2026-03-08 10:00:00', 'status' => 'awaiting-payment']);
-    invoiceOrder(['reference' => 'ORD-LATE', 'placed_at' => '2026-01-20 10:00:00', 'status' => 'awaiting-payment']);
+    adminInvoiceOrder(['reference' => 'ORD-PAID']);
+    adminInvoiceOrder(['reference' => 'ORD-DUE', 'placed_at' => '2026-03-08 10:00:00', 'status' => 'awaiting-payment']);
+    adminInvoiceOrder(['reference' => 'ORD-LATE', 'placed_at' => '2026-01-20 10:00:00', 'status' => 'awaiting-payment']);
 
     Livewire::test(ListInvoices::class)
         ->assertSee('Paid')
@@ -241,8 +275,8 @@ it('shows each invoice\'s payment state as Paid, due by a date, or overdue', fun
 
 it('filters invoices by date', function (): void {
     invoiceStaff();
-    $early = invoiceOrder(['reference' => 'ORD-EARLY', 'placed_at' => '2026-02-01 10:00:00']);
-    $late = invoiceOrder(['reference' => 'ORD-LATE2', 'placed_at' => '2026-03-10 10:00:00']);
+    $early = adminInvoiceOrder(['reference' => 'ORD-EARLY', 'placed_at' => '2026-02-01 10:00:00']);
+    $late = adminInvoiceOrder(['reference' => 'ORD-LATE2', 'placed_at' => '2026-03-10 10:00:00']);
 
     Livewire::test(ListInvoices::class)
         ->filterTable('date', ['from' => '2026-03-01', 'until' => null])->assertCanSeeTableRecords([$late])->assertCanNotSeeTableRecords([$early])
@@ -259,8 +293,8 @@ it('is for staff who can manage orders, is read-only and sits under Sales', func
 
     expect(InvoiceResource::canViewAny())->toBeTrue()
         ->and(InvoiceResource::canCreate())->toBeFalse()
-        ->and(InvoiceResource::canEdit(invoiceOrder()))->toBeFalse()
-        ->and(InvoiceResource::canDelete(invoiceOrder()))->toBeFalse()
+        ->and(InvoiceResource::canEdit(adminInvoiceOrder()))->toBeFalse()
+        ->and(InvoiceResource::canDelete(adminInvoiceOrder()))->toBeFalse()
         ->and(InvoiceResource::getNavigationGroup())->toBe(__('lunarpanel::global.sections.sales'))
         ->and(array_keys(InvoiceResource::getPages()))->toBe(['index']);
 });
@@ -269,7 +303,7 @@ it('is for staff who can manage orders, is read-only and sits under Sales', func
 
 it('downloads the invoice PDF from a row of the Invoices list', function (): void {
     invoiceStaff();
-    $order = invoiceOrder();
+    $order = adminInvoiceOrder();
 
     Livewire::test(ListInvoices::class)
         ->callTableAction('download_invoice_pdf', $order)
@@ -278,7 +312,7 @@ it('downloads the invoice PDF from a row of the Invoices list', function (): voi
 
 it('downloads the invoice PDF from the order page', function (): void {
     invoiceStaff();
-    $order = invoiceOrder();
+    $order = adminInvoiceOrder();
 
     Livewire::test(ManageOrder::class, ['record' => $order->getRouteKey()])
         ->assertActionVisible('download_invoice_pdf')
@@ -288,14 +322,14 @@ it('downloads the invoice PDF from the order page', function (): void {
 
 it('has no Invoice PDF button on an order that was never placed', function (): void {
     invoiceStaff();
-    $draft = invoiceOrder(['placed_at' => null], numbered: false);
+    $draft = adminInvoiceOrder(['placed_at' => null], numbered: false);
 
     Livewire::test(ManageOrder::class, ['record' => $draft->getRouteKey()])->assertActionHidden('download_invoice_pdf');
 });
 
 it('downloads the invoice PDF from the dashboard\'s latest orders', function (): void {
     invoiceStaff();
-    $order = invoiceOrder();
+    $order = adminInvoiceOrder();
 
     Livewire::test(RecentOrdersWidget::class)
         ->callTableAction('download_invoice_pdf', $order)
@@ -303,7 +337,7 @@ it('downloads the invoice PDF from the dashboard\'s latest orders', function ():
 });
 
 it('gives an order without a number one when its PDF is made, and never a second', function (): void {
-    $order = invoiceOrder(numbered: false);
+    $order = adminInvoiceOrder(numbered: false);
 
     expect(DB::table('invoice_numbers')->where('order_id', $order->id)->exists())->toBeFalse();
 

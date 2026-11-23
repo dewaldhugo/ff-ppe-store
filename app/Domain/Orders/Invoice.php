@@ -92,10 +92,36 @@ final readonly class Invoice
         return $this->isOverdue() ? 'Overdue, was due by '.$due : 'Payment due by '.$due;
     }
 
-    /** The goods, in the order they were added. */
+    /**
+     * The goods, sorted by product name, then colour, then size (smallest first), so the lines of a product sit
+     * together and its sizes run in order. Both the invoice page and the admin PDF take their lines from here. The
+     * size is the EU size when the line has one, otherwise its own size, compared as numbers where they are numbers
+     * (9 before 10, 6 before 6.5) and as words otherwise. Lines alike in all three keep the order they were added in.
+     */
     public function goodsLines(): Collection
     {
-        return $this->order->lines->where('type', 'physical')->values();
+        $key = fn (OrderLine $line, string $name): string => trim((string) ($line->meta[$name] ?? ''));
+
+        return $this->order->lines
+            ->where('type', 'physical')
+            ->sort(function (OrderLine $a, OrderLine $b) use ($key): int {
+                return strnatcasecmp(trim($a->description), trim($b->description))
+                    ?: strnatcasecmp($key($a, 'colour'), $key($b, 'colour'))
+                    ?: strnatcasecmp($this->sizeOf($a), $this->sizeOf($b));
+            })
+            ->values();
+    }
+
+    /** What a line is sorted by within its product and colour: its EU size, else its size, else its option text. */
+    private function sizeOf(OrderLine $line): string
+    {
+        foreach (['eu_size', 'size'] as $name) {
+            if (filled($line->meta[$name] ?? null)) {
+                return trim((string) $line->meta[$name]);
+            }
+        }
+
+        return trim((string) $line->option);
     }
 
     /** The delivery charge lines (one, or none). */
