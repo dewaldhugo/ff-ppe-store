@@ -11,8 +11,13 @@ use App\Admin\Extensions\CustomerLogoEditExtension;
 use App\Admin\Extensions\CustomerLogoResourceExtension;
 use App\Admin\Extensions\CustomerSupplierNumberEditExtension;
 use App\Admin\Extensions\CustomerSupplierNumberResourceExtension;
+use App\Admin\Extensions\DashboardTopWidgetsExtension;
 use App\Admin\Extensions\OrderDeleteResourceExtension;
 use App\Admin\Extensions\OrderDeleteViewExtension;
+use App\Admin\Extensions\OrderInvoicePdfViewExtension;
+use App\Admin\Resources\InvoiceResource;
+use App\Admin\Widgets\RecentOrdersWidget;
+use App\Admin\Widgets\SalesTilesWidget;
 use App\Domain\Accounts\RateLimits;
 use App\Domain\Cart\Delivery\StoreShippingModifier;
 use App\Domain\Catalogue\Keys\CatalogueKeys;
@@ -32,6 +37,7 @@ use Filament\View\PanelsRenderHook;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use Lunar\Admin\Filament\Pages\Dashboard;
 use Lunar\Admin\Filament\Resources\CustomerResource;
 use Lunar\Admin\Filament\Resources\CustomerResource\Pages\EditCustomer;
 use Lunar\Admin\Filament\Resources\CustomerResource\Pages\ViewCustomer;
@@ -58,10 +64,12 @@ final class AppServiceProvider extends ServiceProvider
             ViewCustomer::class => CustomerAccessViewExtension::class,
             // Delete order, which Lunar does not have: on the orders list (row and bulk) and on the order page.
             OrderResource::class => OrderDeleteResourceExtension::class,
-            ManageOrder::class => OrderDeleteViewExtension::class,
+            // The order page's header: Delete order, and the Invoice PDF.
+            ManageOrder::class => [OrderDeleteViewExtension::class, OrderInvoicePdfViewExtension::class],
+            // The sales tiles and the latest orders list at the top of the dashboard.
+            Dashboard::class => DashboardTopWidgetsExtension::class,
         ]);
 
-        // A denser admin: root font size x .85 and tighter rows (resources/views/admin/density.blade.php).
         // The storefront's logo on a transparent background: the white file in dark mode, the
         // standard file in light mode (a white logo would vanish on the light sidebar).
         LunarPanel::panel(fn (Panel $panel): Panel => $panel
@@ -72,7 +80,16 @@ final class AppServiceProvider extends ServiceProvider
             ->favicon(asset('favicon.png'))
             ->brandLogoHeight('1.8rem')
             ->maxContentWidth(Width::Full)
-            ->renderHook(PanelsRenderHook::HEAD_END, fn (): View => view('admin.density')),
+            // A top bar across the admin: the logo top left, the global search and the user menu top right. Lunar
+            // switches it off and puts both in the sidebar; the navigation stays in the sidebar below the bar.
+            ->topbar()
+            // The dashboard's top widgets (DashboardTopWidgetsExtension puts them on the page). A widget has to be
+            // registered with the panel as well, or Livewire cannot find it when the page loads it.
+            ->widgets([SalesTilesWidget::class, RecentOrdersWidget::class])
+            // Invoices, under Sales beside Orders: the list, with the Invoice PDF download.
+            ->resources([InvoiceResource::class])
+            // The colours of the dashboard tiles. The rest of the admin keeps Lunar's own styling.
+            ->renderHook(PanelsRenderHook::HEAD_END, fn (): View => view('admin.dashboard-tiles')),
         )->register();
 
         $this->app->scoped(CatalogueKeys::class);
