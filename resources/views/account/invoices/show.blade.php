@@ -12,8 +12,9 @@
 
     // Colour and size columns show only when some line has one. "UK Size" unless a line has another kind of size.
     $showColour = $goods->contains(fn ($line): bool => $meta($line, 'colour') !== null);
-    $showSize = $goods->contains(fn ($line): bool => $meta($line, 'size') !== null);
     $showEu = $goods->contains(fn ($line): bool => $meta($line, 'eu_size') !== null);
+    // The UK size always comes with the EU size, in the column before it (empty for a line that has none).
+    $showSize = $showEu || $goods->contains(fn ($line): bool => $meta($line, 'size') !== null);
     $sizeHeading = $goods->contains(fn ($line): bool => $meta($line, 'size') !== null && ! ($line->meta['size_is_uk'] ?? false)) ? 'Size' : 'UK Size';
 
     // Description, Quantity, Unit Price and VAT, plus Colour, Size and EU Size when shown: the totals' labels span them.
@@ -131,8 +132,9 @@
                             @if ($showColour)<th scope="col" class="px-3 py-2 print:py-1">Colour</th>@endif
                             @if ($showSize)<th scope="col" class="px-3 py-2 print:py-1">{{ $sizeHeading }}</th>@endif
                             @if ($showEu)<th scope="col" class="px-3 py-2 print:py-1">EU Size</th>@endif
-                            <th scope="col" class="px-3 py-2 print:py-1 text-right">Quantity</th>
-                            <th scope="col" class="px-3 py-2 print:py-1 text-right">Unit Price</th>
+                            {{-- Quantity and Unit Price are left-aligned with their figures; VAT and Amount are right-aligned with theirs. --}}
+                            <th scope="col" class="px-3 py-2 print:py-1 text-left">Quantity</th>
+                            <th scope="col" class="px-3 py-2 print:py-1 text-left">Unit Price</th>
                             <th scope="col" class="px-3 py-2 print:py-1 text-right">VAT</th>
                             <th scope="col" class="px-3 py-2 print:py-1 text-right">Amount</th>
                         </tr>
@@ -148,8 +150,8 @@
                                 @if ($showColour)<td class="px-3 py-3 print:py-1.5" data-line-colour>{{ $meta($line, 'colour') }}</td>@endif
                                 @if ($showSize)<td class="px-3 py-3 print:py-1.5" data-line-size>{{ $meta($line, 'size') }}</td>@endif
                                 @if ($showEu)<td class="px-3 py-3 print:py-1.5" data-line-eu>{{ $meta($line, 'eu_size') }}</td>@endif
-                                <td class="px-3 py-3 print:py-1.5 text-right">{{ $line->quantity }}</td>
-                                <td class="px-3 py-3 print:py-1.5 text-right">{{ $amount($line->unit_price) }}</td>
+                                <td class="px-3 py-3 print:py-1.5 text-left" data-line-quantity>{{ $line->quantity }}</td>
+                                <td class="px-3 py-3 print:py-1.5 text-left" data-line-unit-price>{{ $amount($line->unit_price) }}</td>
                                 <td class="px-3 py-3 print:py-1.5 text-right">
                                     @if ($invoice->rate($line) === 0.0)
                                         <span data-zero-rated>0%</span>

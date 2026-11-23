@@ -17,7 +17,9 @@
         <li class="flex justify-between gap-4 py-3 text-sm" data-order-line>
             <div>
                 <p class="font-semibold">{{ $line->description }}</p>
-                <p class="text-xs text-ink-muted">Code {{ $line->identifier }}@if ($line->option), {{ $line->option }}@endif</p>
+                {{-- Colour, UK size, EU size, as placed (App\Domain\Orders\LineDetails). --}}
+                @php($details = \App\Domain\Orders\LineDetails::text($line))
+                <p class="text-xs text-ink-muted">Code {{ $line->identifier }}@if ($details !== ''), {{ $details }}@endif</p>
                 <p class="text-ink-muted">Qty {{ $line->quantity }}</p>
                 @if ((float) $line->tax_breakdown->amounts->sum('percentage') === 0.0)
                     <p class="mt-1"><span class="rounded border border-success bg-success-surface px-2 py-0.5 text-xs font-bold text-success" data-zero-rated>Zero-rated: 0% VAT</span></p>

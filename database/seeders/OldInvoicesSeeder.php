@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use App\Domain\Catalogue\Keys\CatalogueKeys;
+use App\Domain\Catalogue\Options\ShoeSizes;
 use App\Domain\Checkout\PaymentMethods;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Seeder;
@@ -399,12 +400,18 @@ final class OldInvoicesSeeder extends Seeder
             // No variant: the line stays as the old invoice had it, linked to nothing (reorder skips it as no longer sold).
             $variant = $variants[$index] ?? null;
 
+            // The UK size, kept the way an order placed in the store keeps it (SnapshotLineOptions), so the invoice shows
+            // UK Size beside EU Size: the matched variant's own shoe size, or for a line with no variant the UK size the
+            // catalogue's size chart gives for that EU size (none when the chart has no entry).
+            $uk = $variant?->values->first(fn ($value): bool => $value->option->handle === 'shoe_size')?->translate('name') ?? ShoeSizes::ukFor($eu);
+            $uk = filled($uk) ? (string) $uk : null;
+
             $record->lines()->create([
                 'purchasable_type' => $variant?->getMorphClass(),
                 'purchasable_id' => $variant?->getKey(),
                 'type' => 'physical',
                 'description' => $product,
-                'option' => $colour.', EU '.$eu,
+                'option' => implode(', ', array_filter([$colour, $uk === null ? null : 'UK '.$uk, 'EU '.$eu])),
                 'identifier' => $variant === null ? 'old-system' : (string) $variant->sku,
                 'unit_price' => $unit,
                 'unit_quantity' => 1,
@@ -414,7 +421,7 @@ final class OldInvoicesSeeder extends Seeder
                 'tax_breakdown' => $this->breakdown($tax[$index], $rate, $currency, keyed: false),
                 'tax_total' => $tax[$index],
                 'total' => $subs[$index] + $tax[$index],
-                'meta' => ['colour' => $colour, 'eu_size' => $eu],
+                'meta' => array_filter(['colour' => $colour, 'size' => $uk, 'size_is_uk' => $uk === null ? null : true, 'eu_size' => $eu], fn (mixed $value): bool => $value !== null),
                 'created_at' => $placedAt,
                 'updated_at' => $placedAt,
             ]);

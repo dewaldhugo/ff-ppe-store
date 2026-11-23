@@ -12,8 +12,9 @@
     $meta = fn ($line, string $key): ?string => filled($line->meta[$key] ?? null) ? (string) $line->meta[$key] : null;
 
     $showColour = $goods->contains(fn ($line): bool => $meta($line, 'colour') !== null);
-    $showSize = $goods->contains(fn ($line): bool => $meta($line, 'size') !== null);
     $showEu = $goods->contains(fn ($line): bool => $meta($line, 'eu_size') !== null);
+    // The UK size always comes with the EU size, in the column before it (empty for a line that has none).
+    $showSize = $showEu || $goods->contains(fn ($line): bool => $meta($line, 'size') !== null);
     $sizeHeading = $goods->contains(fn ($line): bool => $meta($line, 'size') !== null && ! ($line->meta['size_is_uk'] ?? false)) ? 'Size' : 'UK Size';
 
     $labelSpan = 4 + ($showColour ? 1 : 0) + ($showSize ? 1 : 0) + ($showEu ? 1 : 0);
@@ -37,6 +38,9 @@
         .bar { background-color: {{ $colours['bar'] }}; color: {{ $colours['bar_text'] }}; font-weight: bold; text-transform: uppercase; padding: 4px 8px; font-size: 9px; }
         .box { border: 1px solid {{ $colours['border'] }}; padding: 6px 8px; vertical-align: top; }
         .lines th { background-color: {{ $colours['head'] }}; border-bottom: 3px solid {{ $colours['ink'] }}; padding: 4px 6px; text-align: left; font-size: 9px; }
+        /* A heading follows its figures: VAT and Amount are right-aligned, Quantity and Unit Price left-aligned. This rule is
+           more specific than the one above, which would otherwise keep every heading on the left. */
+        .lines th.right { text-align: right; }
         .lines td { border-bottom: 1px solid {{ $colours['border'] }}; padding: 3px 6px; vertical-align: top; }
         .lines tr { page-break-inside: avoid; }
         .totals td, .totals th { padding: 3px 6px; font-weight: normal; }
@@ -106,8 +110,8 @@
                 @if ($showColour)<th>Colour</th>@endif
                 @if ($showSize)<th>{{ $sizeHeading }}</th>@endif
                 @if ($showEu)<th>EU Size</th>@endif
-                <th class="right">Quantity</th>
-                <th class="right">Unit Price</th>
+                <th>Quantity</th>
+                <th>Unit Price</th>
                 <th class="right">VAT</th>
                 <th class="right">Amount</th>
             </tr>
@@ -120,8 +124,8 @@
                     @if ($showColour)<td>{{ $meta($line, 'colour') }}</td>@endif
                     @if ($showSize)<td>{{ $meta($line, 'size') }}</td>@endif
                     @if ($showEu)<td>{{ $meta($line, 'eu_size') }}</td>@endif
-                    <td class="right">{{ $line->quantity }}</td>
-                    <td class="right">{{ $amount($line->unit_price) }}</td>
+                    <td>{{ $line->quantity }}</td>
+                    <td>{{ $amount($line->unit_price) }}</td>
                     <td class="right">{{ $invoice->rate($line) === 0.0 ? '0%' : $rate($invoice->rate($line)) }}</td>
                     <td class="right bold">{{ $amount($line->sub_total) }}</td>
                 </tr>
