@@ -416,6 +416,49 @@ it('shows the EU size only when some line has one', function (): void {
         ->and($without)->toContain('data-line-size>9');
 });
 
+it('puts the UK Size column before the EU Size column, and shows it even when a line has only an EU size', function (): void {
+    // An imported line has no UK size of its own: the column is still there, empty, so the two sit side by side.
+    $order = invoiceOrder($this->member, [['Black', '9', '43', 1]]);
+    $order->lines()->where('type', 'physical')->get()->each(function ($line): void {
+        $meta = (array) $line->meta;
+        unset($meta['size'], $meta['size_is_uk']);
+        $line->update(['meta' => $meta]);
+    });
+
+    $html = invoicePage($this, $order);
+
+    preg_match_all('#<th scope="col"[^>]*>\s*(.*?)\s*</th>#s', $html, $headings);
+
+    expect($headings[1])->toContain('UK Size')->toContain('EU Size')
+        ->and(array_search('UK Size', $headings[1], true))->toBe(array_search('EU Size', $headings[1], true) - 1)
+        ->and($html)->toContain('data-line-size>')->toContain('data-line-eu>43');
+});
+
+it('aligns the headings with their figures: VAT and Amount on the right, Quantity and Unit Price on the left', function (): void {
+    $html = invoicePage($this, invoiceOrder($this->member, [['Light grey', '9', '43', 2]]));
+
+    preg_match('#<thead.*?</thead>#s', $html, $head);
+    preg_match_all('#<th scope="col" class="([^"]*)"[^>]*>\s*(.*?)\s*</th>#s', $head[0], $headings, PREG_SET_ORDER);
+
+    $alignment = [];
+
+    foreach ($headings as $heading) {
+        $alignment[$heading[2]] = str_contains($heading[1], 'text-right') ? 'right' : (str_contains($heading[1], 'text-left') ? 'left' : 'default');
+    }
+
+    expect($alignment['Quantity'])->toBe('left')
+        ->and($alignment['Unit Price'])->toBe('left')
+        ->and($alignment['VAT'])->toBe('right')
+        ->and($alignment['Amount'])->toBe('right');
+
+    // The figures under them are aligned the same way.
+    preg_match('#<td class="([^"]*)" data-line-quantity>#', $html, $quantity);
+    preg_match('#<td class="([^"]*)" data-line-unit-price>#', $html, $unit);
+
+    expect($quantity[1])->toContain('text-left')->not->toContain('text-right')
+        ->and($unit[1])->toContain('text-left')->not->toContain('text-right');
+});
+
 it('fills the EU size cell for the lines that have one and leaves it empty for the rest', function (): void {
     $html = invoicePage($this, invoiceOrder($this->member, [['Black', '9', '43', 1], ['Black', '8', null, 1]]));
 

@@ -55,6 +55,25 @@ final class ShoeSizes
         return $eu !== null && $eu < self::INFANT_BELOW_EU ? self::KIDS_PREFIX.$uk : $uk;
     }
 
+    /**
+     * The UK size for an EU size on the junior and adult scale (`36` is `3.5`, `43` is `9`), or null when the chart has
+     * no entry for it, or the EU size is on the infant scale (where the UK size alone is ambiguous).
+     */
+    public static function ukFor(string|float $eu): ?string
+    {
+        if (! is_numeric($eu)) {
+            return null;
+        }
+
+        foreach (self::STANDARD as $uk => $size) {
+            if ((float) $size === (float) $eu) {
+                return (string) $uk;
+            }
+        }
+
+        return null;
+    }
+
     public static function isInfant(string $name): bool
     {
         return str_starts_with($name, self::KIDS_PREFIX);

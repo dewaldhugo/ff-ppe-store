@@ -118,8 +118,11 @@ it('imports invoices as placed orders with their old numbers, dates, lines, VAT 
         ->and($lines->pluck('quantity')->all())->toBe([3, 2])
         ->and($lines->first()->unit_price->value)->toBe(2680)
         ->and($lines->first()->description)->toBe('CADOR S1P LOW')
-        ->and($lines->first()->option)->toBe('green, EU 38')
+        // The UK size is kept beside the EU size, from the matched variant, as an order placed in the store keeps it.
+        ->and($lines->first()->option)->toBe('green, UK 5, EU 38')
         ->and($lines->first()->meta['eu_size'])->toBe('38')
+        ->and($lines->first()->meta['size'])->toBe('5')
+        ->and($lines->first()->meta['size_is_uk'])->toBeTrue()
         ->and($lines->first()->purchasable_type)->toBe('product_variant');
 
     // Each line points at the variant of its own EU size.
@@ -202,7 +205,8 @@ it('writes a line whose product or variant is not in the catalogue as the old in
         ->and($order->sub_total->value)->toBe(5 * 2680)
         ->and($order->total->value)->toBe(5 * 2680 + 2680)
         ->and($lines->pluck('description')->all())->toBe(['PATRICIA', 'PATRICIA', 'CADOR S1P LOW', 'CADOR S1P LOW'])
-        ->and($lines->pluck('option')->all())->toBe(['black, EU 39', 'black, EU 40', 'pink, EU 38', 'green, EU 38'])
+        // A line with no variant gets the UK size the size chart gives for its EU size; one with a variant, the variant's own.
+        ->and($lines->pluck('option')->all())->toBe(['black, UK 6, EU 39', 'black, UK 6.5, EU 40', 'pink, UK 5, EU 38', 'green, UK 5, EU 38'])
         ->and($lines->pluck('purchasable_id')->map(fn (mixed $id): bool => $id === null)->all())->toBe([true, true, true, false])
         ->and($lines->first()->identifier)->toBe('old-system')
         ->and($lines->first()->quantity)->toBe(2)

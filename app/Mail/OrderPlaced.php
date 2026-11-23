@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Mail;
 
 use App\Domain\Orders\Invoice;
+use App\Domain\Orders\LineDetails;
 use App\Support\EmailColours;
 use App\Support\Queues;
 use Illuminate\Bus\Queueable;
@@ -137,11 +138,7 @@ final class OrderPlaced extends Mailable implements ShouldQueue
         $rows = [];
 
         foreach ($order->lines->where('type', 'physical') as $line) {
-            $details = array_values(array_filter([
-                $line->meta['colour'] ?? null,
-                filled($line->meta['size'] ?? null) ? (($line->meta['size_is_uk'] ?? false) ? 'UK ' : '').$line->meta['size'] : null,
-                filled($line->meta['eu_size'] ?? null) ? 'EU '.$line->meta['eu_size'] : null,
-            ], fn (mixed $detail): bool => filled($detail)));
+            $details = LineDetails::parts($line);
 
             $rows[] = [
                 'quantity' => (int) $line->quantity,
