@@ -57,6 +57,15 @@ One option, `standard-delivery`, from `App\Domain\Cart\Delivery\DeliveryPolicy`:
 
 `StoreShippingModifier` offers the option to Lunar's shipping manifest. It clears the manifest first, because Lunar keeps options for the whole process and ignores one whose identifier it already holds. On the checkout, before an address is saved, `CartSummary::withDelivery()` sets Lunar's `shippingOptionOverride` so the totals include delivery; at order time the option is set on the shipping address and Lunar reads it itself. `CartSummary::totals()` lays out the stack (and the VAT breakdown by rate); only the checkout uses it.
 
+## Where products ship
+
+Safety Jogger products can be delivered in the UK and the EU, Footsure products in the UK only. The store delivers to the UK only today: the delivery address is UK only, VAT and delivery are UK rules, and EU delivery is **not built**. What is built is the record of where each product can go, as the first phase of `prompts/ships-to-market.md`.
+
+- **Where it comes from.** The vendor code at the start of a product's variant SKUs (`SJ-...`, `FS-...`, fixed by the data contract), read by `App\Domain\Catalogue\Markets\ShipsTo` through the map in `config/store.php` (`markets`): `SJ` is `uk` and `eu`, `FS` is `uk`. A vendor not in the map, a SKU with no vendor code and a product with no variants are UK only, the safe default. A product whose SKUs mix vendors (it should not happen) goes only where all of them can. The storefront never reads the vendor tables for this. If one product ever needs to differ from its vendor, the map is replaced by a product attribute written by the import, and nothing downstream changes.
+- **Where it goes.** Every product document in the search index carries `ships_to` (`["uk", "eu"]` or `["uk"]`), filterable (docs/search.md, settings version 3). Nothing customers see uses it yet: no badge, filter, cart rule or checkout rule.
+- **The switch.** `STORE_EU_DELIVERY` (`config/store.php` `eu_delivery`, read through `Store::euDelivery()`, default false) is for the EU delivery phase. Leave it false.
+- **Not built, and not decided.** A delivery country at checkout, refusing a product the destination cannot take, the "UK delivery only" badge and a delivery filter, delivery and VAT by destination, export wording on the invoice, and the legal pages. They wait for the decisions listed in `prompts/ships-to-market.md` (VAT treatment of EU sales, who pays duty and files customs, the EU delivery charge, customers, returns).
+
 ## Checkout
 
 `/checkout`, `App\Livewire\Checkout\CheckoutPage` with its own layout (`components/layouts/checkout`): a clean header with the logo and a support phone and email, no store navigation, no footer, always noindex. An empty cart goes back to `/cart`.

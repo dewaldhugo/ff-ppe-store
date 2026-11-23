@@ -87,7 +87,7 @@ Waterproofing is the `WR` feature, not a separate attribute. Which attributes ar
 Every variant has exactly one `colour` value and exactly one of `shoe_size` or `garment_size`, never both: which one a product uses is fixed for that product (`NormalisedVariant::sizeOptionHandle`), not chosen per variant.
 
 ## Variants
-- `sku` = `{VENDOR_CODE}-{vendor_sku}`, e.g. `SJ-1492552`, `FS-00052-00095-09`.
+- `sku` = `{VENDOR_CODE}-{vendor_sku}`, e.g. `SJ-1492552`, `FS-00052-00095-09`. The storefront relies on the vendor code: every variant of a product has the same one, and `App\Domain\Catalogue\Markets\ShipsTo` reads it to say where the product can be delivered (docs/cart.md, Where products ship). This states what the contract already guaranteed; it changes nothing for the ingestion module.
 - `ean` set when known (may be null), in Lunar's native variant column.
 - `stock` = sellable quantity after the ingestion module applies its safety buffer. `purchasable = 'in_stock'`.
 - `shippable = true`. Tax class is one of the three above, set by the ingestion module.
