@@ -1,0 +1,235 @@
+<?php
+
+declare(strict_types=1);
+
+use App\Admin\Widgets\RecentOrdersWidget;
+use App\Admin\Widgets\SalesTilesWidget;
+use App\Domain\Orders\DashboardFigures;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+use Livewire\Livewire;
+use Lunar\Admin\Filament\Pages\Dashboard;
+use Lunar\Admin\Models\Staff;
+use Lunar\Models\Channel;
+use Lunar\Models\Customer;
+use Lunar\Models\Order;
+use Lunar\Models\OrderLine;
+
+// The sales tiles and the latest orders list at the top of the admin dashboard, above Lunar's own widgets
+// (App\Admin\Widgets, App\Domain\Orders\DashboardFigures).
+
+beforeEach(function (): void {
+    config()->set('store.noindex', true);
+    Carbon::setTestNow('2026-03-15 12:00:00');
+});
+
+afterEach(fn () => Carbon::setTestNow());
+
+function dashboardOrder(array $attributes = [], array $lines = []): Order
+{
+    // Without events: the store's own hooks would number the order and email staff. These tests number the ones they need.
+    $order = Order::withoutEvents(fn (): Order => Order::factory()->create([
+        'channel_id' => Channel::getDefault()->id,
+        'status' => 'payment-received',
+        'sub_total' => 10000,
+        'tax_total' => 2000,
+        'total' => 12000,
+        'placed_at' => '2026-03-10 09:00:00',
+        ...$attributes,
+    ]));
+
+    foreach ($lines as [$description, $quantity, $type]) {
+        OrderLine::factory()->create([
+            'order_id' => $order->id,
+            'purchasable_type' => null,
+            'purchasable_id' => null,
+            'type' => $type ?? 'physical',
+            'description' => $description,
+            'quantity' => $quantity,
+        ]);
+    }
+
+    return $order;
+}
+
+function dashboardStaff(): Staff
+{
+    $staff = Staff::factory()->create(['admin' => true]);
+    test()->actingAs($staff, 'staff');
+
+    return $staff;
+}
+
+// --- The figures ------------------------------------------------------------------------------
+
+it('counts placed orders that did not fail or get cancelled, and nothing else', function (): void {
+    dashboardOrder(['total' => 12000]);
+    dashboardOrder(['total' => 6000, 'status' => 'awaiting-payment']);          // invoiced on account: counts
+    dashboardOrder(['total' => 99900, 'status' => 'cancelled']);                // does not
+    dashboardOrder(['total' => 88800, 'status' => 'failed']);                   // does not
+    dashboardOrder(['total' => 77700, 'placed_at' => null]);                    // never placed: does not
+
+    $figures = new DashboardFigures;
+
+    expect($figures->orderCount())->toBe(2)
+        ->and($figures->income())->toBe('£180.00');
+});
+
+it('adds up the pairs sold from goods lines only, and names the best seller', function (): void {
+    dashboardOrder(lines: [['CADOR', 10, 'physical'], ['MODULO', 3, 'physical'], ['Freight', 1, 'shipping']]);
+    dashboardOrder(lines: [['MODULO', 9, 'physical']]);
+    dashboardOrder(['status' => 'cancelled'], [['CADOR', 50, 'physical']]);
+
+    $figures = new DashboardFigures;
+
+    // CADOR 10, MODULO 3 + 9 = 12; the cancelled order's 50 pairs and the freight line count for nothing.
+    expect($figures->unitsSold())->toBe(22)
+        ->and($figures->bestSeller())->toBe('MODULO');
+});
+
+it('has no best seller before the first sale', function (): void {
+    expect((new DashboardFigures)->bestSeller())->toBeNull()
+        ->and((new DashboardFigures)->lastOrderDate())->toBeNull()
+        ->and((new DashboardFigures)->income())->toBe('£0.00');
+});
+
+it('counts this month\'s orders, names the day of the last order and counts the clients', function (): void {
+    dashboardOrder(['placed_at' => '2026-03-02 10:00:00']);
+    dashboardOrder(['placed_at' => '2026-03-12 16:30:00']);
+    dashboardOrder(['placed_at' => '2026-02-27 10:00:00']);
+    Customer::query()->create(['first_name' => 'Jo', 'last_name' => 'Builder', 'company_name' => 'Builder Ltd']);
+    Customer::query()->create(['first_name' => 'Al', 'last_name' => 'Roofer', 'company_name' => 'Roofer Ltd']);
+
+    $figures = new DashboardFigures;
+
+    expect($figures->ordersThisMonth())->toBe(2)
+        ->and($figures->lastOrderDate())->toBe('12 Mar')
+        ->and($figures->clients())->toBe(2);
+
+    // An order from an earlier year names its year.
+    Order::query()->delete();
+    dashboardOrder(['placed_at' => '2025-12-30 10:00:00']);
+
+    expect((new DashboardFigures)->lastOrderDate())->toBe('30 Dec 2025');
+});
+
+it('averages this year\'s turnover before VAT over the months so far, to the penny', function (): void {
+    // It is 15 March: three months. £300.00 + £600.00 + £300.01 ex VAT this year, £5,000.00 last year (ignored).
+    dashboardOrder(['placed_at' => '2026-01-20 10:00:00', 'sub_total' => 30000, 'total' => 36000]);
+    dashboardOrder(['placed_at' => '2026-02-20 10:00:00', 'sub_total' => 60000, 'total' => 72000]);
+    dashboardOrder(['placed_at' => '2026-03-10 10:00:00', 'sub_total' => 30001, 'total' => 36001]);
+    dashboardOrder(['placed_at' => '2025-11-10 10:00:00', 'sub_total' => 500000, 'total' => 600000]);
+
+    // 120001 / 3 = 40000.33 pence, so £400.00.
+    expect((new DashboardFigures)->averageMonthlyTurnover())->toBe('£400.00');
+
+    Order::query()->delete();
+    dashboardOrder(['placed_at' => '2026-03-10 10:00:00', 'sub_total' => 30002, 'total' => 36002]);
+
+    // 30002 / 3 = 10000.67 pence rounds up to £100.01.
+    expect((new DashboardFigures)->averageMonthlyTurnover())->toBe('£100.01');
+});
+
+// --- The dashboard ----------------------------------------------------------------------------
+
+it('puts the tiles and the latest orders above Lunar\'s own widgets, which stay', function (): void {
+    dashboardStaff();
+
+    $widgets = (new Dashboard)->getWidgets();
+
+    expect($widgets[0])->toBe(SalesTilesWidget::class)
+        ->and($widgets[1])->toBe(RecentOrdersWidget::class)
+        ->and($widgets)->toContain(Lunar\Admin\Filament\Widgets\Dashboard\Orders\OrderStatsOverview::class)
+        ->and($widgets)->toContain(Lunar\Admin\Filament\Widgets\Dashboard\Orders\LatestOrdersTable::class);
+});
+
+it('registers both widgets with the panel, so Livewire can find them when the page loads them', function (): void {
+    $registry = app(\Livewire\Mechanisms\ComponentRegistry::class);
+
+    foreach ([SalesTilesWidget::class, RecentOrdersWidget::class] as $widget) {
+        expect($registry->getClass($registry->getName($widget)))->toBe($widget);
+    }
+});
+
+it('shows the eight tiles with their figures', function (): void {
+    dashboardStaff();
+    dashboardOrder(['total' => 12000], [['CADOR S1P LOW', 7, 'physical']]);
+    Customer::query()->create(['first_name' => 'Jo', 'last_name' => 'Builder', 'company_name' => 'Builder Ltd']);
+
+    Livewire::test(SalesTilesWidget::class)
+        ->assertSee('Total income (inc VAT)')->assertSee('£120.00')
+        ->assertSee('Orders to date')
+        ->assertSee('Total units sold')
+        ->assertSee('Best seller')->assertSee('CADOR S1P LOW')
+        ->assertSee('Orders this month')
+        ->assertSee('Last order placed')->assertSee('10 Mar')
+        ->assertSee('Clients')
+        ->assertSee('Average turnover per month this year (ex VAT)');
+});
+
+it('colours the tiles green, red, blue and orange down the columns, the same every time', function (): void {
+    dashboardStaff();
+
+    $html = Livewire::test(SalesTilesWidget::class)->html();
+
+    // Eight tiles: each colour twice, in column order, first row then second.
+    preg_match_all('/sales-tile--(success|danger|info|warning)/', $html, $colours);
+
+    expect($colours[1])->toBe(['success', 'danger', 'info', 'warning', 'success', 'danger', 'info', 'warning']);
+
+    // The colours are defined in the admin styles, from Filament's own variables (no colour of our own).
+    $styles = (string) file_get_contents(resource_path('views/admin/dashboard-tiles.blade.php'));
+
+    foreach (['success', 'danger', 'info', 'warning'] as $colour) {
+        expect($styles)->toContain('.sales-tile--'.$colour)->toContain('var(--'.$colour.'-700)');
+    }
+});
+
+it('lists placed orders newest first with company, date, order number, invoice number and value', function (): void {
+    dashboardStaff();
+    $customer = Customer::query()->create(['first_name' => 'Jo', 'last_name' => 'Builder', 'company_name' => 'Builder Ltd']);
+
+    $older = dashboardOrder(['customer_id' => $customer->id, 'reference' => 'ORD-OLDER', 'placed_at' => '2026-02-01 10:00:00', 'total' => 12000]);
+    $newer = dashboardOrder(['customer_id' => $customer->id, 'reference' => 'ORD-NEWER', 'placed_at' => '2026-03-01 10:00:00', 'total' => 140964]);
+    $unplaced = dashboardOrder(['customer_id' => $customer->id, 'reference' => 'ORD-DRAFT', 'placed_at' => null]);
+
+    DB::table('invoice_numbers')->insert(['order_id' => $newer->id, 'invoice_date' => '2026-03-01', 'sequence' => 1, 'number' => '01032026/001', 'created_at' => now()]);
+
+    Livewire::test(RecentOrdersWidget::class)
+        ->assertCanSeeTableRecords([$newer, $older], inOrder: true)
+        ->assertCanNotSeeTableRecords([$unplaced])
+        ->assertSee('Builder Ltd')
+        ->assertSee('2026-03-01')
+        ->assertSee('ORD-NEWER')
+        ->assertSee('01032026/001')
+        ->assertSee('£1,409.64');
+});
+
+it('searches the latest orders by company, order number and invoice number', function (): void {
+    dashboardStaff();
+    $builder = Customer::query()->create(['first_name' => 'Jo', 'last_name' => 'Builder', 'company_name' => 'Builder Ltd']);
+    $roofer = Customer::query()->create(['first_name' => 'Al', 'last_name' => 'Roofer', 'company_name' => 'Roofer Ltd']);
+
+    $one = dashboardOrder(['customer_id' => $builder->id, 'reference' => 'ORD-ONE']);
+    $two = dashboardOrder(['customer_id' => $roofer->id, 'reference' => 'ORD-TWO']);
+    DB::table('invoice_numbers')->insert(['order_id' => $two->id, 'invoice_date' => '2026-03-10', 'sequence' => 1, 'number' => '10032026/001', 'created_at' => now()]);
+
+    Livewire::test(RecentOrdersWidget::class)
+        ->searchTable('Roofer')->assertCanSeeTableRecords([$two])->assertCanNotSeeTableRecords([$one])
+        ->searchTable('ORD-ONE')->assertCanSeeTableRecords([$one])->assertCanNotSeeTableRecords([$two])
+        ->searchTable('10032026')->assertCanSeeTableRecords([$two])->assertCanNotSeeTableRecords([$one]);
+});
+
+it('pages the latest orders ten at a time', function (): void {
+    dashboardStaff();
+
+    foreach (range(1, 12) as $day) {
+        dashboardOrder(['placed_at' => '2026-02-'.str_pad((string) $day, 2, '0', STR_PAD_LEFT).' 10:00:00']);
+    }
+
+    $table = Livewire::test(RecentOrdersWidget::class);
+
+    // Twelve orders in all, ten on the first page.
+    expect($table->instance()->getAllTableRecordsCount())->toBe(12)
+        ->and($table->instance()->getTableRecords())->toHaveCount(10);
+});
