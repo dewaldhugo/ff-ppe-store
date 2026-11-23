@@ -9,6 +9,12 @@ namespace App\Support;
  */
 final class Store
 {
+    /** Whether the store delivers to EU countries. Off by default: the store delivers to the UK only. */
+    public static function euDelivery(): bool
+    {
+        return (bool) config('store.eu_delivery');
+    }
+
     public static function name(): string
     {
         return (string) config('store.name');

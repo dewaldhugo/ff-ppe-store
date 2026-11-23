@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Catalogue\Search;
 
+use App\Domain\Catalogue\Markets\ShipsTo;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
@@ -105,6 +106,8 @@ final class StorefrontProductIndexer extends ProductIndexer
             'sizes_in_stock' => array_map(strval(...), array_keys($sizes)),
             'variants_in_stock' => array_map(strval(...), array_keys($pairs)),
             'in_stock' => $inStock->isNotEmpty(),
+            // The markets the product can be delivered to, from its vendor (App\Domain\Catalogue\Markets\ShipsTo).
+            'ships_to' => app(ShipsTo::class)->forProduct($model),
             'price_min_ex_vat' => $this->minimumPriceExVat($model),
             // No source in the contract yet. Reserved for merchandising.
             'sort_order' => 0,

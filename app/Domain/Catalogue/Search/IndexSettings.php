@@ -12,7 +12,7 @@ namespace App\Domain\Catalogue\Search;
  */
 final class IndexSettings
 {
-    public const int VERSION = 2;
+    public const int VERSION = 3;
 
     /**
      * Order matters: Meilisearch ranks matches in earlier attributes higher.
@@ -44,6 +44,7 @@ final class IndexSettings
             'sizes_in_stock',
             'variants_in_stock',
             'in_stock',
+            'ships_to',
             'price_min_ex_vat',
             'status',
         ];

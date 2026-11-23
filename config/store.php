@@ -74,6 +74,23 @@ return [
         'refund_days' => 14,
     ],
 
+    // Where each product can be delivered, by the vendor code at the start of its variants' SKUs
+    // ({VENDOR_CODE}-{vendor_sku}, docs/data-contract.md). Safety Jogger delivers in the UK and the EU,
+    // Footsure in the UK only. A vendor not listed, or a SKU with no vendor code, is UK only: the safe default.
+    // Read by App\Domain\Catalogue\Markets\ShipsTo (docs/cart.md, Where products ship).
+    'markets' => [
+        'vendors' => [
+            'SJ' => ['uk', 'eu'],
+            'FS' => ['uk'],
+        ],
+        'default' => ['uk'],
+    ],
+
+    // Delivery to EU countries. Off: the store delivers to the UK only, as it always has, and nothing about markets
+    // is shown anywhere. The products' markets are recorded and indexed either way. EU delivery itself (a delivery
+    // country at checkout, VAT and delivery charges by destination) is not built; this switch is for it.
+    'eu_delivery' => filter_var(env('STORE_EU_DELIVERY', false), FILTER_VALIDATE_BOOL),
+
     // One switch for search engines. While true, every page of the site carries
     // <meta name="robots" content="noindex">. Set STORE_NOINDEX=false at launch
     // (see the Launch checklist in CLAUDE.md). It defaults to true so a new
