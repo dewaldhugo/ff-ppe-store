@@ -96,6 +96,9 @@
                             </h3>
                             <p class="text-sm text-ink-muted">{{ $product->translateAttribute('title') }}</p>
 
+                            {{-- Where it can be delivered, only while EU delivery is switched on. --}}
+                            <x-storefront.ships-to :product="$product" class="mt-2" />
+
                             {{-- Pinned to the bottom of the card, so every card in a row is the same height and the buttons line up, with or without a price. --}}
                             <div class="mt-auto flex flex-col">
                                 @if ($price)
