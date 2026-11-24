@@ -8,7 +8,8 @@
     {{-- Menus need JavaScript. This tells the stylesheet whether it is there. --}}
     <script>document.documentElement.classList.remove('no-js')</script>
 
-    <title>{{ isset($title) ? $title.' | '.\App\Support\Store::name() : \App\Support\Store::name() }}</title>
+    {{-- fullTitle is used as it stands (the home page); otherwise "Page | Store name". --}}
+    <title>{{ isset($fullTitle) ? $fullTitle : (isset($title) ? $title.' | '.\App\Support\Store::name() : \App\Support\Store::name()) }}</title>
 
     @isset($description)
         <meta name="description" content="{{ $description }}">

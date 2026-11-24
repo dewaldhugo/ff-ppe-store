@@ -654,3 +654,12 @@ it('fades the incoming photo in over the previous one so the background never di
         ->and($hero)->toContain('data-[state=previous]:opacity-100')
         ->and($hero)->not->toContain('motion-reduce:');
 });
+
+it('has the client title and meta description on the home page, and other pages keep "Page | Store name"', function (): void {
+    $html = $this->get(route('home'))->assertOk()->getContent();
+
+    expect($html)->toContain('<title>Frontline Safety Gear</title>')
+        ->and($html)->toContain('<meta name="description" content="Streamline your site procurement with a single, dependable UK &amp; EU trade supplier. We stock certified head-to-toe PPE, workwear, and safety footwear ready for rapid nationwide dispatch and competitive bulk pricing.">');
+
+    expect($this->get(route('about'))->assertOk()->getContent())->toMatch('#<title>About[^<]* \| #');
+});
