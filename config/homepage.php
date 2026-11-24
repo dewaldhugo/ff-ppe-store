@@ -115,4 +115,74 @@ return [
         ],
     ],
 
+    /*
+     * The "Shop by brand" logo strip, straight under the trust strip. The brands are the storefront's own
+     * (BrandDirectory, the same as /brands): those with published products, most products first, up to `limit`.
+     * Each logo links to that brand's products. With no brand to show the section is left out.
+     */
+    'brands' => [
+        'title' => 'Shop by brand',
+        'limit' => 12,
+    ],
+
+    /*
+     * The buying guides row, between the video and the testimonials: one card per item, each a link to a page
+     * of the site by its route name. `title` and `text` frame the page, `link` is the link's words, `icon` is
+     * the picture beside the title (`ruler` or `shield`; none when left out or unknown), `image` is a photo
+     * behind the card under a dark overlay (`file` in public/images/home, with its `width` and `height`; a plain
+     * white card when left out). The photos are copies of ones the site already uses (hero-bg-1 and hero-bg-7). An item
+     * whose route does not exist is left out, and with none left the section is not shown.
+     */
+    'guides' => [
+        'title' => 'Buying guides',
+        'intro' => 'Choose the right size and the right protection, first time.',
+        'items' => [
+            [
+                'route' => 'size-guide',
+                'icon' => 'ruler',
+                'image' => ['file' => 'guide-size-guide.jpg', 'width' => 1000, 'height' => 459],
+                'title' => 'Size guide',
+                'text' => 'UK to EU size conversions and measuring advice for footwear, workwear and gloves.',
+                'link' => 'Open the size guide',
+            ],
+            [
+                'route' => 'technical-features',
+                'icon' => 'shield',
+                'image' => ['file' => 'guide-technical-features.jpg', 'width' => 1000, 'height' => 459],
+                'title' => 'Technical features',
+                'text' => 'Safety icons, toe caps, slip resistance, waterproofing, ESD and more, explained.',
+                'link' => 'See the technical features',
+            ],
+        ],
+    ],
+
+    /*
+     * Customer testimonials, between the featured products and the service strip. Each has the words (`quote`), the
+     * `role` of the person and the `sector` they work in; nobody is named. With no items the section is not shown.
+     * The copy is the client's own. It must stay genuine and attributable: confirm each one with the person it is
+     * from, and with the client, before launch (docs/launch-checklist.md). Some of what they say is about products
+     * and brands the site does not sell yet (eyewear, height safety, Stanley, Helly Hansen), so read them against
+     * the range on the day the site goes live. No dashes in the copy.
+     */
+    'testimonials' => [
+        'title' => 'What our customers say',
+        'items' => [
+            [
+                'quote' => 'Before switching to Frontline, we were juggling three different vendors just to cover footwear, eyewear, and height safety. Consolidating our PPE spend into a single trade account cut our admin time in half, and having instant access to brands like Safety Jogger, Stanley, and Helly Hansen in one place makes site restocks effortless.',
+                'role' => 'Procurement Manager',
+                'sector' => 'Logistics & Warehousing',
+            ],
+            [
+                'quote' => "When you're kitting out 150+ site operatives, compliance isn't negotiable, but getting staff to actually wear their gear is half the battle. Frontline's range of EN ISO 20345 safety footwear and ergonomic helmets hits the sweet spot between strict site standards and genuine all-day comfort. Return rates and comfort complaints dropped immediately.",
+                'role' => 'Health & Safety Lead',
+                'sector' => 'Commercial Construction',
+            ],
+            [
+                'quote' => 'Reliable stock, sharp trade pricing, and zero chasing for tracking numbers. Exactly what a PPE supplier should be.',
+                'role' => 'Site Manager',
+                'sector' => 'Civil Engineering',
+            ],
+        ],
+    ],
+
 ];
