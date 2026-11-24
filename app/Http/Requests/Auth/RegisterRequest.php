@@ -24,8 +24,23 @@ final class RegisterRequest extends FormRequest
         $this->merge([
             'email' => is_string($this->input('email')) ? mb_strtolower(trim($this->input('email'))) : $this->input('email'),
             'vat_number' => VatNumber::normalise($this->input('vat_number')),
-            'address_postcode' => Postcode::normalise($this->input('address_postcode')),
+            'address_postcode' => $this->postcode($this->input('address_postcode')),
         ]);
+    }
+
+    /**
+     * Any postcode is accepted (UK and EU customers). A UK one is tidied (upper case, one space before the last three
+     * characters); anything else is kept as typed, trimmed.
+     */
+    private function postcode(mixed $value): mixed
+    {
+        if (! is_string($value)) {
+            return $value;
+        }
+
+        $uk = Postcode::normalise($value);
+
+        return $uk !== null && preg_match(Postcode::PATTERN, $uk) === 1 ? $uk : trim($value);
     }
 
     /**
@@ -41,7 +56,7 @@ final class RegisterRequest extends FormRequest
             'address_line_two' => ['nullable', 'string', 'max:255'],
             'address_city' => ['required', 'string', 'max:100'],
             'address_county' => ['nullable', 'string', 'max:100'],
-            'address_postcode' => ['required', 'string', 'regex:'.Postcode::PATTERN],
+            'address_postcode' => ['required', 'string', 'max:12'],
             'industry' => ['required', 'string', Rule::in(Industries::slugs())],
             'vat_number' => ['nullable', 'string', 'max:20', new VatNumber],
             'phone' => ['nullable', 'string', 'regex:/^[0-9+() \-]{7,20}$/'],
@@ -58,7 +73,6 @@ final class RegisterRequest extends FormRequest
         return [
             'email.unique' => 'An account with this email address already exists. Log in instead.',
             'phone.regex' => 'Enter a phone number using digits, spaces, brackets, + or -.',
-            'address_postcode.regex' => 'Enter a UK postcode, for example SW1A 1AA.',
             'industry.in' => 'Choose the industry that fits your business best.',
             'industry.required' => 'Choose the industry that fits your business best.',
         ];

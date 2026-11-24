@@ -1,8 +1,9 @@
-<x-layouts.account title="Register" heading="Create an account">
-    <p class="text-ink-muted">
-        Register a trade account to see prices and manage your details. You can browse the full catalogue without registering.
-        All prices are shown excluding VAT.
-    </p>
+<x-layouts.account title="Register" heading="Register for a Frontline Trade Account">
+    <div class="space-y-4 text-ink-muted" data-register-intro>
+        <p>Create your trade account to unlock exclusive trade pricing, access real-time stock availability and benefit from the support of a dedicated PPE consultant.</p>
+        <p>You can browse our full product catalogue without registering.</p>
+        <p class="text-sm" data-register-vat-note>*All prices are quoted excluding VAT.</p>
+    </div>
 
     <form method="POST" action="{{ route('register') }}" novalidate class="mt-8 grid gap-4 sm:grid-cols-2" data-register-form>
         @csrf
@@ -12,7 +13,7 @@
         <x-ui.field name="company_name" label="Company name" autocomplete="organization" maxlength="150" class="sm:col-span-2" />
         <x-ui.select name="industry" label="Industry" :options="\App\Domain\Accounts\Industries::all()" placeholder="Choose your industry" class="sm:col-span-2" />
 
-        {{-- The company address. UK only: the store sells to UK customers. --}}
+        {{-- The company address. The postcode is not checked against the UK format (UK and EU customers). --}}
         <x-ui.field name="address_line_one" label="Company address line 1" autocomplete="address-line1" maxlength="255" class="sm:col-span-2" />
         <x-ui.field name="address_line_two" label="Company address line 2" :optional="true" autocomplete="address-line2" maxlength="255" class="sm:col-span-2" />
         <x-ui.field name="address_city" label="Town or city" autocomplete="address-level2" maxlength="100" />

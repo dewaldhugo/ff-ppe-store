@@ -112,6 +112,25 @@ it('saves the company address as the billing address, and the industry on the cu
         ->and($address->contact_email)->toBe('jo@builder.example');
 });
 
+it('shows the trade account heading and the client intro, with the VAT note', function (): void {
+    $html = $this->get(route('register'))->assertOk()->getContent();
+
+    preg_match('#<h1[^>]*>(.*?)</h1>#s', $html, $h1);
+    preg_match('#data-register-intro.*?</div>#s', $html, $intro);
+
+    expect(trim($h1[1] ?? ''))->toBe('Register for a Frontline Trade Account')
+        ->and(substr_count($html, '<h1'))->toBe(1)
+        ->and($intro[0] ?? '')->toContain('Create your trade account to unlock exclusive trade pricing, access real-time stock availability and benefit from the support of a dedicated PPE consultant.')
+        ->toContain('You can browse our full product catalogue without registering.')
+        ->toContain('*All prices are quoted excluding VAT.');
+});
+
+it('does not require a UK postcode: other formats are accepted and kept as typed', function (string $typed): void {
+    $this->post(route('register'), registration(['address_postcode' => $typed]))->assertSessionHasNoErrors();
+
+    expect(User::query()->where('email', 'jo@builder.example')->firstOrFail()->customers()->firstOrFail()->addresses()->sole()->postcode)->toBe($typed);
+})->with(['Irish' => 'D02 X285', 'German' => '10115', 'French' => '75001', 'Dutch' => '1012 AB']);
+
 it('accepts the postcode however it is typed, and leaves the optional address lines empty', function (string $typed, string $stored): void {
     $this->post(route('register'), registration([
         'address_postcode' => $typed, 'address_line_two' => '', 'address_county' => '',
@@ -183,7 +202,6 @@ it('rejects invalid registrations and creates nothing', function (array $overrid
     'no address line 1' => [['address_line_one' => ''], 'address_line_one'],
     'no town or city' => [['address_city' => ''], 'address_city'],
     'no postcode' => [['address_postcode' => ''], 'address_postcode'],
-    'bad postcode' => [['address_postcode' => 'NOT A POSTCODE'], 'address_postcode'],
     'no industry' => [['industry' => ''], 'industry'],
     'unknown industry' => [['industry' => 'pirate-radio'], 'industry'],
     'no email' => [['email' => ''], 'email'],
