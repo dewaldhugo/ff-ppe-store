@@ -50,7 +50,14 @@
             { id: 'heavy-duty-boots', label: 'HEAVY DUTY BOOTS' },
             { id: 'esd-or-antistatic', label: 'ESD OR ANTISTATIC?' }
         ],
-        init() { this.fromHash(); },
+        vertical: false,
+        init() {
+            // From the lg breakpoint the pills are a menu down the left, so the tab list is vertical there.
+            const wide = window.matchMedia('(min-width: 1024px)');
+            this.vertical = wide.matches;
+            wide.addEventListener('change', e => this.vertical = e.matches);
+            this.fromHash();
+        },
         fromHash() {
             const id = location.hash.slice(1);
             if (this.tabs.some(t => t.id === id)) this.tab = id;
@@ -72,13 +79,20 @@
 >
     <x-ui.section-heading title="Technical features" tag="h1" />
 
+    {{-- Menu on the left from lg (stuck in view while the page scrolls); wrapped pills above the content on smaller screens. --}}
+    <div class="mt-8 lg:grid lg:grid-cols-[16rem_minmax(0,1fr)] lg:items-start lg:gap-10" data-tf-layout>
+
     {{-- Tab list --}}
     <div
-        class="mt-8 flex flex-wrap gap-2"
+        class="flex flex-wrap gap-2 lg:sticky lg:top-6 lg:flex-col lg:flex-nowrap"
         role="tablist"
         aria-label="Technical features"
+        :aria-orientation="vertical ? 'vertical' : 'horizontal'"
+        data-tf-menu
         @keydown.arrow-right.prevent="move(1)"
         @keydown.arrow-left.prevent="move(-1)"
+        @keydown.arrow-down.prevent="move(1)"
+        @keydown.arrow-up.prevent="move(-1)"
         @keydown.home.prevent="first()"
         @keydown.end.prevent="last()"
     >
@@ -91,7 +105,7 @@
                 :aria-controls="'panel-' + t.id"
                 :tabindex="tab === t.id ? 0 : -1"
                 @click="select(t.id)"
-                class="rounded-md border px-3 py-2 text-xs font-semibold tracking-wide transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-2 sm:text-sm"
+                class="rounded-md border px-3 py-2 text-xs font-semibold tracking-wide transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue focus-visible:ring-offset-2 sm:text-sm lg:w-full lg:text-left"
                 :class="tab === t.id
                     ? 'border-brand-blue bg-brand-blue text-white'
                     : 'border-border bg-white text-ink'"
@@ -100,7 +114,7 @@
         </template>
     </div>
 
-    <div class="mt-8">
+    <div class="mt-8 min-w-0 lg:mt-0" data-tf-content>
 
         {{-- 1. SAFETY ICONS --}}
         <section id="panel-safety-icons" role="tabpanel" aria-labelledby="tab-safety-icons" tabindex="0" x-show="tab === 'safety-icons'" x-cloak class="tf-prose">
@@ -386,5 +400,6 @@
         </section>
 
     </div>
+    </div>{{-- /data-tf-layout --}}
 </div>
 </x-layouts.storefront>
