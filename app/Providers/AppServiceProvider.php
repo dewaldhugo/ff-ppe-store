@@ -89,7 +89,9 @@ final class AppServiceProvider extends ServiceProvider
             // Invoices, under Sales beside Orders: the list, with the Invoice PDF download.
             ->resources([InvoiceResource::class])
             // The colours of the dashboard tiles. The rest of the admin keeps Lunar's own styling.
-            ->renderHook(PanelsRenderHook::HEAD_END, fn (): View => view('admin.dashboard-tiles')),
+            ->renderHook(PanelsRenderHook::HEAD_END, fn (): View => view('admin.dashboard-tiles'))
+            // The sign-in page's background: a photo under a dark overlay (resources/views/admin/login-background.blade.php).
+            ->renderHook(PanelsRenderHook::HEAD_END, fn (): View => view('admin.login-background')),
         )->register();
 
         $this->app->scoped(CatalogueKeys::class);
