@@ -43,6 +43,8 @@
                 <li><a href="{{ route('contact') }}" class="{{ $link }}">Contact</a></li>
                 <li><a href="{{ route('size-guide') }}" class="{{ $link }}">Size Guide</a></li>
                 <li><a href="{{ route('technical-features') }}" class="{{ $link }}">Technical Features</a></li>
+                <li><a href="{{ route('wear-trials') }}" class="{{ $link }}">Wear Trials</a></li>
+                <li><a href="{{ route('ppe-health-check') }}" class="{{ $link }}">PPE Health Check</a></li>
                 <li><a href="{{ route('delivery') }}" class="{{ $link }}">Delivery Information</a></li>
                 <li><a href="{{ route('returns') }}" class="{{ $link }}">Returns and Refunds</a></li>
             </ul>

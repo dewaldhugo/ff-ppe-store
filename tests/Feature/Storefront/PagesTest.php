@@ -84,7 +84,7 @@ it('uses route names for every link in the header and footer', function (): void
     preg_match_all('#<(?:header|footer).*?</(?:header|footer)>#s', $html, $shell);
     preg_match_all('~href="([^"#]+)"~', implode('', $shell[0]), $hrefs);
 
-    $known = collect(['home', 'shop', 'brands', 'about', 'contact', 'login', 'register', 'account', 'cart', 'checkout', 'terms', 'privacy', 'cookies', 'returns', 'delivery', 'accessibility', 'search', 'size-guide', 'technical-features'])
+    $known = collect(['home', 'shop', 'brands', 'about', 'contact', 'login', 'register', 'account', 'cart', 'checkout', 'terms', 'privacy', 'cookies', 'returns', 'delivery', 'accessibility', 'search', 'size-guide', 'technical-features', 'wear-trials', 'ppe-health-check'])
         ->map(fn (string $name): string => route($name));
 
     $categories = collect(app(CategoryMenu::class)->tree())

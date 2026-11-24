@@ -5,14 +5,13 @@ declare(strict_types=1);
 namespace App\Livewire\Contact;
 
 use App\Domain\Accounts\Industries;
+use App\Domain\Enquiries\StaffMail;
+use App\Domain\Enquiries\StaffMailOutcome;
 use App\Mail\EnquiryReceived;
-use App\Support\Store;
 use Illuminate\Contracts\View\View;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
-use Throwable;
 
 /**
  * The enquiry form on the Contact page. It validates, emails the store and
@@ -94,39 +93,17 @@ final class EnquiryForm extends Component
             return;
         }
 
-        // The same people as a new order (STORE_ORDER_NOTIFICATION_EMAILS), or the enquiry address if none are set.
-        $recipients = Store::enquiryRecipients();
+        // The same people as a new order, one email each (App\Domain\Enquiries\StaffMail).
+        $outcome = app(StaffMail::class)->send(fn (): EnquiryReceived => new EnquiryReceived(
+            name: $data['name'],
+            email: $data['email'],
+            phone: ($data['phone'] ?? '') === '' ? null : $data['phone'],
+            enquirySubject: $data['enquirySubject'],
+            body: $data['body'],
+            industry: ($data['industry'] ?? '') === '' ? null : $data['industry'],
+        ));
 
-        if ($recipients === []) {
-            report(new \RuntimeException('No valid enquiry recipient: set STORE_ORDER_NOTIFICATION_EMAILS, or store.enquiry_email in config/store.php.'));
-            $this->addError('form', 'Sorry, we could not send your enquiry just now. Please try again later.');
-
-            return;
-        }
-
-        // One email for each person, not one with everyone in the To field: nobody sees the others'
-        // addresses, and a failure for one does not stop the rest. The customer is told it failed only if
-        // it reached nobody; each failure is reported.
-        $delivered = 0;
-
-        foreach ($recipients as $recipient) {
-            try {
-                Mail::to($recipient)->send(new EnquiryReceived(
-                    name: $data['name'],
-                    email: $data['email'],
-                    phone: ($data['phone'] ?? '') === '' ? null : $data['phone'],
-                    enquirySubject: $data['enquirySubject'],
-                    body: $data['body'],
-                    industry: ($data['industry'] ?? '') === '' ? null : $data['industry'],
-                ));
-
-                $delivered++;
-            } catch (Throwable $e) {
-                report($e);
-            }
-        }
-
-        if ($delivered === 0) {
+        if ($outcome !== StaffMailOutcome::Sent) {
             $this->addError('form', 'Sorry, we could not send your enquiry just now. Please try again later.');
 
             return;
