@@ -71,6 +71,8 @@ Route::middleware(RedirectTrailingSlash::class)->group(function () use ($policie
 
     Route::view('/size-guide', 'pages.size-guide')->name('size-guide');
     Route::view('/technical-features', 'pages.technical-features')->name('technical-features');
+    Route::view('/wear-trials', 'pages.wear-trials')->name('wear-trials');
+    Route::view('/ppe-health-check', 'pages.ppe-health-check')->name('ppe-health-check');
     Route::view('/about', 'pages.about')->name('about');
     Route::view('/contact', 'pages.contact')->name('contact');
 

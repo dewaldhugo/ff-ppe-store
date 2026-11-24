@@ -87,6 +87,8 @@ Current routes (`routes/web.php`):
 | `product` | `/products/{slug}` | `ProductPage` |
 | `about` | `/about` | view `pages.about` (real content, supplied by the client) |
 | `contact` | `/contact` | view `pages.contact`: enquiry form (Livewire `EnquiryForm`) emailing the same people as a new order (`STORE_ORDER_NOTIFICATION_EMAILS`), or the store email / `STORE_ENQUIRY_EMAIL` while none are set |
+| `wear-trials` | `/wear-trials` | view `pages.wear-trials`: the client's copy (free trials for approved business customers, three steps, Register for visitors who are not signed in) and a request form (Livewire `WearTrials\RequestForm`) emailing the same people as a new order through `App\Domain\Enquiries\StaffMail`, the same sender the Contact form uses |
+| `ppe-health-check` | `/ppe-health-check` | view `pages.ppe-health-check`: the client's landing page copy with an example scorecard, and buttons to the online survey (`config('store.ppe_health_check_url')`, new tab); no form of its own |
 | `login`, `register` | `/login`, `/register` | `LoginController`, `RegisterController` (`guest:web`, noindex; docs/accounts.md) |
 | `password.request`, `password.email`, `password.reset`, `password.store` | `/forgot-password`, `/reset-password/{token}` | `PasswordResetLinkController`, `NewPasswordController` (`guest:web`) |
 | `logout` | POST `/logout` | `LoginController@destroy` (regenerates the session, never invalidates it) |

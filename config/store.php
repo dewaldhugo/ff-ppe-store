@@ -24,6 +24,10 @@ return [
     // address is only the fallback while that list is empty: the store email, unless STORE_ENQUIRY_EMAIL is set.
     'enquiry_email' => env('STORE_ENQUIRY_EMAIL') ?: 'info@frontlinesafetygear.com',
 
+    // The online survey behind the PPE Health Check page. Fixed here, with no environment variable, like the
+    // address and phone number: it is a public link, not a secret.
+    'ppe_health_check_url' => 'https://frontline-general-health-and-safety.scoreapp.com/',
+
     // Who is emailed when a customer places an order: addresses separated by commas, in .env
     // (STORE_ORDER_NOTIFICATION_EMAILS). Empty by default, so nothing is sent until it is set.
     // App\Domain\Orders\NotifyStaffOfNewOrder, docs/cart.md.
