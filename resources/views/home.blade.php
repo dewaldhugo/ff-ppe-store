@@ -1,8 +1,8 @@
 {{-- The home page. Search engines are kept out site-wide by STORE_NOINDEX. --}}
 {{-- Order: hero, industries, trust strip, shop by brand, featured products, spotlight, video, buying guides, testimonials, service strip. --}}
 <x-layouts.storefront
-    title="Safety footwear for UK businesses"
-    description="Safety footwear for UK businesses. S1P, S3 and ESD trainers, shoes and boots. All prices exclude VAT."
+    full-title="Frontline Safety Gear"
+    description="Streamline your site procurement with a single, dependable UK & EU trade supplier. We stock certified head-to-toe PPE, workwear, and safety footwear ready for rapid nationwide dispatch and competitive bulk pricing."
     :full="true"
 >
     <x-home.hero />
