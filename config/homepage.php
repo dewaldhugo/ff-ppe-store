@@ -185,4 +185,21 @@ return [
         ],
     ],
 
+    /*
+     * The PPE Health Check band, above "Shop by brand". The words are the client's, from the Health Check page
+     * (resources/views/pages/ppe-health-check.blade.php); the survey address is config('store.ppe_health_check_url').
+     * The scorecard rows are an illustration, shown as an example: made-up scores, not anyone's result.
+     */
+    'health_check' => [
+        'eyebrow' => 'Free PPE scorecard',
+        'title' => 'Is Your PPE Costing You More Than It Should?',
+        'text' => 'Discover hidden gaps in PPE compliance, workforce protection and supply reliability. Take our free 3-minute assessment and see where your business could reduce risk, save time and cut unnecessary costs.',
+        'note' => 'Free. 12 questions. About 3 minutes.',
+        'example' => [
+            ['label' => 'Compliance and Standards', 'score' => 72],
+            ['label' => 'Selection and Fit', 'score' => 58],
+            ['label' => 'Purchasing and Spend', 'score' => 44],
+        ],
+    ],
+
 ];
