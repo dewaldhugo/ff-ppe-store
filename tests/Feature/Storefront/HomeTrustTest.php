@@ -22,16 +22,24 @@ it('shows the three confirmed claims and no delivery claim', function (): void {
         ->and($strip)->toMatch('#<h2 id="home-trust" class="sr-only">#');
 });
 
-it('sits straight under the hero, before the industries slider and the products, on a centred light grey band with an icon per claim', function (): void {
+it('sits under the industries slider, before the products, on a centred light grey band with an icon per claim', function (): void {
     $html = $this->get(route('home'))->getContent();
     $strip = trustStrip($html);
 
-    expect(strpos($html, 'data-home-trust'))->toBeLessThan(strpos($html, 'data-home-industries'))
+    expect(strpos($html, 'data-home-industries'))->toBeLessThan(strpos($html, 'data-home-trust'))
         ->and(strpos($html, 'data-home-trust'))->toBeLessThan(strpos($html, 'data-home-products'))
         ->and($strip)->toContain('bg-surface-muted')
         ->and($strip)->toContain('sm:justify-center')
         ->and($strip)->toContain('text-[1.05rem]')
         ->and(substr_count($strip, '<svg'))->toBe(3);
+});
+
+it('is hidden on a phone and shown from the sm breakpoint', function (): void {
+    $html = $this->get(route('home'))->getContent();
+
+    preg_match('#<section[^>]*data-home-trust[^>]*>#', $html, $open);
+
+    expect($open[0] ?? '')->toContain('hidden')->toContain('sm:block');
 });
 
 it('sits after the hero', function (): void {

@@ -10,9 +10,9 @@
     ];
 @endphp
 
-{{-- Short claims from config/homepage.php, centred on a light grey band. Empty slots are skipped. --}}
+{{-- Short claims from config/homepage.php, centred on a light grey band. Empty slots are skipped. Hidden on a phone (below the sm breakpoint). --}}
 @if ($claims !== [])
-    <section class="border-b border-border bg-surface-muted" aria-labelledby="home-trust" data-home-trust>
+    <section class="hidden border-y border-border bg-surface-muted sm:block" aria-labelledby="home-trust" data-home-trust>
         <h2 id="home-trust" class="sr-only">Why buy from us</h2>
 
         <x-ui.container class="py-6">

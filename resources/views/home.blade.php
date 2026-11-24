@@ -1,17 +1,11 @@
 {{-- The home page. Search engines are kept out site-wide by STORE_NOINDEX. --}}
-{{-- Order: hero, trust strip, shop by brand, featured products, industries, spotlight, video, buying guides, testimonials, service strip. --}}
+{{-- Order: hero, industries, trust strip, shop by brand, featured products, spotlight, video, buying guides, testimonials, service strip. --}}
 <x-layouts.storefront
     title="Safety footwear for UK businesses"
     description="Safety footwear for UK businesses. S1P, S3 and ESD trainers, shoes and boots. All prices exclude VAT."
     :full="true"
 >
     <x-home.hero />
-
-    <x-home.trust-strip />
-
-    <x-home.brand-strip />
-
-    <x-home.product-picks />
 
     {{-- Industries slider. --}}
     <div class="pt-12 sm:pt-16" data-home-industries>
@@ -33,6 +27,12 @@
             <x-industry-slider />
         </div>
     </div>
+
+    <x-home.trust-strip />
+
+    <x-home.brand-strip />
+
+    <x-home.product-picks />
 
     <x-home.featured-products />
 

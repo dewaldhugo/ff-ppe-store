@@ -397,15 +397,15 @@ it('only picks published products that have an image and a price', function (): 
     expect($picks->pick(100)->modelKeys())->not->toContain($product->id);
 });
 
-it('shows the industry slider after the featured products, with its heading', function (): void {
+it('shows the industry slider straight under the hero, with its heading', function (): void {
     $html = $this->get(route('home'))->assertOk()->getContent();
 
     $hero = (int) strpos($html, 'data-home-hero');
     $industries = (int) strpos($html, 'data-home-industries');
 
     expect($industries)->toBeGreaterThan($hero)
-        ->and($industries)->toBeGreaterThan((int) strpos($html, 'data-home-trust'))
-        ->and($industries)->toBeGreaterThan((int) strpos($html, 'data-home-products'))
+        ->and($industries)->toBeLessThan((int) strpos($html, 'data-home-trust'))
+        ->and($industries)->toBeLessThan((int) strpos($html, 'data-home-products'))
         ->and($html)->toContain('Solutions for every workplace')
         ->and($html)->toContain('aria-label="Industries we supply"')
         ->and(substr_count($html, '<h1'))->toBe(1);
