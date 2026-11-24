@@ -288,14 +288,14 @@ it('gives the spotlight image the left half of the block from lg, and the detail
         ->and(homeSection($html, 'data-home-featured'))->toContain('lg:max-w-none');
 });
 
-it('keeps the order of the page: hero, industries, trust strip, brands, featured products, spotlight, video, guides, testimonials, service strip', function (): void {
+it('keeps the order of the page: hero, industries, trust strip, health check, brands, featured products, spotlight, video, guides, testimonials, service strip', function (): void {
     HomeSpotlights::seed();
     // The brand strip counts products in the search index, so it needs a real one to have a brand to show.
     SearchIndex::use();
 
     $html = $this->get(route('home'))->assertOk()->getContent();
 
-    $order = ['data-home-hero', 'data-home-industries', 'data-home-trust', 'data-home-brands', 'data-home-products', 'data-home-featured', 'data-home-video', 'data-home-guides', 'data-home-testimonials', 'data-home-service'];
+    $order = ['data-home-hero', 'data-home-industries', 'data-home-trust', 'data-home-health-check', 'data-home-brands', 'data-home-products', 'data-home-featured', 'data-home-video', 'data-home-guides', 'data-home-testimonials', 'data-home-service'];
     $positions = array_map(fn (string $marker): int|false => strpos($html, $marker), $order);
 
     // The brand strip needs a brand with products to show: the fixtures have some, so every section is on the page.
