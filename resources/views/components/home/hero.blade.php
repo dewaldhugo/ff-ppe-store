@@ -116,8 +116,7 @@
                     {{-- The primary (dark grey) button, with a thin light border so it stands out against the dark photos. --}}
                     <x-ui.button :href="route('shop')" class="border border-white/40">View all products</x-ui.button>
                     @guest('web')
-                        {{-- Not shown on a phone (below 640px). max-sm:hidden, not hidden + sm:inline-flex: the button's own inline-flex would fight a plain hidden. --}}
-                        <x-ui.button-outline :href="route('register')" :on-dark="true" shape="md" class="max-sm:hidden">Open a trade account</x-ui.button-outline>
+                        <x-ui.button-outline :href="route('register')" :on-dark="true" shape="md">Open a trade account</x-ui.button-outline>
                     @endguest
                 </div>
             </div>

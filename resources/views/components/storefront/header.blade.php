@@ -290,6 +290,8 @@
                         <a href="{{ route('shop') }}" class="block py-3 font-semibold text-ink">Products</a>
 
                         <ul class="mb-3 space-y-1 border-l-2 border-brand-teal pl-4 text-base" data-drawer-categories>
+                            {{-- The same link as the desktop Products menu. --}}
+                            <li><a href="{{ route('shop') }}" class="block py-2 font-semibold text-brand-blue" data-drawer-all-products>All products</a></li>
                             @foreach ($categories as $category)
                                 <li x-data="{ open: false }">
                                     @if ($category['children'] !== [])

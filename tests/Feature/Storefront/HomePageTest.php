@@ -222,14 +222,13 @@ it('shows no video section when the list is empty', function (): void {
     $this->get(route('home'))->assertOk()->assertDontSee('data-home-video', false);
 });
 
-it('hides the second hero button on a phone, and keeps the first', function (): void {
+it('shows both hero buttons on a phone', function (): void {
     $hero = heroSection($this->get(route('home'))->assertOk()->getContent());
 
     preg_match('#<a href="'.preg_quote(route('register'), '#').'"([^>]*)>Open a trade account</a>#', $hero, $second);
     preg_match('#<a href="'.preg_quote(route('shop'), '#').'"([^>]*)>View all products</a>#', $hero, $first);
 
-    expect($second[1] ?? '')->toContain('max-sm:hidden')
-        ->and($first[1] ?? '')->not->toContain('max-sm:hidden')
+    expect($second[1] ?? '')->not->toContain('hidden')
         ->and($first[1] ?? '')->not->toContain('hidden');
 });
 
