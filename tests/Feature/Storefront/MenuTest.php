@@ -174,3 +174,12 @@ it('gives the desktop Products button the same disclosure attributes', function 
         ->and($html)->toContain('id="products-menu"')
         ->and($html)->toContain('x-on:click.outside="mega = false"');
 });
+
+it('gives the mobile drawer the All products link first, like the desktop Products menu', function (): void {
+    $html = $this->get(route('home'))->assertOk()->getContent();
+
+    preg_match('#data-drawer-categories>\s*(?:\{\{.*?\}\}\s*)?<li>(.*?)</li>#s', $html, $first);
+
+    expect($first[1] ?? '')->toContain('href="'.route('shop').'"')->toContain('All products')->toContain('data-drawer-all-products')
+        ->and(productsMenu($html))->toContain('All products');
+});
