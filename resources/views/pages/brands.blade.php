@@ -65,11 +65,11 @@
                         x-bind:class="isSelected(@js($tile->slug)) && 'ring-2 ring-inset ring-brand-blue'"
                         @class([
                             'group relative flex aspect-[3/2] w-full flex-col text-center transition-colors',
-                            'bg-white text-ink hover:bg-surface-muted',
+                            'bg-border/40 text-ink hover:bg-white',
                         ])
                         title="{{ $tile->name }}"
                     >
-                        {{-- Logos sit on white. A logo with its own colour is already a rounded badge in the image, so
+                        {{-- A tile starts a shade darker than the page and turns white on hover (the logos have transparent backgrounds). A logo with its own colour is already a rounded badge in the image, so
                              colour never fills the cell. Brands without a logo show their name as plain text on the same white. --}}
                         <span class="flex min-h-0 flex-1 items-center justify-center p-0.5">
                             @if ($tile->logoUrl !== null)

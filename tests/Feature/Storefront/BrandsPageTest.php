@@ -31,6 +31,19 @@ it('shows every brand with published products as a link to its products', functi
         ->toContain('href="'.route('brands.show', 'safety-jogger').'"');
 });
 
+it('starts each tile a shade darker than the page and turns it white on hover, like the home page strip', function (): void {
+    $html = $this->get(route('brands'))->assertOk()->getContent();
+
+    // The link has its attributes on separate lines, and an Alpine :class before the plain class, so match the plain one.
+    preg_match_all('#<a\s+href="[^"]*/brands/[^"]*"[^>]*?\sclass="([^"]*)"#s', $html, $tiles);
+
+    expect($tiles[1])->not->toBeEmpty();
+
+    foreach ($tiles[1] as $classes) {
+        expect($classes)->toContain('bg-border/40')->toContain('hover:bg-white')->not->toContain('hover:bg-surface-muted');
+    }
+});
+
 it('lists brands with the most products first', function (): void {
     $html = $this->get(route('brands'))->assertOk()->getContent();
 

@@ -22,11 +22,11 @@ it('shows the three confirmed claims and no delivery claim', function (): void {
         ->and($strip)->toMatch('#<h2 id="home-trust" class="sr-only">#');
 });
 
-it('sits under the industries slider, before the category tiles, on a centred light grey band with an icon per claim', function (): void {
+it('sits straight under the hero, before the industries slider and the products, on a centred light grey band with an icon per claim', function (): void {
     $html = $this->get(route('home'))->getContent();
     $strip = trustStrip($html);
 
-    expect(strpos($html, 'data-home-industries'))->toBeLessThan(strpos($html, 'data-home-trust'))
+    expect(strpos($html, 'data-home-trust'))->toBeLessThan(strpos($html, 'data-home-industries'))
         ->and(strpos($html, 'data-home-trust'))->toBeLessThan(strpos($html, 'data-home-products'))
         ->and($strip)->toContain('bg-surface-muted')
         ->and($strip)->toContain('sm:justify-center')
@@ -90,7 +90,7 @@ it('is semantic: one h1, a heading for every section, and lazy images below the 
 });
 
 it('has no hard-coded paths in the home templates', function (): void {
-    foreach (['home.blade.php', 'components/home/hero.blade.php', 'components/home/product-picks.blade.php', 'components/home/standard-chips.blade.php', 'components/home/trust-strip.blade.php'] as $file) {
+    foreach (['home.blade.php', 'components/home/hero.blade.php', 'components/home/product-picks.blade.php', 'components/home/standard-chips.blade.php', 'components/home/trust-strip.blade.php', 'components/home/brand-strip.blade.php', 'components/home/guides.blade.php'] as $file) {
         expect((string) file_get_contents(resource_path('views/'.$file)))->not->toMatch('#href="/#');
     }
 });

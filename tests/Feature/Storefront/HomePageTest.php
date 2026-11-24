@@ -159,8 +159,9 @@ it('shows one autoplaying, muted video across the full width of the container, a
         ->and($video[0])->toContain('w-full')
         // The width of the page container (the same one as the sections around it), not the screen.
         ->and($section[0])->toContain('max-w-7xl')
-        // Directly above the Featured products section.
-        ->and(strpos($html, 'data-home-video'))->toBeLessThan(strpos($html, 'data-home-products'));
+        // Below the Featured products and the Product Spotlight, above the buying guides.
+        ->and(strpos($html, 'data-home-products'))->toBeLessThan(strpos($html, 'data-home-video'))
+        ->and(strpos($html, 'data-home-video'))->toBeLessThan(strpos($html, 'data-home-guides'));
 });
 
 it('has the nine footwear and technology videos, each a distinct https mp4 with a label', function (): void {
@@ -320,10 +321,11 @@ it('gives the accent button a teal fill with navy text that meets AA', function 
     expect($button)->toContain('bg-brand-teal text-brand-navy');
 });
 
-it('claims no testimonials or client logos on the home page', function (): void {
+// The client supplied customer testimonials (HomeTestimonialsTest), so only a client logo wall is still not claimed.
+it('claims no client logos on the home page', function (): void {
     $html = strtolower($this->get(route('home'))->getContent());
 
-    expect($html)->not->toContain('testimonial')->and($html)->not->toContain('trusted by');
+    expect($html)->not->toContain('trusted by')->and($html)->not->toContain('our clients');
 });
 
 function productPicksOf(string $html): string
@@ -395,14 +397,15 @@ it('only picks published products that have an image and a price', function (): 
     expect($picks->pick(100)->modelKeys())->not->toContain($product->id);
 });
 
-it('shows the industry slider under the hero, with its heading', function (): void {
+it('shows the industry slider after the featured products, with its heading', function (): void {
     $html = $this->get(route('home'))->assertOk()->getContent();
 
     $hero = (int) strpos($html, 'data-home-hero');
     $industries = (int) strpos($html, 'data-home-industries');
 
     expect($industries)->toBeGreaterThan($hero)
-        ->and($industries)->toBeLessThan((int) strpos($html, 'data-home-trust'))
+        ->and($industries)->toBeGreaterThan((int) strpos($html, 'data-home-trust'))
+        ->and($industries)->toBeGreaterThan((int) strpos($html, 'data-home-products'))
         ->and($html)->toContain('Solutions for every workplace')
         ->and($html)->toContain('aria-label="Industries we supply"')
         ->and(substr_count($html, '<h1'))->toBe(1);
@@ -550,7 +553,8 @@ it('styles the industries heading like the others, 20% larger, with a left align
     $html = $this->get(route('home'))->assertOk()->getContent();
 
     $start = (int) strpos($html, '[&_h2]:text-[1.8rem]');
-    $block = substr($html, $start, (int) strpos($html, '</h3>', $start) - $start);
+    // From the heading wrapper to the industries slider.
+    $block = substr($html, $start, (int) strpos($html, 'data-industry-row', $start) - $start);
 
     expect($start)->toBeGreaterThan(0)
         ->and($block)->toContain('sm:[&_h2]:text-[2.25rem]')
@@ -560,13 +564,24 @@ it('styles the industries heading like the others, 20% larger, with a left align
         ->and($block)->not->toContain('mx-auto');
 });
 
-it('puts an intro h3 under the industries heading and a light grey band above the footer', function (): void {
+it('puts a three paragraph intro under the industries heading and a light grey band above the footer', function (): void {
     $html = $this->get(route('home'))->assertOk()->getContent();
 
-    preg_match('#<section[^>]*data-home-service[^>]*>#', $html, $service);
     preg_match('#<section class="[^"]*"[^>]*data-home-service#', $html, $serviceClass);
+    preg_match('#Solutions for every workplace</h2>.*?(<div[^>]*data-industries-intro[^>]*>)(.*?)</div>#s', $html, $introMatch);
+    $intro = [1 => $introMatch[2] ?? ''];
+    preg_match_all('#<p>(.*?)</p>#s', $intro[1], $paragraphs);
 
-    expect($html)->toMatch('#Solutions for every workplace</h2>.*?<h3[^>]*data-industries-intro[^>]*>Streamline your site procurement with a single, dependable UK trade supplier\. We stock certified head-to-toe PPE, workwear, and safety footwear ready for rapid nationwide dispatch and competitive bulk pricing\.</h3>#s')
+    // Fills the width of the container (no max-width cap), and is at least 30% shorter than the first draft (129 words, now 88).
+    expect($introMatch[1] ?? '')->toContain('w-full')->not->toMatch('/max-w-/')
+        ->and(str_word_count(strip_tags($intro[1])))->toBeLessThanOrEqual(90);
+
+    // The intro is paragraphs, not a long heading, and the first is the original lead, word for word.
+    expect($paragraphs[1])->toHaveCount(3)
+        ->and($paragraphs[1][0])->toBe('Streamline your site procurement with a single, dependable UK trade supplier. We stock certified head-to-toe PPE, workwear, and safety footwear ready for rapid nationwide dispatch and competitive bulk pricing.')
+        ->and($paragraphs[1][1])->toContain('S1P and S3')->toContain('EN ISO 20345')->toContain('ESD and metal-free')
+        ->and($paragraphs[1][2])->toContain('size guide')->toContain('technical features guide')
+        ->and($intro[1])->not->toContain('<h3')->not->toContain('—')->not->toContain('–')
         ->and($serviceClass[0] ?? '')->toContain('bg-surface-muted');
 });
 

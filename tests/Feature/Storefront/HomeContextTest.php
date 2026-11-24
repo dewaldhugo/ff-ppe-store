@@ -9,6 +9,7 @@ use Lunar\FieldTypes\Text;
 use Lunar\FieldTypes\TranslatedText;
 use Tests\Support\CatalogueFactory;
 use Tests\Support\HomeSpotlights;
+use Tests\Support\SearchIndex;
 
 // The video section and the Product Spotlight on the home page used to be a bare video and a bare poster. They now
 // have context: the video a heading, an intro, a caption and a link, and the Spotlight a feature block with the brand,
@@ -274,15 +275,32 @@ it('shows the price to a signed-in customer only, like every other price', funct
     expect($member)->toContain('data-price')->toContain('£50.00')->toContain('ex VAT');
 });
 
-it('keeps the order of the page: video, featured products, spotlight, service strip', function (): void {
+it('gives the spotlight image the left half of the block from lg, and the details the right half', function (): void {
     HomeSpotlights::seed();
 
     $html = $this->get(route('home'))->assertOk()->getContent();
 
-    expect(strpos($html, 'data-home-industries'))->toBeLessThan(strpos($html, 'data-home-video'))
-        ->and(strpos($html, 'data-home-video'))->toBeLessThan(strpos($html, 'data-home-products'))
-        ->and(strpos($html, 'data-home-products'))->toBeLessThan(strpos($html, 'data-home-featured'))
-        ->and(strpos($html, 'data-home-featured'))->toBeLessThan(strpos($html, 'data-home-service'));
+    preg_match('#<div[^>]*data-spotlight>#', $html, $block);
+
+    // Two equal columns (the image column was a fixed 24rem), and the image fills its column on wide screens.
+    expect($block[0] ?? '')->toContain('lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]')->not->toContain('24rem')
+        ->and(strpos($html, 'data-featured-image'))->toBeLessThan(strpos($html, 'data-spotlight-brand'))
+        ->and(homeSection($html, 'data-home-featured'))->toContain('lg:max-w-none');
+});
+
+it('keeps the order of the page: hero, trust strip, brands, featured products, industries, spotlight, video, guides, testimonials, service strip', function (): void {
+    HomeSpotlights::seed();
+    // The brand strip counts products in the search index, so it needs a real one to have a brand to show.
+    SearchIndex::use();
+
+    $html = $this->get(route('home'))->assertOk()->getContent();
+
+    $order = ['data-home-hero', 'data-home-trust', 'data-home-brands', 'data-home-products', 'data-home-industries', 'data-home-featured', 'data-home-video', 'data-home-guides', 'data-home-testimonials', 'data-home-service'];
+    $positions = array_map(fn (string $marker): int|false => strpos($html, $marker), $order);
+
+    // The brand strip needs a brand with products to show: the fixtures have some, so every section is on the page.
+    expect($positions)->not->toContain(false)
+        ->and($positions)->toBe(collect($positions)->sort()->values()->all());
 });
 
 it('has the three campaign images on disk, each with a slug and alt text, and no two alike', function (): void {

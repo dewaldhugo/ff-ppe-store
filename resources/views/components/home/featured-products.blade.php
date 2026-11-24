@@ -25,7 +25,7 @@
         <x-ui.container>
             <x-ui.section-heading id="home-featured" title="Product Spotlight" />
 
-            <div class="mt-8 grid items-center gap-8 rounded-lg border border-border p-5 sm:p-8 lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)] lg:gap-12" data-spotlight>
+            <div class="mt-8 grid items-center gap-8 rounded-lg border border-border p-5 sm:p-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-12" data-spotlight>
                 <figure class="mx-auto w-full max-w-sm lg:max-w-none">
                     <picture>
                         @if ($spotlight['webp'])
