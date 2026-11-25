@@ -51,7 +51,7 @@
     <div class="mx-auto max-w-4xl print:max-w-none" data-invoice>
         <p class="mb-4 flex flex-wrap items-center justify-between gap-3 print:hidden">
             <a href="{{ route('account.invoices') }}" class="text-sm font-semibold text-brand-blue underline">&larr; All invoices</a>
-            <button type="button" class="rounded-md bg-brand-blue px-5 py-2 text-sm font-semibold text-white hover:bg-brand-navy" x-data x-on:click="window.print()" data-print-invoice>Print or save as PDF</button>
+            <button type="button" class="rounded-md bg-brand-teal px-5 py-2 text-sm font-semibold text-brand-navy hover:bg-brand-navy hover:text-white" x-data x-on:click="window.print()" data-print-invoice>Print or save as PDF</button>
         </p>
 
         <article class="rounded border border-border bg-white p-6 sm:p-10 print:border-0 print:p-[11mm]">

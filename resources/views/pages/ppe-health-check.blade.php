@@ -9,13 +9,6 @@
 @php
     $surveyUrl = (string) config('store.ppe_health_check_url');
 
-    // The example scorecard. Purchasing and Spend is the lowest, as the card says.
-    $example = [
-        ['label' => 'Compliance and Standards', 'score' => 72],
-        ['label' => 'Selection and Fit', 'score' => 58],
-        ['label' => 'Purchasing and Spend', 'score' => 44],
-    ];
-
     $areas = [
         ['title' => 'Compliance and Standards', 'text' => 'How PPE is matched to documented risk assessments, and how certification and standards are checked and recorded.'],
         ['title' => 'Selection and Fit', 'text' => 'How you gather wearer feedback and make sure sizing and fit work across your whole workforce.'],
@@ -53,27 +46,8 @@
                 <p class="mt-4 max-w-xl text-xs text-white/90">We will use your details to give you your results and may contact you about PPE. <a href="{{ route('privacy') }}" class="underline">Read our privacy policy</a>.</p>
             </div>
 
-            {{-- An illustration of the result, not a real one. --}}
-            <div class="rounded-xl bg-white p-6 text-ink shadow-lg" data-health-check-example>
-                <p class="text-xs font-semibold uppercase tracking-widest text-ink-muted">Example report</p>
-                <div class="mt-3 flex items-center justify-between gap-4">
-                    <p class="text-xl font-semibold">Your PPE scorecard</p>
-                    <span class="rounded-full bg-surface-muted px-3 py-1 text-xs font-semibold text-brand-blue">Developing</span>
-                </div>
-
-                <ul class="mt-5 space-y-4">
-                    @foreach ($example as $row)
-                        <li>
-                            <p class="text-sm font-semibold">{{ $row['label'] }}</p>
-                            <div class="mt-1.5 h-2 w-full rounded-full bg-border" role="meter" aria-label="{{ $row['label'] }}, example score" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ $row['score'] }}">
-                                <div class="h-2 rounded-full bg-brand-blue" style="width: {{ $row['score'] }}%"></div>
-                            </div>
-                        </li>
-                    @endforeach
-                </ul>
-
-                <p class="mt-5 border-t border-border pt-4 text-sm text-ink-muted">Lowest-scoring section: <span class="font-semibold text-ink">Purchasing and Spend</span></p>
-            </div>
+            {{-- An illustration of the result, not a real one (the same card as the home page band). --}}
+            <x-storefront.health-check-example data-health-check-example />
         </x-ui.container>
     </section>
 

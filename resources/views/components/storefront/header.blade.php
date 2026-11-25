@@ -8,11 +8,16 @@
         ['route' => 'about', 'label' => 'About', 'active' => request()->routeIs('about')],
         ['route' => 'contact', 'label' => 'Contact', 'active' => request()->routeIs('contact')],
     ];
-    // The page you are on gets brand-blue text and a brand-teal underline. Every link reserves the same
-    // 4px border, so nothing shifts when the current one changes.
-    $navLink = fn (bool $active): string => 'inline-block border-b-4 py-3 font-semibold hover:text-brand-blue '
-        .($active ? 'border-brand-teal text-brand-blue' : 'border-transparent text-ink');
+    // The menu bar is brand-teal, so the links are brand-navy (8:1; white on teal fails AA). The page you are on
+    // gets a solid navy underline, and a hovered link a faint one. Every link reserves the same 4px border, so nothing shifts when the current one changes.
+    // The underline sits 4px under the text (pb-1) and 8px above the bar's bottom edge (the bar's pb-2), which with
+    // the 12px above the text keeps the bar the height it was with py-3 links (12 + text + 12 + 4).
+    $navLink = fn (bool $active): string => 'inline-block border-b-4 pb-1 pt-3 font-semibold text-brand-navy '
+        .($active ? 'border-brand-navy' : 'border-transparent hover:border-brand-navy/30');
     $productsActive = request()->routeIs('shop', 'category', 'product');
+    // A faint vertical hairline in the gap before every main menu item but the first: 1px wide, 1rem tall, centred on
+    // the text, navy at 25% so it shows on the teal menu bar without adding weight.
+    $navDivider = 'relative before:absolute before:-left-4 before:top-[calc(50%+2px)] before:h-4 before:w-px before:-translate-y-1/2 before:bg-brand-navy/25';
     $drawerLink = fn (bool $active): string => 'block py-3 font-semibold '.($active ? 'text-brand-blue' : 'text-ink');
     $phoneHref = \App\Support\Store::phoneHref();
     $emailHref = \App\Support\Store::emailHref();
@@ -183,14 +188,15 @@
     </div>
 
     {{-- Main navigation. Below the lg breakpoint it is the drawer; without JavaScript the plain links show at every size. --}}
-    <nav aria-label="Main" class="relative hidden border-b border-border bg-surface-nav no-js:block lg:block">
-        <x-ui.container>
+    <nav aria-label="Main" class="relative hidden border-b border-brand-navy/15 bg-brand-teal no-js:block lg:block">
+        {{-- pb-2 keeps the current page's underline 0.5rem clear of the bar's soft bottom border. --}}
+        <x-ui.container class="pb-2">
             <ul class="flex flex-wrap items-center gap-x-8">
                 <li>
                     <a href="{{ route('home') }}" class="{{ $navLink(request()->routeIs('home')) }}" @if (request()->routeIs('home')) aria-current="page" @endif>Home</a>
                 </li>
 
-                <li>
+                <li class="{{ $navDivider }}">
                     <button
                         type="button"
                         class="no-js:hidden {{ $navLink($productsActive) }} inline-flex items-center gap-1"
@@ -205,11 +211,11 @@
                         <svg aria-hidden="true" class="h-4 w-4 transition-transform" x-bind:class="mega && 'rotate-180'" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6"/></svg>
                     </button>
                     {{-- Only without JavaScript. It must not share $navLink: its inline-block would override hidden. --}}
-                    <a href="{{ route('shop') }}" class="hidden no-js:inline-block border-b-4 py-3 font-semibold hover:text-brand-blue {{ $productsActive ? 'border-brand-teal text-brand-blue' : 'border-transparent text-ink' }}" data-products-link>Products</a>
+                    <a href="{{ route('shop') }}" class="hidden no-js:inline-block border-b-4 pb-1 pt-3 font-semibold text-brand-navy {{ $productsActive ? 'border-brand-navy' : 'border-transparent hover:border-brand-navy/30' }}" data-products-link>Products</a>
                 </li>
 
                 @foreach ($links as $link)
-                    <li>
+                    <li class="{{ $navDivider }}">
                         <a href="{{ route($link['route']) }}" class="{{ $navLink($link['active']) }}" @if ($link['active']) aria-current="page" @endif>{{ $link['label'] }}</a>
                     </li>
                 @endforeach
