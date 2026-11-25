@@ -304,6 +304,35 @@ it('puts only the safety shoes and safety boots of Safety Jogger on the baseline
     expect($mains()->every(fn ($image): bool => $image->getCustomProperty('optimised') === 'webp-1200-q85-base11-side4-ar100'))->toBeTrue();
 });
 
+it('limits a run to the categories asked for, and does not even look at other products', function (): void {
+    importBestboot();
+
+    // BESTBOOT is a boot: another category queues nothing.
+    $this->artisan('vendorsync:images', ['vendor' => 'SJ', '--category' => 'safety-trainers'])
+        ->expectsOutputToContain('Queued 0 image jobs for SJ in safety-trainers.')
+        ->assertSuccessful();
+
+    // Its own categories queue it, one or both.
+    $this->artisan('vendorsync:images', ['vendor' => 'SJ', '--category' => 'safety-shoes, safety-boots'])
+        ->expectsOutputToContain('Queued 1 image job for SJ in safety-shoes, safety-boots.')
+        ->assertSuccessful();
+
+    // --aligned is the categories whose main images are put on the baseline.
+    $this->artisan('vendorsync:images', ['vendor' => 'SJ', '--aligned' => true])
+        ->expectsOutputToContain('Queued 1 image job for SJ in safety-shoes, safety-boots.')
+        ->assertSuccessful();
+
+    // With --refresh the same limit applies.
+    $this->artisan('vendorsync:images', ['vendor' => 'SJ', '--refresh' => true, '--category' => 'safety-trainers'])
+        ->expectsOutputToContain('Queued 0 image jobs')
+        ->assertSuccessful();
+
+    // A handle that does not exist is refused before anything is queued.
+    $this->artisan('vendorsync:images', ['vendor' => 'SJ', '--category' => 'safety-bots'])
+        ->expectsOutputToContain("There is no category with the handle 'safety-bots'")
+        ->assertFailed();
+});
+
 it('does not fetch an image that is already stored as WebP again', function (): void {
     $link = importBestboot();
 

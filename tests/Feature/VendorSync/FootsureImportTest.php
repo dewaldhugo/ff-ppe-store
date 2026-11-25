@@ -180,6 +180,33 @@ it('keeps products draft until they have an image, then publishes them', functio
         ->and((bool) $product->variants->first()->images->first()->pivot->primary)->toBeTrue();
 });
 
+it('puts the main images of Footsure safety shoes and boots on the baseline, and no others', function (): void {
+    VendorSync::footsureFile();
+    VendorSync::import('FS');
+    VendorSync::syncImages(['345']);
+
+    $product = VendorSync::product('FS', '345');
+    $inList = $product->collections->pluck('id')->intersect([
+        CatalogueKeys::collection('safety-shoes')->id,
+        CatalogueKeys::collection('safety-boots')->id,
+    ])->isNotEmpty();
+
+    $markers = fn () => $product->refresh()->getMedia('images')->mapWithKeys(fn ($image): array => [$image->id => [$image->getCustomProperty('role'), $image->getCustomProperty('optimised')]])->values()->all();
+
+    foreach ($markers() as [$role, $marker]) {
+        // A detail picture is never aligned; a main picture is when the product is a safety shoe or boot.
+        expect($marker)->toBe($role === 'main' && $inList ? 'webp-1200-q85-base11-side4-ar100' : 'webp-1200-q85');
+    }
+
+    // Another category list changes only the main pictures: with every category, this product's main picture is aligned.
+    config(['vendorsync.images.align.collections' => []]);
+    VendorSync::syncImages(['345']);
+
+    foreach ($markers() as [$role, $marker]) {
+        expect($marker)->toBe($role === 'main' ? 'webp-1200-q85-base11-side4-ar100' : 'webp-1200-q85');
+    }
+});
+
 it('changes no rows when the same file is imported twice', function (): void {
     VendorSync::footsureFile();
     VendorSync::import('FS');
