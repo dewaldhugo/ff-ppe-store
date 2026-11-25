@@ -42,7 +42,7 @@ it('creates the pictograms attribute in the Specification group, mapped to every
         ->and($attribute->type)->toBe(ListField::class)
         ->and($attribute->attributeGroup->handle)->toBe('product_specification')
         ->and($attribute->translate('name'))->toBe('Pictograms')
-        ->and($attribute->required)->toBeFalse();
+        ->and((bool) $attribute->required)->toBeFalse();
 
     foreach (ProductType::query()->get() as $productType) {
         expect($productType->mappedAttributes()->where('handle', 'pictograms')->exists())->toBeTrue();

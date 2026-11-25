@@ -53,8 +53,10 @@ it('writes nothing for a logo with nothing visible in it', function (): void {
 });
 
 it('has a trimmed copy of every brand logo, much smaller than the canvas it came from', function (): void {
-    foreach (glob(public_path('images/brands/*.png')) as $logo) {
-        $copy = public_path('images/brands/trimmed/'.basename($logo));
+    $public = dirname(__DIR__, 2).'/public';
+
+    foreach (glob($public.'/images/brands/*.png') as $logo) {
+        $copy = $public.'/images/brands/trimmed/'.basename($logo);
 
         expect(is_file($copy))->toBeTrue(basename($logo).' has no trimmed copy: run php artisan catalogue:trim-brand-logos');
 

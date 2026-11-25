@@ -181,7 +181,8 @@ it('gives the mobile drawer the All products link first, like the desktop Produc
     preg_match('#data-drawer-categories>\s*(?:\{\{.*?\}\}\s*)?<li>(.*?)</li>#s', $html, $first);
 
     expect($first[1] ?? '')->toContain('href="'.route('shop').'"')->toContain('All products')->toContain('data-drawer-all-products')
-        ->and(productsMenu($html))->toContain('All products');
+        // The desktop Products panel has the same link, above its category list.
+        ->and($html)->toMatch('#id="products-menu".*?All products#s');
 });
 
 it('separates the main menu items with faint hairline dividers, none before the first', function (): void {

@@ -53,7 +53,7 @@ it('reads every identity value from config, with TBC as the default', function (
         return array_keys($file);
     })();
 
-    expect($defaults)->toBe(['name', 'legal_name', 'company_number', 'registered_office', 'address', 'vat_number', 'phone', 'email', 'enquiry_email', 'order_notification_emails', 'invoice', 'bank', 'delivery', 'returns', 'noindex', 'require_email_verification'])
+    expect($defaults)->toBe(['name', 'legal_name', 'company_number', 'registered_office', 'address', 'vat_number', 'phone', 'email', 'enquiry_email', 'ppe_health_check_url', 'order_notification_emails', 'invoice', 'bank', 'delivery', 'returns', 'markets', 'eu_delivery', 'noindex', 'require_email_verification'])
         ->and(file_get_contents(config_path('store.php')))->not->toContain("'Frontline Safety Gear'");
 
     $example = (string) file_get_contents(base_path('.env.example'));

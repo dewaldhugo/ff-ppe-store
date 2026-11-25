@@ -9,7 +9,7 @@
 @endphp
 
 {{-- Service claims with icons, the last section of the home page: a brand-teal band with navy text and icons (8:1), so it stands out between the page and the charcoal footer. --}}
-<section class="bg-brand-teal" aria-labelledby="home-service" data-home-service>
+<section class="bg-brand-teal text-brand-navy" aria-labelledby="home-service" data-home-service>
     <h2 id="home-service" class="sr-only">Our service</h2>
 
     <ul class="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-4 py-8 sm:grid-cols-2 lg:grid-cols-4 lg:px-8">

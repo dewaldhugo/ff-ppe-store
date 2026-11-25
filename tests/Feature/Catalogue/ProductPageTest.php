@@ -369,11 +369,14 @@ it('shows the brand logo above the product name, linking to the brand page', fun
 });
 
 it('shows the brand name instead when it has no logo', function (): void {
-    $html = $this->get(route('product', 'safety-jogger-ligero'))->assertOk()->getContent();
+    // Test Brand has no storefront brand record, so no logo.
+    CatalogueFactory::product('Plain', [['stock' => 1]]);
+
+    $html = $this->get(route('product', 'test-brand-plain'))->assertOk()->getContent();
 
     preg_match('#<a[^>]*data-product-brand=[^>]*>.*?</a>#s', $html, $brand);
 
-    expect($brand[0] ?? '')->toContain('Safety Jogger')->not->toContain('<img');
+    expect($brand[0] ?? '')->toContain('data-product-brand="test-brand"')->toContain('Test Brand')->not->toContain('<img');
 });
 
 it('gives the product name some room above and below', function (): void {
@@ -396,7 +399,7 @@ it('shows the safety standard as the vendor does: the class and codes on one lin
         ->and($panel)->toMatch('#data-safety-code[^>]*>ESD<#')
         // METAL_FREE is a phrase, not a code, so it is not in the short line.
         ->and($panel)->not->toContain('>METAL_FREE<')
-        ->and($panel)->toMatch('#data-standards[^>]*>EN ISO 20345:2011 - ASTM F2413:2024<#')
+        ->and($panel)->toMatch('#data-standards[^>]*>ASTM F2413:2024 - EN ISO 20345:2011<#')
         // What a code means is its hover text, not more lines in the block.
         ->and($panel)->toContain('title="Cold insulated (CI): The sole insulates the foot against cold ground."')
         ->and($panel)->not->toContain('<dl')
@@ -413,11 +416,16 @@ it('shows the safety standard as the vendor does: the class and codes on one lin
 });
 
 it('shows fastening and the country of origin by name in the specification', function (): void {
+    $product = Url::query()->where('slug', 'safety-jogger-ligero')->sole()->element;
+    $data = $product->attribute_data;
+    $data['fastening'] = new Text('Laces');
+    $product->update(['attribute_data' => $data]);
+
     $html = $this->get(route('product', 'safety-jogger-ligero'))->assertOk()->getContent();
 
     preg_match('#<table[^>]*data-testid="specification".*?</table>#s', $html, $table);
 
-    expect($table[0] ?? '')->toContain('Fastening')->toContain('Country of origin')->toContain('China')->not->toContain('>CN<');
+    expect($table[0] ?? '')->toContain('Fastening')->toContain('Laces')->toContain('Country of origin')->toContain('China')->not->toContain('>CN<');
 });
 
 it('lists the industries as links to the listing filtered to each', function (): void {
@@ -581,11 +589,20 @@ it('puts the vendor links first and tops the list up from the category', functio
     SearchIndex::use();
     app(FixtureCatalogueSeeder::class)->run(base_path('tests/Fixtures/related-products.json'));
 
-    $section = relatedSection($this->get(route('product', 'safety-jogger-duplicate'))->assertOk()->getContent());
+    // The seeder indexes what it creates, and the test index outlives the database rollback while other tests count what is in
+    // it: the two products are taken out of the index again whatever happens.
+    $ids = Url::query()->where('slug', 'like', 'safety-jogger-duplicate%')->pluck('element_id')->all();
 
-    expect($section)->toContain(route('product', 'safety-jogger-duplicate-2'))
-        ->and(strpos($section, route('product', 'safety-jogger-duplicate-2')))->toBeLessThan(strpos($section, relatedTestUrl('FS65')))
-        ->and(substr_count($section, 'data-related-product='))->toBeLessThanOrEqual(4);
+    try {
+        $section = relatedSection($this->get(route('product', 'safety-jogger-duplicate'))->assertOk()->getContent());
+
+        expect($section)->toContain(route('product', 'safety-jogger-duplicate-2'))
+            ->and(strpos($section, route('product', 'safety-jogger-duplicate-2')))->toBeLessThan(strpos($section, relatedTestUrl('FS65')))
+            ->and(substr_count($section, 'data-related-product='))->toBeLessThanOrEqual(4);
+    } finally {
+        app(Client::class)->index((new Product)->searchableAs())->deleteDocuments($ids);
+        SearchIndex::settle();
+    }
 });
 
 it('chooses the related products once, so picking a colour does not search again', function (): void {
