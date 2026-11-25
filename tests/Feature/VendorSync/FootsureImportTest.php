@@ -195,7 +195,7 @@ it('puts the main images of Footsure safety shoes and boots on the baseline, and
 
     foreach ($markers() as [$role, $marker]) {
         // A detail picture is never aligned; a main picture is when the product is a safety shoe or boot.
-        expect($marker)->toBe($role === 'main' && $inList ? 'webp-1200-q85-base11-side4-ar100' : 'webp-1200-q85');
+        expect($marker)->toBe($role === 'main' && $inList ? 'webp-1200-q85-base11-side4-ar100-grow' : 'webp-1200-q85');
     }
 
     // Another category list changes only the main pictures: with every category, this product's main picture is aligned.
@@ -203,7 +203,7 @@ it('puts the main images of Footsure safety shoes and boots on the baseline, and
     VendorSync::syncImages(['345']);
 
     foreach ($markers() as [$role, $marker]) {
-        expect($marker)->toBe($role === 'main' ? 'webp-1200-q85-base11-side4-ar100' : 'webp-1200-q85');
+        expect($marker)->toBe($role === 'main' ? 'webp-1200-q85-base11-side4-ar100-grow' : 'webp-1200-q85');
     }
 });
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\VendorSync\Images;
 
+use App\Domain\Catalogue\Collections\CategoryTree;
 use App\Domain\VendorSync\Contracts\VendorMapper;
 use App\Domain\VendorSync\Data\NormalisedImage;
 use App\Domain\VendorSync\Data\RawRecord;
@@ -549,7 +550,7 @@ final readonly class ProductImageSync
     /**
      * Whether the main images of this product are put on the common baseline: its vendor has it switched on
      * (`vendorsync.images.align.vendors`) and the product is in one of the categories it is limited to
-     * (`vendorsync.images.align.collections`, the safety shoes and safety boots; an empty list means every category).
+     * (`vendorsync.images.align.collections`, safety footwear; a top level category means all the categories under it, and an empty list means every category).
      *
      * @param  list<string>  $collections  The product's category handles.
      */
@@ -561,7 +562,10 @@ final readonly class ProductImageSync
 
         $limit = array_values(array_map(strval(...), (array) config('vendorsync.images.align.collections', [])));
 
-        return $limit === [] || array_intersect($collections, $limit) !== [];
+        // A top level category such as safety-footwear means all the leaf categories under it: products are in leaves only.
+        $leaves = array_values(array_unique(array_merge(...array_map(CategoryTree::leavesUnder(...), $limit ?: ['']))));
+
+        return $limit === [] || array_intersect($collections, $leaves) !== [];
     }
 
     /**

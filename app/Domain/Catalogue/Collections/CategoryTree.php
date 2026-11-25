@@ -126,6 +126,52 @@ final class CategoryTree
     /** The two top-level categories whose products are sized in UK shoe sizes. */
     public const array FOOTWEAR_TOPS = ['safety-footwear', 'non-safety-footwear'];
 
+    /**
+     * The leaf categories under a handle: the handle itself when it is a leaf, otherwise every leaf below it, at any depth. A
+     * product belongs to a leaf only (never to a top level), so this is what a "top level" category means for products.
+     * An unknown handle gives an empty list.
+     *
+     * @return list<string>
+     */
+    public static function leavesUnder(string $handle): array
+    {
+        $find = function (array $tree) use (&$find, $handle): ?array {
+            foreach ($tree as $key => [, $children]) {
+                if ($key === $handle) {
+                    return [$key => [null, $children]];
+                }
+
+                if (($found = $find($children)) !== null) {
+                    return $found;
+                }
+            }
+
+            return null;
+        };
+
+        $node = $find(self::GROUPS[self::CATEGORIES][1]);
+
+        if ($node === null) {
+            return [];
+        }
+
+        $collect = function (string $key, array $children) use (&$collect): array {
+            if ($children === []) {
+                return [$key];
+            }
+
+            $leaves = [];
+
+            foreach ($children as $childKey => [, $grandChildren]) {
+                array_push($leaves, ...$collect($childKey, $grandChildren));
+            }
+
+            return $leaves;
+        };
+
+        return $collect($handle, $node[$handle][1]);
+    }
+
     public static function isFootwear(string $leafHandle): bool
     {
         return in_array(self::parents()[$leafHandle] ?? null, self::FOOTWEAR_TOPS, true);

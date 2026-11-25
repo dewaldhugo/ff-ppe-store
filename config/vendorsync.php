@@ -444,9 +444,10 @@ return [
         // would then leave less than `top` above or less than `side` of the width at either side. Safety Jogger frames its shoes and boots differently, so it is on.
         'align' => [
             'vendors' => ['SJ', 'FS'],
-            // Only products in these categories (contract handles); an empty list is every category. Safety shoes and safety boots
-            // of either vendor, where the framing differs between shoes and boots; everything else is left as it comes.
-            'collections' => ['safety-shoes', 'safety-boots'],
+            // Only products in these categories (contract handles); an empty list is every category. A top level category
+            // means all the categories under it (products are in the leaves), so safety-footwear is safety boots, shoes, trainers,
+            // wellingtons, occupational and metal-free footwear, of either vendor; everything else is left as it comes.
+            'collections' => ['safety-footwear'],
             'bottom' => 0.11,
             'top' => 0.02,
             'side' => 0.04,
