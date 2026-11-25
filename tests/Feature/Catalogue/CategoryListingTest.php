@@ -320,3 +320,14 @@ it('removes one filter from its chip, all of them, the price range and in stock 
         ->assertSet('industry', [])
         ->assertDontSee('data-active-filters', false);
 });
+
+it('puts the card picture on the spotlight backdrop', function (): void {
+    $html = $this->get(route('category', 'safety-footwear'))->assertOk()->getContent();
+
+    expect($html)->toContain('card-backdrop');
+
+    $css = (string) file_get_contents(resource_path('css/app.css'));
+
+    // A radial spotlight, and the hover turns to the menu's light teal.
+    expect($css)->toContain('.card-backdrop')->toContain('radial-gradient')->toContain('var(--color-brand-teal-light)');
+});
