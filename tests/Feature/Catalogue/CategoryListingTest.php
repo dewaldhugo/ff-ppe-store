@@ -273,3 +273,49 @@ it('shows one non-interactive colour swatch per colour under each product', func
             ->and($swatches[0] ?? '')->not->toContain('ring');
     }
 });
+
+it('says what a listing narrowed to an industry is in its heading, and shows the filters as chips', function (): void {
+    $html = $this->get(route('category', 'safety-footwear').'?industry[0]=Mining&brand[0]=Maxguard')->assertOk()->getContent();
+
+    preg_match('#<h1[^>]*>(.*?)</h1>#s', $html, $heading);
+    preg_match('#<ul[^>]*data-active-filters.*?</ul>#s', $html, $chips);
+
+    expect(trim(strip_tags($heading[1] ?? '')))->toBe('Safety Footwear for Mining')
+        ->and($chips[0] ?? '')->toContain('data-active-filter="industry"')->toContain('Mining')
+        ->toContain('data-active-filter="brand"')->toContain('Maxguard')
+        ->toContain('Clear all')
+        // The page title says it too, and the canonical stays the plain category.
+        ->and($html)->toContain('<title>Safety Footwear for Mining')
+        ->and($html)->toContain('<link rel="canonical" href="'.route('category', 'safety-footwear').'">');
+});
+
+it('joins several industries in the heading', function (): void {
+    $html = $this->get(route('category', 'safety-footwear').'?industry[0]=Mining&industry[1]=Logistics')->assertOk()->getContent();
+
+    preg_match('#<h1[^>]*>(.*?)</h1>#s', $html, $heading);
+
+    expect(trim(strip_tags($heading[1] ?? '')))->toBe('Safety Footwear for Mining and Logistics');
+});
+
+it('shows no filter chips on a listing that is not filtered', function (): void {
+    $this->get(route('category', 'safety-footwear'))->assertOk()->assertDontSee('data-active-filters', false);
+});
+
+it('removes one filter from its chip, all of them, the price range and in stock only', function (): void {
+    Livewire::withQueryParams(['industry' => ['Mining', 'Logistics'], 'brand' => ['Maxguard'], 'in_stock' => '1'])
+        ->test(CategoryListing::class, ['collectionId' => CatalogueKeys::collection('safety-footwear')->id])
+        ->assertSee('Safety Footwear for Mining and Logistics')
+        ->call('removeFilter', 'industry', 'Mining')
+        ->assertSet('industry', ['Logistics'])
+        ->assertSee('Safety Footwear for Logistics')
+        ->call('removeInStockOnly')
+        ->assertSet('in_stock', false)
+        ->call('removeFilter', 'brand', 'Maxguard')
+        ->assertSet('brand', [])
+        // Only the known facets can be changed from a chip.
+        ->call('removeFilter', 'sort', 'price-asc')
+        ->assertSet('sort', 'relevance')
+        ->call('clearFilters')
+        ->assertSet('industry', [])
+        ->assertDontSee('data-active-filters', false);
+});
