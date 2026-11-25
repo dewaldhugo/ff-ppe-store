@@ -207,7 +207,7 @@ it('puts a soft border under the main menu bar and keeps the current page underl
     preg_match('#<nav aria-label="Main"[^>]*>#', $html, $nav);
     preg_match('#<nav aria-label="Main"[^>]*>\s*<div class="([^"]*)"#s', $html, $bar);
 
-    expect($nav[0] ?? '')->toContain('border-b')->toContain('border-brand-navy/15')->toContain('bg-brand-teal')
+    expect($nav[0] ?? '')->toContain('border-b')->toContain('border-brand-navy/15')->toContain('bg-brand-teal-light')
         ->and($bar[1] ?? '')->toContain('pb-2');
 });
 
@@ -216,7 +216,7 @@ it('keeps the main menu bar the same height: the underline is close to the text,
 
     preg_match('#<nav aria-label="Main".*?</nav>#s', $html, $nav);
 
-    // pt-3 (12px) + text + pb-1 (4px) + the 4px underline + the bar's pb-2 (8px) = the old py-3 + the 4px underline.
-    expect($nav[0] ?? '')->toContain('border-b-4 pb-1 pt-3')->not->toContain('border-b-4 py-3')
+    // pt-3 (12px) + text + pb-1.5 (6px) + the 2px underline + the bar's pb-2 (8px) = the old py-3 + the 4px underline.
+    expect($nav[0] ?? '')->toContain('border-b-2 pb-1.5 pt-3')->not->toContain('border-b-4')
         ->and(substr_count($nav[0] ?? '', 'pt-3 font-semibold'))->toBeGreaterThan(5);
 });

@@ -130,11 +130,11 @@ it('gives the size guide and technical features the same h1 and divider as the o
 it('gives the main menu a teal bar and its products panel a light grey background', function (): void {
     $html = $this->get(route('about'))->assertOk()->getContent();
 
-    expect($html)->toMatch('#<nav aria-label="Main"[^>]*bg-brand-teal#')->not->toMatch('#<nav aria-label="Main"[^>]*bg-surface-nav#')
+    expect($html)->toMatch('#<nav aria-label="Main"[^>]*bg-brand-teal-light#')->not->toMatch('#<nav aria-label="Main"[^>]*bg-surface-nav#')
         ->and($html)->toMatch('#id="products-menu"[^>]*bg-surface-nav#');
 });
 
-it('marks the current page in the main menu with a solid navy underline, and no other', function (): void {
+it('marks the current page in the main menu with a thin, lighter navy underline, and no other', function (): void {
     $nav = fn (string $route, string|array $params = []): string => (function (string $html): string {
         preg_match('#<nav aria-label="Main".*?</nav>#s', $html, $m);
 
@@ -144,7 +144,7 @@ it('marks the current page in the main menu with a solid navy underline, and no 
     // Products has a button (with JavaScript) and a link (without), so the labels are de-duplicated.
     $current = fn (string $nav): array => array_values(array_unique(array_map(
         fn (array $link): string => trim(strip_tags($link[0])),
-        (preg_match_all('#<(?:a|button)[^>]*(?<![:\w-])border-brand-navy(?![/\w-])[^>]*>.*?</(?:a|button)>#s', $nav, $m, PREG_SET_ORDER) ? $m : []),
+        (preg_match_all('#<(?:a|button)[^>]*(?<![:\w-])border-brand-navy/60(?![\w-])[^>]*>.*?</(?:a|button)>#s', $nav, $m, PREG_SET_ORDER) ? $m : []),
     )));
 
     expect($current($nav('size-guide')))->toBe(['Size Guide'])
