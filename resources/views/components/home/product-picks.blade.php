@@ -9,6 +9,7 @@
                     @php
                         $price = $priceDisplay->fromPrice($product);
                         $hasRange = $product->variants->flatMap->prices->pluck('price.value')->unique()->count() > 1;
+                        $safetyClass = trim((string) $product->attr('safety_class'));
                     @endphp
                     <li class="group relative flex flex-col rounded border border-border p-3 transition-colors hover:border-brand-teal" data-home-product>
                         <div class="card-backdrop aspect-square overflow-hidden rounded">
@@ -22,6 +23,11 @@
                                     height="300"
                                     class="h-full w-full object-contain"
                                 >
+                            @endif
+
+                            {{-- The safety class, top right of the picture, as on the listing cards. --}}
+                            @if (filled($safetyClass))
+                                <span class="absolute right-2 top-2 rounded bg-white px-2 py-1 text-xs font-semibold text-brand-navy" data-card-class>{{ $safetyClass }}</span>
                             @endif
                         </div>
 

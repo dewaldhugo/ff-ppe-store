@@ -331,3 +331,13 @@ it('puts the card picture on the spotlight backdrop', function (): void {
     // A radial spotlight, and the hover turns to the menu's light teal.
     expect($css)->toContain('.card-backdrop')->toContain('radial-gradient')->toContain('var(--color-brand-teal-light)');
 });
+
+it('shows the Industry filter first, above the other filters', function (): void {
+    $html = $this->get(route('category', 'safety-footwear'))->assertOk()->getContent();
+
+    preg_match_all('#<fieldset data-facet="([^"]+)">#', $html, $facets);
+
+    // The desktop and the phone copy of the filters are both on the page: the first facet of the first copy is Industry.
+    expect($facets[1])->not->toBeEmpty()
+        ->and($facets[1][0])->toBe('industry');
+});
