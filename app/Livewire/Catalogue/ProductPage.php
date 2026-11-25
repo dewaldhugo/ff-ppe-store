@@ -7,7 +7,7 @@ namespace App\Livewire\Catalogue;
 use App\Domain\Cart\CartRejected;
 use App\Domain\Cart\CustomerCart;
 use App\Domain\Catalogue\Brands\ProductBrandLink;
-use App\Domain\Catalogue\Display\CountryName;
+use App\Domain\Catalogue\Display\KeyPoints;
 use App\Domain\Catalogue\Display\ProductPictograms;
 use App\Domain\Catalogue\Display\SafetyStandardPanel;
 use App\Domain\Catalogue\Media\ProductMediaDefinitions;
@@ -21,7 +21,6 @@ use App\Domain\Pricing\PriceVisibility;
 use App\Support\CartCount;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\HtmlString;
-use Illuminate\Support\Str;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -47,7 +46,6 @@ final class ProductPage extends Component
         'lining' => 'Lining',
         'cut' => 'Cut',
         'fastening' => 'Fastening',
-        'country_of_origin' => 'Country of origin',
     ];
 
     #[Locked]
@@ -206,10 +204,10 @@ final class ProductPage extends Component
             'quantityError' => $this->quantityError($variant),
             'maxQuantity' => $variant !== null && $variant->stock > 0 ? $variant->stock : null,
             'lowStock' => $variant !== null && $variant->stock > 0 && $variant->stock <= self::LOW_STOCK,
-            'addLabel' => $this->addLabel($selection, $variant),
             'euSizes' => $this->euSizes($product, $selection),
             'specification' => $this->specification($product),
             'safetyStandard' => app(SafetyStandardPanel::class)->for($product),
+            'keyPoints' => app(KeyPoints::class)->for($product),
             'industries' => array_values(array_filter(array_map(fn (mixed $industry): string => trim((string) $industry), (array) $product->attr('industries')), filled(...))),
             'pictograms' => app(ProductPictograms::class)->for($product),
             'productSheet' => $this->productSheet($product, $selection),
@@ -371,28 +369,6 @@ final class ProductPage extends Component
     }
 
     /**
-     * The button says what is still needed, so a disabled button is never
-     * unexplained: "Select a size", "Enter a quantity", "Out of stock" or
-     * "Add to cart".
-     */
-    private function addLabel(VariantSelection $selection, ?ProductVariant $variant): string
-    {
-        if ($this->stockMessage($selection, $variant) === 'Out of stock') {
-            return 'Out of stock';
-        }
-
-        if ($variant !== null) {
-            return $this->quantityValue() === null ? 'Enter a quantity' : 'Add to cart';
-        }
-
-        $missing = $selection->missing()[0] ?? null;
-
-        return $missing === null
-            ? 'Unavailable'
-            : Str::replaceFirst('Please select', 'Select', $selection->promptFor($missing));
-    }
-
-    /**
      * The quantity as a whole number of at least 1, or null when the field
      * is empty or holds anything else.
      */
@@ -495,10 +471,7 @@ final class ProductPage extends Component
 
             $rows[] = [
                 'label' => $label,
-                'values' => array_map(fn (mixed $item): array => [
-                    'text' => $handle === 'country_of_origin' ? CountryName::of((string) $item) : (string) $item,
-                    'tooltip' => null,
-                ], $items),
+                'values' => array_map(fn (mixed $item): array => ['text' => (string) $item, 'tooltip' => null], $items),
             ];
         }
 

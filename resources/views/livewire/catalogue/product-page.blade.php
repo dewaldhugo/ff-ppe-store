@@ -1,12 +1,14 @@
 <article>
     <x-storefront.breadcrumbs :items="$breadcrumbs" class="mb-4" />
 
-    <div class="grid gap-8 lg:grid-cols-[calc((100%_-_2rem)*0.4)_1fr]">
+    <div class="grid gap-8 lg:grid-cols-2" data-product-top>
         {{-- Gallery: the selected colour's images. --}}
         {{--
             Choosing a thumbnail shows that image in the main frame. The key
             changes with the colour, so a new colour starts on its first image.
         --}}
+        {{-- The image column: the gallery, and the video under its thumbnails when the product has one. --}}
+        <div class="min-w-0">
         <section
             aria-label="Product images"
             data-testid="gallery"
@@ -47,7 +49,7 @@
                                         loading="lazy"
                                         width="300"
                                         height="300"
-                                        class="aspect-square w-full rounded object-contain"
+                                        class="aspect-square w-full rounded object-contain p-[5px]"
                                     >
                                 </button>
                             </li>
@@ -56,6 +58,23 @@
                 @endif
             @endif
         </section>
+
+        @if ($videoUrl)
+        <section aria-labelledby="video-heading" class="mt-6 max-w-sm" data-video>
+            <h2 id="video-heading" class="sr-only">Video</h2>
+            <div class="aspect-video">
+                <iframe
+                    src="{{ $videoUrl }}"
+                    title="{{ $product->translateAttribute('name') }} video"
+                    loading="lazy"
+                    allow="accelerometer; encrypted-media; gyroscope; picture-in-picture"
+                    allowfullscreen
+                    class="h-full w-full rounded border border-border"
+                ></iframe>
+            </div>
+        </section>
+        @endif
+        </div>
 
         <section aria-labelledby="product-heading">
             {{-- The brand's logo, or its name when there is no logo, linking to its products. --}}
@@ -68,7 +87,13 @@
                     @endif
                 </a>
             @endif
-            <h1 id="product-heading" class="text-3xl font-bold leading-tight tracking-tight">{{ $product->translateAttribute('name') }}</h1>
+            {{-- The name, with the safety class beside it at 20% smaller type on the light teal of the menu bar, like the vendor's own page. --}}
+            <h1 id="product-heading" class="flex flex-wrap items-center gap-x-3 gap-y-1 text-3xl font-bold leading-tight tracking-tight">
+                {{ $product->translateAttribute('name') }}
+                @if (($safetyStandard['class'] ?? null) !== null)
+                    <span class="rounded bg-brand-teal-light px-3 text-[1.5rem] text-brand-navy" data-name-class>{{ $safetyStandard['class'] }}</span>
+                @endif
+            </h1>
             <p class="mt-2 text-lg text-ink-muted">{{ $product->translateAttribute('title') }}</p>
 
             @if (filled($product->translateAttribute('short_description')))
@@ -80,7 +105,7 @@
                     @if ($pricesVary)
                         <span class="text-ink-muted">From</span>
                     @endif
-                    <span class="text-2xl font-bold">{{ $price->formatted() }}</span>
+                    <span class="text-[2.16rem] font-semibold text-brand-navy">{{ $price->formatted() }}</span>
                     <span class="text-sm text-ink-muted">{{ $price->suffix() }}</span>
                 </p>
             @endif
@@ -90,7 +115,7 @@
             {{-- Where it can be delivered, only while EU delivery is switched on. --}}
             <x-storefront.ships-to :product="$product" class="mt-2" />
 
-            <form wire:submit="addToCart" class="mt-6 space-y-5" novalidate>
+            <form wire:submit="addToCart" id="add-to-cart-form" class="mt-6 space-y-5" novalidate>
                 @foreach ($options as $option)
                     @php $isMissing = $missingOption === $option['handle']; @endphp
 
@@ -132,12 +157,12 @@
                                             wire:key="{{ $option['handle'] }}-{{ $value['key'] }}"
                                             data-value="{{ $value['key'] }}"
                                             data-size-readonly
-                                            class="flex min-w-12 cursor-default items-center gap-2 rounded border border-border-strong bg-white px-3 py-2 text-sm"
+                                            class="flex min-h-11 min-w-12 cursor-default items-center justify-center gap-2 rounded border border-border-strong bg-white px-3.5 py-2 text-base"
                                         >
                                             <span>{{ $value['name'] }}</span>
 
                                             @if ($option['handle'] === 'shoe_size' && isset($euSizes[$value['key']]))
-                                                <span class="text-xs opacity-75">EU {{ $euSizes[$value['key']] }}</span>
+                                                <span class="text-sm opacity-75">EU {{ $euSizes[$value['key']] }}</span>
                                             @endif
                                         </span>
                                         @continue
@@ -152,7 +177,7 @@
                                         @disabled(! $available)
                                         @if (! $available) title="Out of stock" @endif
                                         @class([
-                                            'flex min-w-12 items-center gap-2 rounded border px-3 py-2 text-sm',
+                                            'flex min-h-11 min-w-12 items-center justify-center gap-2 rounded border px-3.5 py-2 text-base',
                                             'border-brand-blue bg-brand-blue text-white' => $value['selected'],
                                             'border-border-strong bg-white hover:border-brand-blue' => ! $value['selected'] && $available,
                                             'cursor-not-allowed border-border bg-surface-muted text-ink-muted line-through' => ! $available,
@@ -169,7 +194,7 @@
                                         <span>{{ $value['name'] }}</span>
 
                                         @if ($option['handle'] === 'shoe_size' && isset($euSizes[$value['key']]))
-                                            <span class="text-xs opacity-75">EU {{ $euSizes[$value['key']] }}</span>
+                                            <span class="text-sm opacity-75">EU {{ $euSizes[$value['key']] }}</span>
                                         @endif
 
                                         @if (! $available)
@@ -204,7 +229,7 @@
                             @if ($quantityError !== null) aria-invalid="true" aria-describedby="error-quantity" @endif
                             data-quantity
                             @class([
-                                'w-28 rounded border px-3 py-2 text-lg',
+                                'h-11 w-28 rounded border px-3 text-lg',
                                 'border-border-strong' => $quantityError === null,
                                 'border-danger' => $quantityError !== null,
                             ])
@@ -212,17 +237,16 @@
 
                         {{-- Once every option is chosen: the stock of that exact variant, which is also the input's max. --}}
                         @if ($variant !== null)
-                            {{-- A badge: green when comfortably in stock, red when low or out. --}}
+                            {{-- The figure alone, with no icon, border or fill: navy when comfortably in stock, red when low or out. --}}
                             <p
                                 @class([
-                                    'inline-flex items-center gap-2 rounded-full border-2 px-4 py-1.5 text-base font-bold',
-                                    'border-success bg-success-surface text-success' => $maxQuantity !== null && ! $lowStock,
-                                    'border-danger bg-surface-muted text-danger' => $maxQuantity === null || $lowStock,
+                                    'inline-flex items-center gap-2 text-base font-bold',
+                                    'text-brand-navy' => $maxQuantity !== null && ! $lowStock,
+                                    'text-danger' => $maxQuantity === null || $lowStock,
                                 ])
                                 data-stock-available
                                 aria-live="polite"
                             >
-                                <span aria-hidden="true" class="inline-block h-2.5 w-2.5 rounded-full bg-current"></span>
                                 {{ $maxQuantity !== null ? $maxQuantity.' available' : 'Out of stock' }}
                             </p>
                         @endif
@@ -233,38 +257,51 @@
                     @endif
                 </div>
 
-                <button
-                    type="submit"
-                    @disabled(! $canAdd)
-                    data-add-to-cart
-                    class="w-full rounded-md bg-brand-teal px-6 py-3 text-lg font-bold text-brand-navy transition-colors hover:bg-brand-navy hover:text-white disabled:cursor-not-allowed disabled:bg-disabled-surface disabled:text-disabled-ink sm:w-auto"
-                >
-                    {{ $addLabel }}
-                </button>
+                @endif
+            </form>
 
+            {{--
+                Add to cart and Add to favourites, side by side and the same size. Neither can sit inside the other's form (forms
+                cannot nest), so the cart button is outside its form and joined to it with the form attribute: it submits the
+                cart form, and Enter in the quantity field still does. The label never changes; the button is disabled until
+                every option is chosen and a quantity that fits the stock is entered. Guests see neither.
+            --}}
+            @php $canFavourite = app(\App\Domain\Favourites\Favourites::class)->available(); @endphp
+
+            @if ($showPrices || $canFavourite)
+                <div class="mt-5 flex flex-wrap gap-3" data-buy-buttons @if ($canFavourite) data-favourite-wrap @endif>
+                    @if ($showPrices)
+                        <button
+                            type="submit"
+                            form="add-to-cart-form"
+                            @disabled(! $canAdd)
+                            data-add-to-cart
+                            class="w-full rounded-md border-2 border-brand-teal bg-brand-teal px-8 py-3 text-lg font-bold text-brand-navy transition-colors hover:border-brand-navy hover:bg-brand-navy hover:text-white disabled:cursor-not-allowed disabled:border-disabled-surface disabled:bg-disabled-surface disabled:text-disabled-ink sm:w-72"
+                        >
+                            Add to cart
+                        </button>
+                    @endif
+
+                    <x-storefront.favourite-button :product="$product" />
+                </div>
+            @endif
+
+            @if ($showPrices)
                 @if ($added)
-                    <p role="status" class="rounded border border-success bg-success-surface p-3 text-sm text-success" data-added-to-cart>
+                    <p role="status" class="mt-4 rounded border border-success bg-success-surface p-3 text-sm text-success" data-added-to-cart>
                         {{ $addedQuantity }} added to your cart.
                         <a href="{{ route('cart') }}" class="font-semibold underline">View cart</a>
                     </p>
                 @endif
 
                 @if ($cartError !== null)
-                    <p role="alert" class="rounded border border-danger bg-surface-muted p-3 text-sm font-semibold text-danger" data-cart-error>{{ $cartError }}</p>
+                    <p role="alert" class="mt-4 rounded border border-danger bg-surface-muted p-3 text-sm font-semibold text-danger" data-cart-error>{{ $cartError }}</p>
                 @endif
-                @endif
-            </form>
-
-            {{-- Outside the cart form (forms cannot nest). Signed-in customers only; guests see nothing. --}}
-            @if (app(\App\Domain\Favourites\Favourites::class)->available())
-                <div class="mt-4" data-favourite-wrap>
-                    <x-storefront.favourite-button :product="$product" />
-                </div>
             @endif
 
-            @if (filled($product->attr('key_points')))
+            @if ($keyPoints !== [])
                 <ul class="mt-6 list-disc space-y-1 pl-5 text-ink-muted">
-                    @foreach ($product->attr('key_points') as $point)
+                    @foreach ($keyPoints as $point)
                         <li>{{ $point }}</li>
                     @endforeach
                 </ul>
@@ -276,8 +313,9 @@
 
             {{-- The English product sheet for the colour chosen, when the vendor has one. The only document shown. --}}
             @if ($productSheet !== null)
-                <p class="mt-8" data-product-sheet>
-                    <a href="{{ $productSheet['url'] }}" target="_blank" rel="noopener" class="inline-flex items-center gap-2 rounded-md border-2 border-brand-teal px-4 py-2 text-sm font-semibold text-brand-blue hover:border-brand-blue hover:bg-brand-blue hover:text-white">
+                <p class="mt-6" data-product-sheet>
+                    <a href="{{ $productSheet['url'] }}" target="_blank" rel="noopener" class="inline-flex items-center gap-2 text-sm font-semibold text-brand-blue underline hover:text-brand-navy">
+                        <svg aria-hidden="true" class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" data-pdf-icon><path d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m.75 12 3 3m0 0 3-3m-3 3v-6m-1.5-9H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"/></svg>
                         Product sheet{{ $productSheet['colour'] !== null ? ', '.$productSheet['colour'] : '' }} (PDF)
                     </a>
                 </p>
@@ -299,17 +337,22 @@
         </section>
     </div>
 
-    @if ($paragraphs !== [])
-        <section aria-labelledby="description-heading" class="mt-10 max-w-3xl">
-            <h2 id="description-heading" class="text-xl font-bold">Description</h2>
-            @foreach ($paragraphs as $paragraph)
-                <p class="mt-3 text-ink-muted">{{ $paragraph }}</p>
-            @endforeach
-        </section>
-    @endif
+    {{-- A rule across the container, then the description on the left and the specification on the right, 50 / 50. --}}
+    @if ($paragraphs !== [] || $specification !== [])
+        <hr class="my-10 border-border" data-product-rule>
 
-    @if ($specification !== [])
-        <section aria-labelledby="specification-heading" class="mt-10 max-w-3xl">
+        <div class="grid gap-10 lg:grid-cols-2" data-product-details>
+        @if ($paragraphs !== [])
+            <section aria-labelledby="description-heading" data-description>
+                <h2 id="description-heading" class="text-xl font-bold">Description</h2>
+                @foreach ($paragraphs as $paragraph)
+                    <p class="mt-3 text-ink-muted">{{ $paragraph }}</p>
+                @endforeach
+            </section>
+        @endif
+
+        @if ($specification !== [])
+        <section aria-labelledby="specification-heading" data-specification>
             <h2 id="specification-heading" class="text-xl font-bold">Specification</h2>
             <table class="mt-3 w-full text-left text-sm" data-testid="specification">
                 <tbody>
@@ -332,22 +375,8 @@
                 </tbody>
             </table>
         </section>
-    @endif
-
-    @if ($videoUrl)
-        <section aria-labelledby="video-heading" class="mt-10 max-w-3xl">
-            <h2 id="video-heading" class="text-xl font-bold">Video</h2>
-            <div class="mt-3 aspect-video">
-                <iframe
-                    src="{{ $videoUrl }}"
-                    title="{{ $product->translateAttribute('name') }} video"
-                    loading="lazy"
-                    allow="accelerometer; encrypted-media; gyroscope; picture-in-picture"
-                    allowfullscreen
-                    class="h-full w-full rounded border border-border"
-                ></iframe>
-            </div>
-        </section>
+        @endif
+        </div>
     @endif
 
     @if ($related !== [])
