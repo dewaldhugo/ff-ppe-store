@@ -252,6 +252,7 @@ final readonly class SafetyJoggerMapper implements VendorMapper
             videoUrl: $this->video($data['productVideos'] ?? []),
             // Certificate PDFs are not mirrored yet.
             certificates: [],
+            pictograms: $this->pictograms($data['icons'] ?? []),
             collections: $collection === null ? [] : [$collection],
             clearance: false,
             draftReasons: array_values(array_unique($draftReasons)),
@@ -392,6 +393,7 @@ final readonly class SafetyJoggerMapper implements VendorMapper
             countryOfOrigin: $this->country($data['countryOfOrigin'] ?? null),
             videoUrl: $this->video($data['productVideos'] ?? []),
             certificates: [],
+            pictograms: $this->pictograms($data['icons'] ?? []),
             collections: $collection === null ? [] : [$collection],
             clearance: false,
             draftReasons: array_values(array_unique($draftReasons)),
@@ -720,6 +722,29 @@ final readonly class SafetyJoggerMapper implements VendorMapper
         }
 
         return $points;
+    }
+
+    /**
+     * The vendor's pictograms as `name|Label` entries, in the order it lists them (the order its own page shows them in; the
+     * `priority` field is not that order). `name` is the icon's file name, which PictogramMirror downloads. A repeat, an entry with
+     * no usable name or no label, and the separator itself inside a label are dropped.
+     *
+     * @return list<string>
+     */
+    private function pictograms(mixed $icons): array
+    {
+        $entries = [];
+
+        foreach (is_array($icons) ? $icons : [] as $icon) {
+            $name = strtolower(trim((string) ($icon['name'] ?? '')));
+            $label = trim(str_replace('|', ' ', (string) ($icon['value'] ?? '')));
+
+            if (preg_match('/^[a-z0-9_-]+$/', $name) === 1 && $label !== '') {
+                $entries[$name] ??= "{$name}|{$label}";
+            }
+        }
+
+        return array_values($entries);
     }
 
     /**

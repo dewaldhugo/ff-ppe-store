@@ -71,6 +71,9 @@ function imageRun(): SyncRun
 }
 
 it('saves BESTBOOT\'s images when its vendor product ID is passed to --product', function (): void {
+    // The size limit is off by default; this test is about the optional one.
+    config(['vendorsync.images.max_megapixels' => 7.0]);
+
     // As on the live host: the main image and the first detail are larger
     // than the worker can convert.
     $link = importBestboot(hugeImages: ['BESTBOOT-BLK-HIRES.PNG', 'BESTBOOT-BLK-HR01.PNG']);
@@ -136,15 +139,20 @@ it('accepts a 2560 x 2560 vendor original and converts it', function (): void {
     try {
         $link = importBestboot(realImages: ['BESTBOOT-BLK-HIRES.PNG' => [2560, 2560]]);
 
-        expect((float) config('vendorsync.images.max_megapixels'))->toBe(7.0);
+        // No limit by default.
+        expect((float) config('vendorsync.images.max_megapixels'))->toBe(0.0);
 
         $this->artisan('vendorsync:images', ['vendor' => 'SJ', '--product' => '215754'])->assertSuccessful();
 
         $media = VendorSync::product('SJ', '215754')->getMedia('images');
         $run = imageRun();
 
-        // The original itself was stored: no smaller rendition was used.
+        // The original itself was used, shrunk to 1200 wide and stored as WebP: no smaller rendition was used.
+        [$storedWidth, $storedHeight] = getimagesize($media[0]->getPath());
+
         expect($media)->toHaveCount(6)
+            ->and($media[0]->mime_type)->toBe('image/webp')
+            ->and([$storedWidth, $storedHeight])->toBe([1200, 1200])
             ->and($media[0]->getCustomProperty('source_url'))->toEndWith('BESTBOOT-BLK-HIRES.PNG')
             ->and($media[0]->getCustomProperty('downloaded_url'))->toEndWith('BESTBOOT-BLK-HIRES.PNG')
             ->and($media[0]->hasGeneratedConversion('small'))->toBeTrue()
@@ -160,6 +168,9 @@ it('accepts a 2560 x 2560 vendor original and converts it', function (): void {
 });
 
 it('still rejects an image above the limit and uses the smaller rendition', function (): void {
+    // The size limit is off by default; this test is about the optional one.
+    config(['vendorsync.images.max_megapixels' => 7.0]);
+
     // 2700 x 2700 is 7.29 megapixels: just over the 7.0 limit.
     importBestboot(hugeImages: ['BESTBOOT-BLK-HIRES.PNG' => [2700, 2700]]);
 
@@ -185,6 +196,74 @@ it('accepts an image of exactly the limit and rejects one pixel row more', funct
     expect($media[0]->getCustomProperty('downloaded_url'))->toEndWith('BESTBOOT-BLK-HIRES.PNG')
         ->and(implode('
 ', imageRun()->messages))->toContain('BESTBOOT-BLK-HR01.PNG: the image is 2000 x 2001 (4.0 megapixels, limit 4.0); used BESTBOOT-BLK-WEB02.JPG instead');
+});
+
+it('stores every image as WebP at most 1200 wide, however large the original is', function (): void {
+    // 3000 x 3000 is 9 megapixels: over the old 7.0 limit, and now simply converted.
+    importBestboot(realImages: ['BESTBOOT-BLK-HIRES.PNG' => [3000, 3000]]);
+
+    $this->artisan('vendorsync:images', ['vendor' => 'SJ', '--product' => '215754'])->assertSuccessful();
+
+    $media = VendorSync::product('SJ', '215754')->getMedia('images');
+
+    expect($media)->toHaveCount(6)
+        ->and($media[0]->getCustomProperty('downloaded_url'))->toEndWith('BESTBOOT-BLK-HIRES.PNG')
+        ->and(implode("\n", imageRun()->messages))->not->toContain('megapixels');
+
+    foreach ($media as $image) {
+        [$width] = getimagesize($image->getPath());
+
+        expect($image->mime_type)->toBe('image/webp')
+            ->and($image->file_name)->toEndWith('.webp')
+            ->and($width)->toBeLessThanOrEqual(1200)
+            ->and($image->getCustomProperty('optimised'))->toBe('webp-1200-q85');
+    }
+
+    // The 9 megapixel original was shrunk, not kept.
+    [$width, $height] = getimagesize($media[0]->getPath());
+
+    expect([$width, $height])->toBe([1200, 1200]);
+});
+
+it('fetches an image stored before the WebP rule again and replaces it', function (): void {
+    $link = importBestboot();
+
+    app(ProductImageSync::class)->sync($link);
+
+    $product = VendorSync::product('SJ', '215754');
+    $before = $product->getMedia('images');
+
+    // As the images of an earlier run: no `optimised` property, and a plan hash from before the signature existed.
+    foreach ($before as $image) {
+        $image->setCustomProperty('optimised', null)->save();
+    }
+
+    $link->refresh()->update(['image_urls_hash' => hash('sha256', 'before the webp rule')]);
+
+    $result = app(ProductImageSync::class)->sync($link->refresh());
+
+    $after = $product->refresh()->getMedia('images');
+
+    expect($result->downloaded)->toBe(6)
+        ->and($after)->toHaveCount(6)
+        ->and($after->pluck('id')->intersect($before->pluck('id'))->all())->toBe([])
+        ->and($after->every(fn ($image): bool => $image->getCustomProperty('optimised') === 'webp-1200-q85'))->toBeTrue();
+});
+
+it('does not fetch an image that is already stored as WebP again', function (): void {
+    $link = importBestboot();
+
+    app(ProductImageSync::class)->sync($link);
+
+    $ids = VendorSync::product('SJ', '215754')->getMedia('images')->pluck('id')->all();
+
+    // A changed plan hash makes the sync look at every image, but each stored one is current.
+    $link->refresh()->update(['image_urls_hash' => hash('sha256', 'another list')]);
+
+    $result = app(ProductImageSync::class)->sync($link->refresh());
+
+    expect($result->downloaded)->toBe(0)
+        ->and(VendorSync::product('SJ', '215754')->getMedia('images')->pluck('id')->all())->toBe($ids);
 });
 
 it('reindexes the product once it has an image', function (): void {
@@ -297,6 +376,9 @@ it('fails loudly when every download fails, and the job lands in failed_jobs', f
 });
 
 it('fails loudly when an oversized image has no smaller rendition and nothing else can be saved', function (): void {
+    // The size limit is off by default; this test is about the optional one.
+    config(['vendorsync.images.max_megapixels' => 7.0]);
+
     $link = importBestboot(brokenImages: ['HR0', 'OUTS', 'WEB'], hugeImages: ['BESTBOOT-BLK-HIRES.PNG']);
 
     expect(fn () => (new SyncProductImages($link->id))->handle(app(ProductImageSync::class)))
@@ -422,6 +504,9 @@ it('reports a job whose host hangs, instead of letting the queue kill it at its 
 });
 
 it('does not download the smaller rendition when the original used up the time budget', function (): void {
+    // The size limit is off by default; this test is about the optional one.
+    config(['vendorsync.images.max_megapixels' => 7.0]);
+
     $link = importBestboot(hugeImages: ['BESTBOOT-BLK-HIRES.PNG']);
     freezeClock();
     // The oversized original takes 100 s to arrive.

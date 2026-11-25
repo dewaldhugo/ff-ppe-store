@@ -37,10 +37,23 @@ final readonly class ImageDownloader
 
     public function download(string $url): DownloadResult
     {
+        return $this->fetch($url, pdf: false);
+    }
+
+    /**
+     * Like `download()` for a PDF: the same throttle, retries and https first rule, and the body must start with `%PDF`.
+     */
+    public function downloadPdf(string $url): DownloadResult
+    {
+        return $this->fetch($url, pdf: true);
+    }
+
+    private function fetch(string $url, bool $pdf): DownloadResult
+    {
         $result = null;
 
         foreach ($this->candidates($url) as $candidate) {
-            $result = $this->attempts($candidate);
+            $result = $this->attempts($candidate, $pdf);
 
             // A busy slot lock is not the URL's fault: do not wait again for
             // the next candidate.
@@ -117,7 +130,7 @@ final readonly class ImageDownloader
         return [$url];
     }
 
-    private function attempts(string $url): DownloadResult
+    private function attempts(string $url, bool $pdf = false): DownloadResult
     {
         $host = (string) parse_url($url, PHP_URL_HOST);
         $max = $this->maxAttempts();
@@ -160,10 +173,14 @@ final readonly class ImageDownloader
                 if ($response->successful()) {
                     $body = $response->body();
 
-                    // Only real images: an error page served with status 200 is a failure.
-                    return $body !== '' && @getimagesizefromstring($body) !== false
+                    // Only the real thing: an error page served with status 200 is a failure.
+                    $valid = $pdf
+                        ? str_starts_with($body, '%PDF')
+                        : $body !== '' && @getimagesizefromstring($body) !== false;
+
+                    return $valid
                         ? DownloadResult::ok($body)
-                        : DownloadResult::failed('download failed: the response is not an image');
+                        : DownloadResult::failed('download failed: the response is not '.($pdf ? 'a PDF' : 'an image'));
                 }
 
                 $status = $response->status();

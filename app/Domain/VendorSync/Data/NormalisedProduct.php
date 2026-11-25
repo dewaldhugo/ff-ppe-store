@@ -14,7 +14,7 @@ final readonly class NormalisedProduct
     /** Product attribute handles the vendor owns outright. */
     public const array VENDOR_OWNED = [
         'safety_class', 'features', 'standards', 'toecap', 'midsole', 'outsole', 'upper', 'lining',
-        'cut', 'fastening', 'industries', 'gender', 'country_of_origin', 'video_url',
+        'cut', 'fastening', 'industries', 'gender', 'country_of_origin', 'video_url', 'pictograms',
     ];
 
     /** Content fields: updated only when the vendor value changed and the field is not locked. */
@@ -26,6 +26,7 @@ final readonly class NormalisedProduct
      * @param  list<string>  $standards
      * @param  list<string>  $industries
      * @param  list<string>  $certificates
+     * @param  list<string>  $pictograms  `name|Label` entries in the vendor's order (data contract, Product attributes).
      * @param  list<string>  $collections  Contract collection handles in the categories group.
      * @param  list<string>  $draftReasons  Empty means the product may be published.
      * @param  list<string>  $relatedVendorProductIds
@@ -63,6 +64,7 @@ final readonly class NormalisedProduct
         public ?string $countryOfOrigin,
         public ?string $videoUrl,
         public array $certificates,
+        public array $pictograms,
         public array $collections,
         public bool $clearance,
         public array $draftReasons,
@@ -100,6 +102,7 @@ final readonly class NormalisedProduct
             'country_of_origin' => $this->countryOfOrigin,
             'video_url' => $this->videoUrl,
             'certificates' => $this->certificates,
+            'pictograms' => $this->pictograms,
         ];
     }
 

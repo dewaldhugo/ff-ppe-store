@@ -421,22 +421,26 @@ return [
 
         'refresh_days' => 7,
 
-        // Largest image, in megapixels, that is stored and converted. With
-        // the GD driver a conversion needs about 8 MB of memory per
-        // megapixel on top of the booted worker (about 54 MB). Measured with
-        // all four conversions inline in one process: a 2560 x 2560 image
-        // (6.55 MP) peaks at about 107 MB, and a 7.0 MP PNG of pure noise
-        // near the 20 MB file cap at about 147 MB, against the 256M CLI
-        // memory_limit. A larger image is replaced by its smaller rendition
-        // when the vendor has one, and reported otherwise. Raise this only
-        // together with the worker's memory limit, or after switching to
-        // Imagick. The environment value wins: the server's .env must be
-        // changed too (docs/vendorsync.md, Images).
-        'max_megapixels' => (float) env('VENDORSYNC_IMAGE_MAX_MEGAPIXELS', 7.0),
+        // Largest original, in megapixels, that is accepted. 0 is no limit, and
+        // is the default: every image is decoded, shrunk to `max_width` and
+        // stored as WebP, whatever the size of the original, with the memory
+        // limit raised for the decode (ImageOptimiser). A value above 0
+        // brings the old rule back: a larger original is replaced by its
+        // smaller rendition when the vendor has one, and reported otherwise.
+        'max_megapixels' => (float) env('VENDORSYNC_IMAGE_MAX_MEGAPIXELS', 0),
 
-        // Largest file accepted, in bytes. Media Library's own default of
-        // 10 MB is raised to this for imports only.
-        'max_file_bytes' => 20 * 1024 * 1024,
+        // Largest original file accepted, in bytes. 0 is no limit (the default).
+        'max_file_bytes' => (int) env('VENDORSYNC_IMAGE_MAX_FILE_BYTES', 0),
+
+        // Every image is stored as WebP, at most this many pixels wide and never
+        // enlarged. The conversions (thumb, medium, large) are made from it.
+        'max_width' => 1200,
+
+        // WebP quality, 1 to 100.
+        'webp_quality' => 85,
+
+        // Where the vendor's pictogram icons are downloaded from (`vendorsync:pictograms`); `{name}` is the icon's name.
+        'pictogram_url' => 'https://www.safetyjogger.com/static/safetyjogger/icon/industrial/{name}.png',
     ],
 
 ];

@@ -43,7 +43,7 @@ final class CatalogueWriter
 {
     private const array TRANSLATED = ['name', 'title', 'short_description', 'description'];
 
-    private const array LISTS = ['key_points', 'features', 'standards', 'industries', 'certificates'];
+    private const array LISTS = ['key_points', 'features', 'standards', 'industries', 'certificates', 'pictograms'];
 
     private ?Language $language = null;
 
