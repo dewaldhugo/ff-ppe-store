@@ -7,6 +7,7 @@ namespace App\Livewire\Catalogue;
 use App\Domain\Cart\CartRejected;
 use App\Domain\Cart\CustomerCart;
 use App\Domain\Catalogue\Brands\ProductBrandLink;
+use App\Domain\Catalogue\Display\FeatureHighlights;
 use App\Domain\Catalogue\Display\KeyPoints;
 use App\Domain\Catalogue\Display\ProductPictograms;
 use App\Domain\Catalogue\Display\SafetyStandardPanel;
@@ -210,6 +211,7 @@ final class ProductPage extends Component
             'keyPoints' => app(KeyPoints::class)->for($product),
             'industries' => array_values(array_filter(array_map(fn (mixed $industry): string => trim((string) $industry), (array) $product->attr('industries')), filled(...))),
             'pictograms' => app(ProductPictograms::class)->for($product),
+            'featureTiles' => app(FeatureHighlights::class)->for($product),
             'productSheet' => $this->productSheet($product, $selection),
             'paragraphs' => preg_split('/\R{2,}|\R/', trim((string) $product->translateAttribute('description')), flags: PREG_SPLIT_NO_EMPTY) ?: [],
             'videoUrl' => $this->videoUrl($product),

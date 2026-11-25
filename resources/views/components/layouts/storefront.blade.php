@@ -53,7 +53,8 @@
             {{ $slot }}
         </main>
     @else
-        <main id="main" class="flex-1">
+        {{-- overflow-x-clip: a full width band (100vw) must not add a sideways scrollbar. --}}
+        <main id="main" class="flex-1 overflow-x-clip">
             <x-ui.container class="py-8">
                 {{ $slot }}
             </x-ui.container>

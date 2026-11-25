@@ -10,6 +10,7 @@ use Database\Seeders\StorefrontBrandSeeder;
 use Livewire\Livewire;
 use Lunar\FieldTypes\ListField;
 use Lunar\FieldTypes\Text;
+use Lunar\Models\Brand;
 use Lunar\Models\Product;
 use Lunar\Models\Url;
 use Meilisearch\Client;
@@ -986,4 +987,98 @@ it('links to the size guide next to the size selector', function (): void {
 
     expect($fieldset[0] ?? '')->toContain('href="'.route('size-guide').'"')
         ->and($fieldset[0])->toContain('data-size-guide-link');
+});
+
+/**
+ * @param  list<string>  $codes
+ * @param  list<string>  $keyPoints
+ */
+function setLigeroFeatures(array $codes, array $keyPoints = []): void
+{
+    $product = Url::query()->where('slug', 'safety-jogger-ligero')->sole()->element;
+    $data = $product->attribute_data;
+    $data['features'] = new ListField($codes);
+    $data['key_points'] = new ListField($keyPoints);
+    $product->update(['attribute_data' => $data]);
+}
+
+it('shows a Key features tile for each feature the product has, in the vendor wording', function (): void {
+    // The vendor's key points decide the order of the ones they name (Nano carbon toecap is not a code at all); the codes add SR and ESD.
+    setLigeroFeatures(['ESD', 'HRO', 'SRC', 'METAL_FREE'], ['Nano carbon toecap', 'Metal free', 'Not a feature']);
+
+    $html = $this->get(route('product', 'safety-jogger-ligero'))->assertOk()->getContent();
+
+    preg_match('#<section[^>]*data-key-features.*?</section>#s', $html, $section);
+    $section = $section[0] ?? '';
+
+    preg_match_all('#data-key-feature="([^"]+)"#', $section, $tiles);
+
+    expect($tiles[1])->toBe(['nano_carbon_toecap', 'metal_free', 'src', 'esd', 'heat_resistant_outsole'])
+        ->and($section)->toContain('Key features')
+        ->and($section)->toContain('SRC slip resistance')
+        ->and($section)->toContain('SRC slip resistant soles pass both SRA and SRB slip resistant tests.')
+        ->and($section)->toContain('The outsole resists high temperatures up to 300°C.')
+        ->and($section)->toContain('Ultralight high-tech material, metalfree with no thermal or electrical conductivity.')
+        ->and($section)->toContain(asset('images/features/src.png'))
+        ->and($section)->not->toContain('Scuff cap');
+});
+
+it('leaves out a tile whose picture is not in the folder yet', function (): void {
+    // 3D mesh is named by the vendor, but its picture has not been added.
+    setLigeroFeatures([], ['3D mesh', 'Metal free']);
+
+    $html = $this->get(route('product', 'safety-jogger-ligero'))->assertOk()->getContent();
+
+    preg_match_all('#data-key-feature="([^"]+)"#', $html, $tiles);
+
+    expect($tiles[1])->toBe(['metal_free'])->and($html)->not->toContain('Three-dimensional produced distance mesh');
+})->skip(fn (): bool => is_file(public_path('images/features/3d_mesh.png')), 'the 3D mesh picture has been added');
+
+it('gives a winter boot its warm lining, cold insulated and antistatic tiles from the vendor key points', function (): void {
+    // As on Safety Jogger's Alaska: the key points name them, and some are also codes.
+    setLigeroFeatures(['SR', 'SC', 'LG', 'FO', 'CI'], ['S3', 'SRC slip resistance', 'Cold insulated (CI)', 'Warm lining', 'Water resistant Upper (WRU)', 'Antistatic']);
+
+    $html = $this->get(route('product', 'safety-jogger-ligero'))->assertOk()->getContent();
+
+    preg_match_all('#data-key-feature="([^"]+)"#', $html, $tiles);
+
+    // Water resistant upper has no picture file yet, so it is left out; the rest follow the vendor's order.
+    // SR and SRC are one tile (SRC), and the codes add ladder grip and oil and fuel.
+    expect($tiles[1])->toContain('src', 'cold_insulated', 'warm_lining', 'antistatic', 'scuff_cap', 'ladder_grip', 'oil_fuel_resistant')
+        ->not->toContain('sr')
+        ->and($html)->toContain('Keeps your feet warm and dry in cold environments.');
+});
+
+it('shows no Key features block when the product has none of the featured codes or key points', function (): void {
+    setLigeroFeatures(['P', 'M']);
+
+    $this->get(route('product', 'safety-jogger-ligero'))->assertOk()->assertDontSee('data-key-features', false);
+});
+
+it('has the Key features pictures committed', function (): void {
+    foreach (['metal_free', 'sr', 'src', 'electrostatic_discharge', 'antistatic', 'scuff_cap', 'cold_insulated', 'heat_resistant_outsole', 'ladder_grip', 'oil_fuel_resistant', 'warm_lining', 'breathable_upper', 'nano_carbon_toecap'] as $name) {
+        expect(is_file(public_path("images/features/{$name}.png")))->toBeTrue("{$name}.png is missing");
+    }
+});
+
+it('gives Key features to footwear of another brand as well, from its key points and codes', function (): void {
+    setLigeroFeatures(['SRC', 'WR'], ['Antistatic']);
+
+    $product = Url::query()->where('slug', 'safety-jogger-ligero')->sole()->element;
+    $product->update(['brand_id' => Brand::query()->create(['name' => 'Another Brand'])->id]);
+
+    $html = $this->get(route('product', 'safety-jogger-ligero'))->assertOk()->getContent();
+
+    preg_match_all('#data-key-feature="([^"]+)"#', $html, $tiles);
+
+    expect($tiles[1])->toBe(['antistatic', 'src', 'waterproof']);
+});
+
+it('gives no Key features to a product that is not footwear', function (): void {
+    setLigeroFeatures(['SRC', 'WR'], ['Antistatic']);
+
+    $product = Url::query()->where('slug', 'safety-jogger-ligero')->sole()->element;
+    $product->collections()->detach();
+
+    $this->get(route('product', 'safety-jogger-ligero'))->assertOk()->assertDontSee('data-key-features', false);
 });
