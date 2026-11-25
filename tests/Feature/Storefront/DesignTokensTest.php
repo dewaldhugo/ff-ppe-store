@@ -69,6 +69,7 @@ it('meets WCAG AA (4.5:1) for every text and background pair the templates use',
     'links and eyebrows' => ['brand-blue', 'white'],
     'links on alternate sections' => ['brand-blue', 'surface-muted'],
     'primary button' => ['brand-navy', 'brand-teal'],
+    'price on the product page' => ['brand-navy', 'white'],
     'primary button on hover' => ['white', 'brand-navy'],
     'footer text' => ['white', 'brand-blue'],
     'top bar and hero text' => ['white', 'brand-navy'],
@@ -170,7 +171,7 @@ it('never puts white text on a teal fill or teal text on a light surface', funct
         }
 
         // Teal text is only for dark surfaces: the eyebrows on the navy bands of the home and Health Check pages.
-        if (str_contains($source, 'text-brand-teal') && ! in_array(str_replace('\\', '/', $name), ['components/home/hero.blade.php', 'components/home/health-check.blade.php', 'pages/ppe-health-check.blade.php'], true)) {
+        if (preg_match('/text-brand-teal(?![-\w])/', $source) === 1 && ! in_array(str_replace('\\', '/', $name), ['components/home/hero.blade.php', 'components/home/health-check.blade.php', 'pages/ppe-health-check.blade.php'], true)) {
             $offenders[] = "{$name}: text-brand-teal outside a dark band";
         }
     }

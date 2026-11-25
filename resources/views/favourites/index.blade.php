@@ -5,12 +5,12 @@
 <x-layouts.storefront title="Favourites" :noindex="true">
     <x-account.company-heading class="mb-6" />
 
-    <x-ui.section-heading title="Your favourites" tag="h1">Products you have saved. Use the heart on a product to add or remove it.</x-ui.section-heading>
+    <x-ui.section-heading title="Your favourites" tag="h1">Products you have saved. Use Add to favourites on a product to add or remove it.</x-ui.section-heading>
 
     @if ($products->isEmpty())
         <div class="mt-8 rounded border border-border bg-surface-muted p-6" data-favourites-empty>
             <p class="font-semibold">You have not saved any products yet.</p>
-            <p class="mt-1 text-ink-muted">Select the heart on a product to keep it here for later.</p>
+            <p class="mt-1 text-ink-muted">Select Add to favourites on a product to keep it here for later.</p>
             <p class="mt-4"><x-ui.button :href="route('shop')">Browse products</x-ui.button></p>
         </div>
     @else

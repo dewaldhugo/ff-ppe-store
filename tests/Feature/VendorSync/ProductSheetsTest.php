@@ -255,7 +255,7 @@ it('shows the stored sheet of the chosen colour on the product page', function (
     preg_match('#<p[^>]*data-product-sheet.*?</p>#s', $navy, $navyLink);
     preg_match('#<p[^>]*data-product-sheet.*?</p>#s', $black, $blackLink);
 
-    expect($navyLink[0] ?? '')->toContain('Product sheet, Navy (PDF)')
+    expect($navyLink[0] ?? '')->toContain('Product sheet, Navy (PDF)')->toContain('data-pdf-icon')
         ->and($blackLink[0] ?? '')->toContain('Product sheet, Black (PDF)')
         ->and($navyLink[0] ?? '')->not->toBe($blackLink[0] ?? '');
 });

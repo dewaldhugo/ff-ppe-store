@@ -11,6 +11,7 @@
     $inStock = $product->variants->sum('stock') > 0;
     $prices = $product->variants->flatMap->prices->pluck('price.value')->unique();
     $swatches = \App\Domain\Catalogue\Options\ProductSwatches::for($product);
+    $safetyClass = trim((string) $product->attr('safety_class'));
 @endphp
 
 <li {{ $attributes->class('group relative flex flex-col rounded border border-border p-3 transition-colors hover:border-brand-teal') }}>
@@ -42,10 +43,14 @@
     @endif
 
     <p class="mt-3 text-xs uppercase tracking-wide text-ink-muted">{{ $product->brand?->name }}</p>
-    <h3 class="font-semibold">
+    {{-- The name, with the safety class beside it on a teal fill (navy text: white on teal fails AA), as on the product page. --}}
+    <h3 class="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-semibold">
         <a href="{{ route('product', $product->defaultUrl?->slug ?? $product->id) }}" class="after:absolute after:inset-0 hover:underline">
             {{ $product->translateAttribute('name') }}
         </a>
+        @if (filled($safetyClass))
+            <span class="rounded bg-brand-teal px-2 text-sm text-brand-navy" data-card-class>{{ $safetyClass }}</span>
+        @endif
     </h3>
     <p class="text-sm text-ink-muted">{{ $product->translateAttribute('title') }}</p>
 

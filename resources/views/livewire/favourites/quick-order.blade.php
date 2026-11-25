@@ -24,7 +24,7 @@
     @if ($rows === [])
         <div class="mt-8 rounded border border-border bg-surface-muted p-6" data-quick-order-empty>
             <p class="font-semibold">You have not saved any products yet.</p>
-            <p class="mt-1 text-ink-muted">Select the heart on a product to keep it here, then order it from this page.</p>
+            <p class="mt-1 text-ink-muted">Select Add to favourites on a product to keep it here, then order it from this page.</p>
             <p class="mt-4"><x-ui.button :href="route('shop')">Browse products</x-ui.button></p>
         </div>
     @else

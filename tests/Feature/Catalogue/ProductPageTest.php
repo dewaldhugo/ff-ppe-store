@@ -379,6 +379,36 @@ it('shows the brand name instead when it has no logo', function (): void {
     expect($brand[0] ?? '')->toContain('data-product-brand="test-brand"')->toContain('Test Brand')->not->toContain('<img');
 });
 
+it('shows the safety class beside the product name, 20% smaller, on the light teal of the menu', function (): void {
+    $html = $this->get(route('product', 'safety-jogger-ligero'))->assertOk()->getContent();
+
+    preg_match('#<h1 id="product-heading".*?</h1>#s', $html, $heading);
+    $heading = $heading[0] ?? '';
+
+    expect($heading)->toContain('LIGERO')
+        ->and($heading)->toMatch('#<span class="[^"]*bg-brand-teal-light[^"]*text-\[1\.5rem\][^"]*text-brand-navy[^"]*" data-name-class>S1P</span>#')
+        // After the name, in the same heading.
+        ->and(strpos($heading, 'LIGERO'))->toBeLessThan(strpos($heading, 'data-name-class'));
+});
+
+it('shows no class beside the name of a product that has none', function (): void {
+    CatalogueFactory::product('Plain', [['stock' => 1]]);
+
+    $html = $this->get(route('product', 'test-brand-plain'))->assertOk()->getContent();
+
+    expect($html)->not->toContain('data-name-class');
+});
+
+it('shows the price 44% larger than it started, in weight 600, in navy', function (): void {
+    $html = $this->get(route('product', 'safety-jogger-ligero'))->assertOk()->getContent();
+
+    preg_match('#<p[^>]*data-price>.*?</p>#s', $html, $price);
+
+    // text-2xl was 1.5rem; 20% more is 1.8rem, and another 20% is 2.16rem.
+    expect($price[0] ?? '')->toContain('£68.90')
+        ->and($price[0])->toMatch('#<span class="text-\[2\.16rem\] font-semibold text-brand-navy">£68\.90</span>#');
+});
+
 it('gives the product name some room above and below', function (): void {
     $html = $this->get(route('product', 'safety-jogger-ligero'))->assertOk()->getContent();
 
@@ -386,14 +416,15 @@ it('gives the product name some room above and below', function (): void {
         ->and($html)->toMatch('#<p class="mt-2 text-lg text-ink-muted">#');
 });
 
-it('shows the safety standard as the vendor does: the class and codes on one line, the standards under it', function (): void {
+it('shows the safety standard as the vendor does: the codes on one line, the standards under it', function (): void {
     $html = $this->get(route('product', 'safety-jogger-ligero'))->assertOk()->getContent();
 
     preg_match('#<section[^>]*data-safety-standard.*?</section>#s', $html, $panel);
     $panel = $panel[0] ?? '';
 
     expect($panel)->toContain('Safety standard')
-        ->and($panel)->toMatch('#data-safety-class>S1P<#')
+        // The class is beside the name, not repeated here.
+        ->and($panel)->not->toContain('data-safety-class')->not->toContain('>S1P<')
         ->and($panel)->toMatch('#data-safety-code[^>]*>SRC<#')
         ->and($panel)->toMatch('#data-safety-code[^>]*>CI<#')
         ->and($panel)->toMatch('#data-safety-code[^>]*>ESD<#')
@@ -405,9 +436,8 @@ it('shows the safety standard as the vendor does: the class and codes on one lin
         ->and($panel)->not->toContain('<dl')
         ->and($panel)->not->toContain('border');
 
-    // The class comes before the codes, and the codes before the standards.
-    expect(strpos($panel, 'data-safety-class'))->toBeLessThan(strpos($panel, 'data-safety-code'))
-        ->and(strpos($panel, 'data-safety-code'))->toBeLessThan(strpos($panel, 'data-standards'));
+    // The codes come before the standards.
+    expect(strpos($panel, 'data-safety-code'))->toBeLessThan(strpos($panel, 'data-standards'));
 
     // They are no longer rows of the specification table as well.
     preg_match('#<table[^>]*data-testid="specification".*?</table>#s', $html, $table);
@@ -415,7 +445,7 @@ it('shows the safety standard as the vendor does: the class and codes on one lin
     expect($table[0] ?? '')->not->toContain('Safety class')->not->toContain('>Standards<')->not->toContain('>Features<');
 });
 
-it('shows fastening and the country of origin by name in the specification', function (): void {
+it('shows fastening in the specification, and no country of origin', function (): void {
     $product = Url::query()->where('slug', 'safety-jogger-ligero')->sole()->element;
     $data = $product->attribute_data;
     $data['fastening'] = new Text('Laces');
@@ -425,7 +455,7 @@ it('shows fastening and the country of origin by name in the specification', fun
 
     preg_match('#<table[^>]*data-testid="specification".*?</table>#s', $html, $table);
 
-    expect($table[0] ?? '')->toContain('Fastening')->toContain('Laces')->toContain('Country of origin')->toContain('China')->not->toContain('>CN<');
+    expect($table[0] ?? '')->toContain('Fastening')->toContain('Laces')->not->toContain('Country of origin')->not->toContain('China');
 });
 
 it('lists the industries as links to the listing filtered to each', function (): void {
@@ -516,6 +546,33 @@ it('leaves out a listed pictogram that has no icon file, and a malformed entry',
     expect($names[1])->toBe(['ce'])->and($html)->not->toContain('Leather');
 });
 
+it('drops the key points that only repeat the safety standard line, and keeps the rest', function (): void {
+    $html = $this->get(route('product', 'safety-jogger-ligero'))->assertOk()->getContent();
+
+    preg_match('#<ul class="mt-6 list-disc[^>]*>.*?</ul>#s', $html, $list);
+    $list = $list[0] ?? '';
+
+    // Ligero's points: ESD (a code on the line, so dropped), Metal free (not on the line, so kept), and four more.
+    expect($list)->not->toContain('Electrostatic Discharge (ESD)')
+        ->and($list)->toContain('Metal free')->toContain('Nano carbon toecap')->toContain('Puncture resistant lightweight')
+        ->toContain('3D mesh')->toContain('SJ Foam');
+});
+
+it('makes the size, colour and quantity controls at least 44px tall, in 16px type', function (): void {
+    $html = $this->get(route('product', 'safety-jogger-ligero'))->assertOk()->getContent();
+
+    preg_match_all('#<button[^>]*aria-pressed[^>]*data-value="[^"]*"[^>]*class="([^"]*)"#s', $html, $buttons);
+    preg_match('#<input[^>]*data-quantity[^>]*class="([^"]*)"#s', $html, $quantity);
+
+    expect($buttons[1])->not->toBeEmpty();
+
+    foreach ($buttons[1] as $classes) {
+        expect($classes)->toContain('min-h-11')->toContain('text-base');
+    }
+
+    expect($quantity[1] ?? '')->toContain('h-11')->toContain('text-lg');
+});
+
 it('shows no pictograms block when the vendor lists none, however many features the product has', function (): void {
     $this->get(route('product', 'safety-jogger-ligero'))->assertOk()->assertDontSee('data-pictograms', false);
 });
@@ -549,7 +606,9 @@ it('offers the English product sheet for the chosen colour, and no other documen
     preg_match('#<p[^>]*data-product-sheet.*?</p>#s', $navy, $navyLink);
     preg_match('#<p[^>]*data-product-sheet.*?</p>#s', $black, $blackLink);
 
-    expect($navyLink[0] ?? '')->toContain('LIGERO_NAV_en')->toContain('Product sheet, Navy (PDF)')->not->toContain('LIGERO_BLK_en')
+    // A text link with a PDF icon, not a button.
+    expect($navyLink[0] ?? '')->toContain('data-pdf-icon')->toContain('underline')->not->toContain('border-2')->not->toContain('rounded-md')
+        ->and($navyLink[0] ?? '')->toContain('LIGERO_NAV_en')->toContain('Product sheet, Navy (PDF)')->not->toContain('LIGERO_BLK_en')
         ->and($blackLink[0] ?? '')->toContain('LIGERO_BLK_en')->toContain('Product sheet, Black (PDF)')
         // A certificate is a download too, and downloads other than the product sheet are not shown.
         ->and($navy)->not->toContain('LIGERO_CERT');
@@ -565,6 +624,55 @@ it('always puts the main gallery image on a white background', function (): void
     preg_match('#<div class="([^"]*)" data-gallery-frame>#', $html, $frame);
 
     expect($frame[1] ?? '')->toContain('bg-white')->not->toContain('bg-surface-muted');
+});
+
+it('keeps 5px of space round each gallery thumbnail', function (): void {
+    $product = Url::query()->where('slug', 'safety-jogger-ligero')->sole()->element;
+    $directory = storage_path('app/private/fixture-placeholders');
+
+    foreach (['detail', 'outsole'] as $role) {
+        $product
+            ->addMedia(app(PlaceholderImageGenerator::class)->generate("Ligero Navy {$role} pad", '394656', $directory, 240))
+            ->withCustomProperties(['colour' => 'Navy', 'role' => $role, 'primary' => false])
+            ->toMediaCollection(config('lunar.media.collection'));
+    }
+
+    $html = $this->get(route('product', 'safety-jogger-ligero').'?colour=navy')->assertOk()->getContent();
+
+    preg_match_all('#<button[^>]*data-gallery-thumb.*?</button>#s', $html, $thumbs);
+
+    expect($thumbs[0])->not->toBeEmpty();
+
+    foreach ($thumbs[0] as $thumb) {
+        expect($thumb)->toContain('p-[5px]');
+    }
+});
+
+it('lays the page out as an image column at half the width, a rule, then the description and specification 50 / 50', function (): void {
+    $html = $this->get(route('product', 'safety-jogger-ligero'))->assertOk()->getContent();
+
+    // The top: the image column and the buy box, two equal columns.
+    expect($html)->toContain('<div class="grid gap-8 lg:grid-cols-2" data-product-top>')
+        // Under it, a rule across the container and then two equal columns.
+        ->and($html)->toContain('<hr class="my-10 border-border" data-product-rule>')
+        ->and($html)->toContain('<div class="grid gap-10 lg:grid-cols-2" data-product-details>')
+        ->and(strpos($html, 'id="product-heading"'))->toBeLessThan(strpos($html, 'data-product-rule'))
+        ->and(strpos($html, 'data-product-rule'))->toBeLessThan(strpos($html, 'data-product-details'))
+        // Description on the left, specification on the right, both after the rule.
+        ->and(strpos($html, 'data-product-details'))->toBeLessThan(strpos($html, 'data-description'))
+        ->and(strpos($html, 'data-description'))->toBeLessThan(strpos($html, 'data-specification'));
+});
+
+it('puts the video under the thumbnails in the image column, and shows no video block for a product without one', function (): void {
+    $html = $this->get(route('product', 'safety-jogger-ligero'))->assertOk()->getContent();
+
+    // Ligero has a video: after the gallery, before the buy box, and not again further down.
+    expect($html)->toContain('data-video')->toMatch('#<section[^>]*class="[^"]*max-w-sm[^"]*"[^>]*data-video>#')
+        ->and(strpos($html, 'data-testid="gallery"'))->toBeLessThan(strpos($html, 'data-video'))
+        ->and(strpos($html, 'data-video'))->toBeLessThan(strpos($html, 'id="product-heading"'))
+        ->and(substr_count($html, '<iframe'))->toBe(1);
+
+    $this->get(route('product', 'gbs-eva'))->assertOk()->assertDontSee('data-video', false)->assertDontSee('<iframe', false);
 });
 
 it('keeps 10px of space round the main gallery image', function (): void {
@@ -695,16 +803,16 @@ function addButton(string $html): array
     ];
 }
 
-it('keeps add to cart disabled until a size and a quantity are chosen, and says what is needed', function (): void {
+it('keeps add to cart disabled until a size and a quantity are chosen, and it always says Add to cart', function (): void {
     $component = Livewire::test(ProductPage::class, ['slug' => 'safety-jogger-ligero']);
 
     // The colour is pre-selected. The size and the quantity never are.
-    expect(addButton($component->html()))->toBe(['disabled' => true, 'label' => 'Select a size'])
+    expect(addButton($component->html()))->toBe(['disabled' => true, 'label' => 'Add to cart'])
         ->and($component->get('quantity'))->toBe('');
 
     $component->call('choose', 'shoe_size', '8');
 
-    expect(addButton($component->html()))->toBe(['disabled' => true, 'label' => 'Enter a quantity']);
+    expect(addButton($component->html()))->toBe(['disabled' => true, 'label' => 'Add to cart']);
 
     $component->set('quantity', '3');
 
@@ -713,18 +821,55 @@ it('keeps add to cart disabled until a size and a quantity are chosen, and says 
     // Clearing the quantity disables it again.
     $component->set('quantity', '');
 
-    expect(addButton($component->html()))->toBe(['disabled' => true, 'label' => 'Enter a quantity']);
+    expect(addButton($component->html()))->toBe(['disabled' => true, 'label' => 'Add to cart']);
 
     // Choosing a combination that is out of stock disables it whatever the quantity.
     $component->set('quantity', '1')->call('choose', 'colour', 'black')->call('choose', 'shoe_size', '10');
 
-    expect(addButton($component->html()))->toBe(['disabled' => true, 'label' => 'Out of stock']);
+    expect(addButton($component->html()))->toBe(['disabled' => true, 'label' => 'Add to cart']);
+});
+
+it('puts Add to cart and Add to favourites side by side, the same size, the second outlined', function (): void {
+    $html = $this->get(route('product', 'safety-jogger-ligero'))->assertOk()->getContent();
+
+    preg_match('#<button[^>]*data-add-to-cart[^>]*>#s', $html, $cart);
+    preg_match('#<button[^>]*data-favourite-button[^>]*>#s', $html, $favourite);
+
+    // The cart button is outside its form and joined to it, so the two buttons can share a row.
+    expect($html)->toMatch('#<form[^>]*wire:submit="addToCart"[^>]*id="add-to-cart-form"#')
+        ->and($cart[0] ?? '')->toContain('form="add-to-cart-form"')
+        ->and(strpos($html, 'data-add-to-cart'))->toBeGreaterThan(strpos($html, '</form>', strpos($html, 'id="add-to-cart-form"')))
+        // The same size, weight and width (18rem on a wide screen, so the longer "Saved to favourites" fits), both wider than before.
+        ->and($cart[0] ?? '')->toContain('px-8 py-3 text-lg font-bold')->toContain('sm:w-72')
+        ->and($favourite[0] ?? '')->toContain('px-8 py-3 text-lg font-bold')->toContain('sm:w-72')
+        // The favourites button is outlined: a teal border and no fill.
+        ->and($favourite[0] ?? '')->toContain('border-2 border-brand-teal')->not->toContain('bg-brand-teal')
+        // The cart button is filled.
+        ->and($cart[0] ?? '')->toContain('bg-brand-teal')
+        // Cart first, favourites after it, in one row.
+        ->and(strpos($html, 'data-add-to-cart'))->toBeLessThan(strpos($html, 'data-favourite-button'))
+        ->and(strpos($html, 'data-buy-buttons'))->toBeLessThan(strpos($html, 'data-add-to-cart'));
+});
+
+it('submits the cart form from the button outside it, and never changes its label', function (): void {
+    $component = Livewire::test(ProductPage::class, ['slug' => 'safety-jogger-ligero'])
+        ->call('choose', 'shoe_size', '8')
+        ->set('quantity', '2');
+
+    // The form is what Livewire submits; the button is only joined to it.
+    $component->assertSeeHtml('id="add-to-cart-form"')->assertSeeHtml('form="add-to-cart-form"');
+
+    expect(addButton($component->html()))->toBe(['disabled' => false, 'label' => 'Add to cart']);
+
+    $component->call('addToCart')->assertSet('added', true);
+
+    expect(addButton($component->html())['label'])->toBe('Add to cart');
 });
 
 it('entering a quantity first still needs a size', function (): void {
     $component = Livewire::test(ProductPage::class, ['slug' => 'safety-jogger-ligero'])->set('quantity', '2');
 
-    expect(addButton($component->html()))->toBe(['disabled' => true, 'label' => 'Select a size']);
+    expect(addButton($component->html()))->toBe(['disabled' => true, 'label' => 'Add to cart']);
 
     $component->call('addToCart')->assertSet('added', false)->assertSet('missingOption', 'shoe_size');
 });
@@ -774,11 +919,10 @@ it('shows the stock of the chosen variant next to the quantity field once every 
 
     preg_match('#(<p[^>]*data-stock-available[^>]*>)(.*?)</p>#s', $component->html(), $stock);
 
-    // A badge (the dot before the text is decoration only), red because 3 is low stock.
+    // The figure alone, red because 3 is low stock, with no border or fill.
     expect(trim(strip_tags($stock[2] ?? '')))->toBe('3 available')
-        ->and($stock[1])->toContain('rounded-full')
-        ->and($stock[1])->toContain('border-danger')
-        ->and($stock[1])->not->toContain('border-success');
+        ->and($stock[1])->toContain('text-danger')
+        ->and($stock[1])->not->toContain('border')->not->toContain('bg-');
     $component->assertSeeHtml('max="3"');
 
     // The figure follows the selection.
@@ -790,15 +934,16 @@ it('shows the stock of the chosen variant next to the quantity field once every 
     $component->assertSeeHtml('max="1"');
 });
 
-it('shows a green stock badge when there is plenty in stock', function (): void {
+it('shows the stock figure alone, with no icon, border or fill, when there is plenty in stock', function (): void {
     // LIGERO in size 8 is "In stock", above the low-stock line.
     $component = Livewire::test(ProductPage::class, ['slug' => 'safety-jogger-ligero'])->call('choose', 'shoe_size', '8');
 
     preg_match('#(<p[^>]*data-stock-available[^>]*>)(.*?)</p>#s', $component->html(), $stock);
 
-    expect($stock[1])->toContain('rounded-full')
-        ->and($stock[1])->toContain('border-success')
-        ->and($stock[1])->not->toContain('border-danger')
+    expect($stock[1])->toContain('text-brand-navy')->not->toContain('border')->not->toContain('bg-')
+        ->and($stock[1])->not->toContain('text-danger')
+        // Just the figure: no icon and no dot before it.
+        ->and($stock[2])->not->toContain('<svg')->not->toContain('bg-current')
         ->and(trim(strip_tags($stock[2])))->toMatch('/^\d+ available$/');
 });
 
@@ -825,9 +970,13 @@ it('shows a labelled quantity field that starts empty', function (): void {
         ->and($input[0])->not->toContain('aria-invalid');
 });
 
-it('says out of stock, not select a size, when nothing is in stock', function (): void {
-    expect(addButton($this->get(route('product', 'maxguard-sx310'))->getContent()))
-        ->toBe(['disabled' => true, 'label' => 'Out of stock']);
+it('says out of stock in the stock line, and leaves Add to cart disabled, when nothing is in stock', function (): void {
+    $html = $this->get(route('product', 'maxguard-sx310'))->getContent();
+
+    preg_match('#<p[^>]*data-testid="stock"[^>]*>(.*?)</p>#s', $html, $stock);
+
+    expect(trim($stock[1] ?? ''))->toBe('Out of stock')
+        ->and(addButton($html))->toBe(['disabled' => true, 'label' => 'Add to cart']);
 });
 
 it('links to the size guide next to the size selector', function (): void {
