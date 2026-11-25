@@ -59,21 +59,6 @@
             @endif
         </section>
 
-        @if ($videoUrl)
-        <section aria-labelledby="video-heading" class="mt-6 max-w-sm" data-video>
-            <h2 id="video-heading" class="sr-only">Video</h2>
-            <div class="aspect-video">
-                <iframe
-                    src="{{ $videoUrl }}"
-                    title="{{ $product->translateAttribute('name') }} video"
-                    loading="lazy"
-                    allow="accelerometer; encrypted-media; gyroscope; picture-in-picture"
-                    allowfullscreen
-                    class="h-full w-full rounded border border-border"
-                ></iframe>
-            </div>
-        </section>
-        @endif
         </div>
 
         <section aria-labelledby="product-heading">
@@ -377,6 +362,34 @@
         </section>
         @endif
         </div>
+    @endif
+
+    {{-- The videos, the full width of the page container, under the product details: the vendor's own first, then any uploaded in the admin, in their order. --}}
+    @if ($videoUrl || $uploadedVideos !== [])
+        <section aria-labelledby="video-heading" class="mt-10" data-video>
+            <h2 id="video-heading" class="text-xl font-bold">{{ ($videoUrl ? 1 : 0) + count($uploadedVideos) > 1 ? 'Product videos' : 'Product video' }}</h2>
+
+            @if ($videoUrl)
+                <div class="mt-4 aspect-video" data-video-vendor>
+                    <iframe
+                        src="{{ $videoUrl }}"
+                        title="{{ $product->translateAttribute('name') }} video"
+                        loading="lazy"
+                        allow="accelerometer; encrypted-media; gyroscope; picture-in-picture"
+                        allowfullscreen
+                        class="h-full w-full rounded border border-border"
+                    ></iframe>
+                </div>
+            @endif
+
+            @foreach ($uploadedVideos as $index => $video)
+                <div class="mt-4 aspect-video" data-video-uploaded>
+                    <video controls preload="metadata" playsinline class="h-full w-full rounded border border-border bg-black" aria-label="{{ $product->translateAttribute('name') }} video {{ $index + 1 }}">
+                        <source src="{{ $video['url'] }}" type="{{ $video['type'] }}">
+                    </video>
+                </div>
+            @endforeach
+        </section>
     @endif
 
     <x-storefront.feature-highlights :tiles="$featureTiles" />

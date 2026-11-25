@@ -21,6 +21,9 @@ final class ProductMediaDefinitions implements MediaDefinitionsInterface
     /** The product's documents (data contract, Media): English product sheets, one per colour. No conversions. */
     public const string DOCUMENTS = 'documents';
 
+    /** The product's own videos, uploaded in the admin (MP4 or WebM): shown on the product page under the vendor's video. No conversions. */
+    public const string VIDEOS = 'videos';
+
     /** @var array<string, int> */
     private const array CONVERSIONS = [
         'thumb' => 300,
@@ -30,8 +33,8 @@ final class ProductMediaDefinitions implements MediaDefinitionsInterface
 
     public function registerMediaConversions(HasMedia $model, ?Media $media = null): void
     {
-        // A document (a product sheet PDF) is stored as it is, never converted.
-        if ($media !== null && $media->collection_name === self::DOCUMENTS) {
+        // A document (a product sheet PDF) or a video is stored as it is, never converted.
+        if ($media !== null && in_array($media->collection_name, [self::DOCUMENTS, self::VIDEOS], true)) {
             return;
         }
 
@@ -59,6 +62,7 @@ final class ProductMediaDefinitions implements MediaDefinitionsInterface
         }
 
         $model->addMediaCollection(self::DOCUMENTS)->useDisk(self::DISK);
+        $model->addMediaCollection(self::VIDEOS)->useDisk(self::DISK);
 
         $collection->registerMediaConversions(function () use ($model): void {
             foreach (self::CONVERSIONS as $name => $size) {
@@ -74,7 +78,7 @@ final class ProductMediaDefinitions implements MediaDefinitionsInterface
      */
     public function getMediaCollectionTitles(): array
     {
-        return ['images' => 'Images', self::DOCUMENTS => 'Documents'];
+        return ['images' => 'Images', self::DOCUMENTS => 'Documents', self::VIDEOS => 'Videos'];
     }
 
     /**

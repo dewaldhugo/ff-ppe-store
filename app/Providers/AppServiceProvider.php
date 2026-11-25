@@ -15,6 +15,7 @@ use App\Admin\Extensions\DashboardTopWidgetsExtension;
 use App\Admin\Extensions\OrderDeleteResourceExtension;
 use App\Admin\Extensions\OrderDeleteViewExtension;
 use App\Admin\Extensions\OrderInvoicePdfViewExtension;
+use App\Admin\Extensions\ProductVideosResourceExtension;
 use App\Admin\Resources\InvoiceResource;
 use App\Admin\Widgets\RecentOrdersWidget;
 use App\Admin\Widgets\SalesTilesWidget;
@@ -43,6 +44,7 @@ use Lunar\Admin\Filament\Resources\CustomerResource\Pages\EditCustomer;
 use Lunar\Admin\Filament\Resources\CustomerResource\Pages\ViewCustomer;
 use Lunar\Admin\Filament\Resources\OrderResource;
 use Lunar\Admin\Filament\Resources\OrderResource\Pages\ManageOrder;
+use Lunar\Admin\Filament\Resources\ProductResource;
 use Lunar\Admin\Support\Facades\LunarPanel;
 use Lunar\Base\ShippingModifiers;
 use Lunar\Facades\Taxes;
@@ -66,6 +68,8 @@ final class AppServiceProvider extends ServiceProvider
             OrderResource::class => OrderDeleteResourceExtension::class,
             // The order page's header: Delete order, and the Invoice PDF.
             ManageOrder::class => [OrderDeleteViewExtension::class, OrderInvoicePdfViewExtension::class],
+            // A Product videos upload on the Edit Product screen (shown on the product page under the vendor's video).
+            ProductResource::class => ProductVideosResourceExtension::class,
             // The sales tiles and the latest orders list at the top of the dashboard.
             Dashboard::class => DashboardTopWidgetsExtension::class,
         ]);
