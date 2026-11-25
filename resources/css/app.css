@@ -234,7 +234,7 @@
     .card-backdrop {
         position: relative;
         background-color: var(--color-white);
-        background-image: radial-gradient(ellipse closest-side at 50% 46%, var(--color-white) 0%, var(--color-white) 20%, #E4F4F2 65%, var(--color-brand-teal-light) 100%);
+        background-image: radial-gradient(ellipse closest-side at 50% 46%, var(--color-white) 0%, var(--color-white) 20%, #EDF7F6 65%, #CFEBE8 100%);
     }
 
     .card-backdrop::before {
