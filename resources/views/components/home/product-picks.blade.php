@@ -11,7 +11,7 @@
                         $hasRange = $product->variants->flatMap->prices->pluck('price.value')->unique()->count() > 1;
                     @endphp
                     <li class="group relative flex flex-col rounded border border-border p-3 transition-colors hover:border-brand-teal" data-home-product>
-                        <div class="aspect-square overflow-hidden rounded bg-surface-muted">
+                        <div class="card-backdrop aspect-square overflow-hidden rounded">
                             @if ($product->thumbnail)
                                 <img
                                     src="{{ $product->thumbnail->getUrl('thumb') }}"
