@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\VendorSync\Images;
 
+use App\Domain\Catalogue\Keys\CatalogueKeys;
 use App\Domain\VendorSync\Exceptions\RunAlreadyRunning;
 use App\Domain\VendorSync\Import\RunRecorder;
 use App\Domain\VendorSync\Models\SyncRun;
@@ -12,6 +13,7 @@ use App\Domain\VendorSync\Models\VendorProduct;
 use App\Support\Queues;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\DB;
 use Lunar\Models\Product;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Throwable;
@@ -67,8 +69,10 @@ final readonly class ImageRun
      * Like `dispatch()`, with the number of products left out as up to date.
      *
      * @param  string|null  $vendorProductId  Limit to one vendor product ID.
+     * @param  list<string>  $categories  Limit to products in these category handles (contract handles, for example
+     *                                    `safety-boots`); empty is every category. Other products are not even looked at.
      */
-    public function run(string $vendorCode, ?string $vendorProductId = null, bool $refresh = false): ImageDispatch
+    public function run(string $vendorCode, ?string $vendorProductId = null, bool $refresh = false, array $categories = []): ImageDispatch
     {
         $vendor = $this->runs->vendor(strtoupper($vendorCode));
 
@@ -80,23 +84,25 @@ final readonly class ImageRun
         }
 
         try {
-            return $this->queue($vendor, $vendorProductId, $refresh);
+            return $this->queue($vendor, $vendorProductId, $refresh, $categories);
         } finally {
             $lock->release();
         }
     }
 
-    private function queue(Vendor $vendor, ?string $vendorProductId, bool $refresh): ImageDispatch
+    private function queue(Vendor $vendor, ?string $vendorProductId, bool $refresh, array $categories): ImageDispatch
     {
         $skipped = 0;
+        $inCategories = $categories === [] ? null : $this->productsIn($categories);
         $ids = $refresh || $vendorProductId !== null
             ? VendorProduct::query()
                 ->where('vendor_id', $vendor->id)
                 ->when($vendorProductId !== null, fn ($query) => $query->where('vendor_product_id', $vendorProductId))
+                ->when($inCategories !== null && $vendorProductId === null, fn ($query) => $query->whereIn('product_id', $inCategories))
                 ->orderBy('id')
                 ->pluck('id')
                 ->all()
-            : $this->needingImages($vendor, $skipped);
+            : $this->needingImages($vendor, $skipped, $inCategories);
 
         $run = $this->runs->start($vendor, self::TYPE);
         $runId = $run->id;
@@ -156,7 +162,7 @@ final readonly class ImageRun
      *
      * @return list<int>
      */
-    private function needingImages(Vendor $vendor, int &$skipped): array
+    private function needingImages(Vendor $vendor, int &$skipped, ?array $inCategories = null): array
     {
         $ids = [];
         $morphType = (new Product)->getMorphClass();
@@ -164,6 +170,7 @@ final readonly class ImageRun
 
         VendorProduct::query()
             ->where('vendor_id', $vendor->id)
+            ->when($inCategories !== null, fn ($query) => $query->whereIn('product_id', $inCategories))
             ->chunkById(self::CHUNK, function (EloquentCollection $links) use (&$ids, &$skipped, $vendor, $morphType, $collection): void {
                 $withImages = Media::query()
                     ->where('model_type', $morphType)
@@ -202,6 +209,24 @@ final readonly class ImageRun
             });
 
         return $ids;
+    }
+
+    /**
+     * The Lunar product IDs in any of these categories (contract handles). A handle the catalogue does not have is an error.
+     *
+     * @param  list<string>  $handles
+     * @return list<int>
+     */
+    private function productsIn(array $handles): array
+    {
+        $collectionIds = array_map(fn (string $handle): int => CatalogueKeys::collection($handle)->id, $handles);
+
+        return DB::table((new Product)->collections()->getTable())
+            ->whereIn('collection_id', $collectionIds)
+            ->distinct()
+            ->pluck('product_id')
+            ->map(fn ($id): int => (int) $id)
+            ->all();
     }
 
     /**
