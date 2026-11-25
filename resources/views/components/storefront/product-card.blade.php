@@ -30,6 +30,11 @@
         @unless ($inStock)
             <span class="absolute left-2 top-2 rounded bg-brand-blue px-2 py-1 text-xs font-semibold text-white">Out of stock</span>
         @endunless
+
+        {{-- The safety class, top right of the picture: the empty space above a shoe on the common baseline, and off the name line. --}}
+        @if (filled($safetyClass))
+            <span class="absolute right-2 top-2 rounded bg-brand-teal-light px-2 py-1 text-xs font-semibold text-brand-navy" data-card-class>{{ $safetyClass }}</span>
+        @endif
     </div>
 
     @if ($swatches !== [])
@@ -43,14 +48,10 @@
     @endif
 
     <p class="mt-3 text-xs uppercase tracking-wide text-ink-muted">{{ $product->brand?->name }}</p>
-    {{-- The name, with the safety class beside it at 20% smaller type on the light teal of the menu bar, as on the product page. --}}
-    <h3 class="flex flex-wrap items-center gap-x-2 gap-y-1 py-1.5 text-[0.9375rem] font-semibold">
+    <h3 class="py-1.5 text-[0.9375rem] font-semibold">
         <a href="{{ route('product', $product->defaultUrl?->slug ?? $product->id) }}" class="after:absolute after:inset-0 hover:underline">
             {{ $product->translateAttribute('name') }}
         </a>
-        @if (filled($safetyClass))
-            <span class="rounded bg-brand-teal-light px-2 text-xs text-brand-navy" data-card-class>{{ $safetyClass }}</span>
-        @endif
     </h3>
     <p class="text-sm text-ink-muted">{{ $product->translateAttribute('title') }}</p>
 

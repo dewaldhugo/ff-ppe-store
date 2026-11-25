@@ -212,7 +212,7 @@ it('sets the product name on a card at 15px with 6px of space above and below', 
     }
 });
 
-it('shows the safety class beside the product name on each card that has one', function (): void {
+it('shows the safety class as a badge in the top right of the picture on each card that has one', function (): void {
     $html = $this->get(route('category', 'safety-footwear'))->assertOk()->getContent();
 
     preg_match_all('#<li[^>]*wire:key="product-(\d+)".*?</li>\s*(?=<li[^>]*wire:key|</ul>)#s', $html, $cards, PREG_SET_ORDER);
@@ -235,9 +235,10 @@ it('shows the safety class beside the product name on each card that has one', f
 
         preg_match('#<h3.*?</h3>#s', $card, $heading);
 
-        expect($heading[0] ?? '')->toMatch('#<span class="[^"]*bg-brand-teal-light[^"]*text-xs[^"]*text-brand-navy[^"]*" data-card-class>'.preg_quote($class, '#').'</span>#')
-            // After the name link, inside the same heading.
-            ->and(strpos($heading[0], '</a>'))->toBeLessThan(strpos($heading[0], 'data-card-class'));
+        // A badge in the top right corner of the picture, on the light teal, and not in the name line.
+        expect($card)->toMatch('#<span class="[^"]*absolute right-2 top-2[^"]*bg-brand-teal-light[^"]*text-brand-navy[^"]*" data-card-class>'.preg_quote($class, '#').'</span>#')
+            ->and($heading[0] ?? '')->not->toContain('data-card-class')
+            ->and(strpos($card, 'data-card-class'))->toBeLessThan(strpos($card, '<h3'));
     }
 
     expect($withClass)->toBeGreaterThan(0);
