@@ -23,18 +23,18 @@ final class ImageOptimiser
     private const int HEADROOM = 48 * 1024 * 1024;
 
     /**
-     * Names the output: it is part of the image plan hash, so changing the width or quality has every product fetch its images
+     * Names the output (`-base11-side4-ar100` when the subject is also put on the baseline, with these margins and canvas shape): it is part of the image plan hash, so changing the width or quality has every product fetch its images
      * again, and an image stored under another signature is processed again.
      */
-    public function signature(): string
+    public function signature(bool $aligned = false): string
     {
-        return 'webp-'.$this->maxWidth().'-q'.$this->quality();
+        return 'webp-'.$this->maxWidth().'-q'.$this->quality().($aligned ? '-base'.(int) round($this->bottom() * 100).'-side'.(int) round($this->side() * 100).($this->aspect() === null ? '' : '-ar'.(int) round($this->aspect() * 100)) : '');
     }
 
     /**
      * @throws RuntimeException When the bytes are not an image GD can read, or cannot be written as WebP.
      */
-    public function optimise(string $content): string
+    public function optimise(string $content, bool $aligned = false): string
     {
         $size = @getimagesizefromstring($content);
 
@@ -47,7 +47,7 @@ final class ImageOptimiser
         $previous = $this->raiseMemoryFor($width * $height * self::BYTES_PER_PIXEL + self::HEADROOM);
 
         try {
-            return $this->encode($content, $width, $height);
+            return $this->encode($content, $width, $height, $aligned);
         } finally {
             if ($previous !== null) {
                 ini_set('memory_limit', $previous);
@@ -55,7 +55,7 @@ final class ImageOptimiser
         }
     }
 
-    private function encode(string $content, int $width, int $height): string
+    private function encode(string $content, int $width, int $height, bool $aligned): string
     {
         $source = @imagecreatefromstring($content);
 
@@ -80,6 +80,11 @@ final class ImageOptimiser
 
             unset($source);
             $source = $resized;
+        }
+
+        // After the shrink, so the subject is found on the smaller image.
+        if ($aligned) {
+            $source = (new SubjectAligner)->align($source, $this->bottom(), $this->top(), $this->side(), $this->aspect());
         }
 
         imagealphablending($source, false);
@@ -137,6 +142,31 @@ final class ImageOptimiser
             'K' => $number * 1024,
             default => $number,
         };
+    }
+
+    private function bottom(): float
+    {
+        return min(0.4, max(0.0, (float) config('vendorsync.images.align.bottom', 0.11)));
+    }
+
+    /**
+     * Width over height of the canvas an aligned image is put on, or null to keep its own shape.
+     */
+    private function aspect(): ?float
+    {
+        $aspect = config('vendorsync.images.align.aspect', 1.0);
+
+        return is_numeric($aspect) && (float) $aspect > 0 ? min(4.0, max(0.25, (float) $aspect)) : null;
+    }
+
+    private function side(): float
+    {
+        return min(0.2, max(0.0, (float) config('vendorsync.images.align.side', 0.04)));
+    }
+
+    private function top(): float
+    {
+        return min(0.4, max(0.0, (float) config('vendorsync.images.align.top', 0.02)));
     }
 
     private function maxWidth(): int

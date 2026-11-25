@@ -216,7 +216,8 @@ it('stores every image as WebP at most 1200 wide, however large the original is'
         expect($image->mime_type)->toBe('image/webp')
             ->and($image->file_name)->toEndWith('.webp')
             ->and($width)->toBeLessThanOrEqual(1200)
-            ->and($image->getCustomProperty('optimised'))->toBe('webp-1200-q85');
+            // A Safety Jogger main image is also put on the baseline; its other pictures are not.
+            ->and($image->getCustomProperty('optimised'))->toBe($image->getCustomProperty('role') === 'main' ? 'webp-1200-q85-base11-side4-ar100' : 'webp-1200-q85');
     }
 
     // The 9 megapixel original was shrunk, not kept.
@@ -247,7 +248,60 @@ it('fetches an image stored before the WebP rule again and replaces it', functio
     expect($result->downloaded)->toBe(6)
         ->and($after)->toHaveCount(6)
         ->and($after->pluck('id')->intersect($before->pluck('id'))->all())->toBe([])
-        ->and($after->every(fn ($image): bool => $image->getCustomProperty('optimised') === 'webp-1200-q85'))->toBeTrue();
+        ->and($after->every(fn ($image): bool => $image->getCustomProperty('optimised') === ($image->getCustomProperty('role') === 'main' ? 'webp-1200-q85-base11-side4-ar100' : 'webp-1200-q85')))->toBeTrue();
+});
+
+it('fetches only the main images again when the baseline rule is added, and not when it is switched off', function (): void {
+    $link = importBestboot();
+
+    // Stored before the rule: every image in plain WebP.
+    config(['vendorsync.images.align.vendors' => []]);
+    app(ProductImageSync::class)->sync($link);
+
+    $product = VendorSync::product('SJ', '215754');
+    $before = $product->getMedia('images');
+
+    expect($before->every(fn ($image): bool => $image->getCustomProperty('optimised') === 'webp-1200-q85'))->toBeTrue();
+
+    // Switched on for Safety Jogger: the plan hash moves, and only the main images are replaced.
+    config(['vendorsync.images.align.vendors' => ['SJ']]);
+
+    $result = app(ProductImageSync::class)->sync($link->refresh());
+
+    $after = $product->refresh()->getMedia('images');
+    $mains = $before->filter(fn ($image): bool => $image->getCustomProperty('role') === 'main');
+
+    expect($result->downloaded)->toBe($mains->count())
+        ->and($after)->toHaveCount($before->count())
+        // The pictures that are not main images are the same files as before.
+        ->and($after->pluck('id')->intersect($before->reject(fn ($image): bool => $image->getCustomProperty('role') === 'main')->pluck('id'))->count())->toBe($before->count() - $mains->count())
+        ->and($after->filter(fn ($image): bool => $image->getCustomProperty('role') === 'main')->every(fn ($image): bool => $image->getCustomProperty('optimised') === 'webp-1200-q85-base11-side4-ar100'))->toBeTrue();
+});
+
+it('puts only the safety shoes and safety boots of Safety Jogger on the baseline', function (): void {
+    $link = importBestboot();
+
+    // BESTBOOT is a boot, so it is in the list.
+    config(['vendorsync.images.align.collections' => ['safety-shoes', 'safety-boots']]);
+    app(ProductImageSync::class)->sync($link);
+
+    $mains = fn () => VendorSync::product('SJ', '215754')->refresh()->getMedia('images')->filter(fn ($image): bool => $image->getCustomProperty('role') === 'main');
+
+    expect($mains()->every(fn ($image): bool => $image->getCustomProperty('optimised') === 'webp-1200-q85-base11-side4-ar100'))->toBeTrue();
+
+    // With the list narrowed to another category, the same product is left as it comes: its main images are fetched again, plain.
+    config(['vendorsync.images.align.collections' => ['safety-trainers']]);
+
+    app(ProductImageSync::class)->sync($link->refresh());
+
+    expect($mains()->every(fn ($image): bool => $image->getCustomProperty('optimised') === 'webp-1200-q85'))->toBeTrue();
+
+    // An empty list means every category again.
+    config(['vendorsync.images.align.collections' => []]);
+
+    app(ProductImageSync::class)->sync($link->refresh());
+
+    expect($mains()->every(fn ($image): bool => $image->getCustomProperty('optimised') === 'webp-1200-q85-base11-side4-ar100'))->toBeTrue();
 });
 
 it('does not fetch an image that is already stored as WebP again', function (): void {

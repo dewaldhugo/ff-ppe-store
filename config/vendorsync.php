@@ -439,6 +439,22 @@ return [
         // WebP quality, 1 to 100.
         'webp_quality' => 85,
 
+        // A vendor's main images (the first picture of each colour) can be put on a common baseline, so a grid of products lines
+        // up (SubjectAligner): the subject is moved so the room under it is `bottom` of the height, and scaled down only when it
+        // would then leave less than `top` above or less than `side` of the width at either side. Safety Jogger frames its shoes and boots differently, so it is on.
+        'align' => [
+            'vendors' => ['SJ'],
+            // Only products in these categories (contract handles); an empty list is every category. Safety shoes and safety boots,
+            // where the framing differs between shoes and boots; workwear and accessories are left as they come.
+            'collections' => ['safety-shoes', 'safety-boots'],
+            'bottom' => 0.11,
+            'top' => 0.02,
+            'side' => 0.04,
+            // Width over height of the canvas the subject is put on: 1.0 is square, so a wide shoe and a tall boot share one
+            // canvas and a grid that fits each picture into a square box lines them up. 0 or null keeps each picture's own shape.
+            'aspect' => 1.0,
+        ],
+
         // Where the vendor's pictogram icons are downloaded from (`vendorsync:pictograms`); `{name}` is the icon's name.
         'pictogram_url' => 'https://www.safetyjogger.com/static/safetyjogger/icon/industrial/{name}.png',
     ],

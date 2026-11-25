@@ -91,3 +91,55 @@ it('leaves the memory limit as it found it after a large image', function (): vo
 
     expect(ini_get('memory_limit'))->toBe($before);
 });
+
+it('names the baseline in the signature only when it aligns', function (): void {
+    expect((new ImageOptimiser)->signature())->toBe('webp-1200-q85')
+        ->and((new ImageOptimiser)->signature(true))->toBe('webp-1200-q85-base11-side4-ar100');
+
+    config(['vendorsync.images.align.bottom' => 0.2]);
+
+    expect((new ImageOptimiser)->signature(true))->toBe('webp-1200-q85-base20-side4-ar100');
+
+});
+
+it('puts the subject on the baseline when asked, and leaves it where it is otherwise', function (): void {
+    // A 600 x 400 transparent PNG with a shoe-shaped block floating in the middle (rows 150 to 249).
+    $image = imagecreatetruecolor(600, 400);
+    imagealphablending($image, false);
+    imagesavealpha($image, true);
+    imagefill($image, 0, 0, (int) imagecolorallocatealpha($image, 0, 0, 0, 127));
+    imagefilledrectangle($image, 100, 150, 499, 249, (int) imagecolorallocate($image, 20, 30, 40));
+    ob_start();
+    imagepng($image);
+    $png = (string) ob_get_clean();
+
+    $bottomRow = function (string $webp): int {
+        $decoded = imagecreatefromstring($webp);
+        $bottom = -1;
+
+        for ($y = 0; $y < imagesy($decoded); $y++) {
+            if (((imagecolorat($decoded, 300, $y) >> 24) & 127) < 80) {
+                $bottom = $y;
+            }
+        }
+
+        return $bottom;
+    };
+
+    // As it was: the block ends at row 249.
+    expect($bottomRow((new ImageOptimiser)->optimise($png)))->toBe(249);
+
+    // On the baseline of a square canvas: the picture becomes 600 x 600, and 89% of 600 = 534.
+    $aligned = (new ImageOptimiser)->optimise($png, true);
+
+    expect(getimagesizefromstring($aligned)[1])->toBe(600)
+        ->and($bottomRow($aligned))->toBeGreaterThanOrEqual(531)->toBeLessThanOrEqual(535);
+
+    // Without a canvas shape it keeps its own size and baseline: 89% of 400 = 356.
+    config(['vendorsync.images.align.aspect' => null]);
+
+    $kept = (new ImageOptimiser)->optimise($png, true);
+
+    expect(getimagesizefromstring($kept)[1])->toBe(400)
+        ->and($bottomRow($kept))->toBeGreaterThanOrEqual(353)->toBeLessThanOrEqual(357);
+});

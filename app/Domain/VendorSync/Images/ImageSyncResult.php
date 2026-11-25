@@ -17,6 +17,9 @@ final class ImageSyncResult
 
     public int $planned = 0;
 
+    /** @var list<string> The category handles the vendor's product is in (read from its payload when the plan is made). */
+    public array $collections = [];
+
     public int $downloaded = 0;
 
     /** Images the product has when the sync ends. */

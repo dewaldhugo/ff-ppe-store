@@ -60,7 +60,8 @@ final readonly class ProductImageSync
         /** @var Product $product */
         $product = Product::query()->findOrFail($link->product_id);
         $collection = (string) config('lunar.media.collection');
-        $planHash = $this->hashOf($plan);
+        $vendorCode = (string) $link->vendor?->code;
+        $planHash = $this->hashOf($plan, $this->alignsProduct($vendorCode, $result->collections));
         $existingMedia = $product->getMedia($collection);
 
         // Re-download only when the URL set changed, or on a full refresh.
@@ -83,7 +84,8 @@ final readonly class ProductImageSync
             $existing = $managed->get($key);
 
             // An image stored before the WebP rule (or under other settings) is fetched and stored again.
-            $current = $existing !== null && $existing->getCustomProperty('optimised') === $this->optimiser->signature();
+            $aligned = $image->role === 'main' && $this->alignsProduct($vendorCode, $result->collections);
+            $current = $existing !== null && $existing->getCustomProperty('optimised') === $this->optimiser->signature($aligned);
 
             if ($current && ! $refresh) {
                 $ordered[$key] = $this->withRole($existing, $image);
@@ -128,7 +130,7 @@ final readonly class ProductImageSync
                 // The original is shrunk to the maximum width and stored as WebP; `sha256` stays that of the download, so
                 // an unchanged image is recognised without being converted again.
                 $media = $product
-                    ->addMediaFromString($this->optimiser->optimise($content))
+                    ->addMediaFromString($this->optimiser->optimise($content, $aligned))
                     ->usingName($caption)
                     ->usingFileName(Str::slug($caption.' '.$image->role.' '.($index + 1)).'.webp')
                     ->withCustomProperties([
@@ -141,7 +143,7 @@ final readonly class ProductImageSync
                         'downloaded_url' => $downloadedFrom,
                         'sha256' => $sha,
                         // The format the stored file is in (ImageOptimiser::signature()).
-                        'optimised' => $this->optimiser->signature(),
+                        'optimised' => $this->optimiser->signature($aligned),
                     ])
                     ->toMediaCollection($collection);
             } catch (Throwable $exception) {
@@ -266,18 +268,21 @@ final readonly class ProductImageSync
      */
     public function planHash(VendorProduct $link): ?string
     {
-        $plan = $this->plan($link, new ImageSyncResult);
+        $result = new ImageSyncResult;
+        $plan = $this->plan($link, $result);
 
-        return $plan === null ? null : $this->hashOf($plan);
+        return $plan === null ? null : $this->hashOf($plan, $this->alignsProduct((string) $link->vendor?->code, $result->collections));
     }
 
     /**
      * @param  list<NormalisedImage>  $plan
      */
-    private function hashOf(array $plan): string
+    private function hashOf(array $plan, bool $aligned): string
     {
         return hash('sha256', json_encode([
             $this->optimiser->signature(),
+            // A vendor whose main images are put on a baseline: a change to that rule has its products fetch them again.
+            $this->optimiser->signature(aligned: $aligned),
             array_map(fn (NormalisedImage $image): array => [$image->url, $image->colour, $image->role], $plan),
         ], JSON_THROW_ON_ERROR));
     }
@@ -469,6 +474,8 @@ final readonly class ProductImageSync
 
         $plan = [];
 
+        $result->collections = $mapped->product->collections;
+
         foreach ($mapped->product->images as $image) {
             $plan[$this->key($image->url, $image->colour)] ??= $image;
         }
@@ -537,6 +544,32 @@ final readonly class ProductImageSync
 
             $variant->images()->sync($sync);
         }
+    }
+
+    /**
+     * Whether the main images of this product are put on the common baseline: its vendor has it switched on
+     * (`vendorsync.images.align.vendors`) and the product is in one of the categories it is limited to
+     * (`vendorsync.images.align.collections`, the safety shoes and safety boots; an empty list means every category).
+     *
+     * @param  list<string>  $collections  The product's category handles.
+     */
+    private function alignsProduct(string $vendorCode, array $collections): bool
+    {
+        if (! in_array($vendorCode, $this->alignedVendors(), true)) {
+            return false;
+        }
+
+        $limit = array_values(array_map(strval(...), (array) config('vendorsync.images.align.collections', [])));
+
+        return $limit === [] || array_intersect($collections, $limit) !== [];
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function alignedVendors(): array
+    {
+        return array_values(array_map(strval(...), (array) config('vendorsync.images.align.vendors', [])));
     }
 
     private function key(mixed $url, mixed $colour): string

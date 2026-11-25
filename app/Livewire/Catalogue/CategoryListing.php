@@ -135,6 +135,29 @@ final class CategoryListing extends Component
         $this->reset(['brand', 'safety_class', 'features', 'size', 'colour', 'gender', 'industry', 'price_min', 'price_max', 'in_stock', 'page']);
     }
 
+    /**
+     * Take one selected value out of a facet (the × on an active filter chip).
+     */
+    public function removeFilter(string $facet, string $value): void
+    {
+        if (! in_array($facet, ['brand', 'safety_class', 'features', 'size', 'colour', 'gender', 'industry'], true)) {
+            return;
+        }
+
+        $this->{$facet} = array_values(array_diff($this->{$facet}, [$value]));
+        $this->page = 1;
+    }
+
+    public function removePriceRange(): void
+    {
+        $this->reset(['price_min', 'price_max', 'page']);
+    }
+
+    public function removeInStockOnly(): void
+    {
+        $this->reset(['in_stock', 'page']);
+    }
+
     public function goToPage(int $page): void
     {
         $this->page = max(1, $page);
@@ -162,6 +185,13 @@ final class CategoryListing extends Component
             default => 'All products',
         };
 
+        // A listing narrowed to industries says so: "Safety Boots for Construction". The other filters are the chips under it.
+        if ($query->selected('industry') !== []) {
+            $heading .= ' for '.$this->readableList($query->selected('industry'));
+        }
+
+        $facetGroups = $this->facetGroups($result->facets);
+
         return view('livewire.catalogue.category-listing', [
             'heading' => $heading,
             'breadcrumbs' => $this->breadcrumbs($collection, $categoryUrl),
@@ -172,7 +202,8 @@ final class CategoryListing extends Component
                 ListingSort::cases(),
                 fn (ListingSort $sort): bool => $showPrices || ! $sort->isPriceSort(),
             )),
-            'facetGroups' => $this->facetGroups($result->facets),
+            'facetGroups' => $facetGroups,
+            'activeFilters' => $this->activeFilters($facetGroups, $showPrices),
             'hasFilters' => $query->facets !== [] || $query->hasPriceRange() || $query->inStockOnly,
         ])->layout('components.layouts.storefront', [
             'title' => $heading,
@@ -365,6 +396,53 @@ final class CategoryListing extends Component
         }
 
         return $groups;
+    }
+
+    /**
+     * "A", "A and B", "A, B and C".
+     *
+     * @param  list<string>  $items
+     */
+    private function readableList(array $items): string
+    {
+        return count($items) <= 1
+            ? (string) ($items[0] ?? '')
+            : implode(', ', array_slice($items, 0, -1)).' and '.$items[array_key_last($items)];
+    }
+
+    /**
+     * The chips under the heading: every selected facet value, the price range and in stock only, each one removable.
+     *
+     * @param  list<array{name: string, title: string, values: list<array{value: string, label: string, selected: bool}>}>  $groups
+     * @return list<array{kind: string, facet: string, value: string, title: string, label: string}>
+     */
+    private function activeFilters(array $groups, bool $showPrices): array
+    {
+        $chips = [];
+
+        foreach ($groups as $group) {
+            foreach ($group['values'] as $value) {
+                if ($value['selected']) {
+                    $chips[] = ['kind' => 'facet', 'facet' => $group['name'], 'value' => $value['value'], 'title' => $group['title'], 'label' => $value['label']];
+                }
+            }
+        }
+
+        if ($showPrices && ($this->price_min !== '' || $this->price_max !== '')) {
+            $label = match (true) {
+                $this->price_min !== '' && $this->price_max !== '' => '£'.$this->price_min.' to £'.$this->price_max,
+                $this->price_min !== '' => 'From £'.$this->price_min,
+                default => 'Up to £'.$this->price_max,
+            };
+
+            $chips[] = ['kind' => 'price', 'facet' => 'price', 'value' => '', 'title' => 'Price', 'label' => $label.' ex VAT'];
+        }
+
+        if ($this->in_stock) {
+            $chips[] = ['kind' => 'stock', 'facet' => 'in_stock', 'value' => '', 'title' => 'Availability', 'label' => 'In stock only'];
+        }
+
+        return $chips;
     }
 
     /**
