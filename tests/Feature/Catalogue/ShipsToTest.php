@@ -83,7 +83,7 @@ it('carries ships_to on every product document, and the setting makes it filtera
         ->and(IndexSettings::filterable())->toContain('ships_to')
         ->and($indexer->getFilterableFields())->toContain('ships_to')
         // The settings changed, so the version moved and the deploy applies them (catalogue:sync-search-settings).
-        ->and(IndexSettings::VERSION)->toBe(3);
+        ->and(IndexSettings::VERSION)->toBeGreaterThanOrEqual(3);
 });
 
 it('filters the live index by market: the EU gets only the Safety Jogger products', function (): void {

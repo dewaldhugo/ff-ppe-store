@@ -99,6 +99,7 @@ final class StorefrontProductIndexer extends ProductIndexer
             'standards' => $model->attr('standards') ?? [],
             'features' => $model->attr('features') ?? [],
             'gender' => $model->attr('gender'),
+            'industries' => $model->attr('industries') ?? [],
             'cut' => $model->attr('cut'),
             'toecap' => $model->attr('toecap'),
             'collection_ids' => $this->collectionIds($model),

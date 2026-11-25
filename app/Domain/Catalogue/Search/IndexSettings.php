@@ -12,7 +12,7 @@ namespace App\Domain\Catalogue\Search;
  */
 final class IndexSettings
 {
-    public const int VERSION = 3;
+    public const int VERSION = 4;
 
     /**
      * Order matters: Meilisearch ranks matches in earlier attributes higher.
@@ -37,6 +37,7 @@ final class IndexSettings
             'safety_class',
             'features',
             'gender',
+            'industries',
             'standards',
             'cut',
             'toecap',

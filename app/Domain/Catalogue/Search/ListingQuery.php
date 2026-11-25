@@ -30,6 +30,7 @@ final readonly class ListingQuery
         'size' => 'sizes_in_stock',
         'colour' => 'colours_in_stock',
         'gender' => 'gender',
+        'industry' => 'industries',
     ];
 
     /**

@@ -14,14 +14,14 @@
             x-data="{ active: 0, images: @js(array_map(fn ($image) => $image->getUrl('medium'), $images)) }"
         >
             @if ($images !== [])
-                <div class="aspect-square overflow-hidden rounded border border-border bg-surface-muted">
+                <div class="aspect-square overflow-hidden rounded border border-border bg-white" data-gallery-frame>
                     <img
                         src="{{ $images[0]->getUrl('medium') }}"
                         x-bind:src="images[active]"
                         alt="{{ $product->translateAttribute('name') }}{{ $selection->selectedName('colour') ? ' in '.$selection->selectedName('colour') : '' }}"
                         width="800"
                         height="800"
-                        class="h-full w-full object-contain"
+                        class="h-full w-full object-contain p-2.5"
                         data-gallery-main
                         data-colour="{{ $images[0]->getCustomProperty('colour') }}"
                     >
@@ -58,9 +58,18 @@
         </section>
 
         <section aria-labelledby="product-heading">
-            <p class="text-sm uppercase tracking-wide text-ink-muted">{{ $product->brand?->name }}</p>
-            <h1 id="product-heading" class="text-3xl font-bold tracking-tight">{{ $product->translateAttribute('name') }}</h1>
-            <p class="text-lg text-ink-muted">{{ $product->translateAttribute('title') }}</p>
+            {{-- The brand's logo, or its name when there is no logo, linking to its products. --}}
+            @if ($brand !== null)
+                <a href="{{ route('brands.show', $brand['slug']) }}" class="mb-3 inline-block" data-product-brand="{{ $brand['slug'] }}">
+                    @if ($brand['logoUrl'] !== null)
+                        <img src="{{ $brand['logoUrl'] }}" alt="{{ $brand['name'] }}" width="100" class="h-auto w-[100px]" data-product-brand-logo>
+                    @else
+                        <span class="text-sm uppercase tracking-wide text-ink-muted hover:underline">{{ $brand['name'] }}</span>
+                    @endif
+                </a>
+            @endif
+            <h1 id="product-heading" class="text-3xl font-bold leading-tight tracking-tight">{{ $product->translateAttribute('name') }}</h1>
+            <p class="mt-2 text-lg text-ink-muted">{{ $product->translateAttribute('title') }}</p>
 
             @if (filled($product->translateAttribute('short_description')))
                 <p class="mt-3 text-ink-muted">{{ $product->translateAttribute('short_description') }}</p>
@@ -228,7 +237,7 @@
                     type="submit"
                     @disabled(! $canAdd)
                     data-add-to-cart
-                    class="w-full rounded-md bg-brand-blue px-6 py-3 text-lg font-bold text-white transition-colors hover:bg-brand-navy disabled:cursor-not-allowed disabled:bg-disabled-surface disabled:text-disabled-ink sm:w-auto"
+                    class="w-full rounded-md bg-brand-teal px-6 py-3 text-lg font-bold text-brand-navy transition-colors hover:bg-brand-navy hover:text-white disabled:cursor-not-allowed disabled:bg-disabled-surface disabled:text-disabled-ink sm:w-auto"
                 >
                     {{ $addLabel }}
                 </button>
@@ -259,6 +268,33 @@
                         <li>{{ $point }}</li>
                     @endforeach
                 </ul>
+            @endif
+
+            <x-storefront.safety-standard :panel="$safetyStandard" />
+
+            <x-storefront.pictograms :pictograms="$pictograms" />
+
+            {{-- The English product sheet for the colour chosen, when the vendor has one. The only document shown. --}}
+            @if ($productSheet !== null)
+                <p class="mt-8" data-product-sheet>
+                    <a href="{{ $productSheet['url'] }}" target="_blank" rel="noopener" class="inline-flex items-center gap-2 rounded-md border-2 border-brand-teal px-4 py-2 text-sm font-semibold text-brand-blue hover:border-brand-blue hover:bg-brand-blue hover:text-white">
+                        Product sheet{{ $productSheet['colour'] !== null ? ', '.$productSheet['colour'] : '' }} (PDF)
+                    </a>
+                </p>
+            @endif
+
+            @if ($industries !== [])
+                <section aria-labelledby="industries-heading" class="mt-8" data-industries>
+                    <h2 id="industries-heading" class="text-lg font-bold">Industries</h2>
+                    <ul class="mt-3 flex flex-wrap gap-2">
+                        @foreach ($industries as $industry)
+                            <li>
+                                {{-- Each industry is the listing filtered to it. --}}
+                                <a href="{{ route('search', ['industry' => [$industry]]) }}" class="inline-block rounded-full border border-border px-3 py-1 text-sm text-ink hover:border-brand-teal hover:bg-surface-muted" data-industry="{{ $industry }}">{{ $industry }}</a>
+                            </li>
+                        @endforeach
+                    </ul>
+                </section>
             @endif
         </section>
     </div>
@@ -317,21 +353,9 @@
     @if ($related !== [])
         <section aria-labelledby="related-heading" class="mt-10" data-testid="related">
             <h2 id="related-heading" class="text-xl font-bold">Related products</h2>
-            <ul class="mt-3 grid grid-cols-2 gap-4 md:grid-cols-4">
+            <ul class="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">
                 @foreach ($related as $relatedProduct)
-                    @php $relatedPrice = $priceDisplay->fromPrice($relatedProduct); @endphp
-                    <li wire:key="related-{{ $relatedProduct->id }}" class="relative rounded border border-border p-3">
-                        @if ($relatedProduct->thumbnail)
-                            <img src="{{ $relatedProduct->thumbnail->getUrl('thumb') }}" alt="" loading="lazy" width="300" height="300" class="aspect-square w-full rounded bg-surface-muted object-contain">
-                        @endif
-                        <p class="mt-2 text-xs uppercase tracking-wide text-ink-muted">{{ $relatedProduct->brand?->name }}</p>
-                        <a href="{{ route('product', $relatedProduct->defaultUrl?->slug ?? $relatedProduct->id) }}" class="font-semibold after:absolute after:inset-0 hover:underline">
-                            {{ $relatedProduct->translateAttribute('name') }}
-                        </a>
-                        @if ($relatedPrice)
-                            <p class="text-sm" data-price><span class="font-bold">{{ $relatedPrice->formatted() }}</span> <span class="text-xs text-ink-muted">{{ $relatedPrice->suffix() }}</span></p>
-                        @endif
-                    </li>
+                    <x-storefront.product-card :product="$relatedProduct" wire:key="related-{{ $relatedProduct->id }}" data-related-product="{{ $relatedProduct->id }}" />
                 @endforeach
             </ul>
         </section>
