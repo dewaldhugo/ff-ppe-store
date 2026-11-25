@@ -70,6 +70,6 @@ it('opens the admin pages of a product with an unpriced variant', function (stri
     $product = unpricedProduct();
 
     $this->actingAs(Staff::factory()->create(['admin' => true]), 'staff')
-        ->get("/lunar/products/{$product->id}/{$page}")
+        ->get("/admin/products/{$product->id}/{$page}")
         ->assertOk();
 })->with(['edit', 'pricing', 'variants']);

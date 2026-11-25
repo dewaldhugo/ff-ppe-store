@@ -203,7 +203,7 @@ it('keeps the search canonical with its query', function (): void {
 it('shows one non-interactive colour swatch per colour under each product', function (): void {
     $html = $this->get(route('category', 'safety-footwear'))->assertOk()->getContent();
 
-    preg_match_all('#<li wire:key="product-(\d+)".*?</li>\s*(?=<li wire:key|</ul>)#s', $html, $cards, PREG_SET_ORDER);
+    preg_match_all('#<li[^>]*wire:key="product-(\d+)".*?</li>\s*(?=<li[^>]*wire:key|</ul>)#s', $html, $cards, PREG_SET_ORDER);
 
     expect($cards)->not->toBeEmpty();
 
