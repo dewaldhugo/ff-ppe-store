@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Domain\Catalogue\Media\PlaceholderImageGenerator;
+use App\Domain\Catalogue\Media\ProductMediaDefinitions;
 use App\Livewire\Catalogue\ProductPage;
 use App\Models\User;
 use Database\Seeders\FixtureCatalogueSeeder;
@@ -664,13 +665,13 @@ it('lays the page out as an image column at half the width, a rule, then the des
         ->and(strpos($html, 'data-description'))->toBeLessThan(strpos($html, 'data-specification'));
 });
 
-it('puts the video under the thumbnails in the image column, and shows no video block for a product without one', function (): void {
+it('puts the video the full width of the container under the product details, and shows no video block for a product without one', function (): void {
     $html = $this->get(route('product', 'safety-jogger-ligero'))->assertOk()->getContent();
 
-    // Ligero has a video: after the gallery, before the buy box, and not again further down.
-    expect($html)->toContain('data-video')->toMatch('#<section[^>]*class="[^"]*max-w-sm[^"]*"[^>]*data-video>#')
-        ->and(strpos($html, 'data-testid="gallery"'))->toBeLessThan(strpos($html, 'data-video'))
-        ->and(strpos($html, 'data-video'))->toBeLessThan(strpos($html, 'id="product-heading"'))
+    // Ligero has a video: after the product details, not narrowed to a column, and only once.
+    expect($html)->toContain('data-video')->not->toMatch('#<section[^>]*class="[^"]*max-w-[^"]*"[^>]*data-video>#')
+        ->and(strpos($html, 'data-specification'))->toBeLessThan(strpos($html, 'data-video'))
+        ->and($html)->toContain('<h2 id="video-heading" class="text-xl font-bold">Product video</h2>')
         ->and(substr_count($html, '<iframe'))->toBe(1);
 
     $this->get(route('product', 'gbs-eva'))->assertOk()->assertDontSee('data-video', false)->assertDontSee('<iframe', false);
@@ -1081,4 +1082,54 @@ it('gives no Key features to a product that is not footwear', function (): void 
     $product->collections()->detach();
 
     $this->get(route('product', 'safety-jogger-ligero'))->assertOk()->assertDontSee('data-key-features', false);
+});
+
+/**
+ * @param  list<string>  $names
+ */
+function addLigeroVideos(array $names): void
+{
+    $product = Url::query()->where('slug', 'safety-jogger-ligero')->sole()->element;
+    $directory = storage_path('app/private/fixture-placeholders');
+
+    if (! is_dir($directory)) {
+        mkdir($directory, 0755, true);
+    }
+
+    foreach ($names as $name) {
+        $file = $directory.'/'.$name.'.mp4';
+        file_put_contents($file, "\x00\x00\x00\x18ftypmp42\x00\x00\x00\x00mp42isom");
+
+        $product->addMedia($file)->toMediaCollection(ProductMediaDefinitions::VIDEOS);
+    }
+}
+
+it('shows videos uploaded in the admin under the vendor video, in their order, with a plural heading', function (): void {
+    addLigeroVideos(['first-upload', 'second-upload']);
+
+    $html = $this->get(route('product', 'safety-jogger-ligero'))->assertOk()->getContent();
+
+    preg_match_all('#data-video-(vendor|uploaded)#', $html, $order);
+    preg_match_all('#<source src="([^"]+)" type="video/mp4">#', $html, $sources);
+
+    // The vendor's own video first, then the uploads in the order they were added.
+    expect($order[1])->toBe(['vendor', 'uploaded', 'uploaded'])
+        ->and($sources[1])->toHaveCount(2)
+        ->and($sources[1][0])->toContain('first-upload')->and($sources[1][1])->toContain('second-upload')
+        ->and($html)->toContain('>Product videos</h2>')
+        ->and($html)->toContain('<video controls preload="metadata"');
+});
+
+it('shows an uploaded video on a product that has no vendor video', function (): void {
+    $product = Url::query()->where('slug', 'safety-jogger-ligero')->sole()->element;
+    $data = $product->attribute_data;
+    $data['video_url'] = new Text('');
+    $product->update(['attribute_data' => $data]);
+
+    addLigeroVideos(['only-upload']);
+
+    $html = $this->get(route('product', 'safety-jogger-ligero'))->assertOk()->getContent();
+
+    expect($html)->toContain('data-video-uploaded')->not->toContain('data-video-vendor')->not->toContain('<iframe')
+        ->and($html)->toContain('>Product video</h2>');
 });

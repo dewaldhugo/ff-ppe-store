@@ -215,6 +215,7 @@ final class ProductPage extends Component
             'productSheet' => $this->productSheet($product, $selection),
             'paragraphs' => preg_split('/\R{2,}|\R/', trim((string) $product->translateAttribute('description')), flags: PREG_SPLIT_NO_EMPTY) ?: [],
             'videoUrl' => $this->videoUrl($product),
+            'uploadedVideos' => $this->uploadedVideos($product),
             'related' => $this->related(),
             'missingPrompt' => $this->missingOption === null ? null : $selection->promptFor($this->missingOption),
         ])->layout('components.layouts.storefront', [
@@ -488,6 +489,19 @@ final class ProductPage extends Component
         $url = (string) $product->attr('video_url');
 
         return preg_match('#^https://www\.youtube(-nocookie)?\.com/embed/[\w-]+$#', $url) === 1 ? $url : null;
+    }
+
+    /**
+     * The videos staff uploaded in the admin (media collection `videos`), in the order set there, to show under the vendor's video.
+     *
+     * @return list<array{url: string, type: string}>
+     */
+    private function uploadedVideos(Product $product): array
+    {
+        return $product->getMedia(ProductMediaDefinitions::VIDEOS)
+            ->map(fn ($media): array => ['url' => $media->getUrl(), 'type' => (string) $media->mime_type])
+            ->values()
+            ->all();
     }
 
     /**
