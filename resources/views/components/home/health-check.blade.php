@@ -3,7 +3,6 @@
     $content = (array) config('homepage.health_check', []);
     $title = trim((string) ($content['title'] ?? ''));
     $surveyUrl = (string) config('store.ppe_health_check_url');
-    $example = array_values(array_filter((array) ($content['example'] ?? []), fn (mixed $row): bool => is_array($row) && isset($row['label'], $row['score'])));
 @endphp
 
 {{-- A navy band above "Shop by brand": the pitch and the buttons on the left, an example scorecard on the right. --}}
@@ -27,24 +26,8 @@
                 @endif
             </div>
 
-            @if ($example !== [])
-                {{-- An illustration of the result, not a real one. --}}
-                <div class="rounded-xl bg-white p-6 text-ink shadow-lg" data-home-health-check-example>
-                    <p class="text-xs font-semibold uppercase tracking-widest text-ink-muted">Example report</p>
-                    <p class="mt-3 text-xl font-semibold">Your PPE scorecard</p>
-
-                    <ul class="mt-5 space-y-4">
-                        @foreach ($example as $row)
-                            <li>
-                                <p class="text-sm font-semibold">{{ $row['label'] }}</p>
-                                <div class="mt-1.5 h-2 w-full rounded-full bg-border" role="meter" aria-label="{{ $row['label'] }}, example score" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ (int) $row['score'] }}">
-                                    <div class="h-2 rounded-full bg-brand-blue" style="width: {{ (int) $row['score'] }}%"></div>
-                                </div>
-                            </li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
+            {{-- An illustration of the result, not a real one: the same card as the Health Check page. --}}
+            <x-storefront.health-check-example data-home-health-check-example />
         </x-ui.container>
     </section>
 @endif

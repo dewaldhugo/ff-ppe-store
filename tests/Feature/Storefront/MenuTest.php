@@ -183,3 +183,40 @@ it('gives the mobile drawer the All products link first, like the desktop Produc
     expect($first[1] ?? '')->toContain('href="'.route('shop').'"')->toContain('All products')->toContain('data-drawer-all-products')
         ->and(productsMenu($html))->toContain('All products');
 });
+
+it('separates the main menu items with faint hairline dividers, none before the first', function (): void {
+    $html = $this->get(route('home'))->assertOk()->getContent();
+
+    preg_match('#<nav aria-label="Main".*?</nav>#s', $html, $nav);
+    // Only the top-level items: the Products dropdown (its own list of categories) sits later in the same nav.
+    $bar = strstr($nav[0] ?? '', 'id="products-menu"', true) ?: ($nav[0] ?? '');
+    preg_match_all('#<li(?: class="([^"]*)")?>\s*<(?:a|button)#', $bar, $items, PREG_SET_ORDER);
+
+    $dividers = array_filter(array_map(fn (array $item): bool => str_contains($item[1] ?? '', 'before:w-px'), $items));
+
+    // Every top-level item except Home carries the divider; Home does not.
+    expect($items)->not->toBeEmpty()
+        ->and($items[0][1] ?? '')->not->toContain('before:')
+        ->and(count($dividers))->toBe(count($items) - 1)
+        ->and($items[1][1] ?? '')->toContain('before:bg-brand-navy/25')->toContain('before:h-4');
+});
+
+it('puts a soft border under the main menu bar and keeps the current page underline clear of it', function (): void {
+    $html = $this->get(route('home'))->assertOk()->getContent();
+
+    preg_match('#<nav aria-label="Main"[^>]*>#', $html, $nav);
+    preg_match('#<nav aria-label="Main"[^>]*>\s*<div class="([^"]*)"#s', $html, $bar);
+
+    expect($nav[0] ?? '')->toContain('border-b')->toContain('border-brand-navy/15')->toContain('bg-brand-teal')
+        ->and($bar[1] ?? '')->toContain('pb-2');
+});
+
+it('keeps the main menu bar the same height: the underline is close to the text, with the spare space below it', function (): void {
+    $html = $this->get(route('home'))->assertOk()->getContent();
+
+    preg_match('#<nav aria-label="Main".*?</nav>#s', $html, $nav);
+
+    // pt-3 (12px) + text + pb-1 (4px) + the 4px underline + the bar's pb-2 (8px) = the old py-3 + the 4px underline.
+    expect($nav[0] ?? '')->toContain('border-b-4 pb-1 pt-3')->not->toContain('border-b-4 py-3')
+        ->and(substr_count($nav[0] ?? '', 'pt-3 font-semibold'))->toBeGreaterThan(5);
+});

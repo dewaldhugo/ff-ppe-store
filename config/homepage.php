@@ -38,9 +38,9 @@ return [
      * Launch checklist in CLAUDE.md).
      */
     'trust' => [
-        'Prices exclusive of VAT',
+        'Exclusive trade pricing',
+        'Free wear trials for businesses',
         'Safety footwear to EN ISO 20345',
-        'Wide range of sizes',
         '',
     ],
 

@@ -12,21 +12,29 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 /**
  * Product images as the data contract defines them: collection "images" on
  * the "products" disk, with WebP conversions thumb (300), medium (800) and
- * large (1600). "small" is kept because Lunar's admin panel requests it.
+ * large (1200, the widest an image is stored). "small" is kept because Lunar's admin panel requests it.
  */
 final class ProductMediaDefinitions implements MediaDefinitionsInterface
 {
     public const string DISK = 'products';
 
+    /** The product's documents (data contract, Media): English product sheets, one per colour. No conversions. */
+    public const string DOCUMENTS = 'documents';
+
     /** @var array<string, int> */
     private const array CONVERSIONS = [
         'thumb' => 300,
         'medium' => 800,
-        'large' => 1600,
+        'large' => 1200,
     ];
 
     public function registerMediaConversions(HasMedia $model, ?Media $media = null): void
     {
+        // A document (a product sheet PDF) is stored as it is, never converted.
+        if ($media !== null && $media->collection_name === self::DOCUMENTS) {
+            return;
+        }
+
         $model->addMediaConversion('small')
             ->fit(Fit::Contain, 300, 300)
             ->format('webp')
@@ -50,6 +58,8 @@ final class ProductMediaDefinitions implements MediaDefinitionsInterface
             $collection->useFallbackPath($fallbackPath);
         }
 
+        $model->addMediaCollection(self::DOCUMENTS)->useDisk(self::DISK);
+
         $collection->registerMediaConversions(function () use ($model): void {
             foreach (self::CONVERSIONS as $name => $size) {
                 $model->addMediaConversion($name)
@@ -64,7 +74,7 @@ final class ProductMediaDefinitions implements MediaDefinitionsInterface
      */
     public function getMediaCollectionTitles(): array
     {
-        return ['images' => 'Images'];
+        return ['images' => 'Images', self::DOCUMENTS => 'Documents'];
     }
 
     /**

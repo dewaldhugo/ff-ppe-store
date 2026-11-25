@@ -34,6 +34,13 @@ final class VendorSync
 
     private static bool $faked = false;
 
+    /**
+     * Answers for other hosts (the pictogram icons, the product sheet PDFs), latest first, asked before a request counts as stray.
+     *
+     * @var list<callable(Request): mixed>
+     */
+    private static array $extra = [];
+
     /** @var list<array<mixed>> */
     private static array $responses = [[], [], [], [], [], []];
 
@@ -72,6 +79,7 @@ final class VendorSync
         File::ensureDirectoryExists(self::path('incoming'));
 
         self::$faked = false;
+        self::$extra = [];
         self::$responses = [[], [], [], [], [], []];
         self::$hanging = [];
         self::$slow = [];
@@ -223,8 +231,28 @@ final class VendorSync
                 return Http::response(base64_decode(self::PNG).basename($url), 200, ['Content-Type' => 'image/png']);
             }
 
+            foreach (self::$extra as $answer) {
+                $response = $answer($request);
+
+                if ($response !== null) {
+                    return $response;
+                }
+            }
+
             return Http::response('unexpected request', 500);
         });
+    }
+
+    /**
+     * Add an answer for requests the vendor fake does not know (a callable that returns a response, or null to pass).
+     * Call it after `fakeHttp()`.
+     *
+     * @param  callable(Request): mixed  $answer
+     */
+    public static function answer(callable $answer): void
+    {
+        // The latest answer is asked first, so a test can change what a host says part way through.
+        array_unshift(self::$extra, $answer);
     }
 
     /**

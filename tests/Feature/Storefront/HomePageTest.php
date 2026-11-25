@@ -125,8 +125,8 @@ it('still renders one empty h1 when no heading is configured', function (): void
 it('links the primary button to the shop and the secondary button to registration, with the same corner radius', function (): void {
     $hero = heroSection($this->get(route('home'))->getContent());
 
-    expect($hero)->toMatch('#<a href="'.preg_quote(route('shop'), '#').'"[^>]*rounded-md[^>]*bg-brand-blue[^>]*text-white[^>]*>View all products</a>#')
-        ->and($hero)->not->toMatch('#<a href="'.preg_quote(route('shop'), '#').'"[^>]*bg-brand-teal[^>]*>View all products</a>#')
+    expect($hero)->toMatch('#<a href="'.preg_quote(route('shop'), '#').'"[^>]*rounded-md[^>]*bg-brand-teal[^>]*text-brand-navy[^>]*>View all products</a>#')
+        ->and($hero)->not->toMatch('#<a href="'.preg_quote(route('shop'), '#').'"[^>]*bg-white[^>]*>View all products</a>#')
         ->and($hero)->toMatch('#<a href="'.preg_quote(route('register'), '#').'"[^>]*rounded-md[^>]*border-brand-teal[^>]*>Open a trade account</a>#')
         ->and($hero)->not->toContain('rounded-full');
 });
@@ -243,7 +243,7 @@ it('shows Open a trade account to guests only', function (): void {
         ->and($hero)->toContain('View all products');
 });
 
-it('uses one of the eight hero-bg photos in the slideshow as the hero background, centred, with no overlay', function (): void {
+it('uses one of the eight hero-bg photos in the slideshow as the hero background, centred, under a 30% black layer', function (): void {
     foreach ([1, 2, 7, 8, 9, 10, 11, 12] as $n) {
         expect(is_file(public_path("images/hero-bg-{$n}.jpg")))->toBeTrue();
     }
@@ -259,6 +259,7 @@ it('uses one of the eight hero-bg photos in the slideshow as the hero background
             ->and($hero)->toContain('height="882"')
             ->and($hero)->toContain('object-cover object-center')
             ->and($hero)->not->toContain('object-[center_')
+            ->and($hero)->toMatch('#<span[^>]*hero-scrim[^>]*absolute inset-0[^>]*data-hero-scrim#')
             ->and($hero)->not->toContain('data-hero-overlay')
             ->and($hero)->not->toContain('from-brand-navy/');
 
@@ -396,14 +397,14 @@ it('only picks published products that have an image and a price', function (): 
     expect($picks->pick(100)->modelKeys())->not->toContain($product->id);
 });
 
-it('shows the industry slider straight under the hero, with its heading', function (): void {
+it('shows the industry slider after the hero and the trust strip, with its heading', function (): void {
     $html = $this->get(route('home'))->assertOk()->getContent();
 
     $hero = (int) strpos($html, 'data-home-hero');
     $industries = (int) strpos($html, 'data-home-industries');
 
     expect($industries)->toBeGreaterThan($hero)
-        ->and($industries)->toBeLessThan((int) strpos($html, 'data-home-trust'))
+        ->and($industries)->toBeGreaterThan((int) strpos($html, 'data-home-trust'))
         ->and($industries)->toBeLessThan((int) strpos($html, 'data-home-products'))
         ->and($html)->toContain('Solutions for every workplace')
         ->and($html)->toContain('aria-label="Industries we supply"')
@@ -563,7 +564,7 @@ it('styles the industries heading like the others, 20% larger, with a left align
         ->and($block)->not->toContain('mx-auto');
 });
 
-it('puts a three paragraph intro under the industries heading and a light grey band above the footer', function (): void {
+it('puts a three paragraph intro under the industries heading and a teal band above the footer', function (): void {
     $html = $this->get(route('home'))->assertOk()->getContent();
 
     preg_match('#<section class="[^"]*"[^>]*data-home-service#', $html, $serviceClass);
@@ -581,7 +582,7 @@ it('puts a three paragraph intro under the industries heading and a light grey b
         ->and($paragraphs[1][1])->toContain('S1P and S3')->toContain('EN ISO 20345')->toContain('ESD and metal-free')
         ->and($paragraphs[1][2])->toContain('size guide')->toContain('technical features guide')
         ->and($intro[1])->not->toContain('<h3')->not->toContain('—')->not->toContain('–')
-        ->and($serviceClass[0] ?? '')->toContain('bg-surface-muted');
+        ->and($serviceClass[0] ?? '')->toContain('bg-brand-teal')->not->toContain('bg-surface-muted');
 });
 
 it('fades through the eight hero photos in use every six seconds, starting at a random one', function (): void {
@@ -661,4 +662,46 @@ it('has the client title and meta description on the home page, and other pages 
         ->and($html)->toContain('<meta name="description" content="Streamline your site procurement with a single, dependable UK &amp; EU trade supplier. We stock certified head-to-toe PPE, workwear, and safety footwear ready for rapid nationwide dispatch and competitive bulk pricing.">');
 
     expect($this->get(route('about'))->assertOk()->getContent())->toMatch('#<title>About[^<]* \| #');
+});
+
+it('gives the hero heading and sub-heading a soft text shadow, defined in the stylesheet', function (): void {
+    $hero = heroSection($this->get(route('home'))->assertOk()->getContent());
+
+    preg_match('#<h1([^>]*)data-hero-heading#', $hero, $heading);
+    preg_match('#<p([^>]*)data-hero-subheading#', $hero, $sub);
+
+    expect($heading[1] ?? '')->toContain('hero-text-shadow')
+        ->and($sub[1] ?? '')->toContain('hero-text-shadow')
+        ->and((string) file_get_contents(resource_path('css/app.css')))->toMatch('#\.hero-text-shadow\s*\{\s*text-shadow:#');
+});
+
+it('moves the hero text block (heading, sub-heading and buttons) down as one, from the sm breakpoint', function (): void {
+    $hero = heroSection($this->get(route('home'))->assertOk()->getContent());
+
+    preg_match('#<div[^>]*data-hero-text[^>]*>#', $hero, $block);
+
+    expect($block[0] ?? '')->toContain('sm:translate-y-[3.3rem]')->not->toContain('lg:translate-y');
+
+    // The heading, sub-heading and buttons are all inside that block.
+    $inside = substr($hero, (int) strpos($hero, 'data-hero-text'));
+
+    expect(strpos($inside, 'data-hero-heading'))->not->toBeFalse()
+        ->and(strpos($inside, 'data-hero-subheading'))->not->toBeFalse()
+        ->and(strpos($inside, 'View all products'))->not->toBeFalse();
+});
+
+it('wraps the hero heading at 60% of the available width from the sm breakpoint, and uses the full width on a phone', function (): void {
+    $hero = heroSection($this->get(route('home'))->assertOk()->getContent());
+
+    preg_match('#<h1([^>]*)data-hero-heading#', $hero, $heading);
+
+    expect($heading[1] ?? '')->toContain('sm:max-w-[60%]')->not->toContain(' max-w-[60%]');
+});
+
+it('leaves space under the industry slider, before the health check band', function (): void {
+    $html = $this->get(route('home'))->assertOk()->getContent();
+
+    preg_match('#<div[^>]*data-home-industries[^>]*>#', $html, $open);
+
+    expect($open[0] ?? '')->toContain('py-12')->toContain('sm:py-16');
 });

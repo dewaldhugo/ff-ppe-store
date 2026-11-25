@@ -6,7 +6,12 @@ namespace App\Livewire\Catalogue;
 
 use App\Domain\Cart\CartRejected;
 use App\Domain\Cart\CustomerCart;
-use App\Domain\Catalogue\Features\FeatureLabels;
+use App\Domain\Catalogue\Brands\ProductBrandLink;
+use App\Domain\Catalogue\Display\CountryName;
+use App\Domain\Catalogue\Display\ProductPictograms;
+use App\Domain\Catalogue\Display\SafetyStandardPanel;
+use App\Domain\Catalogue\Media\ProductMediaDefinitions;
+use App\Domain\Catalogue\Related\RelatedProductIds;
 use App\Domain\Catalogue\Seo\ProductStructuredData;
 use App\Domain\Catalogue\Urls\ProductBreadcrumbs;
 use App\Domain\Catalogue\Variants\VariantSelection;
@@ -35,15 +40,14 @@ final class ProductPage extends Component
     private const int LOW_STOCK = 5;
 
     private const array SPECIFICATION = [
-        'safety_class' => 'Safety class',
-        'features' => 'Features',
-        'standards' => 'Standards',
         'toecap' => 'Toecap',
         'midsole' => 'Midsole',
         'outsole' => 'Outsole',
         'upper' => 'Upper',
         'lining' => 'Lining',
         'cut' => 'Cut',
+        'fastening' => 'Fastening',
+        'country_of_origin' => 'Country of origin',
     ];
 
     #[Locked]
@@ -83,7 +87,15 @@ final class ProductPage extends Component
 
     private ?Product $product = null;
 
-    public function mount(string $slug): void
+    /**
+     * Ids of the related products, chosen once on mount so choosing a colour or size does not search again.
+     *
+     * @var list<int>
+     */
+    #[Locked]
+    public array $relatedIds = [];
+
+    public function mount(string $slug, RelatedProductIds $relatedProducts): void
     {
         $url = LunarUrl::query()
             ->where('element_type', Product::morphName())
@@ -96,6 +108,7 @@ final class ProductPage extends Component
 
         $this->productId = $product->id;
         $this->slug = $slug;
+        $this->relatedIds = $relatedProducts->for($product);
 
         $this->sync($this->selection());
     }
@@ -176,6 +189,7 @@ final class ProductPage extends Component
 
         return view('livewire.catalogue.product-page', [
             'product' => $product,
+            'brand' => $this->brandLink($product),
             'breadcrumbs' => $breadcrumbs->for($product),
             'selection' => $selection,
             'options' => $selection->options(),
@@ -195,10 +209,13 @@ final class ProductPage extends Component
             'addLabel' => $this->addLabel($selection, $variant),
             'euSizes' => $this->euSizes($product, $selection),
             'specification' => $this->specification($product),
+            'safetyStandard' => app(SafetyStandardPanel::class)->for($product),
+            'industries' => array_values(array_filter(array_map(fn (mixed $industry): string => trim((string) $industry), (array) $product->attr('industries')), filled(...))),
+            'pictograms' => app(ProductPictograms::class)->for($product),
+            'productSheet' => $this->productSheet($product, $selection),
             'paragraphs' => preg_split('/\R{2,}|\R/', trim((string) $product->translateAttribute('description')), flags: PREG_SPLIT_NO_EMPTY) ?: [],
             'videoUrl' => $this->videoUrl($product),
-            'related' => $this->related($product),
-            'priceDisplay' => $priceDisplay,
+            'related' => $this->related(),
             'missingPrompt' => $this->missingOption === null ? null : $selection->promptFor($this->missingOption),
         ])->layout('components.layouts.storefront', [
             'title' => $this->pageTitle($product),
@@ -208,6 +225,16 @@ final class ProductPage extends Component
                 '<script type="application/ld+json">'.$structuredData->toJson($product, $canonical).'</script>'
             ),
         ]);
+    }
+
+    /**
+     * The brand's name, logo and page for the top of the product info.
+     *
+     * @return ?array{name: string, slug: string, logoUrl: ?string}
+     */
+    private function brandLink(Product $product): ?array
+    {
+        return app(ProductBrandLink::class)->for($product);
     }
 
     /**
@@ -280,6 +307,27 @@ final class ProductPage extends Component
         }
 
         return $all->values()->all();
+    }
+
+    /**
+     * The English product sheet (a PDF in the product's `documents` collection, custom properties `type` = product_sheet and
+     * `colour`) for the selected colour; else one that names no colour; else, with no colour selected, the first. Null when
+     * there is none, so most products show no link (docs/data-contract.md, Media).
+     *
+     * @return ?array{url: string, colour: ?string}
+     */
+    private function productSheet(Product $product, VariantSelection $selection): ?array
+    {
+        $sheets = $product->getMedia(ProductMediaDefinitions::DOCUMENTS)
+            ->filter(fn (Media $media): bool => $media->getCustomProperty('type') === 'product_sheet');
+
+        $colour = $selection->selectedName('colour');
+
+        $sheet = $sheets->first(fn (Media $media): bool => $colour !== null && $media->getCustomProperty('colour') === $colour)
+            ?? $sheets->first(fn (Media $media): bool => blank($media->getCustomProperty('colour')))
+            ?? ($colour === null ? $sheets->first() : null);
+
+        return $sheet === null ? null : ['url' => $sheet->getUrl(), 'colour' => $sheet->getCustomProperty('colour') ?: null];
     }
 
     private function price(PriceDisplay $priceDisplay, VariantSelection $selection, ?ProductVariant $variant): ?DisplayPrice
@@ -447,9 +495,10 @@ final class ProductPage extends Component
 
             $rows[] = [
                 'label' => $label,
-                'values' => array_map(fn (mixed $item): array => $handle === 'features'
-                    ? ['text' => FeatureLabels::label((string) $item), 'tooltip' => FeatureLabels::tooltip((string) $item)]
-                    : ['text' => (string) $item, 'tooltip' => null], $items),
+                'values' => array_map(fn (mixed $item): array => [
+                    'text' => $handle === 'country_of_origin' ? CountryName::of((string) $item) : (string) $item,
+                    'tooltip' => null,
+                ], $items),
             ];
         }
 
@@ -467,23 +516,27 @@ final class ProductPage extends Component
     }
 
     /**
-     * Published cross-sell products.
+     * The related products chosen on mount (RelatedProductIds), loaded, published only, in the chosen order.
      *
      * @return list<Product>
      */
-    private function related(Product $product): array
+    private function related(): array
     {
-        $ids = $product->associations()->crossSell()->pluck('product_target_id');
-
-        if ($ids->isEmpty()) {
+        if ($this->relatedIds === []) {
             return [];
         }
 
-        return Product::query()
-            ->whereIn('id', $ids)
+        $products = Product::query()
+            ->whereIn('id', $this->relatedIds)
             ->where('status', 'published')
-            ->with(['brand', 'defaultUrl', 'thumbnail', 'variants.prices'])
+            ->with(['brand', 'defaultUrl', 'thumbnail', 'variants.prices', 'variants.values.option'])
             ->get()
+            ->keyBy('id');
+
+        return collect($this->relatedIds)
+            ->map(fn (int $id): ?Product => $products->get($id))
+            ->filter()
+            ->values()
             ->all();
     }
 }

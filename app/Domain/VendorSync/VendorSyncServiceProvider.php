@@ -6,6 +6,8 @@ namespace App\Domain\VendorSync;
 
 use App\Domain\VendorSync\Console\CatalogueCommand;
 use App\Domain\VendorSync\Console\ImagesCommand;
+use App\Domain\VendorSync\Console\PictogramsCommand;
+use App\Domain\VendorSync\Console\ProductSheetsCommand;
 use App\Domain\VendorSync\Console\StatusCommand;
 use App\Domain\VendorSync\Console\StockCommand;
 use App\Domain\VendorSync\Footsure\FootsureMapper;
@@ -94,6 +96,8 @@ final class VendorSyncServiceProvider extends ServiceProvider
                 CatalogueCommand::class,
                 StockCommand::class,
                 ImagesCommand::class,
+                PictogramsCommand::class,
+                ProductSheetsCommand::class,
                 StatusCommand::class,
             ]);
         }

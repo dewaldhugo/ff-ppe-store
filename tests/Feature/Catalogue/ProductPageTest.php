@@ -6,11 +6,15 @@ use App\Domain\Catalogue\Media\PlaceholderImageGenerator;
 use App\Livewire\Catalogue\ProductPage;
 use App\Models\User;
 use Database\Seeders\FixtureCatalogueSeeder;
+use Database\Seeders\StorefrontBrandSeeder;
 use Livewire\Livewire;
+use Lunar\FieldTypes\ListField;
 use Lunar\FieldTypes\Text;
 use Lunar\Models\Product;
 use Lunar\Models\Url;
+use Meilisearch\Client;
 use Tests\Support\CatalogueFactory;
+use Tests\Support\SearchIndex;
 
 // Only signed-in customers see prices (tests/Feature/Storefront/PriceGatingTest.php covers guests).
 beforeEach(function (): void {
@@ -299,10 +303,308 @@ it('lists published cross-sell products only', function (): void {
 
     Url::query()->where('slug', 'safety-jogger-duplicate-2')->sole()->element->update(['status' => 'draft']);
 
-    $this->get(route('product', 'safety-jogger-duplicate'))->assertOk()->assertDontSee('Related products');
+    $this->get(route('product', 'safety-jogger-duplicate'))->assertOk()->assertDontSee(route('product', 'safety-jogger-duplicate-2'));
 });
 
-it('shows no related section when there are no associations', function (): void {
+/** The URL of the published product with this name. */
+function relatedTestUrl(string $name): string
+{
+    $product = Product::query()->where('status', 'published')->get()
+        ->first(fn (Product $product): bool => $product->translateAttribute('name') === $name);
+
+    expect($product)->not->toBeNull();
+
+    return route('product', $product->defaultUrl->slug);
+}
+
+/** The related products section of a page, or an empty string. */
+function relatedSection(string $html): string
+{
+    preg_match('#<section[^>]*data-testid="related".*?</section>#s', $html, $section);
+
+    return $section[0] ?? '';
+}
+
+it('fills the related products with in-stock products from the same category when there are no vendor links', function (): void {
+    SearchIndex::use();
+
+    $section = relatedSection($this->get(route('product', 'safety-jogger-ligero'))->assertOk()->getContent());
+
+    // Safety Shoes holds Ligero, SX310 (nothing in stock) and FS65.
+    expect($section)->toContain('Related products')
+        ->and($section)->toContain(relatedTestUrl('FS65'))
+        ->and($section)->not->toContain(relatedTestUrl('SX310'))
+        ->and($section)->not->toContain(route('product', 'safety-jogger-ligero'))
+        ->and($section)->not->toContain(relatedTestUrl('Classic'));
+});
+
+it('shows the related products on the same card as the listings', function (): void {
+    SearchIndex::use();
+
+    $related = relatedSection($this->get(route('product', 'safety-jogger-ligero'))->assertOk()->getContent());
+    $listing = $this->get(route('category', 'safety-footwear/safety-shoes'))->assertOk()->getContent();
+
+    // FS65 comes in several colours, so its card has swatches, a price and the View product button, like in the listing.
+    expect($related)->toContain('data-swatches')
+        ->and($related)->toContain('data-price')
+        ->and($related)->toContain('data-view-product')
+        ->and($related)->toContain('group relative flex flex-col rounded border border-border p-3')
+        ->and($listing)->toContain('group relative flex flex-col rounded border border-border p-3')
+        ->and($listing)->toContain('data-view-product');
+});
+
+it('shows the brand logo above the product name, linking to the brand page', function (): void {
+    $this->seed(StorefrontBrandSeeder::class);
+
+    $html = $this->get(route('product', 'safety-jogger-ligero'))->assertOk()->getContent();
+
+    preg_match('#<a[^>]*data-product-brand="safety-jogger"[^>]*>.*?</a>#s', $html, $brand);
+
+    expect($brand[0] ?? '')->toContain('href="'.route('brands.show', 'safety-jogger').'"')
+        ->toContain('data-product-brand-logo')
+        ->toContain(asset('images/brands/trimmed/safety-jogger.png'))
+        ->toContain('w-[100px]')
+        ->toContain('alt="Safety Jogger"')
+        ->and(strpos($html, 'data-product-brand-logo'))->toBeLessThan(strpos($html, 'id="product-heading"'));
+});
+
+it('shows the brand name instead when it has no logo', function (): void {
+    $html = $this->get(route('product', 'safety-jogger-ligero'))->assertOk()->getContent();
+
+    preg_match('#<a[^>]*data-product-brand=[^>]*>.*?</a>#s', $html, $brand);
+
+    expect($brand[0] ?? '')->toContain('Safety Jogger')->not->toContain('<img');
+});
+
+it('gives the product name some room above and below', function (): void {
+    $html = $this->get(route('product', 'safety-jogger-ligero'))->assertOk()->getContent();
+
+    expect($html)->toMatch('#<h1 id="product-heading" class="[^"]*leading-tight[^"]*">#')
+        ->and($html)->toMatch('#<p class="mt-2 text-lg text-ink-muted">#');
+});
+
+it('shows the safety standard as the vendor does: the class and codes on one line, the standards under it', function (): void {
+    $html = $this->get(route('product', 'safety-jogger-ligero'))->assertOk()->getContent();
+
+    preg_match('#<section[^>]*data-safety-standard.*?</section>#s', $html, $panel);
+    $panel = $panel[0] ?? '';
+
+    expect($panel)->toContain('Safety standard')
+        ->and($panel)->toMatch('#data-safety-class>S1P<#')
+        ->and($panel)->toMatch('#data-safety-code[^>]*>SRC<#')
+        ->and($panel)->toMatch('#data-safety-code[^>]*>CI<#')
+        ->and($panel)->toMatch('#data-safety-code[^>]*>ESD<#')
+        // METAL_FREE is a phrase, not a code, so it is not in the short line.
+        ->and($panel)->not->toContain('>METAL_FREE<')
+        ->and($panel)->toMatch('#data-standards[^>]*>EN ISO 20345:2011 - ASTM F2413:2024<#')
+        // What a code means is its hover text, not more lines in the block.
+        ->and($panel)->toContain('title="Cold insulated (CI): The sole insulates the foot against cold ground."')
+        ->and($panel)->not->toContain('<dl')
+        ->and($panel)->not->toContain('border');
+
+    // The class comes before the codes, and the codes before the standards.
+    expect(strpos($panel, 'data-safety-class'))->toBeLessThan(strpos($panel, 'data-safety-code'))
+        ->and(strpos($panel, 'data-safety-code'))->toBeLessThan(strpos($panel, 'data-standards'));
+
+    // They are no longer rows of the specification table as well.
+    preg_match('#<table[^>]*data-testid="specification".*?</table>#s', $html, $table);
+
+    expect($table[0] ?? '')->not->toContain('Safety class')->not->toContain('>Standards<')->not->toContain('>Features<');
+});
+
+it('shows fastening and the country of origin by name in the specification', function (): void {
+    $html = $this->get(route('product', 'safety-jogger-ligero'))->assertOk()->getContent();
+
+    preg_match('#<table[^>]*data-testid="specification".*?</table>#s', $html, $table);
+
+    expect($table[0] ?? '')->toContain('Fastening')->toContain('Country of origin')->toContain('China')->not->toContain('>CN<');
+});
+
+it('lists the industries as links to the listing filtered to each', function (): void {
+    $html = $this->get(route('product', 'safety-jogger-ligero'))->assertOk()->getContent();
+
+    preg_match('#<section[^>]*data-industries.*?</section>#s', $html, $section);
+    $section = $section[0] ?? '';
+
+    expect($section)->toContain('Industries')
+        ->and($section)->toContain('href="'.route('search', ['industry' => ['Automotive']]).'"')
+        ->and($section)->toContain('data-industry="Logistics"')
+        ->and($section)->toContain('data-industry="Industry"');
+});
+
+it('leaves out the safety standard and industries when the product has none', function (): void {
+    CatalogueFactory::product('Plain', [['stock' => 1]]);
+
+    $html = $this->get(route('product', 'test-brand-plain'))->assertOk()->getContent();
+
+    expect($html)->not->toContain('data-safety-standard')
+        ->and($html)->not->toContain('data-industries');
+});
+
+it('shows the vendor pictograms that have an icon file, with their names', function (): void {
+    $directory = public_path('images/pictograms');
+    $icon = $directory.'/zz-test-icon.png';
+
+    if (! is_dir($directory)) {
+        mkdir($directory, 0755, true);
+    }
+
+    file_put_contents($icon, base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='));
+
+    try {
+        $product = Url::query()->where('slug', 'safety-jogger-ligero')->sole()->element;
+        $data = $product->attribute_data;
+        $data['pictograms'] = new ListField(['zz-test-icon|Test icon', 'no-such-file|Missing icon', 'bad name|Bad']);
+        $product->update(['attribute_data' => $data]);
+
+        $html = $this->get(route('product', 'safety-jogger-ligero'))->assertOk()->getContent();
+
+        preg_match('#<section[^>]*data-pictograms.*?</section>#s', $html, $section);
+
+        expect($section[0] ?? '')->toContain('data-pictogram="zz-test-icon"')
+            ->toContain(asset('images/pictograms/zz-test-icon.png'))
+            ->toContain('Test icon')
+            ->not->toContain('Missing icon')
+            ->not->toContain('Bad');
+    } finally {
+        unlink($icon);
+    }
+});
+
+/** Sets the `pictograms` attribute of the Ligero product to these `name|Label` entries. */
+function setLigeroPictograms(array $entries): void
+{
+    $product = Url::query()->where('slug', 'safety-jogger-ligero')->sole()->element;
+    $data = $product->attribute_data;
+    $data['pictograms'] = new ListField($entries);
+    $product->update(['attribute_data' => $data]);
+}
+
+it('shows only the pictograms the vendor lists, in its order, and not as links', function (): void {
+    setLigeroPictograms(['coldinsulated|Cold insulated (CI)', 'ce|CE', 'metalfree|Metal free']);
+
+    $html = $this->get(route('product', 'safety-jogger-ligero'))->assertOk()->getContent();
+
+    preg_match('#<section[^>]*data-pictograms.*?</section>#s', $html, $section);
+    $section = $section[0] ?? '';
+
+    preg_match_all('#data-pictogram="([^"]+)"#', $section, $names);
+
+    // Exactly the list, in its order: nothing is added from the product's features (Ligero has SRC and a toecap).
+    expect($names[1])->toBe(['coldinsulated', 'ce', 'metalfree'])
+        ->and($section)->toContain(asset('images/pictograms/coldinsulated.png'))
+        ->and($section)->toContain('Cold insulated (CI)')
+        ->and($section)->not->toContain('<a ')
+        ->and($section)->not->toContain('data-pictogram="slipresistantoutsole"');
+});
+
+it('leaves out a listed pictogram that has no icon file, and a malformed entry', function (): void {
+    setLigeroPictograms(['ce|CE', 'leather-not-downloaded|Leather', 'bad name|Bad', 'metalfree']);
+
+    $html = $this->get(route('product', 'safety-jogger-ligero'))->assertOk()->getContent();
+
+    preg_match_all('#data-pictogram="([^"]+)"#', $html, $names);
+
+    expect($names[1])->toBe(['ce'])->and($html)->not->toContain('Leather');
+});
+
+it('shows no pictograms block when the vendor lists none, however many features the product has', function (): void {
+    $this->get(route('product', 'safety-jogger-ligero'))->assertOk()->assertDontSee('data-pictograms', false);
+});
+
+it('has the icon files of the vendor set committed', function (): void {
+    foreach (['ce', 'safetytoecap', 'scuffcap', 'punctureresistant', 'slipresistantoutsole', 'heelenergyabsorption', 'oilandfuelresistantoutsole', 'metalfree', 'lightweight', 'waterpenetrationandabsorption', 'electrostaticdischarge35', 'coldinsulated', '3fitsystem', 'individualorthopedicsolutions'] as $name) {
+        expect(is_file(public_path("images/pictograms/{$name}.png")))->toBeTrue("{$name}.png is missing");
+    }
+});
+
+it('offers the English product sheet for the chosen colour, and no other document', function (): void {
+    $product = Url::query()->where('slug', 'safety-jogger-ligero')->sole()->element;
+    $directory = storage_path('app/private/fixture-placeholders');
+
+    if (! is_dir($directory)) {
+        mkdir($directory, 0755, true);
+    }
+
+    foreach ([['Navy', 'product_sheet', 'LIGERO_NAV_en'], ['Black', 'product_sheet', 'LIGERO_BLK_en'], ['Navy', 'certificate', 'LIGERO_CERT']] as [$colour, $type, $name]) {
+        $file = $directory.'/'.$name.'.pdf';
+        file_put_contents($file, "%PDF-1.4\n%%EOF\n");
+
+        $product->addMedia($file)
+            ->withCustomProperties(['type' => $type, 'colour' => $colour, 'language' => 'en'])
+            ->toMediaCollection('documents');
+    }
+
+    $navy = $this->get(route('product', 'safety-jogger-ligero').'?colour=navy')->assertOk()->getContent();
+    $black = $this->get(route('product', 'safety-jogger-ligero').'?colour=black')->assertOk()->getContent();
+
+    preg_match('#<p[^>]*data-product-sheet.*?</p>#s', $navy, $navyLink);
+    preg_match('#<p[^>]*data-product-sheet.*?</p>#s', $black, $blackLink);
+
+    expect($navyLink[0] ?? '')->toContain('LIGERO_NAV_en')->toContain('Product sheet, Navy (PDF)')->not->toContain('LIGERO_BLK_en')
+        ->and($blackLink[0] ?? '')->toContain('LIGERO_BLK_en')->toContain('Product sheet, Black (PDF)')
+        // A certificate is a download too, and downloads other than the product sheet are not shown.
+        ->and($navy)->not->toContain('LIGERO_CERT');
+});
+
+it('shows no product sheet link when the product has none', function (): void {
+    $this->get(route('product', 'safety-jogger-ligero'))->assertOk()->assertDontSee('data-product-sheet', false);
+});
+
+it('always puts the main gallery image on a white background', function (): void {
+    $html = $this->get(route('product', 'safety-jogger-ligero'))->assertOk()->getContent();
+
+    preg_match('#<div class="([^"]*)" data-gallery-frame>#', $html, $frame);
+
+    expect($frame[1] ?? '')->toContain('bg-white')->not->toContain('bg-surface-muted');
+});
+
+it('keeps 10px of space round the main gallery image', function (): void {
+    $html = $this->get(route('product', 'safety-jogger-ligero'))->assertOk()->getContent();
+
+    preg_match('#<img[^>]*data-gallery-main[^>]*>#', $html, $image);
+
+    expect($image[0] ?? '')->toContain('object-contain')->toContain('p-2.5');
+});
+
+it('only suggests products from the same category', function (): void {
+    SearchIndex::use();
+
+    $section = relatedSection($this->get(route('product', 'gbs-eva'))->assertOk()->getContent());
+
+    expect($section)->toContain(relatedTestUrl('Exeter Slipper'))
+        ->and($section)->not->toContain(relatedTestUrl('LIGERO'))
+        ->and($section)->not->toContain(route('product', 'gbs-eva'));
+});
+
+it('puts the vendor links first and tops the list up from the category', function (): void {
+    SearchIndex::use();
+    app(FixtureCatalogueSeeder::class)->run(base_path('tests/Fixtures/related-products.json'));
+
+    $section = relatedSection($this->get(route('product', 'safety-jogger-duplicate'))->assertOk()->getContent());
+
+    expect($section)->toContain(route('product', 'safety-jogger-duplicate-2'))
+        ->and(strpos($section, route('product', 'safety-jogger-duplicate-2')))->toBeLessThan(strpos($section, relatedTestUrl('FS65')))
+        ->and(substr_count($section, 'data-related-product='))->toBeLessThanOrEqual(4);
+});
+
+it('chooses the related products once, so picking a colour does not search again', function (): void {
+    SearchIndex::use();
+
+    $component = Livewire::test(ProductPage::class, ['slug' => 'safety-jogger-ligero']);
+    $ids = $component->get('relatedIds');
+
+    expect($ids)->not->toBe([]);
+
+    // From here on the index would fail, and the section still renders from the ids chosen on mount.
+    $this->app->instance(Client::class, new Client('http://127.0.0.1:1'));
+
+    $component->call('choose', 'colour', 'black')->assertSee('Related products')->assertSet('relatedIds', $ids);
+});
+
+it('still shows the page, without the section, when the search index cannot be reached', function (): void {
+    $this->app->instance(Client::class, new Client('http://127.0.0.1:1'));
+
     $this->get(route('product', 'gbs-eva'))->assertOk()->assertDontSee('Related products');
 });
 

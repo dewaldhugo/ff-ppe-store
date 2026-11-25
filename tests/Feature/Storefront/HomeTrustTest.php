@@ -11,27 +11,46 @@ function trustStrip(string $html): string
     return $section[0] ?? '';
 }
 
-it('shows the three confirmed claims and no delivery claim', function (): void {
+it('shows the three claims, in order, and no delivery claim', function (): void {
     $html = $this->get(route('home'))->assertOk()->getContent();
     $strip = trustStrip($html);
 
     preg_match_all('#<li[^>]*>\s*<svg.*?</svg>\s*(.*?)\s*</li>#s', $strip, $claims);
 
-    expect($claims[1])->toBe(['Prices exclusive of VAT', 'Safety footwear to EN ISO 20345', 'Wide range of sizes'])
+    expect($claims[1])->toBe(['Exclusive trade pricing', 'Free wear trials for businesses', 'Safety footwear to EN ISO 20345'])
         ->and(strtolower($strip))->not->toContain('deliver')
         ->and($strip)->toMatch('#<h2 id="home-trust" class="sr-only">#');
 });
 
-it('sits under the industries slider, before the products, on a centred light grey band with an icon per claim', function (): void {
+it('sits inside the hero at the bottom, as a full width band of bordered thirds with an icon per claim', function (): void {
     $html = $this->get(route('home'))->getContent();
     $strip = trustStrip($html);
 
-    expect(strpos($html, 'data-home-industries'))->toBeLessThan(strpos($html, 'data-home-trust'))
+    expect(strpos($html, 'data-home-trust'))->toBeLessThan(strpos($html, 'data-home-industries'))
         ->and(strpos($html, 'data-home-trust'))->toBeLessThan(strpos($html, 'data-home-products'))
-        ->and($strip)->toContain('bg-surface-muted')
-        ->and($strip)->toContain('sm:justify-center')
-        ->and($strip)->toContain('text-[1.05rem]')
+        ->and($strip)->toContain('trust-scrim')->toContain('w-full')
+        ->and($strip)->toContain('divide-x')->toContain('divide-white/30')
+        ->and($strip)->toContain('flex-1')->toContain('basis-0')
+        ->and($strip)->toContain('text-[1.134rem]')->not->toContain('text-[1.05rem]')->toContain('font-normal')->not->toContain('font-semibold')
+        ->and($strip)->not->toContain('container')
+        ->and($strip)->not->toContain('bg-surface-muted')
+        ->and(substr_count($strip, 'data-trust-block'))->toBe(3)
         ->and(substr_count($strip, '<svg'))->toBe(3);
+});
+
+it('is the last thing inside the hero section, below its content', function (): void {
+    $html = $this->get(route('home'))->getContent();
+
+    $heroStart = (int) strpos($html, 'data-home-hero');
+    $trust = (int) strpos($html, 'data-home-trust');
+    $afterTrust = substr($html, $trust);
+
+    // The hero's closing tag comes right after the strip's own: nothing else sits between them.
+    preg_match('#^.*?</section>\s*</section>#s', $afterTrust, $tail);
+
+    expect($trust)->toBeGreaterThan($heroStart)
+        ->and($trust)->toBeGreaterThan((int) strpos($html, 'data-hero-text'))
+        ->and($tail[0] ?? '')->not->toContain('data-home-industries');
 });
 
 it('is hidden on a phone and shown from the sm breakpoint', function (): void {
@@ -46,6 +65,12 @@ it('sits after the hero', function (): void {
     $html = $this->get(route('home'))->getContent();
 
     expect(strpos($html, 'data-home-hero'))->toBeLessThan(strpos($html, 'data-home-trust'));
+});
+
+it('gives each claim its own icon', function (): void {
+    preg_match_all('#<svg[^>]*>\s*<path d="([^"]+)"#', trustStrip($this->get(route('home'))->getContent()), $paths);
+
+    expect($paths[1])->toHaveCount(3)->and(array_unique($paths[1]))->toHaveCount(3);
 });
 
 it('reads its claims from config and skips empty slots', function (): void {

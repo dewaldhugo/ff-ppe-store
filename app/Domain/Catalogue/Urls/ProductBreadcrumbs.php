@@ -44,7 +44,10 @@ final class ProductBreadcrumbs
         return $crumbs;
     }
 
-    private function deepestCategory(Product $product): ?Collection
+    /**
+     * The product's deepest category, the one the breadcrumbs and the related products use.
+     */
+    public function deepestCategory(Product $product): ?Collection
     {
         return $product->collections()
             ->whereHas('group', fn (Builder $query) => $query->where('handle', CollectionPath::GROUP_HANDLE))

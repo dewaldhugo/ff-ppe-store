@@ -71,6 +71,17 @@ it('returns Ligero and FS65 for S1P and SRC', function (): void {
     expect(names($result))->toEqualCanonicalizing(['LIGERO', 'FS65']);
 });
 
+it('filters by industry and counts the industries without their own selection', function (): void {
+    // Only Ligero and SX310 have industries in the fixtures.
+    expect(names(listing(['industry' => ['Mining']])))->toBe(['SX310'])
+        ->and(names(listing(['industry' => ['Automotive']])))->toEqualCanonicalizing(['LIGERO', 'SX310'])
+        ->and(names(listing(['industry' => ['Mining', 'Logistics']])))->toEqualCanonicalizing(['LIGERO', 'SX310'])
+        ->and(listing(['industry' => ['Mining']])->counts('industry'))->toHaveKey('Automotive')
+        ->and(listing()->counts('industry')['Automotive'])->toBe(2)
+        ->and(IndexSettings::filterable())->toContain('industries')
+        ->and(app(StorefrontProductIndexer::class)->getFilterableFields())->toContain('industries');
+});
+
 it('ORs values within a facet and ANDs across facets', function (): void {
     expect(names(listing(['safety_class' => ['S1P', 'SBP']])))->toEqualCanonicalizing(['LIGERO', 'FS65', 'FS9'])
         ->and(names(listing(['safety_class' => ['S3', 'SBP'], 'brand' => ['Amblers Safety']])))->toBe(['FS9']);

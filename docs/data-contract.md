@@ -68,6 +68,7 @@ Lunar has no handle column on tax classes, product types, tax zones or collectio
 | `country_of_origin` | Text | all | ISO 3166-1 alpha-2, e.g. `RO`, `ES` |
 | `video_url` | Text | all | Optional YouTube embed URL |
 | `certificates` | ListField | all | Optional, URLs of local copies of conformity certificate PDFs |
+| `pictograms` | ListField | all | Optional. The vendor's pictograms (CE, Safety toecap, Puncture resistant...) as `name\|Label` entries in display order, e.g. `safetytoecap\|Safety toecap`. `name` is lower case letters, digits, `_` and `-`; its icon is the file `public/images/pictograms/{name}.png`, and an entry with no file is not shown. Exactly the icons the vendor lists for the product, in its order, shown on the product page under the safety standard. Nothing is worked out from other attributes: the vendor chooses the icons per product (an S3 boot shows Puncture resistant without a `P` feature). 14 icon files are committed in `public/images/pictograms`; a name with no file is not shown. Filled by the ingestion phase in prompts/vendorsync-pictograms-product-sheet.md, so a product shows none until then. |
 
 Waterproofing is the `WR` feature, not a separate attribute. Which attributes are searchable and filterable is defined in search.md.
 
@@ -120,7 +121,9 @@ Every variant has exactly one `colour` value and exactly one of `shoe_size` or `
 ## Media
 - Spatie Media Library, disk `products`, collection `images`, attached to the product.
 - Each image has custom property `colour` (the colour option value it depicts) and `role` (`main`, `side`, `outsole`, `detail`). Variants are linked to their colour's images through Lunar's variant image association, with the `main` image as primary.
-- Conversions: `thumb` (300), `medium` (800), `large` (1600), WebP.
+- Every stored image is WebP, at most 1200 pixels wide and never enlarged (the vendor's original is not kept), with custom property `optimised` naming the format (`webp-1200-q85`). There is no limit on the size of the original that is imported.
+- Conversions: `thumb` (300), `medium` (800), `large` (1200), WebP.
+- Documents: Spatie collection `documents` (disk `products`), no conversions. Only the English product sheet is mirrored: one PDF per colour, custom properties `type` = `product_sheet`, `language` = `en`, `colour` (the colour option value name, like the images). The product page links the sheet of the selected colour. Certificates, declarations of conformity and other-language sheets are not mirrored or shown. Filled by `php artisan vendorsync:product-sheets SJ` (docs/vendorsync.md, Product sheets), so a product shows no link until it has run.
 - 360-degree spin frames are not imported at launch. A separate table will be added later.
 
 ## Orders and fulfilment

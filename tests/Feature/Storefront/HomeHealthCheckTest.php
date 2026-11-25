@@ -79,3 +79,18 @@ it('uses UK English and no em dashes in the band and its config', function (): v
 
     expect($text)->not->toContain('—')->and($text)->not->toMatch('/\b(organization|program|center|color|behavior)\b/i');
 });
+
+it('shows the same example scorecard as the Health Check page', function (): void {
+    $card = function (string $url, string $marker): string {
+        preg_match('#<div[^>]*'.$marker.'[^>]*>.*?Lowest-scoring section:.*?</p>\s*</div>#s', test()->get($url)->assertOk()->getContent(), $m);
+
+        return preg_replace('#\s*data-[a-z-]*example\s*#', ' ', preg_replace('/\s+/', ' ', $m[0] ?? ''));
+    };
+
+    $home = $card(route('home'), 'data-home-health-check-example');
+    $page = $card(route('ppe-health-check'), 'data-health-check-example');
+
+    expect($home)->not->toBe('')
+        ->and($home)->toContain('Developing')->toContain('Lowest-scoring section:')
+        ->and($home)->toBe($page);
+});

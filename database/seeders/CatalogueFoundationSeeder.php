@@ -87,6 +87,7 @@ final class CatalogueFoundationSeeder extends Seeder
         'country_of_origin' => ['Country of origin', Text::class, self::ALL, 'product_specification'],
         'video_url' => ['Video URL', Text::class, self::ALL, 'product_specification'],
         'certificates' => ['Certificates', ListField::class, self::ALL, 'product_specification'],
+        'pictograms' => ['Pictograms', ListField::class, self::ALL, 'product_specification'],
     ];
 
     /** Variant attributes: handle => [name, field type, product types]. */

@@ -243,6 +243,7 @@ final readonly class FootsureMapper implements VendorMapper
             countryOfOrigin: $country,
             videoUrl: null,
             certificates: [],
+            pictograms: [],
             collections: $collection === null ? [] : [$collection],
             clearance: $clearance,
             draftReasons: array_values(array_unique($draftReasons)),

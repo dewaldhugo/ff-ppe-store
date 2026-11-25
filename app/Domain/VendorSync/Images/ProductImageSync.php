@@ -37,6 +37,7 @@ final readonly class ProductImageSync
         private Container $container,
         private ImageDownloader $downloader,
         private CatalogueWriter $writer,
+        private ImageOptimiser $optimiser,
     ) {}
 
     /**
@@ -70,12 +71,6 @@ final readonly class ProductImageSync
             return $result;
         }
 
-        // Vendor originals can exceed Media Library's default of 10 MB.
-        config(['media-library.max_file_size' => max(
-            (int) config('media-library.max_file_size'),
-            (int) config('vendorsync.images.max_file_bytes', 20 * 1024 * 1024),
-        )]);
-
         $managed = $existingMedia
             ->filter(fn (Media $media): bool => filled($media->getCustomProperty('source_url')))
             ->keyBy(fn (Media $media): string => $this->key($media->getCustomProperty('source_url'), $media->getCustomProperty('colour')));
@@ -87,7 +82,10 @@ final readonly class ProductImageSync
             $key = $this->key($image->url, $image->colour);
             $existing = $managed->get($key);
 
-            if ($existing !== null && ! $refresh) {
+            // An image stored before the WebP rule (or under other settings) is fetched and stored again.
+            $current = $existing !== null && $existing->getCustomProperty('optimised') === $this->optimiser->signature();
+
+            if ($current && ! $refresh) {
                 $ordered[$key] = $this->withRole($existing, $image);
 
                 continue;
@@ -110,7 +108,7 @@ final readonly class ProductImageSync
 
             $sha = hash('sha256', $content);
 
-            if ($existing !== null && $existing->getCustomProperty('sha256') === $sha) {
+            if ($current && $existing->getCustomProperty('sha256') === $sha) {
                 $ordered[$key] = $this->withRole($existing, $image);
 
                 continue;
@@ -127,10 +125,12 @@ final readonly class ProductImageSync
             $caption = trim(($product->brand?->name ?? '').' '.$product->translateAttribute('name').' '.$image->colour);
 
             try {
+                // The original is shrunk to the maximum width and stored as WebP; `sha256` stays that of the download, so
+                // an unchanged image is recognised without being converted again.
                 $media = $product
-                    ->addMediaFromString($content)
+                    ->addMediaFromString($this->optimiser->optimise($content))
                     ->usingName($caption)
-                    ->usingFileName(Str::slug($caption.' '.$image->role.' '.($index + 1)).'.'.$this->extension($downloadedFrom))
+                    ->usingFileName(Str::slug($caption.' '.$image->role.' '.($index + 1)).'.webp')
                     ->withCustomProperties([
                         'colour' => $image->colour,
                         'role' => $image->role,
@@ -140,6 +140,8 @@ final readonly class ProductImageSync
                         // Where the stored bytes came from (the fallback, when used).
                         'downloaded_url' => $downloadedFrom,
                         'sha256' => $sha,
+                        // The format the stored file is in (ImageOptimiser::signature()).
+                        'optimised' => $this->optimiser->signature(),
                     ])
                     ->toMediaCollection($collection);
             } catch (Throwable $exception) {
@@ -274,7 +276,10 @@ final readonly class ProductImageSync
      */
     private function hashOf(array $plan): string
     {
-        return hash('sha256', json_encode(array_map(fn (NormalisedImage $image): array => [$image->url, $image->colour, $image->role], $plan), JSON_THROW_ON_ERROR));
+        return hash('sha256', json_encode([
+            $this->optimiser->signature(),
+            array_map(fn (NormalisedImage $image): array => [$image->url, $image->colour, $image->role], $plan),
+        ], JSON_THROW_ON_ERROR));
     }
 
     /**
@@ -403,15 +408,20 @@ final readonly class ProductImageSync
     private function tooLarge(string $content): ?string
     {
         $bytes = strlen($content);
-        $maxBytes = (int) config('vendorsync.images.max_file_bytes', 20 * 1024 * 1024);
+        $maxBytes = (int) config('vendorsync.images.max_file_bytes', 0);
 
-        if ($bytes > $maxBytes) {
+        if ($maxBytes > 0 && $bytes > $maxBytes) {
             return sprintf('the file is %.1f MB (limit %.0f MB)', $bytes / 1048576, $maxBytes / 1048576);
+        }
+
+        $maxMegapixels = (float) config('vendorsync.images.max_megapixels', 0);
+
+        if ($maxMegapixels <= 0) {
+            return null;
         }
 
         $size = @getimagesizefromstring($content);
         $megapixels = $size === false ? 0.0 : $size[0] * $size[1] / 1_000_000;
-        $maxMegapixels = (float) config('vendorsync.images.max_megapixels', 5.0);
 
         if ($megapixels > $maxMegapixels) {
             return sprintf('the image is %d x %d (%.1f megapixels, limit %.1f)', $size[0], $size[1], $megapixels, $maxMegapixels);
@@ -532,12 +542,5 @@ final readonly class ProductImageSync
     private function key(mixed $url, mixed $colour): string
     {
         return $url.'|'.$colour;
-    }
-
-    private function extension(string $url): string
-    {
-        $extension = strtolower(pathinfo((string) parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION));
-
-        return in_array($extension, ['jpg', 'jpeg', 'png', 'webp', 'gif'], true) ? $extension : 'jpg';
     }
 }

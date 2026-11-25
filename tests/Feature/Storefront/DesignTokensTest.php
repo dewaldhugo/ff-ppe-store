@@ -62,11 +62,13 @@ it('meets WCAG AA (4.5:1) for every text and background pair the templates use',
     'body text on alternate sections' => ['ink', 'surface-muted'],
     'muted text' => ['ink-muted', 'white'],
     'muted text on alternate sections' => ['ink-muted', 'surface-muted'],
-    'main menu links' => ['ink', 'surface-nav'],
-    'main menu link hover' => ['brand-blue', 'surface-nav'],
+    'main menu links' => ['brand-navy', 'brand-teal'],
+    'text in the Products dropdown' => ['ink', 'surface-nav'],
+    'main menu focus outline text' => ['brand-blue', 'brand-teal'],
     'links and eyebrows' => ['brand-blue', 'white'],
     'links on alternate sections' => ['brand-blue', 'surface-muted'],
-    'primary button' => ['white', 'brand-blue'],
+    'primary button' => ['brand-navy', 'brand-teal'],
+    'primary button on hover' => ['white', 'brand-navy'],
     'footer text' => ['white', 'brand-blue'],
     'top bar and hero text' => ['white', 'brand-navy'],
     'top bar text' => ['white', 'brand-charcoal'],
@@ -86,7 +88,8 @@ it('meets 3:1 for the focus ring and the form field border', function (string $u
 })->with([
     'focus ring on light surfaces' => ['brand-blue', 'white'],
     'focus ring on alternate sections' => ['brand-blue', 'surface-muted'],
-    'focus ring on the main menu' => ['brand-blue', 'surface-nav'],
+    'focus ring on the main menu' => ['brand-blue', 'brand-teal'],
+    'focus ring in the Products dropdown' => ['brand-blue', 'surface-nav'],
     'focus ring on dark surfaces' => ['brand-teal', 'brand-navy'],
     'focus ring on the footer' => ['brand-teal', 'brand-blue'],
     'form field border' => ['border-strong', 'white'],
@@ -165,10 +168,9 @@ it('never puts white text on a teal fill or teal text on a light surface', funct
             }
         }
 
-        // Teal text is only for dark surfaces. The only place it is used is the
-        // eyebrow on the navy hero of the home page.
-        if (str_contains($source, 'text-brand-teal') && ! in_array(str_replace('\\', '/', $name), ['components/home/hero.blade.php'], true)) {
-            $offenders[] = "{$name}: text-brand-teal outside a dark hero";
+        // Teal text is only for dark surfaces: the eyebrows on the navy bands of the home and Health Check pages.
+        if (str_contains($source, 'text-brand-teal') && ! in_array(str_replace('\\', '/', $name), ['components/home/hero.blade.php', 'components/home/health-check.blade.php', 'pages/ppe-health-check.blade.php'], true)) {
+            $offenders[] = "{$name}: text-brand-teal outside a dark band";
         }
     }
 

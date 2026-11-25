@@ -94,7 +94,7 @@
  * - White text on teal fails (2.4:1), so teal is never a text colour on a
  *   light surface and never a background for white text. A teal-filled
  *   element uses brand-navy text.
- * - Primary buttons are brand-blue with white text. Secondary buttons are
+ * - Primary buttons are brand-teal with brand-navy text. Secondary buttons are
  *   pill outlines: brand-teal border, brand-blue text (white text on dark
  *   surfaces, where brand-blue would not be readable).
  */
@@ -179,6 +179,23 @@
 /* Without JavaScript (the no-js class is removed by a script in the layout head)
    the menus cannot open, so navigation falls back to plain links. */
 @custom-variant no-js (html.no-js &);
+
+/* A flat 30% black layer over the home hero photos, so the white text reads on the lighter ones. It is a class,
+   not a template utility: black is not a design token. */
+.hero-scrim {
+    background-color: rgb(0 0 0 / 0.3);
+}
+
+/* A 60% black layer behind the claims strip at the bottom of the home hero. */
+.trust-scrim {
+    background-color: rgb(0 0 0 / 0.6);
+}
+
+/* A soft shadow behind the home hero heading and sub-heading: a tight one for the edges of the letters and a wide,
+   faint one for the glow around them. */
+.hero-text-shadow {
+    text-shadow: 0 1px 3px rgb(0 0 0 / 0.45), 0 2px 18px rgb(0 0 0 / 0.35);
+}
 
 /*
  * The industries row on the home page (resources/views/components/industry-slider.blade.php).

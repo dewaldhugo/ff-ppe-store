@@ -8,21 +8,21 @@
     ];
 @endphp
 
-{{-- Service claims with icons, the last section of the home page. --}}
-<section class="border-b border-border bg-surface-muted" aria-labelledby="home-service" data-home-service>
+{{-- Service claims with icons, the last section of the home page: a brand-teal band with navy text and icons (8:1), so it stands out between the page and the charcoal footer. --}}
+<section class="bg-brand-teal" aria-labelledby="home-service" data-home-service>
     <h2 id="home-service" class="sr-only">Our service</h2>
 
     <ul class="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-4 py-8 sm:grid-cols-2 lg:grid-cols-4 lg:px-8">
         @foreach ($items as $item)
             <li class="flex items-center gap-4">
-                <span class="flex size-14 shrink-0 items-center justify-center rounded-full border border-ink text-brand-navy">
+                <span class="flex size-14 shrink-0 items-center justify-center rounded-full border-2 border-brand-navy text-brand-navy">
                     <svg class="size-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         @foreach ($item['paths'] as $path)
                             <path d="{{ $path }}"/>
                         @endforeach
                     </svg>
                 </span>
-                <span class="text-sm font-medium text-ink">{{ $item['label'] }}</span>
+                <span class="text-base font-semibold text-brand-navy">{{ $item['label'] }}</span>
             </li>
         @endforeach
     </ul>

@@ -1,5 +1,5 @@
 {{-- The home page. Search engines are kept out site-wide by STORE_NOINDEX. --}}
-{{-- Order: hero, industries, trust strip, PPE Health Check, shop by brand, featured products, spotlight, video, buying guides, testimonials, service strip. --}}
+{{-- Order: hero (with the trust strip at its bottom), industries, PPE Health Check, shop by brand, featured products, spotlight, video, buying guides, testimonials, service strip. --}}
 <x-layouts.storefront
     full-title="Frontline Safety Gear"
     description="Streamline your site procurement with a single, dependable UK & EU trade supplier. We stock certified head-to-toe PPE, workwear, and safety footwear ready for rapid nationwide dispatch and competitive bulk pricing."
@@ -8,7 +8,7 @@
     <x-home.hero />
 
     {{-- Industries slider. --}}
-    <div class="pt-12 sm:pt-16" data-home-industries>
+    <div class="py-12 sm:py-16" data-home-industries>
         <x-ui.container>
             {{-- The shared heading style, 20% larger (1.5rem to 1.8rem, 1.875rem to 2.25rem). --}}
             <div class="[&_h2]:text-[1.8rem] sm:[&_h2]:text-[2.25rem]">
@@ -27,8 +27,6 @@
             <x-industry-slider />
         </div>
     </div>
-
-    <x-home.trust-strip />
 
     <x-home.health-check />
 

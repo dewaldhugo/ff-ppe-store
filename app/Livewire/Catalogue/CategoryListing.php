@@ -78,6 +78,10 @@ final class CategoryListing extends Component
     #[Url]
     public array $gender = [];
 
+    /** @var list<string> */
+    #[Url]
+    public array $industry = [];
+
     #[Url(except: '')]
     public string $price_min = '';
 
@@ -128,7 +132,7 @@ final class CategoryListing extends Component
 
     public function clearFilters(): void
     {
-        $this->reset(['brand', 'safety_class', 'features', 'size', 'colour', 'gender', 'price_min', 'price_max', 'in_stock', 'page']);
+        $this->reset(['brand', 'safety_class', 'features', 'size', 'colour', 'gender', 'industry', 'price_min', 'price_max', 'in_stock', 'page']);
     }
 
     public function goToPage(int $page): void
@@ -163,7 +167,6 @@ final class CategoryListing extends Component
             'breadcrumbs' => $this->breadcrumbs($collection, $categoryUrl),
             'result' => $result,
             'products' => $this->products($result->productIds),
-            'priceDisplay' => $priceDisplay,
             'showPrices' => $showPrices,
             'sorts' => array_values(array_filter(
                 ListingSort::cases(),
@@ -222,6 +225,7 @@ final class CategoryListing extends Component
             'size' => $this->size,
             'colour' => $this->colour,
             'gender' => $this->gender,
+            'industry' => $this->industry,
             'price_min' => $this->price_min,
             'price_max' => $this->price_max,
             'in_stock' => $this->in_stock,
@@ -283,6 +287,7 @@ final class CategoryListing extends Component
 
         $filtered = $this->brand !== [] || $this->safety_class !== [] || $this->features !== []
             || $this->size !== [] || $this->colour !== [] || $this->gender !== []
+            || $this->industry !== []
             || $this->price_min !== '' || $this->price_max !== '' || $this->in_stock
             || $this->sort !== 'relevance' || $this->q !== '';
 
@@ -313,35 +318,6 @@ final class CategoryListing extends Component
     }
 
     /**
-     * The distinct colours a product comes in, for the swatches on its card.
-     * Display only: the swatches are not links and show no selection.
-     *
-     * @return list<array{name: string, hexes: list<string>}>
-     */
-    public function swatches(Product $product): array
-    {
-        $swatches = [];
-
-        foreach ($product->variants as $variant) {
-            $value = $variant->values->first(fn ($value): bool => $value->option?->handle === 'colour');
-
-            if ($value === null) {
-                continue;
-            }
-
-            $name = (string) $value->translate('name');
-            $hex = $value->meta['hex'] ?? null;
-
-            $swatches[$name] ??= [
-                'name' => $name,
-                'hexes' => ColourSwatch::hexes($name, is_string($hex) ? $hex : null),
-            ];
-        }
-
-        return array_values($swatches);
-    }
-
-    /**
      * Facets ready for the view: a title, the bound property, and for each
      * value a customer-facing label.
      *
@@ -357,6 +333,7 @@ final class CategoryListing extends Component
             'size' => 'UK size',
             'colour' => 'Colour',
             'gender' => 'Gender',
+            'industry' => 'Industry',
         ];
 
         $colours = $this->colours();

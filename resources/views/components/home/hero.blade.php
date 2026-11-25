@@ -7,10 +7,10 @@
     column from md up, and only exists while resources/images/hero/hero.webp does.
     Without it the text spans the full width, with no placeholder.
 --}}
-<section class="surface-dark relative isolate flex items-center overflow-hidden bg-brand-navy text-white sm:min-h-[33rem] lg:min-h-[39.6rem]" aria-labelledby="home-hero-title" data-home-hero>
+<section class="surface-dark relative isolate flex flex-col overflow-hidden bg-brand-navy text-white sm:min-h-[33rem] lg:min-h-[39.6rem]" aria-labelledby="home-hero-title" data-home-hero>
     {{--
         Decorative background photos: the eight hero-bg images in use, starting at a random one on each page
-        load and fading into the next every 6 seconds, centred, no overlay. Only the first photo is in
+        load and fading into the next every 6 seconds, centred, under a flat 30% black layer (.hero-scrim). Only the first photo is in
         the page; the others load just before their turn (data-src). The photo being faded in sits on
         top while the previous one stays fully visible beneath it, so the background never dips to
         navy. Without JavaScript it stays on the first photo. It fades whatever the visitor's "reduce
@@ -99,18 +99,24 @@
         @endforeach
     </div>
 
+    {{-- A flat 30% black layer over the photos, under the text. Later in the same stacking context, so it paints above the slides. --}}
+    <span class="hero-scrim absolute inset-0 -z-10" aria-hidden="true" data-hero-scrim></span>
+
     @php
         // One of the headings in config/homepage.php, at random on each page load.
         $heroHeadings = array_values(array_filter((array) config('homepage.hero_headings'), fn ($heading): bool => is_string($heading) && trim($heading) !== ''));
         $heroHeading = $heroHeadings === [] ? '' : $heroHeadings[random_int(0, count($heroHeadings) - 1)];
     @endphp
 
-    <x-ui.container class="w-full py-14 sm:py-20">
+    {{-- my-auto centres the content in the space above the trust strip, which sits at the bottom of the hero. --}}
+    <x-ui.container class="my-auto w-full py-14 sm:py-20">
         <div @class(['items-center gap-12', 'md:grid md:grid-cols-2' => $image])>
+            {{-- Shifted down, as a block, from the sm breakpoint. Moved up by 10% of the hero's minimum height (3.3rem of 33rem, 3.96rem of 39.6rem on a laptop), so both land on 3.3rem. --}}
             <div data-hero-text class="sm:translate-y-[3.3rem]">
-                <h1 id="home-hero-title" class="text-[1.753rem] text-white sm:text-[2.475rem] lg:text-[2.75rem]" data-hero-heading>{{ $heroHeading }}</h1>
+                {{-- From sm up the heading wraps onto the next line at 60% of the text column's width. On a phone it uses the full width. --}}
+                <h1 id="home-hero-title" class="hero-text-shadow sm:max-w-[60%] text-[1.753rem] text-white sm:text-[2.475rem] lg:text-[2.75rem]" data-hero-heading>{{ $heroHeading }}</h1>
                 {{-- Not shown on a phone (below the sm breakpoint, 640px): the heading and the buttons are enough there. --}}
-                <p class="mt-4 hidden max-w-2xl text-[1.2375rem] text-white/90 sm:block" data-hero-subheading>EN-compliant safety footwear, head, eye, and hearing protection ready for immediate dispatch. Bulk trade pricing available.</p>
+                <p class="hero-text-shadow mt-4 hidden max-w-2xl text-[1.2375rem] text-white/90 sm:block" data-hero-subheading>EN-compliant safety footwear, head, eye, and hearing protection ready for immediate dispatch. Bulk trade pricing available.</p>
 
                 <div class="mt-8 flex flex-wrap gap-4">
                     {{-- The primary (dark grey) button, with a thin light border so it stands out against the dark photos. --}}
@@ -136,4 +142,6 @@
             @endif
         </div>
     </x-ui.container>
+
+    <x-home.trust-strip />
 </section>
