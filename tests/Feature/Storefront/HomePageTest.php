@@ -705,3 +705,11 @@ it('leaves space under the industry slider, before the health check band', funct
 
     expect($open[0] ?? '')->toContain('py-12')->toContain('sm:py-16');
 });
+
+it('shows the safety class as a badge in the top right of a homepage product picture, as on the listing cards', function (): void {
+    $html = $this->get(route('home'))->assertOk()->getContent();
+
+    preg_match('#<section[^>]*data-home-products.*?</section>#s', $html, $section);
+
+    expect($section[0] ?? '')->toMatch('#<span class="[^"]*absolute right-2 top-2[^"]*bg-white[^"]*" data-card-class>[^<]+</span>#');
+});

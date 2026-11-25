@@ -357,14 +357,15 @@ final class CategoryListing extends Component
      */
     private function facetGroups(array $facets): array
     {
+        // The order the filters are shown in: Industry first.
         $titles = [
+            'industry' => 'Industry',
             'brand' => 'Brand',
             'safety_class' => 'Safety class',
             'features' => 'Features',
             'size' => 'UK size',
             'colour' => 'Colour',
             'gender' => 'Gender',
-            'industry' => 'Industry',
         ];
 
         $colours = $this->colours();
