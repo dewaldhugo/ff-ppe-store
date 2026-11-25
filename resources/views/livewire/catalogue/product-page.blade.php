@@ -379,6 +379,8 @@
         </div>
     @endif
 
+    <x-storefront.feature-highlights :tiles="$featureTiles" />
+
     @if ($related !== [])
         <section aria-labelledby="related-heading" class="mt-10" data-testid="related">
             <h2 id="related-heading" class="text-xl font-bold">Related products</h2>

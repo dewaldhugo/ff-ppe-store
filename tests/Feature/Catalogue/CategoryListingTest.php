@@ -235,8 +235,8 @@ it('shows the safety class as a badge in the top right of the picture on each ca
 
         preg_match('#<h3.*?</h3>#s', $card, $heading);
 
-        // A badge in the top right corner of the picture, on the light teal, and not in the name line.
-        expect($card)->toMatch('#<span class="[^"]*absolute right-2 top-2[^"]*bg-brand-teal-light[^"]*text-brand-navy[^"]*" data-card-class>'.preg_quote($class, '#').'</span>#')
+        // A badge in the top right corner of the picture, on white, and not in the name line.
+        expect($card)->toMatch('#<span class="[^"]*absolute right-2 top-2[^"]*bg-white[^"]*text-brand-navy[^"]*" data-card-class>'.preg_quote($class, '#').'</span>#')
             ->and($heading[0] ?? '')->not->toContain('data-card-class')
             ->and(strpos($card, 'data-card-class'))->toBeLessThan(strpos($card, '<h3'));
     }
