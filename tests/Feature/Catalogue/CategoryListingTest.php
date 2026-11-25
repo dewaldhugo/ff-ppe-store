@@ -200,6 +200,49 @@ it('keeps the search canonical with its query', function (): void {
         ->assertSee('<link rel="canonical" href="'.e(route('search', ['q' => 'boots'])).'">', false);
 });
 
+it('sets the product name on a card one size smaller than body text', function (): void {
+    $html = $this->get(route('category', 'safety-footwear'))->assertOk()->getContent();
+
+    preg_match_all('#<h3 class="([^"]*)"#', $html, $headings);
+
+    expect($headings[1])->not->toBeEmpty();
+
+    foreach ($headings[1] as $classes) {
+        expect($classes)->toContain('text-sm')->toContain('font-semibold');
+    }
+});
+
+it('shows the safety class beside the product name on each card that has one', function (): void {
+    $html = $this->get(route('category', 'safety-footwear'))->assertOk()->getContent();
+
+    preg_match_all('#<li[^>]*wire:key="product-(\d+)".*?</li>\s*(?=<li[^>]*wire:key|</ul>)#s', $html, $cards, PREG_SET_ORDER);
+
+    expect($cards)->not->toBeEmpty();
+
+    $withClass = 0;
+
+    foreach ($cards as [$card, $id]) {
+        $class = trim((string) Product::query()->findOrFail((int) $id)->attr('safety_class'));
+
+        if ($class === '') {
+            // No class, no badge.
+            expect($card)->not->toContain('data-card-class');
+
+            continue;
+        }
+
+        $withClass++;
+
+        preg_match('#<h3.*?</h3>#s', $card, $heading);
+
+        expect($heading[0] ?? '')->toMatch('#<span class="[^"]*bg-brand-teal[^"]*text-brand-navy[^"]*" data-card-class>'.preg_quote($class, '#').'</span>#')
+            // After the name link, inside the same heading.
+            ->and(strpos($heading[0], '</a>'))->toBeLessThan(strpos($heading[0], 'data-card-class'));
+    }
+
+    expect($withClass)->toBeGreaterThan(0);
+});
+
 it('shows one non-interactive colour swatch per colour under each product', function (): void {
     $html = $this->get(route('category', 'safety-footwear'))->assertOk()->getContent();
 
