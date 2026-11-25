@@ -15,7 +15,7 @@
 @endphp
 
 <li {{ $attributes->class('group relative flex flex-col rounded border border-border p-3 transition-colors hover:border-brand-teal') }}>
-    <div class="relative aspect-square overflow-hidden rounded bg-surface-muted">
+    <div class="card-backdrop aspect-square overflow-hidden rounded">
         @if ($product->thumbnail)
             <img
                 src="{{ $product->thumbnail->getUrl('thumb') }}"

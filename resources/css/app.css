@@ -225,3 +225,39 @@
 .industry-row:hover .industry-row-track {
     animation-play-state: paused;
 }
+
+/*
+ * The picture area of a product card: a soft spotlight behind the product, in the light teal of the menu bar, which gets stronger on
+ * hover. The picture sits above it, so a transparent image shows it and an opaque one covers it.
+ */
+@layer components {
+    .card-backdrop {
+        position: relative;
+        background-color: var(--color-white);
+        background-image: radial-gradient(ellipse closest-side at 50% 46%, var(--color-white) 0%, var(--color-white) 20%, #E4F4F2 65%, var(--color-brand-teal-light) 100%);
+    }
+
+    .card-backdrop::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        background-image: radial-gradient(ellipse closest-side at 50% 46%, var(--color-white) 0%, var(--color-white) 10%, #CFECE9 45%, var(--color-brand-teal-light) 70%, #8DD2CC 100%);
+    }
+
+    .group:hover .card-backdrop::before,
+    .group:focus-within .card-backdrop::before {
+        opacity: 1;
+    }
+
+    .card-backdrop > img {
+        position: relative;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .card-backdrop::before {
+            transition: none;
+        }
+    }
+}
