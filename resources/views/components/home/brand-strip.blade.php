@@ -8,7 +8,7 @@
             <ul class="mt-8 grid grid-cols-3 border-l border-t border-border sm:grid-cols-4 lg:grid-cols-6">
                 @foreach ($tiles as $tile)
                     <li class="border-b border-r border-border" data-home-brand="{{ $tile->slug }}">
-                        <a href="{{ route('brands.show', $tile->slug) }}" class="flex aspect-[3/2] w-full items-center justify-center bg-border/40 p-1 text-center text-ink transition-colors hover:bg-white" title="{{ $tile->name }}">
+                        <a href="{{ route('brands.show', $tile->slug) }}" class="flex aspect-[3/2] w-full items-center justify-center bg-white p-1 text-center text-ink transition-colors hover:bg-brand-teal-light" title="{{ $tile->name }}">
                             @if ($tile->logoUrl !== null)
                                 <img src="{{ $tile->logoUrl }}" alt="" loading="lazy" decoding="async" width="360" height="240" class="h-full w-full object-contain">
                             @else

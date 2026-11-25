@@ -46,7 +46,7 @@ it('links to every brand from the strip and to the brands page', function (): vo
         ->and($strip)->toContain('View all brands');
 });
 
-it('starts each tile a shade darker than the page and turns it white on hover', function (): void {
+it('shows each tile on white and turns it light teal on hover', function (): void {
     SearchIndex::use();
 
     $strip = brandStripSection($this->get(route('home'))->assertOk()->getContent());
@@ -56,7 +56,7 @@ it('starts each tile a shade darker than the page and turns it white on hover', 
     expect($tiles[1])->not->toBeEmpty();
 
     foreach ($tiles[1] as $classes) {
-        expect($classes)->toContain('bg-border/40')->toContain('hover:bg-white')->not->toContain(' bg-white ')->not->toContain('hover:bg-surface-muted');
+        expect($classes)->toContain(' bg-white ')->toContain('hover:bg-brand-teal-light')->not->toContain('bg-border/40')->not->toContain('hover:bg-surface-muted');
     }
 });
 
