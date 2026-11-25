@@ -200,7 +200,7 @@ it('keeps the search canonical with its query', function (): void {
         ->assertSee('<link rel="canonical" href="'.e(route('search', ['q' => 'boots'])).'">', false);
 });
 
-it('sets the product name on a card one size smaller than body text', function (): void {
+it('sets the product name on a card at 15px with 6px of space above and below', function (): void {
     $html = $this->get(route('category', 'safety-footwear'))->assertOk()->getContent();
 
     preg_match_all('#<h3 class="([^"]*)"#', $html, $headings);
@@ -208,7 +208,7 @@ it('sets the product name on a card one size smaller than body text', function (
     expect($headings[1])->not->toBeEmpty();
 
     foreach ($headings[1] as $classes) {
-        expect($classes)->toContain('text-sm')->toContain('font-semibold');
+        expect($classes)->toContain('text-[0.9375rem]')->toContain('font-semibold')->toContain('py-1.5');
     }
 });
 
@@ -235,7 +235,7 @@ it('shows the safety class beside the product name on each card that has one', f
 
         preg_match('#<h3.*?</h3>#s', $card, $heading);
 
-        expect($heading[0] ?? '')->toMatch('#<span class="[^"]*bg-brand-teal[^"]*text-brand-navy[^"]*" data-card-class>'.preg_quote($class, '#').'</span>#')
+        expect($heading[0] ?? '')->toMatch('#<span class="[^"]*bg-brand-teal-light[^"]*text-xs[^"]*text-brand-navy[^"]*" data-card-class>'.preg_quote($class, '#').'</span>#')
             // After the name link, inside the same heading.
             ->and(strpos($heading[0], '</a>'))->toBeLessThan(strpos($heading[0], 'data-card-class'));
     }
