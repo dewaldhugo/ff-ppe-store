@@ -83,11 +83,13 @@ it('puts the pitch on the left and the photo on the right, under the heading', f
     preg_match('#<div[^>]*data-wear-trials-hero.*?</div>\s*<img[^>]*>#s', $html, $hero);
     preg_match('#<img[^>]*data-wear-trials-image[^>]*>#s', $html, $image);
 
-    expect($hero[0] ?? '')->toContain('md:grid-cols-2')
+    expect($hero[0] ?? '')->toContain('md:grid-cols-[minmax(0,60fr)_minmax(0,40fr)]')
         // The text comes before the image in the markup, so it is the left column.
         ->and(strpos($html, '<h1'))->toBeLessThan(strpos($html, 'data-wear-trials-intro'))
         ->and(strpos($html, 'data-wear-trials-intro'))->toBeLessThan(strpos($html, 'data-wear-trials-image'))
-        ->and(strpos($html, 'data-wear-trials-image'))->toBeLessThan(strpos($html, 'data-wear-trials-steps'))
+        ->and(strpos($html, 'data-wear-trials-image'))->toBeLessThan(strpos($html, 'data-wear-trials-rule'))
+        ->and(strpos($html, 'data-wear-trials-rule'))->toBeLessThan(strpos($html, 'data-wear-trials-steps'))
+        ->and($html)->toContain('<hr class="mt-12 border-0 border-t border-border" data-wear-trials-rule>')
         ->and($html)->toMatch('#data-wear-trials-offer[^>]*>That’s why we offer free Wear Trials to approved business customers\.</p>#u')
         ->and($image[0] ?? '')->toContain('src="'.asset('images/wear-trials/head-to-toe-ppe.webp').'"')
         ->toContain('width="1470"')->toContain('height="980"')->toMatch('#alt="[^"]+"#');

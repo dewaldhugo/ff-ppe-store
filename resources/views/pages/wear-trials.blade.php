@@ -19,10 +19,12 @@
 <x-layouts.storefront title="Wear Trials" description="Free wear trials for approved business customers: test the build quality, comfort and durability of our PPE on the job before you place a bulk order.">
     <x-ui.section-heading title="Wear Trials" tag="h1" />
 
-    {{-- Two columns from md: the pitch on the left, a photo of the kit on the right. --}}
-    <div class="mt-6 grid items-center gap-8 md:grid-cols-2 md:gap-12" data-wear-trials-hero>
+    {{-- Two columns from md: the pitch on the left (60%), a photo of the kit on the right (40%), then a rule. --}}
+    <div class="mt-6 grid items-center gap-8 md:grid-cols-[minmax(0,60fr)_minmax(0,40fr)] md:gap-12" data-wear-trials-hero>
         <div>
             <p class="leading-relaxed text-ink" data-wear-trials-intro>Choosing the right ‘head to toe’ PPE for your workforce is a major decision, and specs on a screen only tell half the story. You need to see the build quality, feel the comfort, and test the durability on the job before placing a bulk order.</p>
+            {{-- Demo copy: placeholder wording until the client supplies the final paragraph. --}}
+            <p class="mt-4 leading-relaxed text-ink" data-wear-trials-more>Every team works differently. A site engineer, a warehouse picker and a kitchen porter all ask something else of their boots, gloves and eyewear, so we let your people try the kit in their own conditions, over a full shift and across the seasons, and tell you what they think. Their feedback, not a data sheet, should decide what you buy.</p>
             <p class="mt-4 text-lg font-semibold text-brand-navy" data-wear-trials-offer>That’s why we offer free Wear Trials to approved business customers.</p>
         </div>
 
@@ -36,7 +38,9 @@
         >
     </div>
 
-    <section class="mt-12" aria-labelledby="wear-trials-how" data-wear-trials-steps>
+    <hr class="mt-12 border-0 border-t border-border" data-wear-trials-rule>
+
+    <section class="mt-10" aria-labelledby="wear-trials-how" data-wear-trials-steps>
         <h2 id="wear-trials-how" class="text-2xl text-brand-navy sm:text-3xl">How It Works</h2>
 
         <ol class="mt-6 grid gap-8 md:grid-cols-3">
