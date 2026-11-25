@@ -94,11 +94,11 @@ it('leaves the memory limit as it found it after a large image', function (): vo
 
 it('names the baseline in the signature only when it aligns', function (): void {
     expect((new ImageOptimiser)->signature())->toBe('webp-1200-q85')
-        ->and((new ImageOptimiser)->signature(true))->toBe('webp-1200-q85-base11-side4-ar100');
+        ->and((new ImageOptimiser)->signature(true))->toBe('webp-1200-q85-base11-side4-ar100-grow');
 
     config(['vendorsync.images.align.bottom' => 0.2]);
 
-    expect((new ImageOptimiser)->signature(true))->toBe('webp-1200-q85-base20-side4-ar100');
+    expect((new ImageOptimiser)->signature(true))->toBe('webp-1200-q85-base20-side4-ar100-grow');
 
 });
 

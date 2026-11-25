@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\VendorSync\Images;
 
+use App\Domain\Catalogue\Collections\CategoryTree;
 use App\Domain\Catalogue\Keys\CatalogueKeys;
 use App\Domain\VendorSync\Exceptions\RunAlreadyRunning;
 use App\Domain\VendorSync\Import\RunRecorder;
@@ -219,7 +220,13 @@ final readonly class ImageRun
      */
     private function productsIn(array $handles): array
     {
-        $collectionIds = array_map(fn (string $handle): int => CatalogueKeys::collection($handle)->id, $handles);
+        // A top level category (safety-footwear) means every leaf category under it: products are in leaves only.
+        $leaves = array_values(array_unique(array_merge(...array_map(
+            fn (string $handle): array => CategoryTree::leavesUnder($handle) ?: [$handle],
+            $handles,
+        ))));
+
+        $collectionIds = array_map(fn (string $handle): int => CatalogueKeys::collection($handle)->id, $leaves);
 
         return DB::table((new Product)->collections()->getTable())
             ->whereIn('collection_id', $collectionIds)

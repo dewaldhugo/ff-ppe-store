@@ -29,6 +29,9 @@ final class SubjectAligner
     /** The smallest share of the image the subject must cover for the result to be trusted (a speck is noise). */
     private const float MIN_AREA = 0.03;
 
+    /** A subject whose fitting scale is more than this many times a plain resize is "clearly too small" and is enlarged. */
+    private const float SMALL_FACTOR = 1.25;
+
     /** How close to the baseline, as a share of the height, counts as already there. */
     private const float TOLERANCE = 0.01;
 
@@ -42,9 +45,15 @@ final class SubjectAligner
      * @param  float  $bottom  Room left under the subject, as a share of the height.
      * @param  float  $top  Least room left above it, as a share of the height.
      * @param  float  $side  Least room left at each side, as a share of the width.
-     * @param  ?float  $aspect  Width over height of the canvas to put the subject on (1.0 is square), or null to keep the size.
+     * @param  ?float  $aspect  Width over height of the canvas to put the subject on (1.0 is square), or null to keep the shape.
+     * @param  ?int  $outWidth  Width of the result in pixels (the picture is resampled to it from its own full resolution, which is
+     *                          sharper than resizing first and moving after), or null to keep the width.
+     * @param  float  $maxUpscale  How far a subject may be enlarged relative to the source pixels (1.0 never enlarges them). A subject
+     *                             that already fills most of its room is never enlarged beyond a plain resize; one that is clearly
+     *                             too small for its room (the photographer left a lot of empty space round it) is enlarged to
+     *                             fill the room, up to this limit.
      */
-    public function align(GdImage $image, float $bottom, float $top, float $side = 0.0, ?float $aspect = null): GdImage
+    public function align(GdImage $image, float $bottom, float $top, float $side = 0.0, ?float $aspect = null, ?int $outWidth = null, float $maxUpscale = 1.0): GdImage
     {
         $width = imagesx($image);
         $height = imagesy($image);
@@ -59,15 +68,27 @@ final class SubjectAligner
         $boxWidth = $right - $left + 1;
         $boxHeight = $lower - $upper + 1;
 
-        $outHeight = $aspect !== null && $aspect > 0 ? max(1, (int) round($width / $aspect)) : $height;
+        $outWidth ??= $width;
+        $outHeight = $aspect !== null && $aspect > 0 ? max(1, (int) round($outWidth / $aspect)) : max(1, (int) round($height * $outWidth / $width));
         $baseline = (int) round($outHeight * (1 - $bottom));
-        $room = $baseline - (int) round($outHeight * $top);
-        $margin = (int) round($width * $side);
-        $roomWidth = max(1, $width - 2 * $margin);
-        $scale = min(1.0, max(1, $room) / $boxHeight, $roomWidth / $boxWidth);
+        $room = max(1, $baseline - (int) round($outHeight * $top));
+        $margin = (int) round($outWidth * $side);
+        $roomWidth = max(1, $outWidth - 2 * $margin);
 
-        $placed = $outHeight === $height
-            && $scale === 1.0
+        // What scale (source pixels to result pixels) would make the subject fill its room, and what a plain resize would be.
+        $fit = min($room / $boxHeight, $roomWidth / $boxWidth);
+        $natural = min($outWidth / $width, max(1.0, $maxUpscale));
+
+        // Never larger than a plain resize, unless the subject is clearly too small for its room: then it grows to fill it.
+        $scale = min($fit, $natural);
+
+        if ($fit > $natural * self::SMALL_FACTOR && $maxUpscale > $natural) {
+            $scale = min($fit, $maxUpscale);
+        }
+
+        $placed = $outWidth === $width
+            && $outHeight === $height
+            && abs($scale - 1.0) < 1e-9
             && abs(($lower + 1) - $baseline) <= $height * self::TOLERANCE
             && $left >= $margin - $width * self::TOLERANCE
             && $right + 1 <= $width - $margin + $width * self::TOLERANCE;
@@ -79,27 +100,34 @@ final class SubjectAligner
 
         $newWidth = max(1, (int) round($boxWidth * $scale));
         $newHeight = max(1, (int) round($boxHeight * $scale));
-        $x = max($margin, min($width - $newWidth - $margin, (int) round($left + $boxWidth / 2 - $newWidth / 2)));
+        $centre = ($left + $boxWidth / 2) / $width * $outWidth;
+        $x = max($margin, min($outWidth - $newWidth - $margin, (int) round($centre - $newWidth / 2)));
         $y = max(0, $baseline - $newHeight);
 
-        $canvas = imagecreatetruecolor($width, $outHeight);
+        $canvas = imagecreatetruecolor($outWidth, $outHeight);
         imagealphablending($canvas, false);
         imagesavealpha($canvas, true);
         imagefill($canvas, 0, 0, $this->background($image, $width, $height));
 
-        // The whole picture is moved, not just the box round the subject, so the faint shadow under a shoe comes with it (the box
-        // ignores it, and a copy of the box alone would cut it off). The picture is placed so the box lands at $x, $y.
+        // Not the box alone but the area round it, so the faint shadow under a shoe comes with it (the box ignores it, and a
+        // copy of the box alone would cut it off). Only that area is copied, however large the source is.
+        $pad = (int) round(max($boxWidth, $boxHeight) * 0.15);
+        $fromX = max(0, $left - $pad);
+        $fromY = max(0, $upper - $pad);
+        $toX = min($width, $right + 1 + $pad);
+        $toY = min($height, $lower + 1 + $pad);
+
         imagecopyresampled(
             $canvas,
             $image,
-            $x - (int) round($left * $scale),
-            $y - (int) round($upper * $scale),
-            0,
-            0,
-            max(1, (int) round($width * $scale)),
-            max(1, (int) round($height * $scale)),
-            $width,
-            $height,
+            $x - (int) round(($left - $fromX) * $scale),
+            $y - (int) round(($upper - $fromY) * $scale),
+            $fromX,
+            $fromY,
+            max(1, (int) round(($toX - $fromX) * $scale)),
+            max(1, (int) round(($toY - $fromY) * $scale)),
+            $toX - $fromX,
+            $toY - $fromY,
         );
 
         return $canvas;

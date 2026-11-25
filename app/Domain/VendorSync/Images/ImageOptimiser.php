@@ -23,12 +23,12 @@ final class ImageOptimiser
     private const int HEADROOM = 48 * 1024 * 1024;
 
     /**
-     * Names the output (`-base11-side4-ar100` when the subject is also put on the baseline, with these margins and canvas shape): it is part of the image plan hash, so changing the width or quality has every product fetch its images
+     * Names the output (`-base11-side4-ar100-grow` when the subject is also put on the baseline, with these margins and canvas shape): it is part of the image plan hash, so changing the width or quality has every product fetch its images
      * again, and an image stored under another signature is processed again.
      */
     public function signature(bool $aligned = false): string
     {
-        return 'webp-'.$this->maxWidth().'-q'.$this->quality().($aligned ? '-base'.(int) round($this->bottom() * 100).'-side'.(int) round($this->side() * 100).($this->aspect() === null ? '' : '-ar'.(int) round($this->aspect() * 100)) : '');
+        return 'webp-'.$this->maxWidth().'-q'.$this->quality().($aligned ? '-base'.(int) round($this->bottom() * 100).'-side'.(int) round($this->side() * 100).($this->aspect() === null ? '' : '-ar'.(int) round($this->aspect() * 100)).'-grow' : '');
     }
 
     /**
@@ -68,7 +68,8 @@ final class ImageOptimiser
             imagepalettetotruecolor($source);
         }
 
-        if ($width > $this->maxWidth()) {
+        // An aligned image is resampled once, from its full resolution, by the aligner (sharper than a resize and then a move).
+        if (! $aligned && $width > $this->maxWidth()) {
             $newWidth = $this->maxWidth();
             $newHeight = max(1, (int) round($height * $newWidth / $width));
 
@@ -82,9 +83,10 @@ final class ImageOptimiser
             $source = $resized;
         }
 
-        // After the shrink, so the subject is found on the smaller image.
+        // The subject is found on the original, and a subject that is clearly too small for its room (a lot of empty space round it
+        // in the photo) is enlarged to fill it, though never beyond the original's own pixels.
         if ($aligned) {
-            $source = (new SubjectAligner)->align($source, $this->bottom(), $this->top(), $this->side(), $this->aspect());
+            $source = (new SubjectAligner)->align($source, $this->bottom(), $this->top(), $this->side(), $this->aspect(), min($width, $this->maxWidth()), 1.0);
         }
 
         imagealphablending($source, false);

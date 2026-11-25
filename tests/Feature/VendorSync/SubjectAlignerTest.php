@@ -208,3 +208,38 @@ it('keeps the canvas as it is when no shape is asked for', function (): void {
 
     expect(imagesx($aligned))->toBe(400)->and(imagesy($aligned))->toBe(300);
 });
+
+it('enlarges a subject that is clearly too small for its room, up to the pixels of the original', function (): void {
+    // A 400 x 300 photo with a 100 x 60 boot in it, resampled to a 200 wide square (a plain resize would halve it).
+    $image = alignerImage(150, 120, 100, 60);
+
+    $result = (new SubjectAligner)->align($image, 0.11, 0.02, 0.04, 1.0, 200, 1.0);
+    [$left, $top, $right, $bottom] = alignerBox($result);
+
+    expect(imagesx($result))->toBe(200)->and(imagesy($result))->toBe(200)
+        // 1.0 is the original's pixels: the boot is 100 wide there, twice what a plain resize makes it.
+        ->and($right - $left + 1)->toBeGreaterThan(95)->toBeLessThan(105)
+        ->and($bottom + 1)->toBeGreaterThan(176)->toBeLessThan(180);
+});
+
+it('enlarges a small subject until it fills the room, when the limit allows', function (): void {
+    $image = alignerImage(180, 130, 40, 40);
+
+    $result = (new SubjectAligner)->align($image, 0.11, 0.02, 0.04, 1.0, 200, 3.0);
+    [$left, $top, $right, $bottom] = alignerBox($result);
+
+    // Room is 91% of 200 = 182 high, 92% wide: the 40 x 40 subject grows to about 182 square at most, and is never beyond 3x of the source.
+    expect($bottom - $top + 1)->toBeGreaterThan(110)->toBeLessThanOrEqual(182)
+        ->and($bottom + 1)->toBeGreaterThan(176)->toBeLessThan(180)
+        // Still centred.
+        ->and(abs((($left + $right) / 2) - 100))->toBeLessThan(3);
+});
+
+it('does not enlarge a subject that already fills most of its room', function (): void {
+    $image = alignerImage(70, 10, 260, 280);
+
+    $result = (new SubjectAligner)->align($image, 0.11, 0.02, 0.04, 1.0, 400, 3.0);
+    [$left, , $right] = alignerBox($result);
+
+    expect($right - $left + 1)->toBeLessThanOrEqual(262);
+});
