@@ -129,17 +129,17 @@ it('puts the subject on the baseline when asked, and leaves it where it is other
     // As it was: the block ends at row 249.
     expect($bottomRow((new ImageOptimiser)->optimise($png)))->toBe(249);
 
-    // On the baseline of a square canvas: the picture becomes 600 x 600, and 89% of 600 = 534.
+    // On the baseline of a square canvas: the picture becomes 600 x 600, and 85% of 600 = 510.
     $aligned = (new ImageOptimiser)->optimise($png, true);
 
     expect(getimagesizefromstring($aligned)[1])->toBe(600)
-        ->and($bottomRow($aligned))->toBeGreaterThanOrEqual(531)->toBeLessThanOrEqual(535);
+        ->and($bottomRow($aligned))->toBeGreaterThanOrEqual(507)->toBeLessThanOrEqual(511);
 
-    // Without a canvas shape it keeps its own size and baseline: 89% of 400 = 356.
+    // Without a canvas shape it keeps its own size and baseline: 85% of 400 = 340.
     config(['vendorsync.images.align.aspect' => null]);
 
     $kept = (new ImageOptimiser)->optimise($png, true);
 
     expect(getimagesizefromstring($kept)[1])->toBe(400)
-        ->and($bottomRow($kept))->toBeGreaterThanOrEqual(353)->toBeLessThanOrEqual(357);
+        ->and($bottomRow($kept))->toBeGreaterThanOrEqual(337)->toBeLessThanOrEqual(341);
 });

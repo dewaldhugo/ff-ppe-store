@@ -384,7 +384,7 @@
 
             @foreach ($uploadedVideos as $index => $video)
                 <div class="mt-4 aspect-video" data-video-uploaded>
-                    <video controls preload="metadata" playsinline class="h-full w-full rounded border border-border bg-black" aria-label="{{ $product->translateAttribute('name') }} video {{ $index + 1 }}">
+                    <video controls preload="metadata" playsinline class="h-full w-full rounded border border-border bg-brand-navy" aria-label="{{ $product->translateAttribute('name') }} video {{ $index + 1 }}">
                         <source src="{{ $video['url'] }}" type="{{ $video['type'] }}">
                     </video>
                 </div>

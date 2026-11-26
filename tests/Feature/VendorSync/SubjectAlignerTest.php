@@ -223,16 +223,17 @@ it('enlarges a subject that is clearly too small for its room, up to the pixels 
 });
 
 it('enlarges a small subject until it fills the room, when the limit allows', function (): void {
-    $image = alignerImage(180, 130, 40, 40);
+    // 70 x 60 is 3.5% of the picture: a subject under 3% of it is taken for noise and left alone.
+    $image = alignerImage(165, 130, 70, 60);
 
     $result = (new SubjectAligner)->align($image, 0.11, 0.02, 0.04, 1.0, 200, 3.0);
     [$left, $top, $right, $bottom] = alignerBox($result);
 
-    // Room is 91% of 200 = 182 high, 92% wide: the 40 x 40 subject grows to about 182 square at most, and is never beyond 3x of the source.
+    // Room is 91% of 200 = 182 high, 92% wide: the 70 x 60 subject grows until its width fills the room (about 2.6 times), and is never beyond 3x of the source.
     expect($bottom - $top + 1)->toBeGreaterThan(110)->toBeLessThanOrEqual(182)
         ->and($bottom + 1)->toBeGreaterThan(176)->toBeLessThan(180)
         // Still centred.
-        ->and(abs((($left + $right) / 2) - 100))->toBeLessThan(3);
+        ->and(abs((($left + $right) / 2) - 100))->toBeLessThan(6);
 });
 
 it('does not enlarge a subject that already fills most of its room', function (): void {

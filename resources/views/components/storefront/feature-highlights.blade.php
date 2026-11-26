@@ -9,7 +9,7 @@
     <section aria-labelledby="key-features-heading" class="relative left-1/2 mt-10 w-screen -translate-x-1/2 bg-brand-navy py-10 text-white" data-key-features>
         <x-ui.container>
             <h2 id="key-features-heading" class="text-2xl font-bold">Key features</h2>
-            <div class="mt-2 h-1 w-14 bg-brand-teal" aria-hidden="true"></div>
+            <div class="mt-2 h-1 w-14 bg-brand-teal text-brand-navy" aria-hidden="true"></div>
 
             <ul class="mt-8 grid gap-x-12 gap-y-10 md:grid-cols-2 xl:grid-cols-3">
                 @foreach ($tiles as $tile)
