@@ -182,6 +182,8 @@ it('keeps products draft until they have an image, then publishes them', functio
 
 it('puts the main images of Footsure safety shoes and boots on the baseline, and no others', function (): void {
     VendorSync::footsureFile();
+    config(['vendorsync.images.align.collections' => ['safety-shoes', 'safety-boots']]);
+
     VendorSync::import('FS');
     VendorSync::syncImages(['345']);
 
