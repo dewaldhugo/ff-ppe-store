@@ -17,7 +17,7 @@
 
             {{-- Three paragraphs, not a heading: the lead says who we are, the other two how we serve every industry in the slider below. The copy is a draft for the client to confirm. --}}
             <div class="mt-4 w-full space-y-4 text-[1.2rem] leading-relaxed text-ink-muted" data-industries-intro>
-                <p>Streamline your site procurement with a single, dependable UK trade supplier. We stock certified head-to-toe PPE, workwear, and safety footwear ready for rapid nationwide dispatch and competitive bulk pricing.</p>
+                <p>Streamline your site procurement with a single, dependable UK &amp; EU trade supplier. We stock certified head-to-toe PPE, workwear, and safety footwear ready for rapid nationwide dispatch and competitive bulk pricing.</p>
                 <p>Every workplace has different risks, so we cover the full range: S1P and S3 safety footwear to EN ISO 20345, ESD and metal-free options, waterproof boots and slip resistant soles.</p>
                 <p>From building sites to kitchens and hospitals, one trade account serves every team. Use our size guide and technical features guide to match the right protection to each role.</p>
             </div>

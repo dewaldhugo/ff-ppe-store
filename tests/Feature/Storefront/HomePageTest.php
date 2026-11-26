@@ -578,7 +578,7 @@ it('puts a three paragraph intro under the industries heading and a teal band ab
 
     // The intro is paragraphs, not a long heading, and the first is the original lead, word for word.
     expect($paragraphs[1])->toHaveCount(3)
-        ->and($paragraphs[1][0])->toBe('Streamline your site procurement with a single, dependable UK trade supplier. We stock certified head-to-toe PPE, workwear, and safety footwear ready for rapid nationwide dispatch and competitive bulk pricing.')
+        ->and($paragraphs[1][0])->toBe('Streamline your site procurement with a single, dependable UK &amp; EU trade supplier. We stock certified head-to-toe PPE, workwear, and safety footwear ready for rapid nationwide dispatch and competitive bulk pricing.')
         ->and($paragraphs[1][1])->toContain('S1P and S3')->toContain('EN ISO 20345')->toContain('ESD and metal-free')
         ->and($paragraphs[1][2])->toContain('size guide')->toContain('technical features guide')
         ->and($intro[1])->not->toContain('<h3')->not->toContain('—')->not->toContain('–')
