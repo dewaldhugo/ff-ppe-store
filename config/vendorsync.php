@@ -448,12 +448,16 @@ return [
             // means all the categories under it (products are in the leaves), so safety-footwear is safety boots, shoes, trainers,
             // wellingtons, occupational and metal-free footwear, of either vendor; everything else is left as it comes.
             'collections' => ['safety-footwear'],
-            'bottom' => 0.11,
-            'top' => 0.02,
+            'bottom' => 0.15,
+            'top' => 0.15,
             'side' => 0.04,
             // Width over height of the canvas the subject is put on: 1.0 is square, so a wide shoe and a tall boot share one
             // canvas and a grid that fits each picture into a square box lines them up. 0 or null keeps each picture's own shape.
             'aspect' => 1.0,
+            // Make the plain background of an opaque photo (Footsure's shoes on white) transparent before the subject is aligned, so
+            // the storefront's card backdrop shows behind it as it does behind a cut-out picture (BackgroundRemover). Photos that
+            // are not a studio shot on one colour are left alone.
+            'remove_background' => true,
         ],
 
         // Where the vendor's pictogram icons are downloaded from (`vendorsync:pictograms`); `{name}` is the icon's name.
