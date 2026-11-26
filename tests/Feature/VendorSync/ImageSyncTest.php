@@ -331,7 +331,9 @@ it('limits a run to the categories asked for, and does not even look at other pr
         ->expectsOutputToContain('Queued 1 image job for SJ in safety-shoes, safety-boots.')
         ->assertSuccessful();
 
-    // --aligned is the categories whose main images are put on the baseline.
+    // --aligned is the categories whose main images are put on the baseline (an empty list, the default, is every category).
+    config(['vendorsync.images.align.collections' => ['safety-shoes', 'safety-boots']]);
+
     $this->artisan('vendorsync:images', ['vendor' => 'SJ', '--aligned' => true])
         ->expectsOutputToContain('Queued 1 image job for SJ in safety-shoes, safety-boots.')
         ->assertSuccessful();
