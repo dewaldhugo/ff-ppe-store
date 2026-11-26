@@ -26,6 +26,11 @@ use Illuminate\Support\Str;
  * Maps the rows of one Footsure ProductID to a normalised product. Each
  * Family Product Reference is a colourway; each row is a colour and size
  * variant.
+ *
+ * A payload may also carry `members`: the ProductIDs of one product line that
+ * the vendor split by size band (`SplitDetector`), with the rows of all of
+ * them. They map to one product, whose identity and content come from the
+ * first row (the lowest ProductID) and whose variants are every row's.
  */
 final readonly class FootsureMapper implements VendorMapper
 {
@@ -147,7 +152,15 @@ final readonly class FootsureMapper implements VendorMapper
 
         $variants = [];
         $images = [];
-        $clearance = $first['Product Status'] === 'Clearance';
+        // A product is on clearance when its first row says so (or one of its
+        // colours does). A line listed under several ProductIDs is on
+        // clearance only when every ProductID of it is: one band being cleared
+        // out does not move the rest of the line into the range.
+        $cleared = [];
+
+        foreach ($rows as $row) {
+            $cleared[$row['ProductID']] ??= $row['Product Status'] === 'Clearance';
+        }
 
         $real = $this->withoutGhostRows($rows, $messages);
 
@@ -170,7 +183,7 @@ final readonly class FootsureMapper implements VendorMapper
             }
 
             if ($row['Colour Status'] === 'Clearance') {
-                $clearance = true;
+                $cleared[$row['ProductID']] = true;
             }
 
             $variant = $shoeSized
@@ -245,12 +258,13 @@ final readonly class FootsureMapper implements VendorMapper
             certificates: [],
             pictograms: [],
             collections: $collection === null ? [] : [$collection],
-            clearance: $clearance,
+            clearance: ! in_array(false, $cleared, true),
             draftReasons: array_values(array_unique($draftReasons)),
             commodityCode: $this->text($first['Commodity Code']),
             relatedVendorProductIds: [],
             variants: $variants,
             images: array_values($images),
+            memberVendorProductIds: array_values(array_map(strval(...), $record->payload['members'] ?? [])),
         ), $messages, $facts);
     }
 

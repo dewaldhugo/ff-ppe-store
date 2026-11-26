@@ -42,7 +42,10 @@ use Illuminate\Support\Facades\DB;
  *
  * Footsure (`FootsureSource`): the rows of one ProductID are stored as
  * read. `File_Create_Date` is left out of the change-detection hash, since
- * it changes with every export.
+ * it changes with every export. A product line listed under several
+ * ProductIDs is stored once for each of them, with the same payload (the rows
+ * of all of them, and their IDs as `members`), so whichever ID a link has
+ * maps to the whole product.
  *
  * A record is written with a single upsert. The previous payload is never
  * loaded.
@@ -55,16 +58,16 @@ final class RawStore
         $now = now();
 
         DB::table('vendor_raw_records')->upsert(
-            [[
+            array_map(fn (string $externalId): array => [
                 'vendor_id' => $vendor->id,
-                'external_id' => $record->externalId,
+                'external_id' => $externalId,
                 'payload' => $payload,
                 'payload_hash' => hash('sha256', $payload),
                 'fetched_at' => $now,
                 'last_seen_run_id' => $runId,
                 'created_at' => $now,
                 'updated_at' => $now,
-            ]],
+            ], $record->externalIds()),
             ['vendor_id', 'external_id'],
             ['payload', 'payload_hash', 'fetched_at', 'last_seen_run_id', 'updated_at'],
         );

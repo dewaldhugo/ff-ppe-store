@@ -32,6 +32,9 @@ final readonly class NormalisedProduct
      * @param  list<string>  $relatedVendorProductIds
      * @param  list<NormalisedVariant>  $variants
      * @param  list<NormalisedImage>  $images
+     * @param  list<string>  $memberVendorProductIds  Every vendor product ID this product stands for, when the vendor listed
+     *                                                it under several (a Footsure line split by size band). Empty means
+     *                                                just `$vendorProductId`. The first is the primary.
      */
     public function __construct(
         public string $vendorCode,
@@ -72,7 +75,16 @@ final readonly class NormalisedProduct
         public array $relatedVendorProductIds,
         public array $variants,
         public array $images,
+        public array $memberVendorProductIds = [],
     ) {}
+
+    /**
+     * @return list<string>
+     */
+    public function memberIds(): array
+    {
+        return $this->memberVendorProductIds === [] ? [$this->vendorProductId] : $this->memberVendorProductIds;
+    }
 
     /**
      * Attribute values by contract handle.

@@ -140,7 +140,7 @@ it('does not let a dry run take the lock or be blocked by it', function (): void
     $report = VendorSync::import('FS', dryRun: true);
 
     expect($report->status)->toBe('succeeded')
-        ->and($report->created)->toBe(32)
+        ->and($report->created)->toBe(29)
         ->and(SyncRun::query()->count())->toBe(0);
 
     $held->release();

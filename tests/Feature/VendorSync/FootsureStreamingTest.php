@@ -50,7 +50,8 @@ function importedSnapshot(): array
     foreach (VendorOffer::query()->orderBy('vendor_sku')->get() as $offer) {
         $variant = ProductVariant::query()->find($offer->product_variant_id);
         $product = $variant->product;
-        $link = VendorProduct::query()->where('product_id', $product->id)->sole();
+        // A product line the vendor lists under several IDs has a link for each: the first names it.
+        $link = VendorProduct::query()->where('product_id', $product->id)->orderBy('id')->firstOrFail();
 
         $snapshot[$offer->vendor_sku] = [
             'product' => $link->vendor_product_id,
@@ -108,7 +109,8 @@ it('imports the same whether the rows of a product are together or scattered', f
 
     expect($runs)->toBeGreaterThan(100)
         ->and($report->status)->toBe('succeeded')
-        ->and($report->seen)->toBe(32)
+        // 32 ProductIDs, 29 product lines (546 and 547, 569 to 571 are one each).
+        ->and($report->seen)->toBe(29)
         ->and(VendorProduct::query()->count())->toBe($products)
         ->and(importedSnapshot())->toEqual($expected);
 });

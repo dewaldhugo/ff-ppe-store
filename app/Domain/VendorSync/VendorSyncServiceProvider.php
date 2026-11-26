@@ -6,6 +6,7 @@ namespace App\Domain\VendorSync;
 
 use App\Domain\VendorSync\Console\CatalogueCommand;
 use App\Domain\VendorSync\Console\ImagesCommand;
+use App\Domain\VendorSync\Console\MergeSplitsCommand;
 use App\Domain\VendorSync\Console\PictogramsCommand;
 use App\Domain\VendorSync\Console\ProductSheetsCommand;
 use App\Domain\VendorSync\Console\StatusCommand;
@@ -81,7 +82,11 @@ final class VendorSyncServiceProvider extends ServiceProvider
         ));
 
         // Footsure
-        $this->app->bind('vendorsync.source.FS', fn (): FootsureSource => new FootsureSource(config('vendorsync.footsure')));
+        $this->app->bind('vendorsync.source.FS', fn (Application $app): FootsureSource => new FootsureSource(
+            config('vendorsync.footsure'),
+            // Product lines listed under several ProductIDs are found with it and imported as one.
+            mapper: $app->make('vendorsync.mapper.FS'),
+        ));
         $this->app->bind('vendorsync.mapper.FS', fn (Application $app): FootsureMapper => new FootsureMapper(
             config('vendorsync.footsure'),
             $app->make(Features::class),
@@ -96,6 +101,7 @@ final class VendorSyncServiceProvider extends ServiceProvider
                 CatalogueCommand::class,
                 StockCommand::class,
                 ImagesCommand::class,
+                MergeSplitsCommand::class,
                 PictogramsCommand::class,
                 ProductSheetsCommand::class,
                 StatusCommand::class,

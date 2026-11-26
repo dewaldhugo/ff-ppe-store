@@ -30,7 +30,8 @@ beforeEach(function (): void {
     // (Each sync converts every image, so one is all the tests can afford.)
     $this->synced = VendorProduct::query()->orderBy('id')->limit(1)->pluck('vendor_product_id')->all();
     VendorSync::syncImages($this->synced);
-    $this->total = VendorProduct::query()->count();
+    // One job per product: a product line the vendor lists under several IDs has a link for each, and only the first is queued.
+    $this->total = VendorProduct::query()->primary()->count();
 
     config()->set('queue.default', 'database');
     DB::table('jobs')->delete();
