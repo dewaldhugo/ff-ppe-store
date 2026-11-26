@@ -334,7 +334,8 @@ it('limits a run to the categories asked for, and does not even look at other pr
     // --aligned is the categories whose main images are put on the baseline (an empty list, the default, is every category).
     config(['vendorsync.images.align.collections' => ['safety-shoes', 'safety-boots']]);
 
-    $this->artisan('vendorsync:images', ['vendor' => 'SJ', '--aligned' => true])
+    // (--refresh, because the run above has stored the product's images, which are the same under either list of categories.)
+    $this->artisan('vendorsync:images', ['vendor' => 'SJ', '--aligned' => true, '--refresh' => true])
         ->expectsOutputToContain('Queued 1 image job for SJ in safety-shoes, safety-boots.')
         ->assertSuccessful();
 
@@ -344,7 +345,7 @@ it('limits a run to the categories asked for, and does not even look at other pr
         ->assertSuccessful();
 
     // A top level category means everything under it: BESTBOOT is in a leaf of safety-footwear.
-    $this->artisan('vendorsync:images', ['vendor' => 'SJ', '--category' => 'safety-footwear'])
+    $this->artisan('vendorsync:images', ['vendor' => 'SJ', '--category' => 'safety-footwear', '--refresh' => true])
         ->expectsOutputToContain('Queued 1 image job for SJ in safety-footwear.')
         ->assertSuccessful();
 

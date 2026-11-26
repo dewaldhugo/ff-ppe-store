@@ -9,7 +9,7 @@ use Illuminate\Database\QueryException;
 use Lunar\Admin\Models\Staff;
 use Tests\Support\CatalogueFactory;
 
-// Favourites: a bookmark button on the product page, saved per signed-in customer,
+// Favourites: a heart button on the product page, saved per signed-in customer,
 // and a /favourites page. A guest sees no button (docs/accounts.md).
 
 function favouriteProduct(string $name = 'Heart Boot', string $status = 'published')
@@ -42,7 +42,7 @@ it('shows the button on the product page only, never on cards', function (): voi
     expect($this->get(route('product', $product->defaultUrl->slug))->getContent())->toContain('data-favourite-button');
 });
 
-it('shows a signed-in customer the bookmark button on the product page, off until it is saved', function (): void {
+it('shows a signed-in customer the favourites button on the product page, off until it is saved', function (): void {
     $this->actingAs(User::factory()->create(), 'web');
     $product = favouriteProduct();
 
@@ -53,7 +53,7 @@ it('shows a signed-in customer the bookmark button on the product page, off unti
         ->assertSee('data-favourited="false"', false);
 });
 
-it('uses the bookmark icon, not a heart, in the button and in the header', function (): void {
+it('uses the heart icon, not a bookmark, in the button and in the header', function (): void {
     $this->actingAs(User::factory()->create(), 'web');
     $product = favouriteProduct();
 
@@ -62,9 +62,9 @@ it('uses the bookmark icon, not a heart, in the button and in the header', funct
     preg_match('#<button[^>]*data-favourite-button.*?</button>#s', $html, $button);
     preg_match('#<a[^>]*data-favourites-link.*?</a>#s', $html, $link);
 
-    // The bookmark path starts M17.593 3.322; the heart started M12 20.5s.
-    expect($button[0] ?? '')->toContain('data-bookmark-icon')->toContain('M17.593 3.322')->not->toContain('M12 20.5s')
-        ->and($link[0] ?? '')->toContain('data-bookmark-icon')->toContain('M17.593 3.322')->not->toContain('M12 20.5s');
+    // The heart path starts M12 20.5s; the bookmark one started M17.593 3.322.
+    expect($button[0] ?? '')->toContain('data-heart-icon')->toContain('M12 20.5s')->not->toContain('M17.593 3.322')
+        ->and($link[0] ?? '')->toContain('data-heart-icon')->toContain('M12 20.5s')->not->toContain('M17.593 3.322');
 });
 
 it('saves a product, and removes it on the second press', function (): void {

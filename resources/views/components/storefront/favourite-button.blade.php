@@ -1,7 +1,7 @@
 @props(['product'])
 
 {{--
-    The "Add to favourites" button (a bookmark), for the product page only and for signed-in customers only: it renders
+    The "Add to favourites" button (a heart), for the product page only and for signed-in customers only: it renders
     nothing for a guest. It is the same size as Add to cart and sits beside it, as the outlined secondary button. Alpine posts with fetch and flips the label at once; without JavaScript the form
     posts and goes back to the page.
 --}}
@@ -55,7 +55,7 @@
             x-bind:data-favourited="on.toString()"
             x-bind:aria-label="on ? @js('Remove '.$name.' from favourites') : @js('Add '.$name.' to favourites')"
         >
-            <svg aria-hidden="true" class="h-6 w-6" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" stroke-linecap="round" fill="{{ $on ? 'currentColor' : 'none' }}" x-bind:fill="on ? 'currentColor' : 'none'" data-bookmark-icon><path d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z"/></svg>
+            <svg aria-hidden="true" class="h-6 w-6" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" stroke-linecap="round" fill="{{ $on ? 'currentColor' : 'none' }}" x-bind:fill="on ? 'currentColor' : 'none'" data-heart-icon><path d="M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7c0 5.6-7.5 10.2-7.5 10.2Z"/></svg>
             <span x-text="on ? 'Saved to favourites' : 'Add to favourites'">{{ $on ? 'Saved to favourites' : 'Add to favourites' }}</span>
         </button>
     </form>

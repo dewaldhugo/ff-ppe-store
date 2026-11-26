@@ -133,7 +133,7 @@
 
             {{-- Guests cannot see prices or order, so they get no cart. --}}
             @if ($customer)
-            {{-- Saved products. The count is kept current by the bookmark buttons (favourites-updated). --}}
+            {{-- Saved products. The count is kept current by the heart buttons (favourites-updated). --}}
             <a
                 href="{{ route('favourites') }}"
                 class="relative ml-auto inline-flex h-11 w-11 items-center justify-center rounded-md text-brand-blue hover:bg-surface-muted lg:ml-0"
@@ -143,7 +143,7 @@
                 x-on:favourites-updated.window="count = $event.detail.count"
                 x-bind:aria-label="'Favourites, ' + count + ' saved'"
             >
-                <svg aria-hidden="true" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" stroke-linecap="round" data-bookmark-icon><path d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z"/></svg>
+                <svg aria-hidden="true" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" stroke-linecap="round" data-heart-icon><path d="M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7c0 5.6-7.5 10.2-7.5 10.2Z"/></svg>
                 <span aria-hidden="true" data-favourites-count x-show="count > 0" x-text="count" @if ($favouriteCount === 0) style="display: none" @endif class="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-teal px-1 text-xs font-bold text-brand-navy">{{ $favouriteCount }}</span>
             </a>
 

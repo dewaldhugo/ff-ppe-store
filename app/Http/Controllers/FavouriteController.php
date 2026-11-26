@@ -12,7 +12,7 @@ use Illuminate\View\View;
 use Lunar\Models\Product;
 
 /**
- * Favourites for the signed-in customer (`auth:web` on both routes). The bookmark button posts here
+ * Favourites for the signed-in customer (`auth:web` on both routes). The heart button posts here
  * with fetch and gets JSON; without JavaScript it is a plain form post that goes back to the page.
  */
 final class FavouriteController extends Controller
