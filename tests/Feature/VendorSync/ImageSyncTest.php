@@ -217,7 +217,7 @@ it('stores every image as WebP at most 1200 wide, however large the original is'
             ->and($image->file_name)->toEndWith('.webp')
             ->and($width)->toBeLessThanOrEqual(1200)
             // A Safety Jogger main image is also put on the baseline; its other pictures are not.
-            ->and($image->getCustomProperty('optimised'))->toBe($image->getCustomProperty('role') === 'main' ? 'webp-1200-q85-base11-side4-ar100-grow' : 'webp-1200-q85');
+            ->and($image->getCustomProperty('optimised'))->toBe($image->getCustomProperty('role') === 'main' ? 'webp-1200-q85-base15-top15-side4-ar100-grow-bg' : 'webp-1200-q85');
     }
 
     // The 9 megapixel original was shrunk, not kept.
@@ -248,7 +248,7 @@ it('fetches an image stored before the WebP rule again and replaces it', functio
     expect($result->downloaded)->toBe(6)
         ->and($after)->toHaveCount(6)
         ->and($after->pluck('id')->intersect($before->pluck('id'))->all())->toBe([])
-        ->and($after->every(fn ($image): bool => $image->getCustomProperty('optimised') === ($image->getCustomProperty('role') === 'main' ? 'webp-1200-q85-base11-side4-ar100-grow' : 'webp-1200-q85')))->toBeTrue();
+        ->and($after->every(fn ($image): bool => $image->getCustomProperty('optimised') === ($image->getCustomProperty('role') === 'main' ? 'webp-1200-q85-base15-top15-side4-ar100-grow-bg' : 'webp-1200-q85')))->toBeTrue();
 });
 
 it('fetches only the main images again when the baseline rule is added, and not when it is switched off', function (): void {
@@ -275,7 +275,7 @@ it('fetches only the main images again when the baseline rule is added, and not 
         ->and($after)->toHaveCount($before->count())
         // The pictures that are not main images are the same files as before.
         ->and($after->pluck('id')->intersect($before->reject(fn ($image): bool => $image->getCustomProperty('role') === 'main')->pluck('id'))->count())->toBe($before->count() - $mains->count())
-        ->and($after->filter(fn ($image): bool => $image->getCustomProperty('role') === 'main')->every(fn ($image): bool => $image->getCustomProperty('optimised') === 'webp-1200-q85-base11-side4-ar100-grow'))->toBeTrue();
+        ->and($after->filter(fn ($image): bool => $image->getCustomProperty('role') === 'main')->every(fn ($image): bool => $image->getCustomProperty('optimised') === 'webp-1200-q85-base15-top15-side4-ar100-grow-bg'))->toBeTrue();
 });
 
 it('puts only the safety shoes and safety boots of Safety Jogger on the baseline', function (): void {
@@ -287,7 +287,7 @@ it('puts only the safety shoes and safety boots of Safety Jogger on the baseline
 
     $mains = fn () => VendorSync::product('SJ', '215754')->refresh()->getMedia('images')->filter(fn ($image): bool => $image->getCustomProperty('role') === 'main');
 
-    expect($mains()->every(fn ($image): bool => $image->getCustomProperty('optimised') === 'webp-1200-q85-base11-side4-ar100-grow'))->toBeTrue();
+    expect($mains()->every(fn ($image): bool => $image->getCustomProperty('optimised') === 'webp-1200-q85-base15-top15-side4-ar100-grow-bg'))->toBeTrue();
 
     // With the list narrowed to another category, the same product is left as it comes: its main images are fetched again, plain.
     config(['vendorsync.images.align.collections' => ['safety-trainers']]);
@@ -301,7 +301,7 @@ it('puts only the safety shoes and safety boots of Safety Jogger on the baseline
 
     app(ProductImageSync::class)->sync($link->refresh());
 
-    expect($mains()->every(fn ($image): bool => $image->getCustomProperty('optimised') === 'webp-1200-q85-base11-side4-ar100-grow'))->toBeTrue();
+    expect($mains()->every(fn ($image): bool => $image->getCustomProperty('optimised') === 'webp-1200-q85-base15-top15-side4-ar100-grow-bg'))->toBeTrue();
 
     // Another top level category does not include it.
     config(['vendorsync.images.align.collections' => ['apparel']]);
@@ -315,7 +315,7 @@ it('puts only the safety shoes and safety boots of Safety Jogger on the baseline
 
     app(ProductImageSync::class)->sync($link->refresh());
 
-    expect($mains()->every(fn ($image): bool => $image->getCustomProperty('optimised') === 'webp-1200-q85-base11-side4-ar100-grow'))->toBeTrue();
+    expect($mains()->every(fn ($image): bool => $image->getCustomProperty('optimised') === 'webp-1200-q85-base15-top15-side4-ar100-grow-bg'))->toBeTrue();
 });
 
 it('limits a run to the categories asked for, and does not even look at other products', function (): void {

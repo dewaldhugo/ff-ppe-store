@@ -23,12 +23,12 @@ final class ImageOptimiser
     private const int HEADROOM = 48 * 1024 * 1024;
 
     /**
-     * Names the output (`-base11-side4-ar100-grow` when the subject is also put on the baseline, with these margins and canvas shape): it is part of the image plan hash, so changing the width or quality has every product fetch its images
+     * Names the output (`-base15-top15-side4-ar100-grow-bg` when the subject is also put on the baseline, with these margins and canvas shape, and `-bg` when a plain background is made transparent): it is part of the image plan hash, so changing the width or quality has every product fetch its images
      * again, and an image stored under another signature is processed again.
      */
     public function signature(bool $aligned = false): string
     {
-        return 'webp-'.$this->maxWidth().'-q'.$this->quality().($aligned ? '-base'.(int) round($this->bottom() * 100).'-side'.(int) round($this->side() * 100).($this->aspect() === null ? '' : '-ar'.(int) round($this->aspect() * 100)).'-grow' : '');
+        return 'webp-'.$this->maxWidth().'-q'.$this->quality().($aligned ? '-base'.(int) round($this->bottom() * 100).'-top'.(int) round($this->top() * 100).'-side'.(int) round($this->side() * 100).($this->aspect() === null ? '' : '-ar'.(int) round($this->aspect() * 100)).'-grow'.($this->removesBackground() ? '-bg' : '') : '');
     }
 
     /**
@@ -86,6 +86,11 @@ final class ImageOptimiser
         // The subject is found on the original, and a subject that is clearly too small for its room (a lot of empty space round it
         // in the photo) is enlarged to fill it, though never beyond the original's own pixels.
         if ($aligned) {
+            // A photo on a plain background (Footsure's shoes on white) is cut out first, so the card's backdrop shows behind it.
+            if ($this->removesBackground()) {
+                $source = (new BackgroundRemover)->remove($source, $this->maxWidth());
+            }
+
             $source = (new SubjectAligner)->align($source, $this->bottom(), $this->top(), $this->side(), $this->aspect(), min($width, $this->maxWidth()), 1.0);
         }
 
@@ -148,7 +153,7 @@ final class ImageOptimiser
 
     private function bottom(): float
     {
-        return min(0.4, max(0.0, (float) config('vendorsync.images.align.bottom', 0.11)));
+        return min(0.4, max(0.0, (float) config('vendorsync.images.align.bottom', 0.15)));
     }
 
     /**
@@ -166,9 +171,14 @@ final class ImageOptimiser
         return min(0.2, max(0.0, (float) config('vendorsync.images.align.side', 0.04)));
     }
 
+    private function removesBackground(): bool
+    {
+        return (bool) config('vendorsync.images.align.remove_background', true);
+    }
+
     private function top(): float
     {
-        return min(0.4, max(0.0, (float) config('vendorsync.images.align.top', 0.02)));
+        return min(0.4, max(0.0, (float) config('vendorsync.images.align.top', 0.15)));
     }
 
     private function maxWidth(): int
