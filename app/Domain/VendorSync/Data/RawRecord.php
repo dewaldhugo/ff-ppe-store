@@ -15,6 +15,7 @@ final readonly class RawRecord
     /**
      * @param  array<array-key, mixed>  $payload
      * @param  array<array-key, mixed>|null  $hashable
+     * @param  list<string>  $memberIds
      */
     public function __construct(
         public string $externalId,
@@ -32,7 +33,20 @@ final readonly class RawRecord
         // mapper. Used only for the importer's progress output; null falls
         // back to the external id.
         public ?string $name = null,
+        // The vendor product IDs this record stands for, when the vendor lists
+        // one product under several IDs and the source has put them together
+        // (a Footsure line split by size band). The first is `$externalId`.
+        // Empty means just `$externalId`.
+        public array $memberIds = [],
     ) {}
+
+    /**
+     * @return list<string>
+     */
+    public function externalIds(): array
+    {
+        return $this->memberIds === [] ? [$this->externalId] : $this->memberIds;
+    }
 
     public function hash(): string
     {

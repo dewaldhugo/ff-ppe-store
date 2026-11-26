@@ -136,7 +136,7 @@ Rules:
 
 Known follow-ups, not in the current phase:
 
-- Merge vendor products split by size band into one Lunar product with several `vendor_products` rows. Footsure lists one line as several ProductIDs (Morris, Dunlop Sport, 6045/PSG27 plimsolls, Audrey Slipper, Primera Gardening Shoe); each is its own product today, with numeric slug suffixes.
+- None listed. (Footsure product lines split by size band are imported as one product, and `vendorsync:merge-splits FS` merges the ones already in the database: docs/vendorsync.md, Split product lines.)
 
 ## Launch checklist
 

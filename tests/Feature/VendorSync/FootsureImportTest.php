@@ -53,14 +53,16 @@ function catalogueTimestamps(): array
     ])->all();
 }
 
-it('imports one product per ProductID with a colour per family', function (): void {
+it('imports one product per product line with a colour per family', function (): void {
     VendorSync::footsureFile();
 
     $report = VendorSync::import('FS');
 
+    // 32 ProductIDs, but the Squash trainer (546, 547) and the unisex 6045/PSG27 plimsolls (569, 570, 571) are lines
+    // the vendor split by size band: five ProductIDs, two products (FootsureSplitProductsTest).
     expect($report->status)->toBe('succeeded')
-        ->and($report->seen)->toBe(32)
-        ->and($report->created)->toBe(32)
+        ->and($report->seen)->toBe(29)
+        ->and($report->created)->toBe(29)
         ->and($report->outOfScope)->toBe(0)
         ->and(VendorProduct::query()->count())->toBe(32);
 
@@ -220,7 +222,7 @@ it('changes no rows when the same file is imported twice', function (): void {
     $report = VendorSync::import('FS');
 
     expect($report->status)->toBe('succeeded')
-        ->and($report->unchanged)->toBe(32)
+        ->and($report->unchanged)->toBe(29)
         ->and($report->created + $report->updated)->toBe(0)
         ->and(catalogueTimestamps())->toBe($before);
 });
@@ -415,7 +417,7 @@ it('writes nothing on a dry run and saves a report', function (): void {
     $report = VendorSync::import('FS', dryRun: true);
 
     expect($report->status)->toBe('succeeded')
-        ->and($report->created)->toBe(32)
+        ->and($report->created)->toBe(29)
         ->and($report->samples)->not->toBeEmpty()
         ->and(Product::query()->count())->toBe(0)
         ->and(SyncRun::query()->count())->toBe(0)

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\VendorSync\Footsure;
 
+use App\Domain\VendorSync\Contracts\VendorMapper;
 use App\Domain\VendorSync\Contracts\VendorSource;
 use App\Domain\VendorSync\Data\RawRecord;
 use App\Domain\VendorSync\Data\SourceBatch;
@@ -20,6 +21,12 @@ use Illuminate\Support\Facades\File;
  *
  * One raw record per ProductID. Each Family Product Reference inside it is
  * one colourway of that product, and each row is one variant.
+ *
+ * Exception: a product line the vendor split into several ProductIDs by size
+ * band (the same shoe listed once for the small sizes, once for the large)
+ * is one record carrying the rows of all of them, so it becomes one product.
+ * `SplitDetector` finds them, from each ProductID as the mapper maps it, when
+ * a mapper is given. Without one every ProductID is its own record.
  *
  * The rows of one product are not next to each other in the real file (69
  * products appear in 283 separate runs), and the file may grow, so the file
@@ -46,6 +53,7 @@ final class FootsureSource implements VendorSource
         private readonly array $config,
         private readonly ?string $onlyFile = null,
         private readonly bool $checkAge = true,
+        private readonly ?VendorMapper $mapper = null,
     ) {}
 
     public function fetch(): SourceBatch
@@ -54,7 +62,11 @@ final class FootsureSource implements VendorSource
 
         [$header, $offsets, $noProductId] = $this->index($this->file);
 
-        return new SourceBatch(count($offsets) + ($noProductId > 0 ? 1 : 0), $this->records($this->file, $header, $offsets, $noProductId));
+        // The ProductIDs of each split line, under the first of them.
+        $groups = $this->splits($this->file, $header, $offsets);
+        $merged = array_sum(array_map(fn (array $ids): int => count($ids) - 1, $groups));
+
+        return new SourceBatch(count($offsets) - $merged + ($noProductId > 0 ? 1 : 0), $this->records($this->file, $header, $offsets, $noProductId, $groups));
     }
 
     /**
@@ -191,10 +203,19 @@ final class FootsureSource implements VendorSource
      *
      * @param  list<string>  $header
      * @param  array<string, list<int>>  $offsets
+     * @param  array<string, list<string>>  $groups  The ProductIDs of each split line, by the first of them.
      * @return Generator<int, RawRecord>
      */
-    private function records(string $path, array $header, array $offsets, int $noProductId): Generator
+    private function records(string $path, array $header, array $offsets, int $noProductId, array $groups = []): Generator
     {
+        $secondary = [];
+
+        foreach ($groups as $ids) {
+            foreach (array_slice($ids, 1) as $id) {
+                $secondary[$id] = true;
+            }
+        }
+
         $handle = fopen($path, 'rb');
 
         if ($handle === false) {
@@ -203,32 +224,40 @@ final class FootsureSource implements VendorSource
 
         try {
             foreach ($offsets as $productId => $rowOffsets) {
+                $productId = (string) $productId;
+
+                // Another ProductID of a split line: yielded with its line.
+                if (isset($secondary[$productId])) {
+                    continue;
+                }
+
+                $members = $groups[$productId] ?? [];
                 $rows = [];
 
-                foreach ($rowOffsets as $offset) {
-                    fseek($handle, $offset);
-                    $line = fgetcsv($handle, 0, ',', '"', '');
+                foreach ($members === [] ? [$productId] : $members as $member) {
+                    array_push($rows, ...$this->rows($handle, $header, $offsets[$member]));
+                }
 
-                    if (! is_array($line) || count($line) !== count($header)) {
-                        throw SourceAborted::because('The Footsure file changed while it was being read.');
-                    }
+                $payload = ['rows' => $rows];
+                $hashable = ['rows' => array_map(
+                    // The file date changes every day; it is not product data.
+                    fn (array $row): array => array_diff_key($row, [CsvColumns::FILE_DATE => true]),
+                    $rows,
+                )];
 
-                    // Barcodes and references stay strings, never numbers.
-                    $rows[] = array_combine($header, array_map(fn (?string $value): string => trim((string) $value), $line));
+                if ($members !== []) {
+                    $payload['members'] = $hashable['members'] = $members;
                 }
 
                 yield new RawRecord(
-                    externalId: (string) $productId,
-                    payload: ['rows' => $rows],
-                    // The file date changes every day; it is not product data.
-                    hashable: ['rows' => array_map(
-                        fn (array $row): array => array_diff_key($row, [CsvColumns::FILE_DATE => true]),
-                        $rows,
-                    )],
+                    externalId: $productId,
+                    payload: $payload,
+                    hashable: $hashable,
                     name: $rows[0]['Short Product Name'] ?? null,
+                    memberIds: $members,
                 );
 
-                unset($rows);
+                unset($rows, $payload, $hashable);
             }
 
             if ($noProductId > 0) {
@@ -240,6 +269,86 @@ final class FootsureSource implements VendorSource
         } finally {
             fclose($handle);
         }
+    }
+
+    /**
+     * The rows at these byte offsets, read one at a time.
+     *
+     * @param  resource  $handle
+     * @param  list<string>  $header
+     * @param  list<int>  $rowOffsets
+     * @return list<array<string, string>>
+     */
+    private function rows($handle, array $header, array $rowOffsets): array
+    {
+        $rows = [];
+
+        foreach ($rowOffsets as $offset) {
+            fseek($handle, $offset);
+            $line = fgetcsv($handle, 0, ',', '"', '');
+
+            if (! is_array($line) || count($line) !== count($header)) {
+                throw SourceAborted::because('The Footsure file changed while it was being read.');
+            }
+
+            // Barcodes and references stay strings, never numbers.
+            $rows[] = array_combine($header, array_map(fn (?string $value): string => trim((string) $value), $line));
+        }
+
+        return $rows;
+    }
+
+    /**
+     * Pass 1.5: the product lines the vendor listed under several ProductIDs.
+     * Each ProductID is read and mapped on its own, only to be reduced to a
+     * small signature, then released, so memory stays flat. Nothing is
+     * detected without a mapper.
+     *
+     * @param  list<string>  $header
+     * @param  array<string, list<int>>  $offsets
+     * @return array<string, list<string>> ProductIDs by the first of them, for lines of two or more.
+     */
+    private function splits(string $path, array $header, array $offsets): array
+    {
+        if ($this->mapper === null || count($offsets) < 2) {
+            return [];
+        }
+
+        $handle = fopen($path, 'rb');
+
+        if ($handle === false) {
+            throw SourceAborted::because("The Footsure file {$path} could not be opened.");
+        }
+
+        $signatures = [];
+
+        try {
+            foreach ($offsets as $productId => $rowOffsets) {
+                $mapped = $this->mapper->map(new RawRecord((string) $productId, ['rows' => $this->rows($handle, $header, $rowOffsets)]));
+
+                if ($mapped->product === null) {
+                    continue;
+                }
+
+                $signature = ProductSignature::from($mapped->product);
+
+                if ($signature !== null) {
+                    $signatures[] = $signature;
+                }
+
+                unset($mapped);
+            }
+        } finally {
+            fclose($handle);
+        }
+
+        $groups = [];
+
+        foreach ((new SplitDetector)->detect($signatures)->groups as $ids) {
+            $groups[$ids[0]] = $ids;
+        }
+
+        return $groups;
     }
 
     /**

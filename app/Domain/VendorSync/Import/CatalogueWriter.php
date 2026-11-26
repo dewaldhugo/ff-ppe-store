@@ -65,14 +65,36 @@ final class CatalogueWriter
     public function write(Vendor $vendor, NormalisedProduct $data, string $payloadHash, AcceptedPrices $accepted = new AcceptedPrices): WriteResult
     {
         return DB::transaction(function () use ($vendor, $data, $payloadHash, $accepted): WriteResult {
+            // One link for a product, or several for a line the vendor lists
+            // under several IDs. They must all be on the same Lunar product.
+            $found = VendorProduct::query()
+                ->where('vendor_id', $vendor->id)
+                ->whereIn('vendor_product_id', $data->memberIds())
+                ->get(['id', 'product_id', 'vendor_product_id']);
+
+            $productIds = $found->pluck('product_id')->unique();
+
+            if ($productIds->count() > 1) {
+                throw new ProductNotWritable(sprintf(
+                    'The vendor product IDs %s are one product line but are on different Lunar products (%s). Merge them first: php artisan vendorsync:merge-splits %s',
+                    implode(', ', $data->memberIds()),
+                    $productIds->implode(', '),
+                    $vendor->code,
+                ));
+            }
+
+            if ($found->isEmpty()) {
+                return $this->create($vendor, $data, $payloadHash);
+            }
+
+            // The primary link holds the product's sync state.
             $link = VendorProduct::query()
                 ->where('vendor_id', $vendor->id)
-                ->where('vendor_product_id', $data->vendorProductId)
-                ->first();
+                ->where('product_id', $productIds->first())
+                ->orderBy('id')
+                ->firstOrFail();
 
-            return $link === null
-                ? $this->create($vendor, $data, $payloadHash)
-                : $this->update($vendor, $link, $data, $payloadHash, $accepted);
+            return $this->update($vendor, $link, $data, $payloadHash, $accepted);
         });
     }
 
@@ -88,8 +110,10 @@ final class CatalogueWriter
             return false;
         }
 
-        DB::transaction(function () use ($link, $reasons): void {
-            $link->update(['draft_reasons' => [...$reasons, DraftReason::MISSING_FROM_FEED]]);
+        DB::transaction(function () use ($link): void {
+            foreach ($link->siblings() as $sibling) {
+                $sibling->update(['draft_reasons' => array_values(array_unique([...($sibling->draft_reasons ?? []), DraftReason::MISSING_FROM_FEED]))]);
+            }
 
             Product::query()->whereKey($link->product_id)->update(['status' => 'draft', 'updated_at' => now()]);
 
@@ -123,7 +147,10 @@ final class CatalogueWriter
         $status = $reasons === [] ? 'published' : 'draft';
 
         if ($reasons !== ($link->draft_reasons ?? [])) {
-            $link->update(['draft_reasons' => $reasons]);
+            // The product's links share its draft reasons.
+            foreach ($link->siblings() as $sibling) {
+                $sibling->update(['draft_reasons' => $reasons]);
+            }
         }
 
         if ($product->status === $status) {
@@ -199,17 +226,19 @@ final class CatalogueWriter
             'language_id' => $this->language()->id,
         ]);
 
-        VendorProduct::query()->create([
-            'product_id' => $product->id,
-            'vendor_id' => $vendor->id,
-            'vendor_product_id' => $data->vendorProductId,
-            'commodity_code' => $data->commodityCode,
-            'payload_hash' => $payloadHash,
-            'content_hashes' => $this->contentHashes($data),
-            'draft_reasons' => $reasons,
-            'related_ids' => $data->relatedVendorProductIds,
-            'missed_runs' => 0,
-        ]);
+        foreach ($data->memberIds() as $memberId) {
+            VendorProduct::query()->create([
+                'product_id' => $product->id,
+                'vendor_id' => $vendor->id,
+                'vendor_product_id' => $memberId,
+                'commodity_code' => $data->commodityCode,
+                'payload_hash' => $payloadHash,
+                'content_hashes' => $this->contentHashes($data),
+                'draft_reasons' => $reasons,
+                'related_ids' => $data->relatedVendorProductIds,
+                'missed_runs' => 0,
+            ]);
+        }
 
         $this->syncCollections($product, $data);
 
@@ -306,7 +335,7 @@ final class CatalogueWriter
             $messages[] = "SKU {$vendorSku} is no longer listed by the vendor and was set to stock 0.";
         }
 
-        $link->update([
+        $shared = [
             'commodity_code' => $data->commodityCode,
             // A product with a held price or a held currency flip keeps its old
             // hash, so the next run looks at it again instead of treating it as
@@ -315,8 +344,28 @@ final class CatalogueWriter
             'content_hashes' => $contentHashes,
             'draft_reasons' => $reasons,
             'related_ids' => $data->relatedVendorProductIds,
-            'missed_runs' => 0,
-        ]);
+        ];
+
+        // Every link of the product carries the same state; a link whose ID the
+        // vendor lists today is seen, and one it does not list yet is created
+        // (a new size band of the line).
+        $links = $link->siblings()->keyBy('vendor_product_id');
+
+        foreach ($data->memberIds() as $memberId) {
+            if (! $links->has($memberId)) {
+                $links->put($memberId, VendorProduct::query()->create([
+                    'product_id' => $product->id,
+                    'vendor_id' => $vendor->id,
+                    'vendor_product_id' => $memberId,
+                    'missed_runs' => 0,
+                    ...$shared,
+                ]));
+            }
+        }
+
+        foreach ($links as $memberLink) {
+            $memberLink->update([...$shared, ...(in_array((string) $memberLink->vendor_product_id, $data->memberIds(), true) ? ['missed_runs' => 0] : [])]);
+        }
 
         return new WriteResult($product->id, false, $status, $reasons, $messages, array_values($held), array_values($flips));
     }

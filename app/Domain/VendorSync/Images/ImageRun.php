@@ -95,10 +95,17 @@ final readonly class ImageRun
     {
         $skipped = 0;
         $inCategories = $categories === [] ? null : $this->productsIn($categories);
+        // One job per Lunar product: a product line the vendor lists under several
+        // IDs has a link for each, and its images are planned from all of them
+        // together, so only the primary link is queued (whichever ID was named).
         $ids = $refresh || $vendorProductId !== null
             ? VendorProduct::query()
+                ->primary()
                 ->where('vendor_id', $vendor->id)
-                ->when($vendorProductId !== null, fn ($query) => $query->where('vendor_product_id', $vendorProductId))
+                ->when($vendorProductId !== null, fn ($query) => $query->whereIn('product_id', VendorProduct::query()
+                    ->select('product_id')
+                    ->where('vendor_id', $vendor->id)
+                    ->where('vendor_product_id', $vendorProductId)))
                 ->when($inCategories !== null && $vendorProductId === null, fn ($query) => $query->whereIn('product_id', $inCategories))
                 ->orderBy('id')
                 ->pluck('id')
@@ -170,6 +177,7 @@ final readonly class ImageRun
         $collection = (string) config('lunar.media.collection');
 
         VendorProduct::query()
+            ->primary()
             ->where('vendor_id', $vendor->id)
             ->when($inCategories !== null, fn ($query) => $query->whereIn('product_id', $inCategories))
             ->chunkById(self::CHUNK, function (EloquentCollection $links) use (&$ids, &$skipped, $vendor, $morphType, $collection): void {

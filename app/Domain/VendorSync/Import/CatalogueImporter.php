@@ -246,7 +246,10 @@ final class CatalogueImporter
             }
 
             if ($this->record($vendor, $record, $mapper, $writer, $report, $force, $run)) {
-                $present[$record->externalId] = true;
+                // A product line listed under several IDs is present under each.
+                foreach ($record->externalIds() as $externalId) {
+                    $present[$externalId] = true;
+                }
             }
 
             // The payload and everything mapped from it is released here,
@@ -336,10 +339,40 @@ final class CatalogueImporter
         $hash = hash('sha256', $record->hash().'|'.PricingRules::fingerprint($code));
 
         // One small row per product, looked up by ID. No list of links is held.
-        $link = $vendor === null ? null : VendorProduct::query()
+        // A product line listed under several IDs has one link for each, on one
+        // Lunar product; the primary one (lowest id) carries the sync state.
+        $links = $vendor === null ? collect() : VendorProduct::query()
             ->where('vendor_id', $vendor->id)
-            ->where('vendor_product_id', $record->externalId)
-            ->first(['id', 'product_id', 'payload_hash', 'missed_runs', 'draft_reasons']);
+            ->whereIn('vendor_product_id', $record->externalIds())
+            ->get(['id', 'product_id', 'vendor_product_id']);
+
+        $link = null;
+
+        if ($links->isNotEmpty()) {
+            $productIds = $links->pluck('product_id')->unique();
+
+            if ($productIds->count() > 1) {
+                // Not written: it would put one vendor SKU on two products.
+                $report->error(sprintf(
+                    '%s: vendor product IDs %s are one product line but are on different Lunar products (%s); left as they are. Run: php artisan vendorsync:merge-splits %s',
+                    $result->product->label,
+                    implode(', ', $record->externalIds()),
+                    $productIds->implode(', '),
+                    $code,
+                ));
+
+                return true;
+            }
+
+            $link = VendorProduct::query()
+                ->where('vendor_id', $vendor->id)
+                ->where('product_id', $productIds->first())
+                ->orderBy('id')
+                ->first(['id', 'product_id', 'payload_hash', 'missed_runs', 'draft_reasons']);
+        }
+
+        // Every ID of the line has its link, or the record is not unchanged.
+        $linked = $links->count() === count($record->externalIds());
 
         // No importable variant remains. A product that already exists is
         // drafted by the writer; one that does not exist cannot be created
@@ -352,12 +385,16 @@ final class CatalogueImporter
 
         $wasMissing = in_array(DraftReason::MISSING_FROM_FEED, $link?->draft_reasons ?? [], true);
 
-        if ($link !== null && ! $force && ! $wasMissing && $link->payload_hash === $hash) {
+        if ($link !== null && $linked && ! $force && ! $wasMissing && $link->payload_hash === $hash) {
             $report->unchanged++;
             $this->countNonGbp($report, $record, $result->product, []);
 
-            if ($writer !== null && $link->missed_runs > 0) {
-                $link->update(['missed_runs' => 0]);
+            if ($writer !== null) {
+                VendorProduct::query()
+                    ->where('vendor_id', $vendor->id)
+                    ->whereIn('vendor_product_id', $record->externalIds())
+                    ->where('missed_runs', '>', 0)
+                    ->update(['missed_runs' => 0]);
             }
 
             return true;
@@ -537,6 +574,13 @@ final class CatalogueImporter
                         continue;
                     }
 
+                    // One ID of a product line the vendor still lists under another ID:
+                    // the product stays on sale. The writer already took the SKUs the
+                    // line no longer lists off sale, so nothing is counted against it.
+                    if ($this->siblingPresent($link, $present)) {
+                        continue;
+                    }
+
                     $missed = min(255, $link->missed_runs + 1);
 
                     if ($writer === null) {
@@ -557,6 +601,21 @@ final class CatalogueImporter
                     }
                 }
             });
+    }
+
+    /**
+     * Whether another link of the same Lunar product is in the feed today.
+     *
+     * @param  array<string, true>  $present
+     */
+    private function siblingPresent(VendorProduct $link, array $present): bool
+    {
+        return VendorProduct::query()
+            ->where('vendor_id', $link->vendor_id)
+            ->where('product_id', $link->product_id)
+            ->where('id', '!=', $link->id)
+            ->pluck('vendor_product_id')
+            ->contains(fn ($id): bool => isset($present[(string) $id]));
     }
 
     private function outOfScope(RunReport $report, string $reason): void
