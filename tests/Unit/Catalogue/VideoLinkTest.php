@@ -48,3 +48,9 @@ it('refuses anything else', function (string $url): void {
     'not an address' => 'toecaps',
     'empty' => '',
 ]);
+
+it('shows a video file one second in before it is played, unless its address already names a time', function (): void {
+    expect(VideoLink::withPreviewFrame('https://cdn.example.com/a.mp4'))->toBe('https://cdn.example.com/a.mp4#t=1')
+        ->and(VideoLink::withPreviewFrame('https://cdn.example.com/a.mp4?v=2'))->toBe('https://cdn.example.com/a.mp4?v=2#t=1')
+        ->and(VideoLink::withPreviewFrame('https://cdn.example.com/a.mp4#t=5'))->toBe('https://cdn.example.com/a.mp4#t=5');
+});
