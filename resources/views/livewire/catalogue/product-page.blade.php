@@ -364,10 +364,10 @@
         </div>
     @endif
 
-    {{-- The videos, the full width of the page container, under the product details: the vendor's own first, then any uploaded in the admin, in their order. --}}
-    @if ($videoUrl || $uploadedVideos !== [])
+    {{-- The videos, the full width of the page container, under the product details: the vendor's own first, then any uploaded in the admin, then those added by web address, each in their order. --}}
+    @if ($videoUrl || $uploadedVideos !== [] || $linkedVideos !== [])
         <section aria-labelledby="video-heading" class="mt-10" data-video>
-            <h2 id="video-heading" class="text-xl font-bold">{{ ($videoUrl ? 1 : 0) + count($uploadedVideos) > 1 ? 'Product videos' : 'Product video' }}</h2>
+            <h2 id="video-heading" class="text-xl font-bold">{{ ($videoUrl ? 1 : 0) + count($uploadedVideos) + count($linkedVideos) > 1 ? 'Product videos' : 'Product video' }}</h2>
 
             @if ($videoUrl)
                 <div class="mt-4 aspect-video" data-video-vendor>
@@ -387,6 +387,26 @@
                     <video controls preload="metadata" playsinline class="h-full w-full rounded border border-border bg-brand-navy" aria-label="{{ $product->translateAttribute('name') }} video {{ $index + 1 }}">
                         <source src="{{ $video['url'] }}" type="{{ $video['type'] }}">
                     </video>
+                </div>
+            @endforeach
+
+            @foreach ($linkedVideos as $index => $video)
+                <div class="mt-4 aspect-video" data-video-linked>
+                    @if ($video['kind'] === 'frame')
+                        <iframe
+                            src="{{ $video['src'] }}"
+                            title="{{ $product->translateAttribute('name') }} video {{ $index + 1 }}"
+                            loading="lazy"
+                            allow="accelerometer; encrypted-media; gyroscope; picture-in-picture"
+                            allowfullscreen
+                            referrerpolicy="strict-origin-when-cross-origin"
+                            class="h-full w-full rounded border border-border"
+                        ></iframe>
+                    @else
+                        <video controls preload="metadata" playsinline class="h-full w-full rounded border border-border bg-brand-navy" aria-label="{{ $product->translateAttribute('name') }} video {{ $index + 1 }}">
+                            <source src="{{ $video['src'] }}" type="{{ $video['type'] }}">
+                        </video>
+                    @endif
                 </div>
             @endforeach
         </section>

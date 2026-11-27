@@ -1133,3 +1133,62 @@ it('shows an uploaded video on a product that has no vendor video', function ():
     expect($html)->toContain('data-video-uploaded')->not->toContain('data-video-vendor')->not->toContain('<iframe')
         ->and($html)->toContain('>Product video</h2>');
 });
+
+function addLigeroVideoLinks(array $urls): void
+{
+    $product = Url::query()->where('slug', 'safety-jogger-ligero')->sole()->element;
+
+    foreach ($urls as $position => $url) {
+        $product->videoLinks()->create(['url' => $url, 'position' => $position]);
+    }
+}
+
+it('shows the videos added by web address after the vendor video and the uploads, in their order', function (): void {
+    addLigeroVideos(['first-upload']);
+    addLigeroVideoLinks([
+        'https://cdn.example.com/clips/toecaps.mp4',
+        'https://youtu.be/dQw4w9WgXcQ',
+        'https://vimeo.com/76979871',
+    ]);
+
+    $html = $this->get(route('product', 'safety-jogger-ligero'))->assertOk()->getContent();
+
+    preg_match_all('#data-video-(vendor|uploaded|linked)#', $html, $order);
+
+    expect($order[1])->toBe(['vendor', 'uploaded', 'linked', 'linked', 'linked'])
+        ->and($html)->toContain('>Product videos</h2>')
+        ->and($html)->toContain('<source src="https://cdn.example.com/clips/toecaps.mp4" type="video/mp4">')
+        ->and($html)->toContain('src="https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ"')
+        ->and($html)->toContain('src="https://player.vimeo.com/video/76979871"')
+        // The links are in the order set by position, whatever order they were saved in.
+        ->and(strpos($html, 'toecaps.mp4'))->toBeLessThan(strpos($html, 'youtube-nocookie.com/embed/dQw4w9WgXcQ'))
+        ->and(strpos($html, 'youtube-nocookie.com/embed/dQw4w9WgXcQ'))->toBeLessThan(strpos($html, 'player.vimeo.com'));
+});
+
+it('shows a video added by web address on a product with no other video', function (): void {
+    $product = Url::query()->where('slug', 'safety-jogger-ligero')->sole()->element;
+    $data = $product->attribute_data;
+    $data['video_url'] = new Text('');
+    $product->update(['attribute_data' => $data]);
+
+    addLigeroVideoLinks(['https://www.youtube.com/watch?v=dQw4w9WgXcQ']);
+
+    $html = $this->get(route('product', 'safety-jogger-ligero'))->assertOk()->getContent();
+
+    expect($html)->toContain('data-video-linked')->not->toContain('data-video-vendor')->not->toContain('data-video-uploaded')
+        ->and($html)->toContain('>Product video</h2>')
+        ->and($html)->toContain('youtube-nocookie.com/embed/dQw4w9WgXcQ');
+});
+
+it('leaves out a saved video address that is not a YouTube, Vimeo or MP4 or WebM link', function (): void {
+    addLigeroVideoLinks(['https://evil.example/embed/abc', 'javascript:alert(1)', 'https://youtu.be/dQw4w9WgXcQ']);
+
+    $html = $this->get(route('product', 'safety-jogger-ligero'))->assertOk()->getContent();
+
+    expect($html)->not->toContain('evil.example')->not->toContain('javascript:alert')
+        ->and(substr_count($html, 'data-video-linked'))->toBe(1);
+});
+
+it('shows no video block on a product with no video links and no other videos', function (): void {
+    $this->get(route('product', 'gbs-eva'))->assertOk()->assertDontSee('data-video-linked', false);
+});
