@@ -415,3 +415,62 @@ it('shows the pounds alone when the rate cannot be fetched', function (): void {
 
     Livewire::test(SalesTilesWidget::class)->assertSee('£120.00')->assertDontSee('sales-tile-zar', false)->assertDontSee('R 0');
 });
+
+it('makes the rand value 20% bigger than the 0.8rem it was', function (): void {
+    expect((string) file_get_contents(resource_path('views/admin/dashboard-tiles.blade.php')))
+        ->toContain('.sales-tile .sales-tile-zar { margin-left: 0.5rem; font-size: 0.96rem;');
+});
+
+// --- Gross profit on the latest orders ------------------------------------------------------
+
+it('shows each latest order\'s gross profit in pounds, from its goods lines only', function (): void {
+    dashboardStaff();
+
+    // 3 pairs sold for £45.00 ex VAT that cost £10.00 each: £15.00. The delivery line is not goods and does not count.
+    $order = dashboardOrder();
+    profitLine($order, 4500, 3, ['cost_price' => 1000]);
+    OrderLine::factory()->create(['order_id' => $order->id, 'purchasable_type' => null, 'purchasable_id' => null, 'type' => 'shipping', 'quantity' => 1, 'sub_total' => 800]);
+
+    // No recorded cost: the markup comes off the price. £30.00 / 1.5 = £20.00 cost, £10.00 profit.
+    config()->set('vendorsync.markup', '1.5');
+    $other = dashboardOrder(['placed_at' => '2026-03-11 09:00:00']);
+    profitLine($other, 3000, 1);
+
+    Livewire::test(RecentOrdersWidget::class)
+        ->assertSee('Gross profit (GBP)')
+        ->assertTableColumnStateSet('gross_profit', '£15.00', record: $order)
+        ->assertTableColumnStateSet('gross_profit', '£10.00', record: $other);
+});
+
+it('shows the gross profit in rand too, at today\'s rate', function (): void {
+    zarApiReturns(20.0);
+    dashboardStaff();
+    $order = dashboardOrder();
+    profitLine($order, 4500, 3, ['cost_price' => 1000]);
+
+    Livewire::test(RecentOrdersWidget::class)
+        ->assertTableColumnVisible('gross_profit_zar')
+        ->assertSee('Gross profit (ZAR)')
+        ->assertTableColumnStateSet('gross_profit_zar', 'R 300', record: $order);
+});
+
+it('leaves the rand column out while the rate cannot be fetched', function (): void {
+    Http::fake(['api.frankfurter.dev/*' => Http::response('', 503)]);
+    dashboardStaff();
+    profitLine(dashboardOrder(), 4500, 3, ['cost_price' => 1000]);
+
+    Livewire::test(RecentOrdersWidget::class)
+        ->assertSee('Gross profit (GBP)')
+        ->assertTableColumnHidden('gross_profit_zar')
+        ->assertDontSee('Gross profit (ZAR)');
+});
+
+it('adds up an order\'s gross profit without the delivery line or another order\'s lines', function (): void {
+    $order = dashboardOrder();
+    profitLine($order, 4500, 3, ['cost_price' => 1000]);
+    profitLine($order, 3000, 1, ['cost_price' => 2500]);
+    OrderLine::factory()->create(['order_id' => $order->id, 'purchasable_type' => null, 'purchasable_id' => null, 'type' => 'shipping', 'quantity' => 1, 'sub_total' => 800]);
+    profitLine(dashboardOrder(), 9000, 1, ['cost_price' => 1]);
+
+    expect(app(OrderLineProfit::class)->forOrder($order->load('lines')))->toBe(1500 + 500);
+});

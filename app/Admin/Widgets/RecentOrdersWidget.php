@@ -6,6 +6,9 @@ namespace App\Admin\Widgets;
 
 use App\Admin\Extensions\DownloadInvoicePdfAction;
 use App\Domain\Accounts\CustomerLogo;
+use App\Domain\Orders\DashboardFigures;
+use App\Domain\Orders\OrderLineProfit;
+use App\Domain\Orders\ZarRate;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -16,7 +19,7 @@ use Lunar\Models\Order;
 
 /**
  * The list under the tiles at the top of the admin dashboard: every placed order, newest first, ten to a page, with the
- * company's logo, its invoice number and a download of its invoice as a PDF. Search covers the company, the order number
+ * company's logo, its invoice number, its gross profit in pounds and in rand and a download of its invoice as a PDF. Search covers the company, the order number
  * and the invoice number.
  */
 final class RecentOrdersWidget extends TableWidget
@@ -32,7 +35,7 @@ final class RecentOrdersWidget extends TableWidget
             ->query(fn (): Builder => Order::query()
                 ->select('lunar_orders.*', 'invoice_numbers.number as invoice_number')
                 ->leftJoin('invoice_numbers', 'invoice_numbers.order_id', '=', 'lunar_orders.id')
-                ->with(['customer', 'currency'])
+                ->with(['customer', 'currency', 'lines' => fn ($lines) => $lines->where('type', 'physical')])
                 ->whereNotNull('lunar_orders.placed_at')
                 ->orderByDesc('lunar_orders.placed_at')
                 ->orderByDesc('lunar_orders.id'))
@@ -60,11 +63,32 @@ final class RecentOrdersWidget extends TableWidget
                     ->label('Value')
                     ->alignEnd()
                     ->getStateUsing(fn (Order $order): string => $order->total->formatted),
+                // The order's gross profit before VAT (the goods less the vendor cost, OrderLineProfit), in pounds and in rand.
+                TextColumn::make('gross_profit')
+                    ->label('Gross profit (GBP)')
+                    ->alignEnd()
+                    ->getStateUsing(fn (Order $order): string => $this->figures()->money($this->profit($order))),
+                // Rand at today's rate (ZarRate): the column is left out while the rate cannot be fetched.
+                TextColumn::make('gross_profit_zar')
+                    ->label('Gross profit (ZAR)')
+                    ->alignEnd()
+                    ->visible(fn (): bool => app(ZarRate::class)->perPound() !== null)
+                    ->getStateUsing(fn (Order $order): ?string => $this->figures()->zar($this->profit($order))),
             ])
             ->recordUrl(fn (Order $order): string => OrderResource::getUrl('order', ['record' => $order]))
             ->recordActions([DownloadInvoicePdfAction::make('Invoice')->size('sm')])
             ->paginationPageOptions([10, 25, 50])
             ->defaultPaginationPageOption(10)
             ->poll('60s');
+    }
+
+    private function figures(): DashboardFigures
+    {
+        return app(DashboardFigures::class);
+    }
+
+    private function profit(Order $order): int
+    {
+        return app(OrderLineProfit::class)->forOrder($order);
     }
 }
