@@ -1157,7 +1157,7 @@ it('shows the videos added by web address after the vendor video and the uploads
 
     expect($order[1])->toBe(['vendor', 'uploaded', 'linked', 'linked', 'linked'])
         ->and($html)->toContain('>Product videos</h2>')
-        ->and($html)->toContain('<source src="https://cdn.example.com/clips/toecaps.mp4" type="video/mp4">')
+        ->and($html)->toContain('<source src="https://cdn.example.com/clips/toecaps.mp4#t=1" type="video/mp4">')
         ->and($html)->toContain('src="https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ"')
         ->and($html)->toContain('src="https://player.vimeo.com/video/76979871"')
         // The links are in the order set by position, whatever order they were saved in.
@@ -1191,4 +1191,19 @@ it('leaves out a saved video address that is not a YouTube, Vimeo or MP4 or WebM
 
 it('shows no video block on a product with no video links and no other videos', function (): void {
     $this->get(route('product', 'gbs-eva'))->assertOk()->assertDontSee('data-video-linked', false);
+});
+
+it('shows each video file\'s frame one second in before it is played, and leaves an address that names its own time alone', function (): void {
+    addLigeroVideos(['first-upload']);
+    addLigeroVideoLinks(['https://cdn.example.com/clips/a.mp4', 'https://cdn.example.com/clips/b.webm#t=5']);
+
+    $html = $this->get(route('product', 'safety-jogger-ligero'))->assertOk()->getContent();
+
+    preg_match_all('#<source src="([^"]+)" type="video/(?:mp4|webm)">#', $html, $sources);
+
+    // The upload, then the two links: one second in, one second in, and the address that already said five seconds.
+    expect($sources[1])->toHaveCount(3)
+        ->and($sources[1][0])->toContain('first-upload')->toEndWith('#t=1')
+        ->and($sources[1][1])->toBe('https://cdn.example.com/clips/a.mp4#t=1')
+        ->and($sources[1][2])->toBe('https://cdn.example.com/clips/b.webm#t=5');
 });

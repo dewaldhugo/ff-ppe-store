@@ -59,6 +59,16 @@ final class VideoLink
     }
 
     /**
+     * A video file's address with the frame to show before play: one second in (a `#t=1` media fragment), so the picture on the
+     * page is the shoe and not the black frame most clips open on. An address that already names a time or anything else after
+     * a `#` is left as it is.
+     */
+    public static function withPreviewFrame(string $url): string
+    {
+        return str_contains($url, '#') ? $url : $url.'#t=1';
+    }
+
+    /**
      * @param  array<array-key, mixed>  $query
      */
     private static function youtubeId(string $host, string $path, array $query): ?string

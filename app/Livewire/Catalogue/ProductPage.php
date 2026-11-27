@@ -502,7 +502,7 @@ final class ProductPage extends Component
     private function uploadedVideos(Product $product): array
     {
         return $product->getMedia(ProductMediaDefinitions::VIDEOS)
-            ->map(fn ($media): array => ['url' => $media->getUrl(), 'type' => (string) $media->mime_type])
+            ->map(fn ($media): array => ['url' => VideoLink::withPreviewFrame($media->getUrl()), 'type' => (string) $media->mime_type])
             ->values()
             ->all();
     }
@@ -518,6 +518,8 @@ final class ProductPage extends Component
         return $product->videoLinks
             ->map(fn (ProductVideoLink $link): ?array => VideoLink::parse($link->url))
             ->filter()
+            // A video file shows its frame one second in before it is played (a frame in a YouTube or Vimeo player is its own).
+            ->map(fn (array $video): array => $video['kind'] === VideoLink::FILE ? [...$video, 'src' => VideoLink::withPreviewFrame($video['src'])] : $video)
             ->values()
             ->all();
     }
