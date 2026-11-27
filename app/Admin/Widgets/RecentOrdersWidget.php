@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Admin\Widgets;
 
 use App\Admin\Extensions\DownloadInvoicePdfAction;
+use App\Admin\ReportsAccess;
 use App\Domain\Accounts\CustomerLogo;
 use App\Domain\Orders\DashboardFigures;
 use App\Domain\Orders\OrderLineProfit;
@@ -75,7 +76,8 @@ final class RecentOrdersWidget extends TableWidget
                     ->visible(fn (): bool => app(ZarRate::class)->perPound() !== null)
                     ->getStateUsing(fn (Order $order): ?string => $this->figures()->zar($this->profit($order))),
             ])
-            ->recordUrl(fn (Order $order): string => OrderResource::getUrl('order', ['record' => $order]))
+            // A row opens its order only for staff who manage orders; a Reports user (ReportsAccess) has the PDF and no link.
+            ->recordUrl(fn (Order $order): ?string => ReportsAccess::canOpenOrders() ? OrderResource::getUrl('order', ['record' => $order]) : null)
             ->recordActions([DownloadInvoicePdfAction::make('Invoice')->size('sm')])
             ->paginationPageOptions([10, 25, 50])
             ->defaultPaginationPageOption(10)

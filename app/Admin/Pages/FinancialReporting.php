@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Admin\Pages;
 
+use App\Admin\ReportsAccess;
 use App\Domain\Orders\FinancialReport;
-use Filament\Facades\Filament;
 use Filament\Navigation\NavigationItem;
 use Filament\Pages\Page;
 use Filament\Panel;
@@ -15,7 +15,7 @@ use Illuminate\Contracts\Support\Htmlable;
  * Financial reporting, one page a year (/admin/financial-reporting/2026): revenue, gross profit, units sold and the margin as
  * tiles, then monthly unit sales, monthly turnover before VAT, units per customer, monthly gross profit and the top styles sold.
  * The figures are in FinancialReport. The menu has a Financial reporting item with a year under it for every year that has an
- * order, up to this year. Seen by the staff who see orders (sales:manage-orders), like Invoices.
+ * order, up to this year. Seen by the staff who see orders and by the Reports role (ReportsAccess), like Invoices.
  */
 final class FinancialReporting extends Page
 {
@@ -34,7 +34,7 @@ final class FinancialReporting extends Page
 
     public static function canAccess(): bool
     {
-        return Filament::auth()->user()?->can('sales:manage-orders') === true;
+        return ReportsAccess::allowed();
     }
 
     /**
