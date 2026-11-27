@@ -16,6 +16,7 @@ use App\Admin\Extensions\OrderDeleteResourceExtension;
 use App\Admin\Extensions\OrderDeleteViewExtension;
 use App\Admin\Extensions\OrderInvoicePdfViewExtension;
 use App\Admin\Extensions\ProductVideosResourceExtension;
+use App\Admin\Pages\FinancialReporting;
 use App\Admin\Resources\InvoiceResource;
 use App\Admin\Widgets\RecentOrdersWidget;
 use App\Admin\Widgets\SalesTilesWidget;
@@ -95,6 +96,8 @@ final class AppServiceProvider extends ServiceProvider
             ->widgets([SalesTilesWidget::class, RecentOrdersWidget::class])
             // Invoices, under Sales beside Orders: the list, with the Invoice PDF download.
             ->resources([InvoiceResource::class])
+            // Financial reporting, under Sales: a page for each year (revenue, gross profit, units, margin and the charts).
+            ->pages([FinancialReporting::class])
             // The colours of the dashboard tiles. The rest of the admin keeps Lunar's own styling.
             ->renderHook(PanelsRenderHook::HEAD_END, fn (): View => view('admin.dashboard-tiles'))
             // The sign-in page's background: a photo under a dark overlay (resources/views/admin/login-background.blade.php).
