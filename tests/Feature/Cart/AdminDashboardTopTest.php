@@ -8,7 +8,10 @@ use App\Domain\Orders\DashboardFigures;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
+use Livewire\Mechanisms\ComponentRegistry;
 use Lunar\Admin\Filament\Pages\Dashboard;
+use Lunar\Admin\Filament\Widgets\Dashboard\Orders\LatestOrdersTable;
+use Lunar\Admin\Filament\Widgets\Dashboard\Orders\OrderStatsOverview;
 use Lunar\Admin\Models\Staff;
 use Lunar\Models\Channel;
 use Lunar\Models\Customer;
@@ -139,19 +142,91 @@ it('puts the tiles and the latest orders above Lunar\'s own widgets, which stay'
 
     expect($widgets[0])->toBe(SalesTilesWidget::class)
         ->and($widgets[1])->toBe(RecentOrdersWidget::class)
-        ->and($widgets)->toContain(Lunar\Admin\Filament\Widgets\Dashboard\Orders\OrderStatsOverview::class)
-        ->and($widgets)->toContain(Lunar\Admin\Filament\Widgets\Dashboard\Orders\LatestOrdersTable::class);
+        ->and($widgets)->toContain(OrderStatsOverview::class)
+        ->and($widgets)->toContain(LatestOrdersTable::class);
 });
 
 it('registers both widgets with the panel, so Livewire can find them when the page loads them', function (): void {
-    $registry = app(\Livewire\Mechanisms\ComponentRegistry::class);
+    $registry = app(ComponentRegistry::class);
 
     foreach ([SalesTilesWidget::class, RecentOrdersWidget::class] as $widget) {
         expect($registry->getClass($registry->getName($widget)))->toBe($widget);
     }
 });
 
-it('shows the eight tiles with their figures', function (): void {
+function profitLine(Order $order, int $subTotal, int $quantity, array $meta = []): void
+{
+    OrderLine::factory()->create([
+        'order_id' => $order->id,
+        'purchasable_type' => null,
+        'purchasable_id' => null,
+        'type' => 'physical',
+        'quantity' => $quantity,
+        'unit_price' => intdiv($subTotal, $quantity),
+        'sub_total' => $subTotal,
+        'total' => $subTotal * 1.2,
+        'meta' => $meta,
+    ]);
+}
+
+it('takes the vendor cost off this month\'s sales before VAT to give the gross profit', function (): void {
+    // 3 pairs sold at £15.00 each ex VAT (£45.00) that cost £10.00 each: £15.00 profit.
+    profitLine(dashboardOrder(), 4500, 3, ['cost_price' => 1000]);
+    // A second order this month: £30.00 sold, £20.00 cost.
+    profitLine(dashboardOrder(['placed_at' => '2026-03-01 08:00:00']), 3000, 1, ['cost_price' => 2000]);
+
+    expect((new DashboardFigures)->grossProfitThisMonthPence())->toBe(1500 + 1000)
+        ->and((new DashboardFigures)->grossProfitThisMonth())->toBe('£25.00');
+});
+
+it('uses the cost recorded when the order was placed, not the vendor\'s cost today', function (): void {
+    config()->set('vendorsync.markup', '3');
+    profitLine(dashboardOrder(), 3000, 1, ['vendor_code' => 'SJ', 'cost_price' => 2000]);
+
+    expect((new DashboardFigures)->grossProfitThisMonthPence())->toBe(1000);
+});
+
+it('takes the markup off the price when a line has no recorded cost, with the vendor\'s own markup first', function (): void {
+    // Default markup 1.5: £30.00 / 1.5 = £20.00 cost, £10.00 profit.
+    config()->set('vendorsync.markup', '1.5');
+    config()->set('vendorsync.vendors.SJ.markup', null);
+    profitLine(dashboardOrder(), 3000, 1);
+
+    expect((new DashboardFigures)->grossProfitThisMonthPence())->toBe(1000);
+
+    // The vendor's own markup of 2: £30.00 / 2 = £15.00 cost, £15.00 profit.
+    config()->set('vendorsync.vendors.FS.markup', '2');
+    profitLine(dashboardOrder(), 3000, 1, ['vendor_code' => 'FS', 'cost_price' => null]);
+
+    expect((new DashboardFigures)->grossProfitThisMonthPence())->toBe(1000 + 1500);
+});
+
+it('leaves out delivery lines, other months and orders that failed, were cancelled or were never placed', function (): void {
+    profitLine(dashboardOrder(), 3000, 1, ['cost_price' => 2000]);                                      // counts: 1000
+    OrderLine::factory()->create(['order_id' => dashboardOrder()->id, 'purchasable_type' => null, 'purchasable_id' => null, 'type' => 'shipping', 'quantity' => 1, 'sub_total' => 800]);
+    profitLine(dashboardOrder(['placed_at' => '2026-02-28 23:00:00']), 9000, 1, ['cost_price' => 1]);  // last month
+    profitLine(dashboardOrder(['placed_at' => '2026-04-01 00:30:00']), 9000, 1, ['cost_price' => 1]);  // next month
+    profitLine(dashboardOrder(['status' => 'cancelled']), 9000, 1, ['cost_price' => 1]);
+    profitLine(dashboardOrder(['status' => 'failed']), 9000, 1, ['cost_price' => 1]);
+    profitLine(dashboardOrder(['placed_at' => null]), 9000, 1, ['cost_price' => 1]);
+
+    expect((new DashboardFigures)->grossProfitThisMonthPence())->toBe(1000);
+});
+
+it('shows a month with no sales as £0.00 profit', function (): void {
+    expect((new DashboardFigures)->grossProfitThisMonth())->toBe('£0.00');
+});
+
+it('shows the gross profit tile on the dashboard', function (): void {
+    dashboardStaff();
+    profitLine(dashboardOrder(), 4500, 3, ['cost_price' => 1000]);
+
+    Livewire::test(SalesTilesWidget::class)
+        ->assertSee('Gross profit this month')
+        ->assertSee('£15.00');
+});
+
+it('shows the nine tiles with their figures', function (): void {
     dashboardStaff();
     dashboardOrder(['total' => 12000], [['CADOR S1P LOW', 7, 'physical']]);
     Customer::query()->create(['first_name' => 'Jo', 'last_name' => 'Builder', 'company_name' => 'Builder Ltd']);
@@ -172,10 +247,11 @@ it('colours the tiles green, red, blue and orange down the columns, the same eve
 
     $html = Livewire::test(SalesTilesWidget::class)->html();
 
-    // Eight tiles: each colour twice, in column order, first row then second.
+    // Nine tiles: each colour twice in column order, first row then second, then the gross profit tile on a row of its own.
     preg_match_all('/sales-tile--(success|danger|info|warning)/', $html, $colours);
 
-    expect($colours[1])->toBe(['success', 'danger', 'info', 'warning', 'success', 'danger', 'info', 'warning']);
+    expect($colours[1])->toBe(['success', 'danger', 'info', 'warning', 'success', 'danger', 'info', 'warning', 'success'])
+        ->and($html)->toContain('sales-tile--wide');
 
     // The colours are defined in the admin styles, from Filament's own variables (no colour of our own).
     $styles = (string) file_get_contents(resource_path('views/admin/dashboard-tiles.blade.php'));

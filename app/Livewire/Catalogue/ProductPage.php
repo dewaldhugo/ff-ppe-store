@@ -12,6 +12,7 @@ use App\Domain\Catalogue\Display\KeyPoints;
 use App\Domain\Catalogue\Display\ProductPictograms;
 use App\Domain\Catalogue\Display\SafetyStandardPanel;
 use App\Domain\Catalogue\Media\ProductMediaDefinitions;
+use App\Domain\Catalogue\Media\VideoLink;
 use App\Domain\Catalogue\Related\RelatedProductIds;
 use App\Domain\Catalogue\Seo\ProductStructuredData;
 use App\Domain\Catalogue\Urls\ProductBreadcrumbs;
@@ -19,6 +20,7 @@ use App\Domain\Catalogue\Variants\VariantSelection;
 use App\Domain\Pricing\DisplayPrice;
 use App\Domain\Pricing\PriceDisplay;
 use App\Domain\Pricing\PriceVisibility;
+use App\Models\ProductVideoLink;
 use App\Support\CartCount;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\HtmlString;
@@ -216,6 +218,7 @@ final class ProductPage extends Component
             'paragraphs' => preg_split('/\R{2,}|\R/', trim((string) $product->translateAttribute('description')), flags: PREG_SPLIT_NO_EMPTY) ?: [],
             'videoUrl' => $this->videoUrl($product),
             'uploadedVideos' => $this->uploadedVideos($product),
+            'linkedVideos' => $this->linkedVideos($product),
             'related' => $this->related(),
             'missingPrompt' => $this->missingOption === null ? null : $selection->promptFor($this->missingOption),
         ])->layout('components.layouts.storefront', [
@@ -500,6 +503,21 @@ final class ProductPage extends Component
     {
         return $product->getMedia(ProductMediaDefinitions::VIDEOS)
             ->map(fn ($media): array => ['url' => $media->getUrl(), 'type' => (string) $media->mime_type])
+            ->values()
+            ->all();
+    }
+
+    /**
+     * The videos staff added by web address (ProductVideoLink), in the order set in the admin, after the uploaded ones. An address
+     * that is not a YouTube, Vimeo or MP4 or WebM link (VideoLink) is left out, whatever was saved.
+     *
+     * @return list<array{kind: 'frame'|'file', src: string, type: ?string}>
+     */
+    private function linkedVideos(Product $product): array
+    {
+        return $product->videoLinks
+            ->map(fn (ProductVideoLink $link): ?array => VideoLink::parse($link->url))
+            ->filter()
             ->values()
             ->all();
     }

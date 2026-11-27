@@ -31,11 +31,13 @@ use App\Domain\Favourites\Favourites;
 use App\Domain\Orders\InvoiceNumbers;
 use App\Domain\Orders\NotifyStaffOfNewOrder;
 use App\Domain\Pricing\Vat\StoreTaxDriver;
+use App\Models\ProductVideoLink;
 use App\Support\Store;
 use Filament\Panel;
 use Filament\Support\Enums\Width;
 use Filament\View\PanelsRenderHook;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use Lunar\Admin\Filament\Pages\Dashboard;
@@ -52,6 +54,7 @@ use Lunar\Facades\Telemetry;
 use Lunar\Models\Collection;
 use Lunar\Models\CollectionGroup;
 use Lunar\Models\Order;
+use Lunar\Models\Product;
 use Lunar\Models\Url;
 use Throwable;
 
@@ -108,6 +111,9 @@ final class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Telemetry::optOut();
+
+        // The videos staff add to a product by web address (the Product videos section of Edit Product, ProductVideoLink).
+        Product::resolveRelationUsing('videoLinks', fn (Product $product): HasMany => $product->hasMany(ProductVideoLink::class)->orderBy('position')->orderBy('id'));
 
         // VAT: the system driver plus the employer rate for zero-protective lines. Delivery: one
         // rule, offered on every cart. See docs/cart.md.

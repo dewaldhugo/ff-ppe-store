@@ -10,7 +10,7 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 
 /**
  * The tiles at the very top of the admin dashboard: income, orders, units sold, best seller, this month, the last
- * order, clients and the average monthly turnover. The figures are in DashboardFigures.
+ * order, clients, the average monthly turnover and this month's gross profit (a row of its own). The figures are in DashboardFigures.
  *
  * Each tile is a solid colour with white text, in the old dashboard's four colours down the columns: green, red, blue
  * and orange. The colours are Filament's own (success, danger, info, warning at shade 700), set in
@@ -40,11 +40,12 @@ final class SalesTilesWidget extends StatsOverviewWidget
             ['Last order placed', $figures->lastOrderDate() ?? 'None yet'],
             ['Clients', number_format($figures->clients())],
             ['Average turnover per month this year (ex VAT)', $figures->averageMonthlyTurnover()],
+            ['Gross profit this month (ex VAT, vendor cost taken off)', $figures->grossProfitThisMonth()],
         ];
 
         return array_map(
             fn (array $tile, int $index): Stat => Stat::make($tile[0], $tile[1])
-                ->extraAttributes(['class' => 'sales-tile sales-tile--'.self::COLOURS[$index % count(self::COLOURS)]]),
+                ->extraAttributes(['class' => 'sales-tile sales-tile--'.self::COLOURS[$index % count(self::COLOURS)].($index === count($tiles) - 1 ? ' sales-tile--wide' : '')]),
             $tiles,
             array_keys($tiles),
         );
