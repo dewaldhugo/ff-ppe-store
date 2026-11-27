@@ -99,6 +99,52 @@ final class DashboardFigures
         return $this->money(intdiv($net * 2 + $months, $months * 2));
     }
 
+    /**
+     * This month's gross profit, before VAT: what the goods on the month's invoices sold for (each line's total ex VAT, after any
+     * discount) less what they cost. The cost is the vendor cost copied onto the line when the order was placed (`cost_price`
+     * in the line's meta, per unit), so a later price change does not move it. A line with no recorded cost (a hand-made variant,
+     * an order from before the snapshot) has the markup taken off its price instead: cost = price / markup, the vendor's markup
+     * or the default one. Delivery lines are not goods and are left out, as their cost to the store is not known.
+     * An order counts as it does in every other figure here, and the month is the one it was placed in.
+     */
+    public function grossProfitThisMonthPence(): int
+    {
+        $profit = 0;
+
+        OrderLine::query()
+            ->where('type', 'physical')
+            ->whereIn('order_id', $this->orders()->whereBetween('placed_at', [now()->startOfMonth(), now()->endOfMonth()])->select('id'))
+            ->select(['id', 'quantity', 'sub_total', 'meta'])
+            ->lazyById(500)
+            ->each(function (OrderLine $line) use (&$profit): void {
+                $revenue = (int) $line->sub_total->value;
+                $meta = (array) $line->meta;
+                $recorded = $meta['cost_price'] ?? null;
+
+                $cost = is_numeric($recorded)
+                    ? (int) $recorded * (int) $line->quantity
+                    : $this->costFromMarkup($revenue, (string) ($meta['vendor_code'] ?? ''));
+
+                $profit += $revenue - $cost;
+            });
+
+        return $profit;
+    }
+
+    public function grossProfitThisMonth(): string
+    {
+        return $this->money($this->grossProfitThisMonthPence());
+    }
+
+    /** A price ex VAT with the markup taken off, in whole pence, rounded half up (the markup in thousandths, so no float touches the money). */
+    private function costFromMarkup(int $pence, string $vendorCode): int
+    {
+        $markup = config('vendorsync.vendors.'.strtoupper($vendorCode).'.markup') ?? config('vendorsync.markup');
+        $thousandths = is_numeric($markup) && (float) $markup >= 1.0 ? (int) round((float) $markup * 1000) : 1500;
+
+        return intdiv($pence * 2000 + $thousandths, $thousandths * 2);
+    }
+
     private function money(int $pence): string
     {
         return (new Price($pence, Currency::getDefault(), 1))->formatted;
