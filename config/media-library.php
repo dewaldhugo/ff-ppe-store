@@ -50,8 +50,12 @@ return [
     /*
      * The maximum file size of an item in bytes.
      * Adding a larger file will result in an exception.
+     *
+     * 200 MB, the store's limit for a product video (App\Domain\Catalogue\Media\VideoUploadLimit). The package's own 10 MB turned a
+     * video of 12 MB away when the form was saved, after the upload had worked, with only a server error to show for it. The
+     * upload field has its own, smaller limit for what this server's PHP takes, so a file over that never reaches this one.
      */
-    'max_file_size' => 1024 * 1024 * 10, // 10MB
+    'max_file_size' => 1024 * 1024 * 200, // 200MB
 
     /*
      * Uploads whose file name contains any of these extensions will be rejected.
