@@ -24,6 +24,10 @@ return [
     // address is only the fallback while that list is empty: the store email, unless STORE_ENQUIRY_EMAIL is set.
     'enquiry_email' => env('STORE_ENQUIRY_EMAIL') ?: 'info@frontlinesafetygear.com',
 
+    // South African rand to the pound (STORE_ZAR_PER_GBP, for example 23.4), for the small rand figure beside the money tiles on the
+    // admin dashboard (App\Domain\Orders\DashboardFigures::zar). Set by hand: nothing fetches a rate. Empty shows pounds only.
+    'zar_per_gbp' => env('STORE_ZAR_PER_GBP'),
+
     // The online survey behind the PPE Health Check page. Fixed here, with no environment variable, like the
     // address and phone number: it is a public link, not a secret.
     'ppe_health_check_url' => 'https://frontline-general-health-and-safety.scoreapp.com/',

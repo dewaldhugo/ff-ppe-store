@@ -309,3 +309,53 @@ it('pages the latest orders ten at a time', function (): void {
     expect($table->instance()->getAllTableRecordsCount())->toBe(12)
         ->and($table->instance()->getTableRecords())->toHaveCount(10);
 });
+
+// --- The rand value beside the pounds --------------------------------------------------------
+
+it('works out whole rand from pence at the rate in the settings, rounded half up', function (): void {
+    config()->set('store.zar_per_gbp', '23.4');
+
+    $figures = new DashboardFigures;
+
+    // £1,000.00 at R23.40 is R23,400; £1.00 at R23.40 is R23 (23.4 rounds down); £0.03 at R23.40 is R1 (0.702 rounds up).
+    expect($figures->zar(100000))->toBe('R 23,400')
+        ->and($figures->zar(100))->toBe('R 23')
+        ->and($figures->zar(3))->toBe('R 1')
+        ->and($figures->zar(0))->toBe('R 0');
+
+    // Half a rand rounds up: £0.50 at R23.00 is R11.50.
+    config()->set('store.zar_per_gbp', '23');
+
+    expect($figures->zar(50))->toBe('R 12');
+});
+
+it('shows no rand value when no rate is set or the rate is not a positive number', function (mixed $rate): void {
+    config()->set('store.zar_per_gbp', $rate);
+
+    expect((new DashboardFigures)->zar(100000))->toBeNull();
+})->with([null, '', 'abc', '0', '-3']);
+
+it('shows a small muted rand value beside the pounds on the three money tiles only', function (): void {
+    config()->set('store.zar_per_gbp', '20');
+    dashboardStaff();
+    profitLine(dashboardOrder(['total' => 12000, 'sub_total' => 10000]), 4500, 3, ['cost_price' => 1000]);
+
+    $html = Livewire::test(SalesTilesWidget::class)->html();
+
+    // Total income £120.00 = R2,400; average turnover £100.00 over three months of the year so far, all in March: £33.33 = R667;
+    // gross profit this month £15.00 = R300. Three tiles, no more.
+    expect(substr_count($html, 'sales-tile-zar'))->toBe(3)
+        ->and($html)->toContain('R 2,400')
+        ->and($html)->toContain('R 667')
+        ->and($html)->toContain('R 300')
+        ->and($html)->toContain('£120.00')
+        ->and((string) file_get_contents(resource_path('views/admin/dashboard-tiles.blade.php')))->toContain('.sales-tile .sales-tile-zar');
+});
+
+it('shows the pounds alone while no rand rate is set', function (): void {
+    config()->set('store.zar_per_gbp', null);
+    dashboardStaff();
+    dashboardOrder(['total' => 12000]);
+
+    Livewire::test(SalesTilesWidget::class)->assertSee('£120.00')->assertDontSee('sales-tile-zar', false);
+});

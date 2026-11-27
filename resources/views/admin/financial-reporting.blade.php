@@ -2,6 +2,11 @@
 <x-filament-panels::page>
     <style>
         /* The four tiles: a solid colour each, in Filament's own colours at shade 700 (white text stays above 4.5:1). */
+        /* Four tiles in a row, two on a tablet, one on a phone. Plain CSS: the admin's own stylesheet only has the utility classes Filament uses itself. */
+        .report-tiles { display: grid; gap: 1rem; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        @media (max-width: 1023px) { .report-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        @media (max-width: 639px) { .report-tiles { grid-template-columns: minmax(0, 1fr); } }
+        .report-note { font-size: 0.875rem; opacity: 0.7; }
         .report-tile { color: white; border-radius: 0.75rem; padding: 1rem 1.25rem; }
         .report-tile--success { background-color: var(--success-700); }
         .report-tile--danger { background-color: var(--danger-700); }
@@ -20,7 +25,7 @@
         ];
     @endphp
 
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4" data-report-tiles>
+    <div class="report-tiles" data-report-tiles>
         @foreach ($tiles as [$colour, $value, $label])
             <div class="report-tile report-tile--{{ $colour }}">
                 <div class="report-tile-value">{{ $value }}</div>
@@ -29,7 +34,7 @@
         @endforeach
     </div>
 
-    <p class="text-sm text-gray-600 dark:text-gray-400">
+    <p class="report-note">
         Orders placed in {{ $report['year'] }}, not failed or cancelled. Revenue is the order totals before VAT, delivery included. Gross profit is the goods sold before VAT less the vendor cost
         (delivery is left out), and the margin is that profit as a share of the goods sold.
     </p>

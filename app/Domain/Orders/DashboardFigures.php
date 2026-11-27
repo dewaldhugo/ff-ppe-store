@@ -31,7 +31,12 @@ final class DashboardFigures
     /** Everything invoiced to date, VAT included. */
     public function income(): string
     {
-        return $this->money((int) $this->orders()->sum('total'));
+        return $this->money($this->incomePence());
+    }
+
+    public function incomePence(): int
+    {
+        return (int) $this->orders()->sum('total');
     }
 
     public function orderCount(): int
@@ -93,10 +98,34 @@ final class DashboardFigures
      */
     public function averageMonthlyTurnover(): string
     {
+        return $this->money($this->averageMonthlyTurnoverPence());
+    }
+
+    public function averageMonthlyTurnoverPence(): int
+    {
         $net = (int) $this->orders()->whereBetween('placed_at', [now()->startOfYear(), now()->endOfYear()])->sum('sub_total');
         $months = max(1, now()->month);
 
-        return $this->money(intdiv($net * 2 + $months, $months * 2));
+        return intdiv($net * 2 + $months, $months * 2);
+    }
+
+    /**
+     * An amount in pence as whole South African rand, like "R 28,461", at the rate set in STORE_ZAR_PER_GBP (rand to the pound),
+     * or null when no rate is set (the tiles then show pounds only). Worked out in whole pence and ten-thousandths of a rand, rounded half up,
+     * so no float touches the money. It is an indication for the shop owner, not an accounting figure.
+     */
+    public function zar(int $pence): ?string
+    {
+        $rate = config('store.zar_per_gbp');
+
+        if (! is_numeric($rate) || (float) $rate <= 0) {
+            return null;
+        }
+
+        $tenThousandths = (int) round((float) $rate * 10000);
+        $rand = intdiv($pence * $tenThousandths * 2 + 1_000_000, 2_000_000);
+
+        return 'R '.number_format($rand);
     }
 
     /**
@@ -126,7 +155,7 @@ final class DashboardFigures
         return $this->money($this->grossProfitThisMonthPence());
     }
 
-    private function money(int $pence): string
+    public function money(int $pence): string
     {
         return (new Price($pence, Currency::getDefault(), 1))->formatted;
     }

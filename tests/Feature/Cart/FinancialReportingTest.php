@@ -233,3 +233,13 @@ it('is for staff who see orders only', function (): void {
 
     expect(FinancialReporting::canAccess())->toBeTrue();
 });
+
+it('lays the four tiles out in one row with its own CSS, not the admin\'s utility classes', function (): void {
+    reportStaff();
+
+    $html = Livewire::test(FinancialReporting::class, ['year' => 2026])->html();
+
+    expect($html)->toContain('class="report-tiles" data-report-tiles')
+        ->and($html)->toContain('grid-template-columns: repeat(4, minmax(0, 1fr))')
+        ->and(substr_count($html, 'report-tile report-tile--'))->toBe(4);
+});

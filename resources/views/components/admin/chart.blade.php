@@ -59,7 +59,7 @@
 @endphp
 
 <x-filament::section :heading="$title">
-    <svg viewBox="0 0 {{ $width }} {{ $height }}" role="img" aria-label="{{ $title }}" class="w-full" data-chart="{{ $id }}" data-chart-type="{{ $type }}" style="max-height: 20rem;">
+    <svg viewBox="0 0 {{ $width }} {{ $height }}" role="img" aria-label="{{ $title }}" data-chart="{{ $id }}" data-chart-type="{{ $type }}" style="display: block; width: 100%; height: auto; max-height: 20rem;">
         @foreach ($ticks as $tick)
             <line x1="{{ $left }}" x2="{{ $width - $right }}" y1="{{ round($y($tick), 1) }}" y2="{{ round($y($tick), 1) }}" stroke="currentColor" stroke-opacity="0.12" />
             <text x="{{ $left - 8 }}" y="{{ round($y($tick), 1) + 4 }}" text-anchor="end" font-size="12" fill="currentColor" fill-opacity="0.7">{{ $format($tick) }}</text>

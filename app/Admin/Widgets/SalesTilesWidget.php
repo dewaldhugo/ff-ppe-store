@@ -7,6 +7,7 @@ namespace App\Admin\Widgets;
 use App\Domain\Orders\DashboardFigures;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use Illuminate\Support\HtmlString;
 
 /**
  * The tiles at the very top of the admin dashboard: income, orders, units sold, best seller, this month, the last
@@ -31,16 +32,22 @@ final class SalesTilesWidget extends StatsOverviewWidget
     {
         $figures = app(DashboardFigures::class);
 
+        // A money tile carries its rand value as a small muted figure beside the pounds (only when STORE_ZAR_PER_GBP is set).
+        $money = fn (int $pence): HtmlString => new HtmlString(
+            e($figures->money($pence))
+            .(($zar = $figures->zar($pence)) === null ? '' : ' <span class="sales-tile-zar" title="About '.e($zar).' at R'.e((string) config('store.zar_per_gbp')).' to the pound">'.e($zar).'</span>')
+        );
+
         $tiles = [
-            ['Total income (inc VAT)', $figures->income()],
+            ['Total income (inc VAT)', $money($figures->incomePence())],
             ['Orders to date', number_format($figures->orderCount())],
             ['Total units sold', number_format($figures->unitsSold())],
             ['Best seller', $figures->bestSeller() ?? 'None yet'],
             ['Orders this month', number_format($figures->ordersThisMonth())],
             ['Last order placed', $figures->lastOrderDate() ?? 'None yet'],
             ['Clients', number_format($figures->clients())],
-            ['Average turnover per month this year (ex VAT)', $figures->averageMonthlyTurnover()],
-            ['Gross profit this month (ex VAT, vendor cost taken off)', $figures->grossProfitThisMonth()],
+            ['Average turnover per month this year (ex VAT)', $money($figures->averageMonthlyTurnoverPence())],
+            ['Gross profit this month (ex VAT, vendor cost taken off)', $money($figures->grossProfitThisMonthPence())],
         ];
 
         return array_map(
