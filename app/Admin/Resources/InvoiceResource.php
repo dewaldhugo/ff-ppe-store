@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace App\Admin\Resources;
 
 use App\Admin\Extensions\DownloadInvoicePdfAction;
+use App\Admin\ReportsAccess;
 use App\Admin\Resources\InvoiceResource\Pages\ListInvoices;
 use App\Domain\Checkout\PaymentMethods;
 use App\Domain\Orders\Invoice;
-use Filament\Facades\Filament;
 use Filament\Forms\Components\DatePicker;
 use Filament\Resources\Resource;
 use Filament\Tables\Columns\TextColumn;
@@ -22,7 +22,7 @@ use Lunar\Models\Order;
 /**
  * Invoices in the admin: every placed order has one (there is no invoices table, App\Domain\Orders\Invoice works it out
  * from the order), so this lists the placed orders, with the invoice number, date, company, payment state and total. Each row opens its order and downloads the invoice as a PDF. It is read-only, and is seen by
- * the staff who see orders (sales:manage-orders).
+ * the staff who see orders (sales:manage-orders) and staff with the Reports role (ReportsAccess).
  */
 final class InvoiceResource extends Resource
 {
@@ -48,7 +48,7 @@ final class InvoiceResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return Filament::auth()->user()?->can('sales:manage-orders') === true;
+        return ReportsAccess::allowed();
     }
 
     public static function canCreate(): bool
@@ -146,7 +146,8 @@ final class InvoiceResource extends Resource
                         ->when($data['from'] ?? null, fn (Builder $q, string $date): Builder => $q->whereDate('lunar_orders.placed_at', '>=', $date))
                         ->when($data['until'] ?? null, fn (Builder $q, string $date): Builder => $q->whereDate('lunar_orders.placed_at', '<=', $date))),
             ])
-            ->recordUrl(fn (Order $order): string => OrderResource::getUrl('order', ['record' => $order]))
+            // A row opens its order only for staff who manage orders; a Reports user (ReportsAccess) has the PDF and no link.
+            ->recordUrl(fn (Order $order): ?string => ReportsAccess::canOpenOrders() ? OrderResource::getUrl('order', ['record' => $order]) : null)
             ->recordActions([DownloadInvoicePdfAction::make('PDF')])
             ->paginationPageOptions([10, 25, 50, 100])
             ->defaultPaginationPageOption(25);
