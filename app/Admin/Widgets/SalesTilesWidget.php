@@ -32,10 +32,11 @@ final class SalesTilesWidget extends StatsOverviewWidget
     {
         $figures = app(DashboardFigures::class);
 
-        // A money tile carries its rand value as a small muted figure beside the pounds (only when STORE_ZAR_PER_GBP is set).
+        // A money tile carries its rand value as a small muted figure beside the pounds, at today's rate (ZarRate). When the
+        // rate cannot be fetched there is no rand figure and the tile shows pounds only.
         $money = fn (int $pence): HtmlString => new HtmlString(
             e($figures->money($pence))
-            .(($zar = $figures->zar($pence)) === null ? '' : ' <span class="sales-tile-zar" title="About '.e($zar).' at R'.e((string) config('store.zar_per_gbp')).' to the pound">'.e($zar).'</span>')
+            .(($zar = $figures->zar($pence)) === null ? '' : ' <span class="sales-tile-zar" title="About '.e($zar).' at R'.e((string) $figures->zarRate()).' to the pound (European Central Bank rate)">'.e($zar).'</span>')
         );
 
         $tiles = [
@@ -51,8 +52,14 @@ final class SalesTilesWidget extends StatsOverviewWidget
         ];
 
         return array_map(
-            fn (array $tile, int $index): Stat => Stat::make($tile[0], $tile[1])
-                ->extraAttributes(['class' => 'sales-tile sales-tile--'.self::COLOURS[$index % count(self::COLOURS)].($index === count($tiles) - 1 ? ' sales-tile--wide' : '')]),
+            function (array $tile, int $index) use ($tiles): Stat {
+                $last = $index === count($tiles) - 1;
+                $stat = Stat::make($tile[0], $tile[1])
+                    ->extraAttributes(['class' => 'sales-tile sales-tile--'.self::COLOURS[$index % count(self::COLOURS)].($last ? ' sales-tile--wide' : '')]);
+
+                // The last tile (gross profit) has a row of its own: Filament puts each stat in a grid column, and the span is set there.
+                return $last ? $stat->columnSpanFull() : $stat;
+            },
             $tiles,
             array_keys($tiles),
         );
