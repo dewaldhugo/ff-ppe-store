@@ -5,8 +5,11 @@ declare(strict_types=1);
 use App\Admin\Widgets\RecentOrdersWidget;
 use App\Admin\Widgets\SalesTilesWidget;
 use App\Domain\Orders\DashboardFigures;
+use App\Domain\Orders\ZarRate;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Livewire\Livewire;
 use Livewire\Mechanisms\ComponentRegistry;
 use Lunar\Admin\Filament\Pages\Dashboard;
@@ -24,6 +27,11 @@ use Lunar\Models\OrderLine;
 beforeEach(function (): void {
     config()->set('store.noindex', true);
     Carbon::setTestNow('2026-03-15 12:00:00');
+
+    // The rand rate comes from an outside API (ZarRate): no test reaches it. A test that needs a rate fakes the answer; any
+    // other request fails, which gives no rand figure.
+    Cache::forget(ZarRate::CACHE_KEY);
+    Http::preventStrayRequests();
 });
 
 afterEach(fn () => Carbon::setTestNow());
@@ -312,8 +320,59 @@ it('pages the latest orders ten at a time', function (): void {
 
 // --- The rand value beside the pounds --------------------------------------------------------
 
-it('works out whole rand from pence at the rate in the settings, rounded half up', function (): void {
-    config()->set('store.zar_per_gbp', '23.4');
+/** The Frankfurter API answering with this many rand to the pound. */
+function zarApiReturns(float $rate): void
+{
+    Http::fake(['api.frankfurter.dev/*' => Http::response(['amount' => 1.0, 'base' => 'GBP', 'date' => '2026-11-27', 'rates' => ['ZAR' => $rate]])]);
+}
+
+it('asks the Frankfurter API for rand to the pound, sending nothing else', function (): void {
+    zarApiReturns(22.747);
+
+    expect(app(ZarRate::class)->perPound())->toBe(22.747);
+
+    Http::assertSentCount(1);
+    Http::assertSent(fn ($request): bool => $request->method() === 'GET'
+        && str_starts_with($request->url(), 'https://api.frankfurter.dev/v1/latest')
+        && $request['base'] === 'GBP' && $request['symbols'] === 'ZAR'
+        && ! str_contains($request->url(), '@'));
+});
+
+it('keeps a good rate for the next calls instead of asking again', function (): void {
+    zarApiReturns(22.747);
+
+    app(ZarRate::class)->perPound();
+    app(ZarRate::class)->perPound();
+    (new DashboardFigures)->zar(100000);
+
+    Http::assertSentCount(1);
+});
+
+it('has no rate when the API fails, and does not ask again for a few minutes', function (mixed $answer): void {
+    Http::fake(['api.frankfurter.dev/*' => $answer]);
+
+    expect(app(ZarRate::class)->perPound())->toBeNull()
+        ->and(app(ZarRate::class)->perPound())->toBeNull()
+        ->and((new DashboardFigures)->zar(100000))->toBeNull();
+
+    Http::assertSentCount(1);
+
+    // After the five minutes it asks again, and a good answer then gives the rate.
+    $this->travel(6)->minutes();
+    zarApiReturns(22.5);
+
+    expect(app(ZarRate::class)->perPound())->toBe(22.5);
+})->with([
+    'a server error' => fn () => Http::response('', 500),
+    'not JSON' => fn () => Http::response('<html>down</html>', 200),
+    'no ZAR in the answer' => fn () => Http::response(['rates' => ['USD' => 1.3]]),
+    'a rate that is not positive' => fn () => Http::response(['rates' => ['ZAR' => 0]]),
+    'a rate that is not a number' => fn () => Http::response(['rates' => ['ZAR' => 'lots']]),
+    'no connection' => fn () => Http::failedConnection(),
+]);
+
+it('works out whole rand from pence at the rate, rounded half up', function (): void {
+    zarApiReturns(23.4);
 
     $figures = new DashboardFigures;
 
@@ -321,22 +380,18 @@ it('works out whole rand from pence at the rate in the settings, rounded half up
     expect($figures->zar(100000))->toBe('R 23,400')
         ->and($figures->zar(100))->toBe('R 23')
         ->and($figures->zar(3))->toBe('R 1')
-        ->and($figures->zar(0))->toBe('R 0');
+        ->and($figures->zar(0))->toBe('R 0')
+        ->and($figures->zarRate())->toBe('23.4');
 
     // Half a rand rounds up: £0.50 at R23.00 is R11.50.
-    config()->set('store.zar_per_gbp', '23');
+    Cache::forget(ZarRate::CACHE_KEY);
+    zarApiReturns(23.0);
 
     expect($figures->zar(50))->toBe('R 12');
 });
 
-it('shows no rand value when no rate is set or the rate is not a positive number', function (mixed $rate): void {
-    config()->set('store.zar_per_gbp', $rate);
-
-    expect((new DashboardFigures)->zar(100000))->toBeNull();
-})->with([null, '', 'abc', '0', '-3']);
-
 it('shows a small muted rand value beside the pounds on the three money tiles only', function (): void {
-    config()->set('store.zar_per_gbp', '20');
+    zarApiReturns(20.0);
     dashboardStaff();
     profitLine(dashboardOrder(['total' => 12000, 'sub_total' => 10000]), 4500, 3, ['cost_price' => 1000]);
 
@@ -349,13 +404,14 @@ it('shows a small muted rand value beside the pounds on the three money tiles on
         ->and($html)->toContain('R 667')
         ->and($html)->toContain('R 300')
         ->and($html)->toContain('£120.00')
+        ->and($html)->toContain('at R20 to the pound')
         ->and((string) file_get_contents(resource_path('views/admin/dashboard-tiles.blade.php')))->toContain('.sales-tile .sales-tile-zar');
 });
 
-it('shows the pounds alone while no rand rate is set', function (): void {
-    config()->set('store.zar_per_gbp', null);
+it('shows the pounds alone when the rate cannot be fetched', function (): void {
+    Http::fake(['api.frankfurter.dev/*' => Http::response('', 503)]);
     dashboardStaff();
     dashboardOrder(['total' => 12000]);
 
-    Livewire::test(SalesTilesWidget::class)->assertSee('£120.00')->assertDontSee('sales-tile-zar', false);
+    Livewire::test(SalesTilesWidget::class)->assertSee('£120.00')->assertDontSee('sales-tile-zar', false)->assertDontSee('R 0');
 });

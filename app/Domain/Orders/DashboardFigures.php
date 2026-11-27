@@ -110,22 +110,31 @@ final class DashboardFigures
     }
 
     /**
-     * An amount in pence as whole South African rand, like "R 28,461", at the rate set in STORE_ZAR_PER_GBP (rand to the pound),
-     * or null when no rate is set (the tiles then show pounds only). Worked out in whole pence and ten-thousandths of a rand, rounded half up,
-     * so no float touches the money. It is an indication for the shop owner, not an accounting figure.
+     * An amount in pence as whole South African rand, like "R 28,461", at today's rate (ZarRate: rand to the pound from the
+     * Frankfurter API), or null when the rate is not known (the tiles then show pounds only). Worked out in whole pence and
+     * ten-thousandths of a rand, rounded half up, so no float touches the money. It is an indication for the shop owner, not
+     * an accounting figure.
      */
     public function zar(int $pence): ?string
     {
-        $rate = config('store.zar_per_gbp');
+        $rate = app(ZarRate::class)->perPound();
 
-        if (! is_numeric($rate) || (float) $rate <= 0) {
+        if ($rate === null) {
             return null;
         }
 
-        $tenThousandths = (int) round((float) $rate * 10000);
+        $tenThousandths = (int) round($rate * 10000);
         $rand = intdiv($pence * $tenThousandths * 2 + 1_000_000, 2_000_000);
 
         return 'R '.number_format($rand);
+    }
+
+    /** The rate behind zar(), like "22.747", or null when it is not known. */
+    public function zarRate(): ?string
+    {
+        $rate = app(ZarRate::class)->perPound();
+
+        return $rate === null ? null : rtrim(rtrim(number_format($rate, 4, '.', ''), '0'), '.');
     }
 
     /**

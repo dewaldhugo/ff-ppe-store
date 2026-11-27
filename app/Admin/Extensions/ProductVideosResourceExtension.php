@@ -6,6 +6,7 @@ namespace App\Admin\Extensions;
 
 use App\Domain\Catalogue\Media\ProductMediaDefinitions;
 use App\Domain\Catalogue\Media\VideoLink;
+use App\Domain\Catalogue\Media\VideoUploadLimit;
 use Closure;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
@@ -26,15 +27,15 @@ use Lunar\Models\Product;
  */
 final class ProductVideosResourceExtension extends ResourceExtension
 {
-    /** The largest video, in kilobytes (200 MB). The server's own upload limits (PHP, the web server) must allow it too. */
-    public const int MAX_KILOBYTES = 204800;
-
     public function extendForm(Schema $schema): Schema
     {
+        // The largest video this server really takes (VideoUploadLimit): the store's 200 MB or what PHP allows, if less.
+        $limit = new VideoUploadLimit;
+
         return $schema->components([
             ...$schema->getComponents(withHidden: true),
             Section::make('Product videos')
-                ->description('Shown on the product page under the vendor\'s own video, in this order. Upload MP4 or WebM files (up to 200 MB each) or add a video by its web address.')
+                ->description('Shown on the product page under the vendor\'s own video, in this order. Upload MP4 or WebM files or add a video by its web address.')
                 ->columnSpanFull()
                 ->collapsible()
                 // Edit page only: a new product has no record to attach a file to yet.
@@ -49,8 +50,10 @@ final class ProductVideosResourceExtension extends ResourceExtension
                         ->reorderable()
                         ->downloadable()
                         ->acceptedFileTypes(['video/mp4', 'video/webm'])
-                        ->maxSize(self::MAX_KILOBYTES)
-                        ->helperText('Drag to change the order. Remove one to take it off the product page.'),
+                        // A file over the limit is turned away at once, with the limit named, instead of failing part way.
+                        ->maxSize($limit->kilobytes())
+                        ->validationMessages($limit->validationMessages())
+                        ->helperText('Drag to change the order. Remove one to take it off the product page. '.$limit->helperText()),
                     Repeater::make('videoLinks')
                         ->label('Video links')
                         ->relationship('videoLinks')
