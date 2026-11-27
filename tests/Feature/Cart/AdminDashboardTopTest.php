@@ -255,11 +255,14 @@ it('colours the tiles green, red, blue and orange down the columns, the same eve
 
     $html = Livewire::test(SalesTilesWidget::class)->html();
 
-    // Nine tiles: each colour twice in column order, first row then second, then the gross profit tile on a row of its own.
+    // The gross profit tile leads, light blue, on a row of its own; then eight tiles: each colour twice in column order, first row then second.
     preg_match_all('/sales-tile--(success|danger|info|warning)/', $html, $colours);
 
-    expect($colours[1])->toBe(['success', 'danger', 'info', 'warning', 'success', 'danger', 'info', 'warning', 'success'])
-        ->and($html)->toContain('sales-tile--wide');
+    expect($colours[1])->toBe(['success', 'danger', 'info', 'warning', 'success', 'danger', 'info', 'warning'])
+        ->and(substr_count($html, 'sales-tile--sky'))->toBe(1)
+        ->and(substr_count($html, 'sales-tile--wide'))->toBe(1)
+        ->and(strpos($html, 'sales-tile--sky'))->toBeLessThan(strpos($html, 'sales-tile--success'))
+        ->and(strpos($html, 'Gross profit this month'))->toBeLessThan(strpos($html, 'Total income (inc VAT)'));
 
     // The colours are defined in the admin styles, from Filament's own variables (no colour of our own).
     $styles = (string) file_get_contents(resource_path('views/admin/dashboard-tiles.blade.php'));
@@ -473,4 +476,11 @@ it('adds up an order\'s gross profit without the delivery line or another order\
     profitLine(dashboardOrder(), 9000, 1, ['cost_price' => 1]);
 
     expect(app(OrderLineProfit::class)->forOrder($order->load('lines')))->toBe(1500 + 500);
+});
+
+it('draws the gross profit tile light blue with dark text', function (): void {
+    $styles = (string) file_get_contents(resource_path('views/admin/dashboard-tiles.blade.php'));
+
+    expect($styles)->toContain('.sales-tile.sales-tile--sky { background-color: #bfe3f7 !important; color: #0b2540; }')
+        ->toContain('.sales-tile.sales-tile--sky .fi-wi-stats-overview-stat-value { color: #0b2540 !important; }');
 });

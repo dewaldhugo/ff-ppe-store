@@ -7,6 +7,10 @@
     .fi-wi-stats-overview-stat.sales-tile--danger { background-color: var(--danger-700) !important; }
     .fi-wi-stats-overview-stat.sales-tile--info { background-color: var(--info-700) !important; }
     .fi-wi-stats-overview-stat.sales-tile--warning { background-color: var(--warning-700) !important; }
+    /* The gross profit tile: light blue with dark text (white would not be readable on it; #0b2540 on #bfe3f7 is above 11:1). */
+    .fi-wi-stats-overview-stat.sales-tile.sales-tile--sky { background-color: #bfe3f7 !important; color: #0b2540; }
+    .sales-tile.sales-tile--sky .fi-wi-stats-overview-stat-label,
+    .sales-tile.sales-tile--sky .fi-wi-stats-overview-stat-value { color: #0b2540 !important; }
     /* The rand value beside the pounds on a money tile: small and muted. */
     .sales-tile .sales-tile-zar { margin-left: 0.5rem; font-size: 0.96rem; font-weight: 400; opacity: 0.75; white-space: nowrap; }
     /* The gross profit tile has a row of its own, across every column. */
