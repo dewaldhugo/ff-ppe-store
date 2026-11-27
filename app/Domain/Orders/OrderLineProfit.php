@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Orders;
 
+use Lunar\Models\Order;
 use Lunar\Models\OrderLine;
 
 /**
@@ -32,6 +33,14 @@ final class OrderLineProfit
     public function profit(OrderLine $line): int
     {
         return $this->revenue($line) - $this->cost($line);
+    }
+
+    /** What a whole order earned: the profit on its goods lines (delivery is not goods and is left out). Reads the order's lines relation. */
+    public function forOrder(Order $order): int
+    {
+        return (int) $order->lines
+            ->filter(fn (OrderLine $line): bool => $line->type === 'physical')
+            ->sum(fn (OrderLine $line): int => $this->profit($line));
     }
 
     /** A price ex VAT with the markup taken off, in whole pence, rounded half up (the markup in thousandths, so no float touches the money). */
