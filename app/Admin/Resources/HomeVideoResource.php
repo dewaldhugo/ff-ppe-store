@@ -7,6 +7,7 @@ namespace App\Admin\Resources;
 use App\Admin\Resources\HomeVideoResource\Pages\CreateHomeVideo;
 use App\Admin\Resources\HomeVideoResource\Pages\EditHomeVideo;
 use App\Admin\Resources\HomeVideoResource\Pages\ListHomeVideos;
+use App\Admin\WebsiteContent;
 use App\Domain\Catalogue\Home\HomeVideos;
 use App\Domain\Catalogue\Media\VideoUploadLimit;
 use App\Models\HomeVideo;
@@ -51,7 +52,7 @@ final class HomeVideoResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return __('lunarpanel::global.sections.catalog');
+        return WebsiteContent::GROUP;
     }
 
     public static function canViewAny(): bool
@@ -172,7 +173,7 @@ final class HomeVideoResource extends Resource
             ])
             ->recordActions([EditAction::make(), DeleteAction::make()])
             ->emptyStateHeading('No home videos yet')
-            ->emptyStateDescription('Until you add some, the home page shows its standard videos. Add the standard ones here to edit them, or add your own.');
+            ->emptyStateDescription('Until you add some, the home page shows its standard videos. Add your own and they take over.');
     }
 
     public static function getPages(): array

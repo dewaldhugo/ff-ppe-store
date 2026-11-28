@@ -7,6 +7,7 @@ namespace App\Admin\Resources;
 use App\Admin\Resources\SpotlightBannerResource\Pages\CreateSpotlightBanner;
 use App\Admin\Resources\SpotlightBannerResource\Pages\EditSpotlightBanner;
 use App\Admin\Resources\SpotlightBannerResource\Pages\ListSpotlightBanners;
+use App\Admin\WebsiteContent;
 use App\Models\SpotlightBanner;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
@@ -47,7 +48,7 @@ final class SpotlightBannerResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return __('lunarpanel::global.sections.catalog');
+        return WebsiteContent::GROUP;
     }
 
     public static function canViewAny(): bool
@@ -141,7 +142,7 @@ final class SpotlightBannerResource extends Resource
             ])
             ->recordActions([EditAction::make(), DeleteAction::make()])
             ->emptyStateHeading('No spotlight banners yet')
-            ->emptyStateDescription('Until you add some, the home page uses its standard spotlight campaigns. Add a banner and a product to take over.');
+            ->emptyStateDescription('Until you add some, the home page uses its standard spotlight campaigns. Add a banner and a product and they take over.');
     }
 
     public static function getPages(): array

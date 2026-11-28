@@ -7,6 +7,7 @@ namespace App\Admin\Resources;
 use App\Admin\Resources\HeroContentResource\Pages\CreateHeroContent;
 use App\Admin\Resources\HeroContentResource\Pages\EditHeroContent;
 use App\Admin\Resources\HeroContentResource\Pages\ListHeroContents;
+use App\Admin\WebsiteContent;
 use App\Models\HeroContent;
 use Closure;
 use Filament\Actions\DeleteAction;
@@ -45,7 +46,7 @@ final class HeroContentResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return __('lunarpanel::global.sections.catalog');
+        return WebsiteContent::GROUP;
     }
 
     public static function canViewAny(): bool
@@ -133,7 +134,7 @@ final class HeroContentResource extends Resource
             ])
             ->recordActions([EditAction::make(), DeleteAction::make()])
             ->emptyStateHeading('No hero content yet')
-            ->emptyStateDescription('Until you add some, the home page uses its standard headings. Add the standard ones here to edit them, or add your own.');
+            ->emptyStateDescription('Until you add some, the home page uses its standard headings. Add your own and they take over.');
     }
 
     public static function getPages(): array

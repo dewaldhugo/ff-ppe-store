@@ -53,35 +53,6 @@ final class HeroContents
         return str_starts_with($link, '/') ? url($link) : $link;
     }
 
-    /**
-     * Copies the headings of config/homepage.php into the admin's list as sets with the standard sub-heading and button, for a store
-     * that wants to edit them there. A heading already in the list is left alone, so it can be run again.
-     */
-    public function importStandard(): int
-    {
-        $position = (int) HeroContent::query()->max('position');
-        $added = 0;
-
-        foreach ((array) config('homepage.hero_headings') as $heading) {
-            if (! is_string($heading) || trim($heading) === '' || HeroContent::query()->where('heading', $heading)->exists()) {
-                continue;
-            }
-
-            HeroContent::query()->create([
-                'heading' => $heading,
-                'sub_heading' => self::DEFAULT_SUB_HEADING,
-                'cta_text' => self::DEFAULT_CTA_TEXT,
-                'cta_link' => '/shop',
-                'active' => true,
-                'position' => ++$position,
-            ]);
-
-            $added++;
-        }
-
-        return $added;
-    }
-
     /** @return list<HeroContent> */
     private function sets(): array
     {
