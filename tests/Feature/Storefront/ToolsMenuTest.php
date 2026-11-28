@@ -3,10 +3,24 @@
 declare(strict_types=1);
 use App\Models\User;
 
-// The Size Guide and Technical Features links are a Tools menu beside the search box (resources/views/components/storefront/header.blade.php),
-// not items of the main menu bar, and the search box is no longer the whole width of the bar.
+// The Size Guide and Technical Features links are two links with an icon each beside the search box
+// (resources/views/components/storefront/header.blade.php), not items of the main menu bar and not a drop down, and the search box
+// is no longer the whole width of the bar.
 
-it('puts a Tools menu beside the search, after it and before the favourites and cart', function (): void {
+/**
+ * The two Tools links beside the search, as the markup of each.
+ *
+ * @return list<string>
+ */
+function toolLinks(string $html): array
+{
+    preg_match('#<ul[^>]*data-tools-menu.*?</ul>#s', $html, $list);
+    preg_match_all('#<a\s[^>]*data-tool-link.*?</a>#s', $list[0] ?? '', $links);
+
+    return $links[0];
+}
+
+it('puts the two Tools links beside the search, after it and before the favourites and cart', function (): void {
     $html = $this->get(route('about'))->assertOk()->getContent();
 
     $search = strpos($html, 'role="search"');
@@ -14,30 +28,48 @@ it('puts a Tools menu beside the search, after it and before the favourites and 
 
     expect($search)->not->toBeFalse()->and($tools)->not->toBeFalse()
         ->and($tools)->toBeGreaterThan($search)
-        // Straight after the search form: nothing but the form's own markup between them.
         ->and(substr($html, (int) $search, (int) $tools - (int) $search))->not->toContain('data-cart-link');
 });
 
-it('lists the size guide and the technical features in the Tools menu, in that order, with their own links', function (): void {
+it('shows the size guide and the technical features as links, not a drop down', function (): void {
     $html = $this->get(route('about'))->assertOk()->getContent();
 
-    preg_match('#<details.*?data-tools-menu.*?</details>#s', $html, $tools);
-    preg_match_all('#<a href="([^"]+)"[^>]*>([^<]+)</a>#', $tools[0], $links, PREG_SET_ORDER);
+    $links = toolLinks($html);
 
-    expect(array_column($links, 1))->toBe([route('size-guide'), route('technical-features')])
-        ->and(array_map('trim', array_column($links, 2)))->toBe(['Size Guide', 'Technical Features'])
-        ->and($tools[0])->toContain('data-tools-button')->toContain('>Tools');
+    expect($links)->toHaveCount(2)
+        ->and($links[0])->toContain('href="'.route('size-guide').'"')->toContain('Size Guide')
+        ->and($links[1])->toContain('href="'.route('technical-features').'"')->toContain('Technical Features')
+        ->and($html)->not->toContain('data-tools-button')->not->toContain('data-tools-list')
+        ->and($html)->not->toContain('<details');
 });
 
-it('is a native details element, so it opens without JavaScript, and is for large screens only', function (): void {
+it('gives each link its own icon', function (): void {
+    $links = toolLinks($this->get(route('about'))->assertOk()->getContent());
+
+    expect($links[0])->toContain('data-tool-icon="size-guide"')
+        ->and($links[1])->toContain('data-tool-icon="technical-features"')
+        // Decoration: hidden from a screen reader, which reads the name.
+        ->and($links[0])->toContain('<svg aria-hidden="true"')
+        ->and($links[1])->toContain('<svg aria-hidden="true"')
+        // The two icons are different pictures.
+        ->and(preg_replace('/\s+/', '', $links[0]))->not->toBe(preg_replace('/\s+/', '', $links[1]));
+});
+
+it('shows the words from the xl breakpoint, and the icon alone below it with the name for a screen reader and a tooltip', function (): void {
+    $links = toolLinks($this->get(route('about'))->assertOk()->getContent());
+
+    foreach ([['Size Guide', 0], ['Technical Features', 1]] as [$label, $index]) {
+        expect($links[$index])->toContain('title="'.$label.'"')
+            ->and($links[$index])->toMatch('#<span class="sr-only xl:not-sr-only">'.$label.'</span>#');
+    }
+});
+
+it('is for large screens only, the mobile menu having the same links', function (): void {
     $html = $this->get(route('about'))->assertOk()->getContent();
 
-    preg_match('#<details[^>]*data-tools-menu[^>]*>#s', $html, $details);
+    preg_match('#<ul[^>]*data-tools-menu[^>]*>#', $html, $list);
 
-    expect($details[0])->toContain('hidden lg:block')
-        // The menu closes on a click outside and on Escape.
-        ->and($details[0])->toContain("x-on:click.outside=\"\$el.removeAttribute('open')\"")
-        ->and($details[0])->toContain("x-on:keydown.escape=\"\$el.removeAttribute('open')\"");
+    expect($list[0])->toContain('hidden')->toContain('lg:flex');
 });
 
 it('takes the size guide and technical features out of the main menu bar', function (): void {
@@ -50,29 +82,20 @@ it('takes the size guide and technical features out of the main menu bar', funct
         ->and($nav[0])->toContain('>Brands<')->toContain('>Wear Trials<')->toContain('>PPE Health Check<')->toContain('>About<')->toContain('>Contact<');
 });
 
-it('marks Tools as current on the size guide and the technical features pages, and only there', function (): void {
-    foreach (['size-guide', 'technical-features'] as $name) {
-        $html = $this->get(route($name))->assertOk()->getContent();
+it('marks the link of the page you are on as current, and only that one', function (): void {
+    foreach (['size-guide' => 0, 'technical-features' => 1] as $name => $index) {
+        $links = toolLinks($this->get(route($name))->assertOk()->getContent());
 
-        preg_match('#<summary[^>]*data-tools-button[^>]*>#', $html, $summary);
-        preg_match('#<div[^>]*data-tools-list.*?</div>#s', $html, $list);
-
-        expect($summary[0])->toMatch('/(?<![:\w-])bg-surface-muted/')
-            ->and(substr_count($list[0], 'aria-current="page"'))->toBe(1)
-            ->and($list[0])->toMatch('#<a href="'.preg_quote(route($name), '#').'"[^>]*aria-current="page"#');
+        expect($links[$index])->toContain('aria-current="page"')->toMatch('/(?<![:\w-])bg-surface-muted/')
+            ->and($links[1 - $index])->not->toContain('aria-current')->not->toMatch('/(?<![:\w-])bg-surface-muted/');
     }
 
-    $html = $this->get(route('about'))->assertOk()->getContent();
-
-    preg_match('#<summary[^>]*data-tools-button[^>]*>#', $html, $summary);
-    preg_match('#<div[^>]*data-tools-list.*?</div>#s', $html, $list);
-
-    // Only the hover tint is on the button, and no link in the list is current.
-    expect($summary[0])->not->toMatch('/(?<![:\w-])bg-surface-muted/')
-        ->and($list[0])->not->toContain('aria-current');
+    foreach (toolLinks($this->get(route('about'))->assertOk()->getContent()) as $link) {
+        expect($link)->not->toContain('aria-current')->not->toMatch('/(?<![:\w-])bg-surface-muted/');
+    }
 });
 
-it('keeps the Tools links in the mobile menu, in a group of their own', function (): void {
+it('keeps the Tools links in the mobile menu, in a group of their own, with the same icons', function (): void {
     $html = $this->get(route('about'))->assertOk()->getContent();
 
     preg_match('#id="mobile-menu".*?</nav>#s', $html, $drawer);
@@ -80,7 +103,8 @@ it('keeps the Tools links in the mobile menu, in a group of their own', function
 
     expect($drawer[0])->toContain('>Tools</span>')
         ->and($tools[0])->toContain('href="'.route('size-guide').'"')->toContain('href="'.route('technical-features').'"')
-        // The old place of the two links, in the drawer's main list, is gone: each is in the Tools group only.
+        ->and($tools[0])->toContain('data-tool-icon="size-guide"')->toContain('data-tool-icon="technical-features"')
+        // Each is in the Tools group only.
         ->and(substr_count($drawer[0], 'href="'.route('size-guide').'"'))->toBe(1)
         ->and(substr_count($drawer[0], 'href="'.route('technical-features').'"'))->toBe(1);
 });
