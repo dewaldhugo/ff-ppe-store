@@ -125,7 +125,7 @@ it('still renders one empty h1 when no heading is configured', function (): void
 it('links the primary button to the shop and the secondary button to registration, with the same corner radius', function (): void {
     $hero = heroSection($this->get(route('home'))->getContent());
 
-    expect($hero)->toMatch('#<a href="'.preg_quote(route('shop'), '#').'"[^>]*rounded-md[^>]*bg-brand-teal[^>]*text-brand-navy[^>]*>View all products</a>#')
+    expect($hero)->toMatch('#<a href="'.preg_quote(route('shop'), '#').'"[^>]*rounded-md[^>]*bg-brand-teal[^>]*text-white[^>]*>View all products</a>#')
         ->and($hero)->not->toMatch('#<a href="'.preg_quote(route('shop'), '#').'"[^>]*bg-white[^>]*>View all products</a>#')
         ->and($hero)->toMatch('#<a href="'.preg_quote(route('register'), '#').'"[^>]*rounded-md[^>]*border-brand-teal[^>]*>Open a trade account</a>#')
         ->and($hero)->not->toContain('rounded-full');
@@ -139,7 +139,7 @@ it('pins the View product button to the bottom of every card, so cards match in 
     $cards = preg_match_all('#<span[^>]*data-view-product#', $html);
 
     expect($cards)->toBeGreaterThan(0)
-        ->and(preg_match_all('#<div class="mt-auto flex flex-col">(?:\s|<!--.*?-->)*(?:<p[^>]*data-price.*?</p>(?:\s|<!--.*?-->)*)?<span[^>]*data-view-product#s', $html))->toBe($cards);
+        ->and(preg_match_all('#<div class="mt-auto flex flex-col">(?:\s|<!--.*?-->)*(?:<p[^>]*data-price.*?</p>(?:\s|<!--.*?-->)*)?(?:<form[^>]*data-compare-form.*?</form>(?:\s|<!--.*?-->)*)?<span[^>]*data-view-product#s', $html))->toBe($cards);
 })->with(['home', 'listing']);
 
 /** The first page of the video section: the two players that are shown when the page opens. */
@@ -430,10 +430,10 @@ it('registers resources/images with Vite so the hero is built', function (): voi
         ->and(HeroImage::SOURCE)->toBe('resources/images/hero/hero.webp');
 });
 
-it('gives the accent button a teal fill with navy text that meets AA', function (): void {
+it('gives the primary button the deep teal with white text, and the accent button the bright teal with navy text, both meeting AA', function (): void {
     $button = (string) file_get_contents(resource_path('views/components/ui/button.blade.php'));
 
-    expect($button)->toContain('bg-brand-teal text-brand-navy');
+    expect($button)->toContain('bg-brand-teal text-white')->toContain('bg-brand-teal-bright text-brand-navy');
 });
 
 // The client supplied customer testimonials (HomeTestimonialsTest), so only a client logo wall is still not claimed.

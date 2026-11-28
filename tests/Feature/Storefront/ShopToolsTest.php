@@ -78,6 +78,17 @@ it('shows the strip on the home page once something has been viewed', function (
         ->and(strpos($html, 'data-home-recent'))->toBeLessThan(strpos($html, 'data-home-service'));
 });
 
+it('has the Compare tick on each of the home page featured products', function (): void {
+    $html = $this->get(route('home'))->assertOk()->getContent();
+
+    preg_match('#<section[^>]*data-home-products.*?</section>#s', $html, $section);
+
+    $cards = substr_count($section[0] ?? '', 'data-home-product>');
+
+    expect($cards)->toBeGreaterThan(0)
+        ->and(substr_count($section[0], 'data-compare-checkbox'))->toBe($cards);
+});
+
 // --- Search suggestions ----------------------------------------------------------------------------
 
 it('suggests products for what has been typed, as JSON, with a link to all the results', function (): void {
