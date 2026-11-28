@@ -3,8 +3,9 @@
 declare(strict_types=1);
 
 use App\Domain\Catalogue\Options\ShoeSizes;
-use App\Domain\Orders\LineDetails;
+use App\Domain\Orders\Invoice;
 use App\Domain\Orders\InvoicePdf;
+use App\Domain\Orders\LineDetails;
 use Illuminate\Support\Facades\Blade;
 use Lunar\Base\ValueObjects\Cart\TaxBreakdown;
 use Lunar\Models\Channel;
@@ -75,7 +76,7 @@ it('lays the PDF\'s lines table out with UK Size before EU Size, VAT and Amount 
     $order = sizedOrder(['colour' => 'Black', 'eu_size' => '41']);
 
     $html = view('admin.pdf.invoice', [
-        'invoice' => new App\Domain\Orders\Invoice($order), 'order' => $order, 'colours' => InvoicePdf::COLOURS, 'logo' => public_path('images/frontline-logo.png'),
+        'invoice' => new Invoice($order), 'order' => $order, 'colours' => InvoicePdf::COLOURS, 'logo' => public_path('images/frontline-logo.png'),
     ])->render();
 
     preg_match('#<thead>.*?</thead>#s', $html, $head);
