@@ -93,7 +93,7 @@ it('has no margin before the first sale', function (): void {
 
 it('splits the year into months, only the months so far in this year and all twelve in an earlier one', function (): void {
     reportOrder(['sub_total' => 10000, 'placed_at' => '2026-01-05 10:00:00'], [['A', 2, 10000, 4000, 'physical']]);
-    reportOrder(['sub_total' => 20000, 'placed_at' => '2026-03-05 10:00:00'], [['A', 5, 20000, 6000, 'physical']]);
+    reportOrder(['sub_total' => 20000, 'placed_at' => '2026-03-05 10:00:00'], [['A', 5, 20000, 3000, 'physical']]);
     reportOrder(['sub_total' => 7000, 'placed_at' => '2025-11-05 10:00:00'], [['A', 1, 7000, 2000, 'physical']]);
 
     $this_year = app(FinancialReport::class)->forYear(2026);

@@ -25,7 +25,7 @@ it('has the five category cards, each a link to its category with its picture', 
 
     preg_match('#<div[^>]*data-home-categories.*?</ul>#s', $html, $section);
 
-    expect(substr_count($section[0], 'data-category-image'))->toBe(5)
+    expect(preg_match_all('#data-category-image(?![-\w])#', $section[0]))->toBe(5)
         ->and($section[0])->toContain('lg:grid-cols-5');
 
     foreach (['safety-footwear', 'non-safety-footwear', 'apparel', 'ppe-gear', 'accessories'] as $handle) {
@@ -38,7 +38,9 @@ it('has the five category cards, each a link to its category with its picture', 
 
 it('has the same cards on the home page as on /shop', function (): void {
     $card = fn (string $html): array => (function () use ($html): array {
-        preg_match_all('#<a href="([^"]+)" class="[^"]*after:absolute[^"]*"#', $html, $links);
+        // Only the cards' own list: the product cards and guides further down have stretched links too.
+        preg_match('#data-category-grid.*?</ul>#s', $html, $grid);
+        preg_match_all('#<a href="([^"]+)" class="[^"]*after:absolute[^"]*"#', $grid[0] ?? '', $links);
 
         return $links[1];
     })();

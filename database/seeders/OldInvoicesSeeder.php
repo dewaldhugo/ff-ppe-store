@@ -9,6 +9,7 @@ use App\Domain\Catalogue\Options\ShoeSizes;
 use App\Domain\Checkout\PaymentMethods;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Lunar\Base\OrderReferenceGeneratorInterface;
@@ -83,7 +84,7 @@ final class OldInvoicesSeeder extends Seeder
     /** @var array<string, list<int>>|null Normalised product name => product ids. */
     private ?array $productIds = null;
 
-    /** @var array<int, \Illuminate\Support\Collection<int, ProductVariant>> */
+    /** @var array<int, Collection<int, ProductVariant>> */
     private array $variants = [];
 
     public function run(): void
@@ -316,8 +317,8 @@ final class OldInvoicesSeeder extends Seeder
         return $this->productIds;
     }
 
-    /** @return \Illuminate\Support\Collection<int, ProductVariant> */
-    private function variantsOf(int $productId): \Illuminate\Support\Collection
+    /** @return Collection<int, ProductVariant> */
+    private function variantsOf(int $productId): Collection
     {
         return $this->variants[$productId] ??= ProductVariant::query()->where('product_id', $productId)->with('values.option')->get();
     }

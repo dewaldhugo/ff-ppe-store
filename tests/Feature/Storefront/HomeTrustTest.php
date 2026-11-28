@@ -151,3 +151,18 @@ it('ends the home page with the service strip, just above the footer', function 
 
     expect($between)->not->toContain('<section');
 });
+
+it('gives each service claim a navy disc with a white icon and a line of text under its label', function (): void {
+    $html = $this->get(route('home'))->assertOk()->getContent();
+
+    preg_match('#<section[^>]*data-home-service.*?</section>#s', $html, $section);
+    $strip = $section[0];
+
+    expect(substr_count($strip, 'data-service-item'))->toBe(4)
+        ->and(substr_count($strip, 'data-service-text'))->toBe(4)
+        ->and($strip)->toContain('bg-brand-navy text-white')
+        ->and($strip)->toContain('Rapid nationwide dispatch')->toContain('Competitive bulk pricing')
+        // The rule between the claims is on every one but the first.
+        ->and(substr_count($strip, 'lg:border-l'))->toBe(3)
+        ->and($strip)->not->toContain('—')->not->toContain('–');
+});

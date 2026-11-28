@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Admin\Resources\InvoiceResource;
 use App\Admin\Resources\InvoiceResource\Pages\ListInvoices;
 use App\Admin\Widgets\RecentOrdersWidget;
+use App\Domain\Orders\Invoice;
 use App\Domain\Orders\InvoiceNumbers;
 use App\Domain\Orders\InvoicePdf;
 use Carbon\Carbon;
@@ -119,7 +120,7 @@ it('shows on the PDF what the invoice page shows: number, date, parties, lines, 
     $order = adminInvoiceOrder(['customer_reference' => 'LMLLP / 29095']);
 
     $html = view('admin.pdf.invoice', [
-        'invoice' => new App\Domain\Orders\Invoice($order),
+        'invoice' => new Invoice($order),
         'order' => $order,
         'colours' => InvoicePdf::COLOURS,
         'logo' => public_path('images/frontline-logo.png'),
@@ -143,7 +144,7 @@ it('shows the due date and bank details on an invoice still to pay', function ()
     $order = adminInvoiceOrder(['status' => 'awaiting-payment']);
 
     $html = view('admin.pdf.invoice', [
-        'invoice' => new App\Domain\Orders\Invoice($order),
+        'invoice' => new Invoice($order),
         'order' => $order,
         'colours' => InvoicePdf::COLOURS,
         'logo' => public_path('images/frontline-logo.png'),
@@ -195,7 +196,7 @@ it('sorts the invoice lines by product name, then colour, then size smallest fir
     }
 
     $order->lines()->where('identifier', 'SJ-1713342')->update(['identifier' => 'ID-3']);
-    $invoice = new App\Domain\Orders\Invoice($order->fresh(['lines']));
+    $invoice = new Invoice($order->fresh(['lines']));
 
     // Product name first (CADOR before CADOR S3 MID before LIGERO), then colour, then size: EU sizes 38, 41, 44, and 6.5, 9, 10 as numbers.
     expect($invoice->goodsLines()->pluck('identifier')->all())->toBe(['ID-1', 'ID-2', 'ID-3', 'ID-4', 'ID-5', 'ID-6', 'ID-7', 'ID-8']);

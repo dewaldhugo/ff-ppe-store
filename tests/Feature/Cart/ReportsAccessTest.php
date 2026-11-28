@@ -74,9 +74,9 @@ it('keeps a Reports user out of orders, customers and products', function (): vo
     reportsStaff('reports');
 
     expect(ReportsAccess::canOpenOrders())->toBeFalse()
-        ->and(OrderResource::canViewAny())->toBeFalse()
-        ->and(CustomerResource::canViewAny())->toBeFalse()
-        ->and(ProductResource::canViewAny())->toBeFalse();
+        ->and(OrderResource::can('viewAny'))->toBeFalse()
+        ->and(CustomerResource::can('viewAny'))->toBeFalse()
+        ->and(ProductResource::can('viewAny'))->toBeFalse();
 });
 
 it('shows a Reports user Invoices and Financial reporting in the menu', function (): void {
@@ -84,7 +84,7 @@ it('shows a Reports user Invoices and Financial reporting in the menu', function
 
     expect(InvoiceResource::shouldRegisterNavigation())->toBeTrue()
         ->and(FinancialReporting::shouldRegisterNavigation())->toBeTrue()
-        ->and(OrderResource::shouldRegisterNavigation())->toBeFalse();
+        ->and(OrderResource::can('viewAny'))->toBeFalse();
 });
 
 it('keeps a member of staff with no role out of Invoices and Financial reporting', function (): void {

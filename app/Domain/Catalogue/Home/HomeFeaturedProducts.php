@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Lunar\Models\Product;
 
 /**
- * The products shown in the home page "Featured products" section: half of them (4 of 8) picked
+ * The products shown in the home page "Featured products" section: half of them (5 of 10) picked
  * at random from published products in Safety Footwear and half from PPE & Gear (each category and
  * everything below it), that have an image and at least one priced variant, and then shown in random
  * order. A product in both categories is shown once. When one category has too few products, the
@@ -19,8 +19,11 @@ use Lunar\Models\Product;
  */
 final class HomeFeaturedProducts
 {
-    /** Four from each category: two even rows of four on desktop and four of two on mobile, never a lone product. */
-    public const int COUNT = 8;
+    /**
+     * Five from each category: two rows of five at the largest breakpoint (2xl). Below it the section shows the first eight (the last two
+     * are hidden, the product picks view), so that it is two even rows of four on desktop and four of two on mobile, never a lone product.
+     */
+    public const int COUNT = 10;
 
     /**
      * The categories the pick is limited to, by contract handle. Each supplies an equal share.

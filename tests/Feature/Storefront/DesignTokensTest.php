@@ -137,7 +137,8 @@ it('has no hard-coded colour in any template', function (): void {
             $offenders[] = "{$name}: {$match[0]}";
         }
 
-        if (preg_match('/(?<![\w&\/])#[0-9a-fA-F]{3,8}\b(?![\w-])/', $source, $match) === 1) {
+        // The admin panel (Filament) has its own styling: its tiles may use colours the storefront tokens do not have.
+        if (! str_starts_with($name, 'admin'.DIRECTORY_SEPARATOR) && preg_match('/(?<![\w&\/])#[0-9a-fA-F]{3,8}\b(?![\w-])/', $source, $match) === 1) {
             $offenders[] = "{$name}: {$match[0]}";
         }
 
@@ -170,8 +171,8 @@ it('never puts white text on a teal fill or teal text on a light surface', funct
             }
         }
 
-        // Teal text is only for dark surfaces: the eyebrows on the navy bands of the home and Health Check pages.
-        if (preg_match('/text-brand-teal(?![-\w])/', $source) === 1 && ! in_array(str_replace('\\', '/', $name), ['components/home/hero.blade.php', 'components/home/health-check.blade.php', 'pages/ppe-health-check.blade.php'], true)) {
+        // Teal text is only for dark surfaces: the eyebrows on the navy bands of the home and Health Check pages, and the arrow on the dark label gradient of an industry card.
+        if (preg_match('/text-brand-teal(?![-\w])/', $source) === 1 && ! in_array(str_replace('\\', '/', $name), ['components/home/hero.blade.php', 'components/home/health-check.blade.php', 'pages/ppe-health-check.blade.php', 'components/industry-slider.blade.php'], true)) {
             $offenders[] = "{$name}: text-brand-teal outside a dark band";
         }
     }

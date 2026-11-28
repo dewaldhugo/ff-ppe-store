@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Admin\Widgets\RecentOrdersWidget;
 use App\Admin\Widgets\SalesTilesWidget;
 use App\Domain\Orders\DashboardFigures;
+use App\Domain\Orders\OrderLineProfit;
 use App\Domain\Orders\ZarRate;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -352,7 +353,15 @@ it('keeps a good rate for the next calls instead of asking again', function (): 
 });
 
 it('has no rate when the API fails, and does not ask again for a few minutes', function (mixed $answer): void {
-    Http::fake(['api.frankfurter.dev/*' => $answer]);
+    // The first stub that matches wins, so a later Http::fake() cannot replace this one: the answer is chosen when it is asked.
+    $recovered = false;
+    Http::fake(['api.frankfurter.dev/*' => function ($request) use (&$recovered, $answer) {
+        if ($recovered) {
+            return Http::response(['amount' => 1.0, 'base' => 'GBP', 'date' => '2026-11-27', 'rates' => ['ZAR' => 22.5]]);
+        }
+
+        return $answer instanceof Closure ? $answer($request) : $answer;
+    }]);
 
     expect(app(ZarRate::class)->perPound())->toBeNull()
         ->and(app(ZarRate::class)->perPound())->toBeNull()
@@ -362,7 +371,7 @@ it('has no rate when the API fails, and does not ask again for a few minutes', f
 
     // After the five minutes it asks again, and a good answer then gives the rate.
     $this->travel(6)->minutes();
-    zarApiReturns(22.5);
+    $recovered = true;
 
     expect(app(ZarRate::class)->perPound())->toBe(22.5);
 })->with([

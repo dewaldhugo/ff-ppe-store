@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 use App\Models\User;
+use App\Support\GuideIcons;
 
 // The Size Guide and Technical Features links are two links with an icon each beside the search box
 // (resources/views/components/storefront/header.blade.php), not items of the main menu bar and not a drop down, and the search box
@@ -126,4 +127,46 @@ it('keeps the favourites and cart at the right of the bar', function (): void {
     preg_match('#<a[^>]*data-favourites-link[^>]*>#', $html, $favourites);
 
     expect($favourites[0])->toContain('ml-auto')->not->toContain('lg:ml-0');
+});
+
+it('uses the buying guide cards\' icons for the same two pages beside the search: a ruler and a shield', function (): void {
+    $html = $this->get(route('home'))->assertOk()->getContent();
+
+    preg_match('#<ul[^>]*data-tools-menu.*?</ul>#s', $html, $tools);
+    preg_match_all('#<svg[^>]*data-tool-icon="([^"]+)"[^>]*>(.*?)</svg>#s', $tools[0], $header, PREG_SET_ORDER);
+    preg_match('#<section[^>]*data-home-guides.*?</section>#s', $html, $guides);
+    preg_match_all('#<span[^>]*data-guide-icon>\s*<svg[^>]*>(.*?)</svg>#s', $guides[0], $cards);
+
+    $paths = fn (string $inside): array => array_map(fn (string $d): string => html_entity_decode($d), (preg_match_all('#<path d="([^"]+)"#', $inside, $found) ? $found[1] : []));
+
+    expect($header)->toHaveCount(2)
+        ->and($cards[1])->toHaveCount(2)
+        // The size guide: the card's ruler. The technical features: the card's shield.
+        ->and($header[0][1])->toBe('size-guide')->and($paths($header[0][2]))->toBe($paths($cards[1][0]))->and($paths($header[0][2]))->toBe(GuideIcons::PATHS['ruler'])
+        ->and($header[1][1])->toBe('technical-features')->and($paths($header[1][2]))->toBe($paths($cards[1][1]))->and($paths($header[1][2]))->toBe(GuideIcons::PATHS['shield']);
+});
+
+it('draws the header icons and the card icons from one definition, with the same line weight', function (): void {
+    $card = (string) file_get_contents(resource_path('views/components/home/guides.blade.php'));
+    $icon = (string) file_get_contents(resource_path('views/components/storefront/tool-icon.blade.php'));
+
+    expect($card)->toContain('\App\Support\GuideIcons::PATHS')->not->toContain('M3.75 7.5h16.5')
+        ->and($icon)->toContain('\App\Support\GuideIcons::forTool')->not->toContain('M3.75 7.5h16.5')->toContain('stroke-width="1.5"')
+        ->and($card)->toContain('stroke-width="1.5"');
+
+    // Every Tools link has an icon, and an unknown name has none.
+    expect(GuideIcons::forTool('size-guide'))->toBe(GuideIcons::PATHS['ruler'])
+        ->and(GuideIcons::forTool('technical-features'))->toBe(GuideIcons::PATHS['shield'])
+        ->and(GuideIcons::forTool('no-such-page'))->toBe([]);
+});
+
+it('shows the same ruler and shield in the mobile menu\'s Tools group', function (): void {
+    $html = $this->get(route('home'))->assertOk()->getContent();
+
+    preg_match('#<ul[^>]*data-drawer-tools.*?</ul>#s', $html, $drawer);
+    preg_match_all('#data-tool-icon="([^"]+)"[^>]*>(.*?)</svg>#s', $drawer[0], $icons, PREG_SET_ORDER);
+
+    expect($icons)->toHaveCount(2)
+        ->and(html_entity_decode($icons[0][2]))->toContain(GuideIcons::PATHS['ruler'][1])
+        ->and(html_entity_decode($icons[1][2]))->toContain('M9 12.75 11.25 15');
 });

@@ -142,26 +142,139 @@ it('pins the View product button to the bottom of every card, so cards match in 
         ->and(preg_match_all('#<div class="mt-auto flex flex-col">(?:\s|<!--.*?-->)*(?:<p[^>]*data-price.*?</p>(?:\s|<!--.*?-->)*)?<span[^>]*data-view-product#s', $html))->toBe($cards);
 })->with(['home', 'listing']);
 
-it('shows one autoplaying, muted video across the full width of the container, above the featured products', function (): void {
+/** The first page of the video section: the two players that are shown when the page opens. */
+function firstVideoPage(string $html): string
+{
+    preg_match('#<div[^>]*data-video-page(?=[\s>])[^>]*>.*?</div>#s', $html, $page);
+
+    return $page[0] ?? '';
+}
+
+it('shows two videos side by side that do not autoplay, in the width of the container, above the buying guides', function (): void {
     $html = $this->get(route('home'))->assertOk()->getContent();
 
     preg_match('#<section[^>]*data-home-video.*?</section>#s', $html, $section);
-    preg_match('#<video[^>]*>#s', $section[0] ?? '', $video);
-    preg_match('#<source[^>]*src="([^"]+)"[^>]*type="video/mp4"#', $section[0] ?? '', $source);
+    $first = firstVideoPage($html);
+    preg_match_all('#<video[^>]*>#s', $first, $videos);
+    preg_match('#<div[^>]*data-video-page(?=[\s>])[^>]*>#', $first, $grid);
+    preg_match_all('#<source[^>]*\ssrc="([^"]+)"[^>]*type="video/mp4"#', $first, $sources);
 
     expect($section)->not->toBeEmpty()
-        ->and(substr_count($html, '<video'))->toBe(1)
-        ->and(array_column(config('homepage.videos'), 'src'))->toContain(html_entity_decode($source[1]))
-        ->and($video[0])->toMatch('/\sautoplay\s/')
-        ->and($video[0])->toMatch('/\smuted\s/')
-        ->and($video[0])->toMatch('/\splaysinline\s/')
-        ->and($video[0])->toMatch('/\scontrols\s/')
-        ->and($video[0])->toContain('w-full')
-        // The width of the page container (the same one as the sections around it), not the screen.
-        ->and($section[0])->toContain('max-w-7xl')
+        ->and($videos[0])->toHaveCount(2)
+        ->and(substr_count($first, 'data-video-item'))->toBe(2)
+        // Two different clips, both from the list.
+        ->and(array_unique($sources[1]))->toHaveCount(2)
+        ->and(array_map('html_entity_decode', $sources[1]))->each->toBeIn(array_column(config('homepage.videos'), 'src'))
+        // Two columns from the medium breakpoint, one above the other on a phone.
+        ->and($grid[0])->toContain('grid-cols-1')->toContain('md:grid-cols-2')
+        // Nothing plays until the visitor presses play: no autoplay, and no muting either.
+        ->and($section[0])->not->toMatch('/\sautoplay[\s>=]/')->not->toMatch('/\smuted[\s>=]/');
+
+    foreach ($videos[0] as $video) {
+        expect($video)->toMatch('/\splaysinline\s/')->toMatch('/\scontrols\s/')->toContain('w-full');
+    }
+
+    // The width of the page container (the same one as the sections around it), not the screen.
+    expect($section[0])->toContain('max-w-7xl')
         // Below the Featured products and the Product Spotlight, above the buying guides.
         ->and(strpos($html, 'data-home-products'))->toBeLessThan(strpos($html, 'data-home-video'))
         ->and(strpos($html, 'data-home-video'))->toBeLessThan(strpos($html, 'data-home-guides'));
+});
+
+it('forces every player to the same 16:9 shape, so the two are always the same height', function (): void {
+    $html = $this->get(route('home'))->assertOk()->getContent();
+
+    preg_match_all('#<video[^>]*>#s', $html, $videos);
+
+    expect($videos[0])->not->toBeEmpty();
+
+    foreach ($videos[0] as $video) {
+        // A fixed ratio and black bars for a clip of another shape; never the clip's own height (h-auto).
+        expect($video)->toContain('aspect-video')->toContain('w-full')->toContain('bg-brand-navy')->toContain('object-contain')
+            ->not->toContain('h-auto');
+    }
+});
+
+it('shows the frame one second in until the video is played, and has no poster image', function (): void {
+    $html = $this->get(route('home'))->assertOk()->getContent();
+
+    preg_match_all('#<source[^>]*(?:\ssrc|\sdata-src)="([^"]+)"#', $html, $sources);
+
+    expect($sources[1])->not->toBeEmpty()
+        ->and($html)->not->toMatch('#<video[^>]*\sposter=#');
+
+    foreach ($sources[1] as $source) {
+        expect(html_entity_decode($source))->toEndWith('#t=1');
+    }
+
+    // Every address in the list has it, shown and held back alike, and so does one the list gives without it.
+    foreach (array_merge(config('homepage.videos'), config('homepage.videos_held')) as $video) {
+        expect($video['src'])->toEndWith('#t=1')->and($video)->not->toHaveKey('poster');
+    }
+
+    config(['homepage.videos' => [['label' => 'Plain', 'src' => 'https://frontline-footwear.com/shop/datasheets/PLAIN.mp4']]]);
+
+    expect($this->get(route('home'))->getContent())->toContain('PLAIN.mp4#t=1');
+});
+
+it('pages through all the videos, two at a time, with previous and next arrows that need JavaScript', function (): void {
+    $html = $this->get(route('home'))->assertOk()->getContent();
+
+    // Nine videos, two to a page: five pages, the last filled up from the start of the list.
+    preg_match_all('#<div[^>]*data-video-page(?=[\s>])[^>]*>#', $html, $pages);
+    preg_match('#<div[^>]*data-video-pager[^>]*>#', $html, $pager);
+    preg_match('#<button[^>]*data-video-prev[^>]*>#', $html, $prev);
+    preg_match('#<button[^>]*data-video-next[^>]*>#', $html, $next);
+    preg_match('#data-video-position[^>]*>.*?</span>\s*/\s*(\d+)#s', $html, $total);
+
+    expect($pages[0])->toHaveCount(5)
+        ->and(substr_count($html, '<video'))->toBe(10)
+        ->and($total[1])->toBe('5')
+        // Hidden until Alpine starts, so without JavaScript there is just the first pair.
+        ->and($pager[0])->toContain('x-cloak')
+        ->and($prev[0])->toContain('aria-label="Previous videos"')->toContain('type="button"')->toContain('show(page - 1)')
+        ->and($next[0])->toContain('aria-label="Next videos"')->toContain('type="button"')->toContain('show(page + 1)')
+        // Only the first page is in reach when the page opens; the others are inert until the arrows slide them in.
+        ->and($pages[0][0])->not->toContain(' inert')
+        ->and($pages[0][1])->toContain(' inert')->toContain('x-bind:inert="page !== 1"');
+
+    // The pages are a row inside a clipped viewport, and the arrows slide the row a page at a time.
+    preg_match('#<div[^>]*data-video-viewport[^>]*>#', $html, $viewport);
+    preg_match('#<div[^>]*data-video-track[^>]*>#', $html, $track);
+
+    expect($viewport[0])->toContain('overflow-hidden')
+        ->and($track[0])->toContain('flex')->toContain('transition-transform')->toContain('duration-500')->toContain('translateX(-')->toContain('page * 100')
+        ->and($pages[0][0])->toContain('w-full')->toContain('shrink-0');
+
+    // Every video of the list is on some page.
+    preg_match_all('#data-video-label="([^"]+)"#', $html, $labels);
+
+    expect(array_map('html_entity_decode', array_unique($labels[1])))->toEqualCanonicalizing(array_column(config('homepage.videos'), 'label'));
+});
+
+it('only gives the first pair its file address, so the page does not fetch nine videos', function (): void {
+    $html = $this->get(route('home'))->assertOk()->getContent();
+
+    $first = firstVideoPage($html);
+
+    expect(preg_match_all('#<source[^>]*\ssrc="#', $html))->toBe(2)
+        ->and(preg_match_all('#<source[^>]*\sdata-src="#', $html))->toBe(8)
+        ->and($first)->not->toContain('data-src=')
+        ->and(preg_match_all('#<video[^>]*preload="none"#', $html))->toBe(8);
+
+    // The arrows hand the address over when a page is first opened, and stop what is playing.
+    expect($html)->toContain('source[data-src]')->toContain('s.src = s.dataset.src')->toContain('v.pause()');
+});
+
+it('shows no arrows and one wide video when the list has only one', function (): void {
+    config(['homepage.videos' => [config('homepage.videos')[0]]]);
+
+    $html = $this->get(route('home'))->assertOk()->getContent();
+
+    preg_match('#<section[^>]*data-home-video.*?</section>#s', $html, $section);
+
+    expect(substr_count($section[0], '<video'))->toBe(1)
+        ->and($section[0])->not->toContain('md:grid-cols-2')->not->toContain('data-video-pager');
 });
 
 it('has the nine footwear and technology videos, each a distinct https mp4 with a label', function (): void {
@@ -174,46 +287,48 @@ it('has the nine footwear and technology videos, each a distinct https mp4 with 
     // The four held back (HomeContextTest) are the same kind of file.
     foreach (array_merge($videos, config('homepage.videos_held')) as $video) {
         expect($video['src'])->toStartWith('https://frontline-footwear.com/shop/datasheets/')
-            ->and($video['src'])->toMatch('/\.mp4(#t=0\.5)?$/')
+            ->and($video['src'])->toMatch('/\.mp4(#t=1)?$/')
             ->and($video['label'])->not->toBe('');
     }
 });
 
-it('picks a different video from page load to page load, and each one is from the list', function (): void {
+it('shuffles the videos on a page load, so the first pair differs from page load to page load, and each one is from the list', function (): void {
     $labels = array_column(config('homepage.videos'), 'label');
     $seen = [];
 
     foreach (range(1, 60) as $ignored) {
-        preg_match('#data-video-label="([^"]+)"#', $this->get(route('home'))->assertOk()->getContent(), $m);
+        preg_match_all('#data-video-label="([^"]+)"#', firstVideoPage($this->get(route('home'))->assertOk()->getContent()), $m);
 
-        expect($labels)->toContain(html_entity_decode($m[1]));
-        $seen[$m[1]] = true;
+        expect($m[1])->toHaveCount(2);
+
+        foreach ($m[1] as $label) {
+            expect($labels)->toContain(html_entity_decode($label));
+            $seen[$label] = true;
+        }
     }
 
     expect(count($seen))->toBeGreaterThan(3);
 });
 
-it('gives a video its own poster, loop and preload only when the list says so', function (): void {
+it('gives a video loop and preload only when the list says so', function (): void {
     config(['homepage.videos' => [[
         'label' => 'CADOR colours that work',
-        'src' => 'https://frontline-footwear.com/shop/datasheets/CADOR%20Colours%20that%20work.mp4',
-        'poster' => 'https://frontline-footwear.com/v1.jpg',
+        'src' => 'https://frontline-footwear.com/shop/datasheets/CADOR%20Colours%20that%20work.mp4#t=1',
         'loop' => true,
-        'preload' => 'metadata',
+        'preload' => 'auto',
     ]]]);
 
     preg_match('#<video[^>]*>#s', $this->get(route('home'))->getContent(), $with);
 
     expect($with[0])->toMatch('/\sloop\s/')
-        ->and($with[0])->toContain('poster="https://frontline-footwear.com/v1.jpg"')
-        ->and($with[0])->toContain('preload="metadata"')
+        ->and($with[0])->toContain('preload="auto"')
         ->and($with[0])->toContain('aria-label="CADOR colours that work"');
 
-    config(['homepage.videos' => [['label' => 'Midsoles', 'src' => 'https://frontline-footwear.com/shop/datasheets/MIDSOLES_360p.mp4#t=0.5']]]);
+    config(['homepage.videos' => [['label' => 'Midsoles', 'src' => 'https://frontline-footwear.com/shop/datasheets/MIDSOLES_360p.mp4#t=1']]]);
 
     preg_match('#<video[^>]*>#s', $this->get(route('home'))->getContent(), $without);
 
-    expect($without[0])->not->toMatch('/\sloop\s/')->and($without[0])->not->toContain('poster=');
+    expect($without[0])->not->toMatch('/\sloop\s/')->toContain('preload="metadata"');
 });
 
 it('shows no video section when the list is empty', function (): void {
@@ -342,11 +457,11 @@ it('replaces the shop by type tiles with a Featured products section of linked p
     $section = productPicksOf($html);
     $cards = substr_count($section, 'data-home-product>');
 
-    expect($html)->not->toContain('data-home-categories')
-        ->and($html)->not->toContain('Shop by type')
+    // (The "Shop by category" section has its own marker, data-home-categories: it is not the old tiles.)
+    expect($html)->not->toContain('Shop by type')
         ->and($section)->toMatch('#<h2[^>]*id="home-products"[^>]*>Featured products</h2>#')
         ->and($cards)->toBeGreaterThan(0)
-        ->and($cards)->toBeLessThanOrEqual(8);
+        ->and($cards)->toBeLessThanOrEqual(10);
 
     preg_match_all('#<li[^>]*data-home-product>.*?</li>#s', $section, $items);
 
@@ -359,19 +474,19 @@ it('replaces the shop by type tiles with a Featured products section of linked p
     }
 });
 
-it('shows eight products when the catalogue has at least eight that can be shown', function (): void {
+it('shows ten products when the catalogue has at least ten that can be shown', function (): void {
     $eligible = (new HomeFeaturedProducts)->pick(100)->count();
 
     $shown = substr_count(productPicksOf($this->get(route('home'))->getContent()), 'data-home-product>');
 
-    expect($shown)->toBe(min(8, $eligible));
+    expect($shown)->toBe(min(10, $eligible));
 });
 
 it('picks a different set of products from page load to page load', function (): void {
     $eligible = (new HomeFeaturedProducts)->pick(100)->count();
 
-    if ($eligible <= 8) {
-        $this->markTestSkipped('The fixture catalogue has eight or fewer products to pick from.');
+    if ($eligible <= 10) {
+        $this->markTestSkipped('The fixture catalogue has ten or fewer products to pick from.');
     }
 
     $sets = [];
@@ -457,21 +572,21 @@ function homePickCatalogue(int $footwear, int $gear): array
     return $made;
 }
 
-it('shows four products from Safety Footwear and four from PPE & Gear, eight in all, with none repeated', function (): void {
+it('shows five products from Safety Footwear and five from PPE & Gear, ten in all, with none repeated', function (): void {
     $made = homePickCatalogue(footwear: 6, gear: 6);
 
     foreach (range(1, 25) as $ignored) {
         $pick = (new HomeFeaturedProducts)->pick();
         $keys = $pick->modelKeys();
 
-        expect($pick)->toHaveCount(8)
+        expect($pick)->toHaveCount(10)
             ->and($keys)->toBe(array_values(array_unique($keys)))
-            ->and(count(array_intersect($keys, $made['footwear'])))->toBe(4)
-            ->and(count(array_intersect($keys, $made['gear'])))->toBe(4);
+            ->and(count(array_intersect($keys, $made['footwear'])))->toBe(5)
+            ->and(count(array_intersect($keys, $made['gear'])))->toBe(5);
     }
 });
 
-it('takes four from each category from different products over time', function (): void {
+it('takes five from each category from different products over time', function (): void {
     $made = homePickCatalogue(footwear: 8, gear: 8);
     $footwearSeen = [];
     $gearSeen = [];
@@ -482,12 +597,12 @@ it('takes four from each category from different products over time', function (
         $gearSeen = [...$gearSeen, ...array_intersect($keys, $made['gear'])];
     }
 
-    // Eight to choose from, four taken each time: over 40 loads more than four different ones appear.
-    expect(count(array_unique($footwearSeen)))->toBeGreaterThan(4)
-        ->and(count(array_unique($gearSeen)))->toBeGreaterThan(4);
+    // Eight to choose from, five taken each time: over 40 loads more than five different ones appear.
+    expect(count(array_unique($footwearSeen)))->toBeGreaterThan(5)
+        ->and(count(array_unique($gearSeen)))->toBeGreaterThan(5);
 });
 
-it('shows the eight in random order, so footwear does not always come first', function (): void {
+it('shows the products in random order, so footwear does not always come first', function (): void {
     $made = homePickCatalogue(footwear: 4, gear: 4);
     $firstIsFootwear = [];
     $orders = [];
@@ -498,23 +613,24 @@ it('shows the eight in random order, so footwear does not always come first', fu
         $orders[implode(',', $keys)] = true;
     }
 
-    // Always the same eight products, but both kinds lead the row at times and the order keeps changing.
+    // Always the same eight products (all there are), but both kinds lead the row at times and the order keeps changing.
     expect(array_unique($firstIsFootwear))->toHaveCount(2)
         ->and(count($orders))->toBeGreaterThan(5);
 });
 
 it('fills the gap from the other category when PPE & Gear has too few products', function (): void {
-    $made = homePickCatalogue(footwear: 8, gear: 1);
+    $made = homePickCatalogue(footwear: 10, gear: 1);
 
     $keys = (new HomeFeaturedProducts)->pick()->modelKeys();
 
-    expect($keys)->toHaveCount(8)
+    // Five from footwear, the one gear product, and four more from footwear to fill the gap.
+    expect($keys)->toHaveCount(10)
         ->and($keys)->toBe(array_values(array_unique($keys)))
         ->and(count(array_intersect($keys, $made['gear'])))->toBe(1)
-        ->and(count(array_intersect($keys, $made['footwear'])))->toBe(7);
+        ->and(count(array_intersect($keys, $made['footwear'])))->toBe(9);
 });
 
-it('shows fewer than eight, never padding, when the catalogue has fewer to show', function (): void {
+it('shows fewer than ten, never padding, when the catalogue has fewer to show', function (): void {
     homePickCatalogue(footwear: 2, gear: 1);
 
     expect((new HomeFeaturedProducts)->pick())->toHaveCount(3);
@@ -712,4 +828,25 @@ it('shows the safety class as a badge in the top right of a homepage product pic
     preg_match('#<section[^>]*data-home-products.*?</section>#s', $html, $section);
 
     expect($section[0] ?? '')->toMatch('#<span class="[^"]*absolute right-2 top-2[^"]*bg-white[^"]*" data-card-class>[^<]+</span>#');
+});
+
+it('shows the featured products five to a row at the largest breakpoint, and the first eight below it', function (): void {
+    homePickCatalogue(footwear: 6, gear: 6);
+
+    $picks = productPicksOf($this->get(route('home'))->assertOk()->getContent());
+
+    preg_match('#<ul class="([^"]*)">#', $picks, $grid);
+    preg_match_all('#<li class="([^"]*)" data-home-product>#', $picks, $cards);
+
+    // All ten are in the page; two rows of five at 2xl, two rows of four below it (the last two are hidden there), two across on a phone.
+    expect($grid[1])->toContain('grid-cols-2')->toContain('md:grid-cols-4')->toContain('2xl:grid-cols-5')
+        ->and($cards[1])->toHaveCount(10);
+
+    foreach ($cards[1] as $index => $class) {
+        if ($index < 8) {
+            expect($class)->not->toContain('max-2xl:hidden');
+        } else {
+            expect($class)->toContain('max-2xl:hidden');
+        }
+    }
 });
