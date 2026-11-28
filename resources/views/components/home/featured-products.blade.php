@@ -28,11 +28,11 @@
             <div class="mt-8 grid items-center gap-8 rounded-lg border border-border p-5 sm:p-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-12" data-spotlight>
                 <figure class="mx-auto w-full max-w-sm lg:max-w-none">
                     <picture>
-                        @if ($spotlight['webp'])
+                        @if ($spotlight['webp'] ?? false)
                             <source type="image/webp" srcset="{{ asset('images/home/'.$spotlight['file'].'.webp') }}">
                         @endif
                         <img
-                            src="{{ asset('images/home/'.$spotlight['file'].'.jpg') }}"
+                            src="{{ $spotlight['image_url'] ?? asset('images/home/'.$spotlight['file'].'.jpg') }}"
                             alt="{{ $spotlight['alt'] }}"
                             width="{{ $spotlight['width'] }}"
                             height="{{ $spotlight['height'] }}"
