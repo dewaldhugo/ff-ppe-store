@@ -129,3 +129,23 @@ it('does not take a Reports user for someone who is only there for the figures w
 it('sends someone who is not signed in to the sign-in page, not to a 403', function (): void {
     test()->get(OrderResource::getUrl('index'))->assertRedirect(route('filament.lunar.auth.login'));
 });
+
+it('hides the Taxes link from a Reports user', function (): void {
+    accessStaff(roles: ['reports']);
+
+    $html = test()->get(Filament::getPanel('lunar')->getUrl())->assertOk()->getContent();
+
+    expect($html)->toContain('data-reports-only-menu')->toContain('a[href$="/admin/taxes"]')->toContain('display: none');
+});
+
+it('leaves the Taxes link for an admin', function (): void {
+    accessStaff(admin: true);
+
+    expect(test()->get(Filament::getPanel('lunar')->getUrl())->assertOk()->getContent())->not->toContain('data-reports-only-menu');
+});
+
+it('leaves the Taxes link for staff who manage orders', function (): void {
+    accessStaff(permissions: ['sales:manage-orders']);
+
+    expect(test()->get(Filament::getPanel('lunar')->getUrl())->assertOk()->getContent())->not->toContain('data-reports-only-menu');
+});
