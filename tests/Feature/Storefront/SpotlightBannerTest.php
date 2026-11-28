@@ -198,6 +198,26 @@ it('deletes the picture with the banner', function (): void {
     Storage::disk(SpotlightBanner::DISK)->assertMissing($path);
 });
 
+it('copies the standard campaigns into the list once, with their pictures, and not again', function (): void {
+    $added = app(HomeSpotlight::class)->importStandard();
+
+    expect($added)->toBe(count(app(HomeSpotlight::class)->available()))->and($added)->toBeGreaterThan(0)
+        ->and(SpotlightBanner::query()->count())->toBe($added)
+        ->and(app(HomeSpotlight::class)->importStandard())->toBe(0);
+
+    foreach (SpotlightBanner::query()->get() as $banner) {
+        Storage::disk(SpotlightBanner::DISK)->assertExists($banner->image);
+    }
+});
+
+it('adds the standard banners from a button on the list', function (): void {
+    spotlightAdmin();
+
+    Livewire::test(ListSpotlightBanners::class)->callAction('importStandard')->assertNotified();
+
+    expect(SpotlightBanner::query()->count())->toBeGreaterThan(0);
+});
+
 it('is not for a member of staff with no permissions', function (): void {
     spotlightAdmin(admin: false);
 
