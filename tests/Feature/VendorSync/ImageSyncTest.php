@@ -217,7 +217,7 @@ it('stores every image as WebP at most 1200 wide, however large the original is'
             ->and($image->file_name)->toEndWith('.webp')
             ->and($width)->toBeLessThanOrEqual(1200)
             // A Safety Jogger main image is also put on the baseline; its other pictures are not.
-            ->and($image->getCustomProperty('optimised'))->toBe($image->getCustomProperty('role') === 'main' ? 'webp-1200-q85-base15-top15-side4-ar100-grow-bg' : 'webp-1200-q85');
+            ->and($image->getCustomProperty('optimised'))->toBe($image->getCustomProperty('role') === 'main' ? 'webp-1200-q85-crop2-bg' : 'webp-1200-q85');
     }
 
     // The 9 megapixel original was shrunk, not kept.
@@ -248,7 +248,7 @@ it('fetches an image stored before the WebP rule again and replaces it', functio
     expect($result->downloaded)->toBe(6)
         ->and($after)->toHaveCount(6)
         ->and($after->pluck('id')->intersect($before->pluck('id'))->all())->toBe([])
-        ->and($after->every(fn ($image): bool => $image->getCustomProperty('optimised') === ($image->getCustomProperty('role') === 'main' ? 'webp-1200-q85-base15-top15-side4-ar100-grow-bg' : 'webp-1200-q85')))->toBeTrue();
+        ->and($after->every(fn ($image): bool => $image->getCustomProperty('optimised') === ($image->getCustomProperty('role') === 'main' ? 'webp-1200-q85-crop2-bg' : 'webp-1200-q85')))->toBeTrue();
 });
 
 it('fetches only the main images again when the baseline rule is added, and not when it is switched off', function (): void {
@@ -275,7 +275,7 @@ it('fetches only the main images again when the baseline rule is added, and not 
         ->and($after)->toHaveCount($before->count())
         // The pictures that are not main images are the same files as before.
         ->and($after->pluck('id')->intersect($before->reject(fn ($image): bool => $image->getCustomProperty('role') === 'main')->pluck('id'))->count())->toBe($before->count() - $mains->count())
-        ->and($after->filter(fn ($image): bool => $image->getCustomProperty('role') === 'main')->every(fn ($image): bool => $image->getCustomProperty('optimised') === 'webp-1200-q85-base15-top15-side4-ar100-grow-bg'))->toBeTrue();
+        ->and($after->filter(fn ($image): bool => $image->getCustomProperty('role') === 'main')->every(fn ($image): bool => $image->getCustomProperty('optimised') === 'webp-1200-q85-crop2-bg'))->toBeTrue();
 });
 
 it('puts only the safety shoes and safety boots of Safety Jogger on the baseline', function (): void {
@@ -287,7 +287,7 @@ it('puts only the safety shoes and safety boots of Safety Jogger on the baseline
 
     $mains = fn () => VendorSync::product('SJ', '215754')->refresh()->getMedia('images')->filter(fn ($image): bool => $image->getCustomProperty('role') === 'main');
 
-    expect($mains()->every(fn ($image): bool => $image->getCustomProperty('optimised') === 'webp-1200-q85-base15-top15-side4-ar100-grow-bg'))->toBeTrue();
+    expect($mains()->every(fn ($image): bool => $image->getCustomProperty('optimised') === 'webp-1200-q85-crop2-bg'))->toBeTrue();
 
     // With the list narrowed to another category, the same product is left as it comes: its main images are fetched again, plain.
     config(['vendorsync.images.align.collections' => ['safety-trainers']]);
@@ -301,7 +301,7 @@ it('puts only the safety shoes and safety boots of Safety Jogger on the baseline
 
     app(ProductImageSync::class)->sync($link->refresh());
 
-    expect($mains()->every(fn ($image): bool => $image->getCustomProperty('optimised') === 'webp-1200-q85-base15-top15-side4-ar100-grow-bg'))->toBeTrue();
+    expect($mains()->every(fn ($image): bool => $image->getCustomProperty('optimised') === 'webp-1200-q85-crop2-bg'))->toBeTrue();
 
     // Another top level category does not include it.
     config(['vendorsync.images.align.collections' => ['apparel']]);
@@ -315,7 +315,7 @@ it('puts only the safety shoes and safety boots of Safety Jogger on the baseline
 
     app(ProductImageSync::class)->sync($link->refresh());
 
-    expect($mains()->every(fn ($image): bool => $image->getCustomProperty('optimised') === 'webp-1200-q85-base15-top15-side4-ar100-grow-bg'))->toBeTrue();
+    expect($mains()->every(fn ($image): bool => $image->getCustomProperty('optimised') === 'webp-1200-q85-crop2-bg'))->toBeTrue();
 });
 
 it('limits a run to the categories asked for, and does not even look at other products', function (): void {
@@ -897,4 +897,152 @@ it('holds a product back, and stores nothing, when its first image fails and no 
         ->and($link->draft_reasons)->toBe([DraftReason::NO_IMAGE])
         ->and($link->image_urls_hash)->toBeNull()
         ->and($link->images_synced_at)->toBeNull();
+});
+
+// --- Main images only --------------------------------------------------------------------------
+
+/**
+ * The image requests made since the given count, as URLs (the API calls are left out).
+ *
+ * @return list<string>
+ */
+function imageRequestsSince(int $count): array
+{
+    return Http::recorded()
+        ->slice($count)
+        ->map(fn (array $pair): string => $pair[0]->url())
+        ->filter(fn (string $url): bool => str_contains($url, '/image/'))
+        ->values()
+        ->all();
+}
+
+/** BESTBOOT with every image stored as it was before the crop rule (plain WebP), the crop then switched on. */
+function bestbootBeforeTheCropRule(): VendorProduct
+{
+    $link = importBestboot();
+
+    config(['vendorsync.images.align.vendors' => []]);
+    app(ProductImageSync::class)->sync($link);
+
+    config(['vendorsync.images.align.vendors' => ['SJ']]);
+
+    return $link->refresh();
+}
+
+it('brings only the main images to the current rules, and does not fetch, read or replace the other pictures', function (): void {
+    $link = bestbootBeforeTheCropRule();
+    $product = VendorSync::product('SJ', '215754');
+    $before = $product->getMedia('images');
+    $mainBefore = $before->first(fn ($image): bool => $image->getCustomProperty('role') === 'main');
+    $others = $before->reject(fn ($image): bool => $image->getCustomProperty('role') === 'main');
+    $variantLinks = DB::table('lunar_media_product_variant')->count();
+    $hash = $link->image_urls_hash;
+    $status = $product->status;
+    $requests = Http::recorded()->count();
+
+    expect(app(ProductImageSync::class)->mainImagesCurrent($link))->toBeFalse();
+
+    $result = app(ProductImageSync::class)->syncMain($link);
+
+    $after = $product->refresh()->getMedia('images');
+    $mainAfter = $after->first(fn ($image): bool => $image->getCustomProperty('role') === 'main');
+
+    // One main image downloaded, and no request for any other picture.
+    expect($result->downloaded)->toBe(1)
+        ->and(imageRequestsSince($requests))->toHaveCount(1)
+        ->and(imageRequestsSince($requests)[0])->toContain('HIRES')
+        // The other pictures are the very same files, untouched.
+        ->and($after->pluck('id')->intersect($others->pluck('id'))->count())->toBe($others->count())
+        ->and($after)->toHaveCount($before->count())
+        // The main image is a new file on the current rules, in the old one's place, still the primary image.
+        ->and($mainAfter->id)->not->toBe($mainBefore->id)
+        ->and($mainAfter->getCustomProperty('optimised'))->toBe('webp-1200-q85-crop2-bg')
+        ->and($mainAfter->order_column)->toBe($mainBefore->order_column)
+        ->and($mainAfter->getCustomProperty('primary'))->toBeTrue()
+        ->and($after->first()->id)->toBe($mainAfter->id)
+        // The variants keep their links, now to the new file.
+        ->and(DB::table('lunar_media_product_variant')->count())->toBe($variantLinks)
+        ->and($product->variants->first()->images->pluck('id')->all())->toContain($mainAfter->id)->not->toContain($mainBefore->id)
+        // The status and the image hash are left as they were, and the main image is now current.
+        ->and($product->status)->toBe($status)
+        ->and($link->refresh()->image_urls_hash)->toBe($hash)
+        ->and(app(ProductImageSync::class)->mainImagesCurrent($link))->toBeTrue();
+});
+
+it('downloads nothing when the main images are already on the current rules, and every main image again with --refresh', function (): void {
+    $link = bestbootBeforeTheCropRule();
+
+    app(ProductImageSync::class)->syncMain($link);
+
+    $requests = Http::recorded()->count();
+    $none = app(ProductImageSync::class)->syncMain($link->refresh());
+
+    expect($none->downloaded)->toBe(0)->and(imageRequestsSince($requests))->toBe([]);
+
+    $again = app(ProductImageSync::class)->syncMain($link->refresh(), refresh: true);
+
+    expect($again->downloaded)->toBe(1)->and(imageRequestsSince($requests))->toHaveCount(1);
+});
+
+it('does not fetch a main image that is not stored yet, and says so', function (): void {
+    $link = importBestboot();
+
+    $requests = Http::recorded()->count();
+    $result = app(ProductImageSync::class)->syncMain($link);
+
+    expect($result->downloaded)->toBe(0)
+        ->and($result->stored)->toBe(0)
+        ->and(implode(' ', $result->notes))->toContain('is not stored yet')
+        ->and(imageRequestsSince($requests))->toBe([])
+        ->and(VendorSync::product('SJ', '215754')->getMedia('images'))->toHaveCount(0);
+});
+
+it('runs vendorsync:images with --main for the products whose main images are not on the current rules', function (): void {
+    bestbootBeforeTheCropRule();
+    $requests = Http::recorded()->count();
+
+    $this->artisan('vendorsync:images', ['vendor' => 'SJ', '--main' => true])
+        ->expectsOutputToContain('Queued 1 main image job for SJ.')
+        ->assertSuccessful();
+
+    $product = VendorSync::product('SJ', '215754');
+    $mains = $product->getMedia('images')->filter(fn ($image): bool => $image->getCustomProperty('role') === 'main');
+
+    expect(imageRequestsSince($requests))->toHaveCount(1)
+        ->and($mains->every(fn ($image): bool => $image->getCustomProperty('optimised') === 'webp-1200-q85-crop2-bg'))->toBeTrue()
+        ->and(imageRun()->status)->toBe('succeeded');
+
+    // Run again: every main image is current, so nothing is queued, and the product is not even read for its other pictures.
+    $this->artisan('vendorsync:images', ['vendor' => 'SJ', '--main' => true])
+        ->expectsOutputToContain('Queued 0 main image jobs for SJ.')
+        ->expectsOutputToContain('1 products whose main images are already on the current rules')
+        ->assertSuccessful();
+
+    // --refresh downloads the main image again, and only that.
+    $requests = Http::recorded()->count();
+
+    $this->artisan('vendorsync:images', ['vendor' => 'SJ', '--main' => true, '--refresh' => true])
+        ->expectsOutputToContain('Queued 1 main image job for SJ.')
+        ->assertSuccessful();
+
+    expect(imageRequestsSince($requests))->toHaveCount(1);
+});
+
+it('leaves a product with no stored images to a normal run, whatever --main says', function (): void {
+    importBestboot();
+
+    $this->artisan('vendorsync:images', ['vendor' => 'SJ', '--main' => true])
+        ->expectsOutputToContain('Queued 0 main image jobs for SJ.')
+        ->assertSuccessful();
+
+    expect(VendorSync::product('SJ', '215754')->getMedia('images'))->toHaveCount(0);
+});
+
+it('reports a main image job on a product with no stored main image as a failure that names the way out', function (): void {
+    importBestboot();
+
+    $this->artisan('vendorsync:images', ['vendor' => 'SJ', '--main' => true, '--product' => '215754'])->assertSuccessful();
+
+    expect(imageRun()->messages)->not->toBe([])
+        ->and(implode("\n", imageRun()->messages))->toContain('no main image is stored for this product yet');
 });

@@ -439,22 +439,20 @@ return [
         // WebP quality, 1 to 100.
         'webp_quality' => 85,
 
-        // A vendor's main images (the first picture of each colour) can be put on a common baseline, so a grid of products lines
-        // up (SubjectAligner): the subject is moved so the room under it is `bottom` of the height, and scaled down only when it
-        // would then leave less than `top` above or less than `side` of the width at either side. Safety Jogger frames its shoes and boots differently, so it is on.
+        // A vendor's main images (the first picture of each colour) are cropped to their subject, tight on all four sides, so the
+        // storefront can give every picture the same padding and align it to the bottom (the product cards, object-contain
+        // object-bottom): the margins are CSS, not part of the stored file, and a change to them needs no new import. The subject
+        // is found by SubjectAligner (the non-transparent area, or what differs from the corner colour on an opaque photo).
         'align' => [
             'vendors' => ['SJ', 'FS'],
             // Only products in these categories (contract handles); an empty list is every category, which is what is wanted: the
-            // main image of every product of either vendor is aligned and has its plain background cut out. A top level category
+            // main image of every product of either vendor is cropped and has its plain background cut out. A top level category
             // means all the categories under it (products are in the leaves), so ['safety-footwear'] limits it to safety footwear.
             'collections' => [],
-            'bottom' => 0.15,
-            'top' => 0.15,
-            'side' => 0.04,
-            // Width over height of the canvas the subject is put on: 1.0 is square, so a wide shoe and a tall boot share one
-            // canvas and a grid that fits each picture into a square box lines them up. 0 or null keeps each picture's own shape.
-            'aspect' => 1.0,
-            // Make the plain background of an opaque photo (Footsure's shoes on white) transparent before the subject is aligned, so
+            // Room kept round the subject when it is cropped, as a share of its longer side (0.02 is 2%, never under 2 pixels): the
+            // antialiased edge and a faint shadow are not clipped. Not a margin; the cards' padding is that.
+            'padding' => 0.02,
+            // Make the plain background of an opaque photo (Footsure's shoes on white) transparent before the subject is cropped, so
             // the storefront's card backdrop shows behind it as it does behind a cut-out picture (BackgroundRemover). Photos that
             // are not a studio shot on one colour are left alone.
             'remove_background' => true,

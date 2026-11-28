@@ -23,12 +23,12 @@ final class ImageOptimiser
     private const int HEADROOM = 48 * 1024 * 1024;
 
     /**
-     * Names the output (`-base15-top15-side4-ar100-grow-bg` when the subject is also put on the baseline, with these margins and canvas shape, and `-bg` when a plain background is made transparent): it is part of the image plan hash, so changing the width or quality has every product fetch its images
+     * Names the output (`-crop2-bg` when the subject is also cropped to, with this padding, and `-bg` when a plain background is made transparent): it is part of the image plan hash, so changing the width, the quality or the crop has every product fetch its images
      * again, and an image stored under another signature is processed again.
      */
     public function signature(bool $aligned = false): string
     {
-        return 'webp-'.$this->maxWidth().'-q'.$this->quality().($aligned ? '-base'.(int) round($this->bottom() * 100).'-top'.(int) round($this->top() * 100).'-side'.(int) round($this->side() * 100).($this->aspect() === null ? '' : '-ar'.(int) round($this->aspect() * 100)).'-grow'.($this->removesBackground() ? '-bg' : '') : '');
+        return 'webp-'.$this->maxWidth().'-q'.$this->quality().($aligned ? '-crop'.(int) round($this->padding() * 100).($this->removesBackground() ? '-bg' : '') : '');
     }
 
     /**
@@ -83,15 +83,30 @@ final class ImageOptimiser
             $source = $resized;
         }
 
-        // The subject is found on the original, and a subject that is clearly too small for its room (a lot of empty space round it
-        // in the photo) is enlarged to fill it, though never beyond the original's own pixels.
+        // The subject is found on the original and the picture is cut to it, tight on all four sides (SubjectAligner::crop). No margin
+        // is stored: the storefront's cards give every picture the same padding and align it to the bottom.
         if ($aligned) {
             // A photo on a plain background (Footsure's shoes on white) is cut out first, so the card's backdrop shows behind it.
             if ($this->removesBackground()) {
                 $source = (new BackgroundRemover)->remove($source, $this->maxWidth());
             }
 
-            $source = (new SubjectAligner)->align($source, $this->bottom(), $this->top(), $this->side(), $this->aspect(), min($width, $this->maxWidth()), 1.0);
+            $source = (new SubjectAligner)->crop($source, $this->padding(), $this->maxWidth());
+
+            // A picture with no subject to find comes back whole, and still obeys the width limit.
+            if (imagesx($source) > $this->maxWidth()) {
+                $newWidth = $this->maxWidth();
+                $newHeight = max(1, (int) round(imagesy($source) * $newWidth / imagesx($source)));
+
+                $resized = imagecreatetruecolor($newWidth, $newHeight);
+                imagealphablending($resized, false);
+                imagesavealpha($resized, true);
+                imagefill($resized, 0, 0, (int) imagecolorallocatealpha($resized, 0, 0, 0, 127));
+                imagecopyresampled($resized, $source, 0, 0, 0, 0, $newWidth, $newHeight, imagesx($source), imagesy($source));
+
+                unset($source);
+                $source = $resized;
+            }
         }
 
         imagealphablending($source, false);
@@ -151,34 +166,15 @@ final class ImageOptimiser
         };
     }
 
-    private function bottom(): float
+    /** The room left round the subject when the picture is cropped to it, as a share of the subject's longer side. */
+    private function padding(): float
     {
-        return min(0.4, max(0.0, (float) config('vendorsync.images.align.bottom', 0.15)));
-    }
-
-    /**
-     * Width over height of the canvas an aligned image is put on, or null to keep its own shape.
-     */
-    private function aspect(): ?float
-    {
-        $aspect = config('vendorsync.images.align.aspect', 1.0);
-
-        return is_numeric($aspect) && (float) $aspect > 0 ? min(4.0, max(0.25, (float) $aspect)) : null;
-    }
-
-    private function side(): float
-    {
-        return min(0.2, max(0.0, (float) config('vendorsync.images.align.side', 0.04)));
+        return min(0.2, max(0.0, (float) config('vendorsync.images.align.padding', 0.02)));
     }
 
     private function removesBackground(): bool
     {
         return (bool) config('vendorsync.images.align.remove_background', true);
-    }
-
-    private function top(): float
-    {
-        return min(0.4, max(0.0, (float) config('vendorsync.images.align.top', 0.15)));
     }
 
     private function maxWidth(): int
