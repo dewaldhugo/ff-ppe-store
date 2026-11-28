@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Admin;
 
 use Filament\Facades\Filament;
+use Lunar\Admin\Models\Staff;
 
 /**
  * Who sees the money pages of the admin: Invoices and Financial reporting. The staff who manage orders (`sales:manage-orders`,
@@ -25,6 +26,21 @@ final class ReportsAccess
         $user = Filament::auth()->user();
 
         return $user?->can(self::PERMISSION) === true || $user?->can('sales:manage-orders') === true;
+    }
+
+    /**
+     * Someone who is in the admin for the figures only: they hold `reports:view` and no other permission, and are not an admin.
+     * (EnforceAdminAccess keeps them to the dashboard, Invoices and Financial reporting.)
+     */
+    public static function isReportsOnly(Staff $user): bool
+    {
+        if ($user->admin) {
+            return false;
+        }
+
+        $held = $user->getAllPermissions()->pluck('name');
+
+        return $held->contains(self::PERMISSION) && $held->reject(fn (string $name): bool => $name === self::PERMISSION)->isEmpty();
     }
 
     /** May open an order from a row of a list (a Reports user may not: the orders area is not theirs). */
