@@ -103,6 +103,8 @@ final class AppServiceProvider extends ServiceProvider
             ->authMiddleware([EnforceAdminAccess::class])
             // The colours of the dashboard tiles. The rest of the admin keeps Lunar's own styling.
             ->renderHook(PanelsRenderHook::HEAD_END, fn (): View => view('admin.dashboard-tiles'))
+            // The Taxes link, which Lunar shows to everyone, is hidden from a Reports user (the page itself is a 403 for them).
+            ->renderHook(PanelsRenderHook::HEAD_END, fn (): View => view('admin.reports-only-menu'))
             // The sign-in page's background: a photo under a dark overlay (resources/views/admin/login-background.blade.php).
             ->renderHook(PanelsRenderHook::HEAD_END, fn (): View => view('admin.login-background')),
         )->register();
