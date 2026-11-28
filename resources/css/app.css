@@ -255,6 +255,21 @@
         position: relative;
     }
 
+    /*
+     * The picture in a product card (listings, related products, the home page picks). The vendor's main image is cropped to its
+     * subject with no margin of its own (App\Domain\VendorSync\Images\SubjectAligner), so the margin is here: 15% above and below
+     * and 4% at each side of the square box (padding in % is of the width, and the box is square), the picture fitted inside what
+     * is left and stood on the bottom of it. A tall boot and a wide shoe then end on one baseline, and a change to a margin is this
+     * one line, with no picture imported again.
+     */
+    .card-picture {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        object-position: bottom;
+        padding: 15% 4%;
+    }
+
     @media (prefers-reduced-motion: reduce) {
         .card-backdrop::before {
             transition: none;

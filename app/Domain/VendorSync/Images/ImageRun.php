@@ -72,8 +72,11 @@ final readonly class ImageRun
      * @param  string|null  $vendorProductId  Limit to one vendor product ID.
      * @param  list<string>  $categories  Limit to products in these category handles (contract handles, for example
      *                                    `safety-boots`); empty is every category. Other products are not even looked at.
+     * @param  bool  $mainOnly  Only the main images (the first picture of each colour): a job for a product whose stored main
+     *                          images are not on the current rules (all of them with `--refresh`), which downloads those and
+     *                          does not read, compare or fetch the product's other pictures (ProductImageSync::syncMain).
      */
-    public function run(string $vendorCode, ?string $vendorProductId = null, bool $refresh = false, array $categories = []): ImageDispatch
+    public function run(string $vendorCode, ?string $vendorProductId = null, bool $refresh = false, array $categories = [], bool $mainOnly = false): ImageDispatch
     {
         $vendor = $this->runs->vendor(strtoupper($vendorCode));
 
@@ -85,13 +88,13 @@ final readonly class ImageRun
         }
 
         try {
-            return $this->queue($vendor, $vendorProductId, $refresh, $categories);
+            return $this->queue($vendor, $vendorProductId, $refresh, $categories, $mainOnly);
         } finally {
             $lock->release();
         }
     }
 
-    private function queue(Vendor $vendor, ?string $vendorProductId, bool $refresh, array $categories): ImageDispatch
+    private function queue(Vendor $vendor, ?string $vendorProductId, bool $refresh, array $categories, bool $mainOnly = false): ImageDispatch
     {
         $skipped = 0;
         $inCategories = $categories === [] ? null : $this->productsIn($categories);
@@ -110,7 +113,7 @@ final readonly class ImageRun
                 ->orderBy('id')
                 ->pluck('id')
                 ->all()
-            : $this->needingImages($vendor, $skipped, $inCategories);
+            : $this->needingImages($vendor, $skipped, $inCategories, $mainOnly);
 
         $run = $this->runs->start($vendor, self::TYPE);
         $runId = $run->id;
@@ -131,7 +134,7 @@ final readonly class ImageRun
         if (config('queue.default') === 'sync') {
             foreach ($ids as $id) {
                 try {
-                    SyncProductImages::dispatchSync($id, $refresh, $runId);
+                    SyncProductImages::dispatchSync($id, $refresh, $runId, $mainOnly);
                 } catch (Throwable) {
                     continue;
                 }
@@ -145,7 +148,7 @@ final readonly class ImageRun
         // A batch pushes its jobs with the queue named on the batch itself and
         // ignores each job's own `onQueue()`, so without this line every job
         // lands on the connection default, away from the images supervisor.
-        Bus::batch(array_map(fn (int $id): SyncProductImages => new SyncProductImages($id, $refresh, $runId), $ids))
+        Bus::batch(array_map(fn (int $id): SyncProductImages => new SyncProductImages($id, $refresh, $runId, $mainOnly), $ids))
             ->name("vendorsync images {$vendor->code}")
             ->onQueue(Queues::IMAGES)
             ->allowFailures()
@@ -170,7 +173,7 @@ final readonly class ImageRun
      *
      * @return list<int>
      */
-    private function needingImages(Vendor $vendor, int &$skipped, ?array $inCategories = null): array
+    private function needingImages(Vendor $vendor, int &$skipped, ?array $inCategories = null, bool $mainOnly = false): array
     {
         $ids = [];
         $morphType = (new Product)->getMorphClass();
@@ -180,7 +183,7 @@ final readonly class ImageRun
             ->primary()
             ->where('vendor_id', $vendor->id)
             ->when($inCategories !== null, fn ($query) => $query->whereIn('product_id', $inCategories))
-            ->chunkById(self::CHUNK, function (EloquentCollection $links) use (&$ids, &$skipped, $vendor, $morphType, $collection): void {
+            ->chunkById(self::CHUNK, function (EloquentCollection $links) use (&$ids, &$skipped, $vendor, $morphType, $collection, $mainOnly): void {
                 $withImages = Media::query()
                     ->where('model_type', $morphType)
                     ->where('collection_name', $collection)
@@ -190,6 +193,26 @@ final readonly class ImageRun
                     ->flip();
 
                 foreach ($links as $link) {
+                    // Main images only: a product with no stored images has none to bring to the rules (a normal run fetches them), and
+                    // the others are judged by their stored main images alone, never by the rest of the pictures.
+                    if ($mainOnly) {
+                        $link->setRelation('vendor', $vendor);
+
+                        try {
+                            $current = $withImages->has($link->product_id) ? $this->sync->mainImagesCurrent($link) : true;
+                        } catch (Throwable) {
+                            $current = null;
+                        }
+
+                        if ($current === true) {
+                            $skipped++;
+                        } else {
+                            $ids[] = $link->id;
+                        }
+
+                        continue;
+                    }
+
                     if ($link->image_urls_hash === null || ! $withImages->has($link->product_id)) {
                         $ids[] = $link->id;
 

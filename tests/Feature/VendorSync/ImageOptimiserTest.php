@@ -92,54 +92,68 @@ it('leaves the memory limit as it found it after a large image', function (): vo
     expect(ini_get('memory_limit'))->toBe($before);
 });
 
-it('names the baseline in the signature only when it aligns', function (): void {
+it('names the crop in the signature only when it crops', function (): void {
     expect((new ImageOptimiser)->signature())->toBe('webp-1200-q85')
-        ->and((new ImageOptimiser)->signature(true))->toBe('webp-1200-q85-base15-top15-side4-ar100-grow-bg');
+        ->and((new ImageOptimiser)->signature(true))->toBe('webp-1200-q85-crop2-bg');
 
-    config(['vendorsync.images.align.bottom' => 0.2]);
+    config(['vendorsync.images.align.padding' => 0.05]);
 
-    expect((new ImageOptimiser)->signature(true))->toBe('webp-1200-q85-base20-top15-side4-ar100-grow-bg');
+    expect((new ImageOptimiser)->signature(true))->toBe('webp-1200-q85-crop5-bg');
 
+    config(['vendorsync.images.align.remove_background' => false]);
+
+    expect((new ImageOptimiser)->signature(true))->toBe('webp-1200-q85-crop5');
 });
 
-it('puts the subject on the baseline when asked, and leaves it where it is otherwise', function (): void {
-    // A 600 x 400 transparent PNG with a shoe-shaped block floating in the middle (rows 150 to 249).
-    $image = imagecreatetruecolor(600, 400);
+/** A transparent PNG, as the bytes, with one opaque block in it. */
+function optimiserBlockPng(int $width, int $height, int $left, int $top, int $right, int $bottom): string
+{
+    $image = imagecreatetruecolor($width, $height);
     imagealphablending($image, false);
     imagesavealpha($image, true);
     imagefill($image, 0, 0, (int) imagecolorallocatealpha($image, 0, 0, 0, 127));
-    imagefilledrectangle($image, 100, 150, 499, 249, (int) imagecolorallocate($image, 20, 30, 40));
+    imagefilledrectangle($image, $left, $top, $right, $bottom, (int) imagecolorallocate($image, 20, 30, 40));
     ob_start();
     imagepng($image);
-    $png = (string) ob_get_clean();
 
-    $bottomRow = function (string $webp): int {
-        $decoded = imagecreatefromstring($webp);
-        $bottom = -1;
+    return (string) ob_get_clean();
+}
 
-        for ($y = 0; $y < imagesy($decoded); $y++) {
-            if (((imagecolorat($decoded, 300, $y) >> 24) & 127) < 80) {
-                $bottom = $y;
-            }
-        }
+it('crops the picture to its subject when asked, tight on all four sides, and leaves it whole otherwise', function (): void {
+    // A 600 x 400 transparent PNG with a shoe-shaped block (400 x 100) floating in the middle.
+    $png = optimiserBlockPng(600, 400, 100, 150, 499, 249);
 
-        return $bottom;
-    };
+    // As it was: the whole picture.
+    expect(optimisedSize((new ImageOptimiser)->optimise($png)))->toBe([600, 400]);
 
-    // As it was: the block ends at row 249.
-    expect($bottomRow((new ImageOptimiser)->optimise($png)))->toBe(249);
+    // Cropped: the block and 2% of its longer side (8 px) all round, and nothing else. No margin is stored.
+    $cropped = (new ImageOptimiser)->optimise($png, true);
+    $decoded = imagecreatefromstring($cropped);
 
-    // On the baseline of a square canvas: the picture becomes 600 x 600, and 85% of 600 = 510.
-    $aligned = (new ImageOptimiser)->optimise($png, true);
+    expect(optimisedSize($cropped))->toBe([416, 116])
+        // The block is 8 px in from each edge: opaque inside it, transparent in the padding round it.
+        ->and((imagecolorat($decoded, 208, 58) >> 24) & 127)->toBe(0)
+        ->and((imagecolorat($decoded, 12, 12) >> 24) & 127)->toBe(0)
+        ->and((imagecolorat($decoded, 3, 58) >> 24) & 127)->toBeGreaterThan(100)
+        ->and((imagecolorat($decoded, 208, 102) >> 24) & 127)->toBe(0)
+        ->and((imagecolorat($decoded, 208, 112) >> 24) & 127)->toBeGreaterThan(100);
+});
 
-    expect(getimagesizefromstring($aligned)[1])->toBe(600)
-        ->and($bottomRow($aligned))->toBeGreaterThanOrEqual(507)->toBeLessThanOrEqual(511);
+it('keeps the cropped picture within the width limit, shrinking the subject and never enlarging it', function (): void {
+    // A subject 2000 wide in a 2400 x 800 picture: cropped to about 2080 x 280 and shrunk to 1200 wide.
+    $wide = optimiserBlockPng(2400, 800, 200, 300, 2199, 499);
 
-    // Without a canvas shape it keeps its own size and baseline: 85% of 400 = 340.
-    config(['vendorsync.images.align.aspect' => null]);
+    expect(optimisedSize((new ImageOptimiser)->optimise($wide, true))[0])->toBe(1200);
 
-    $kept = (new ImageOptimiser)->optimise($png, true);
+    // A small subject stays at its own pixels: nothing is blown up to fill the file.
+    $small = optimiserBlockPng(400, 300, 150, 100, 249, 199);
 
-    expect(getimagesizefromstring($kept)[1])->toBe(400)
-        ->and($bottomRow($kept))->toBeGreaterThanOrEqual(337)->toBeLessThanOrEqual(341);
+    expect(optimisedSize((new ImageOptimiser)->optimise($small, true)))->toBe([104, 104]);
+});
+
+it('still obeys the width limit for a picture it finds no subject in', function (): void {
+    // One pixel is no subject (noise), so the picture comes back whole and is shrunk like any other.
+    $empty = optimiserBlockPng(1800, 600, 0, 0, 0, 0);
+
+    expect(optimisedSize((new ImageOptimiser)->optimise($empty, true)))->toBe([1200, 400]);
 });

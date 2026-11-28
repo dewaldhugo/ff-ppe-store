@@ -17,7 +17,8 @@ final class ImagesCommand extends Command
         {--product= : Only this vendor product ID, as shown in reports (for example 215754)}
         {--refresh : Download every image again and replace changed ones}
         {--category= : Only products in these categories, comma separated contract handles (for example safety-shoes,safety-boots); other products are not considered}
-        {--aligned : Only the categories whose main images are put on the common baseline (vendorsync.images.align.collections); same as --category with those}';
+        {--aligned : Only the categories whose main images are cropped to their subject (vendorsync.images.align.collections); same as --category with those}
+        {--main : Only the main images (the first picture of each colour): those not on the current crop rules are downloaded again, and the other pictures are not read, compared or fetched}';
 
     protected $description = 'Queue image downloads for a vendor\'s products';
 
@@ -49,7 +50,8 @@ final class ImagesCommand extends Command
         }
 
         try {
-            $dispatch = $images->run($vendor, $product, (bool) $this->option('refresh'), $categories);
+            $mainOnly = (bool) $this->option('main');
+            $dispatch = $images->run($vendor, $product, (bool) $this->option('refresh'), $categories, $mainOnly);
             $queued = $dispatch->queued;
         } catch (RunAlreadyRunning $exception) {
             $this->error($exception->getMessage());
@@ -57,9 +59,11 @@ final class ImagesCommand extends Command
             return self::FAILURE;
         }
 
-        $this->line("Queued {$queued} image ".($queued === 1 ? 'job' : 'jobs')." for {$vendor}".($product === null ? '' : " product {$product}").($categories === [] || $product !== null ? '' : ' in '.implode(', ', $categories)).'.');
+        $this->line("Queued {$queued} ".($mainOnly ? 'main image ' : 'image ').($queued === 1 ? 'job' : 'jobs')." for {$vendor}".($product === null ? '' : " product {$product}").($categories === [] || $product !== null ? '' : ' in '.implode(', ', $categories)).'.');
         if ($dispatch->skipped > 0) {
-            $this->line("{$dispatch->skipped} products with up-to-date images were not queued. Use --refresh to check every image again.");
+            $this->line($mainOnly
+                ? "{$dispatch->skipped} products whose main images are already on the current rules (or that have no stored images yet) were not queued. Use --refresh to download every main image again."
+                : "{$dispatch->skipped} products with up-to-date images were not queued. Use --refresh to check every image again.");
         }
 
         $this->line('A job that cannot save any image fails and appears in failed_jobs. Run `php artisan vendorsync:status` for the result.');

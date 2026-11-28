@@ -59,6 +59,8 @@ final class SyncProductImages implements ShouldQueue
         public readonly int $vendorProductId,
         public readonly bool $refresh = false,
         public readonly ?int $runId = null,
+        // Only the main images (ProductImageSync::syncMain): the other pictures are not looked at.
+        public readonly bool $mainOnly = false,
     ) {
         $this->onQueue(Queues::IMAGES);
     }
@@ -79,7 +81,7 @@ final class SyncProductImages implements ShouldQueue
         $deadline = now()->addSeconds(max(0, $this->timeout - (int) config('vendorsync.images.job_margin_seconds', 60)));
 
         try {
-            $result = $sync->sync($link, $this->refresh, $deadline);
+            $result = $this->mainOnly ? $sync->syncMain($link, $this->refresh, $deadline) : $sync->sync($link, $this->refresh, $deadline);
         } catch (Throwable $exception) {
             $this->fail($id, class_basename($exception).': '.$exception->getMessage(), $exception);
         }
@@ -89,7 +91,9 @@ final class SyncProductImages implements ShouldQueue
         }
 
         if ($result->stored === 0) {
-            $this->fail($id, "none of the {$result->planned} images could be saved. ".implode(' | ', $result->failed), result: $result);
+            $this->fail($id, $this->mainOnly
+                ? 'no main image is stored for this product yet, so there is nothing to bring to the current rules; run a normal image run (without --main) first. '.implode(' | ', $result->notes)
+                : "none of the {$result->planned} images could be saved. ".implode(' | ', $result->failed), result: $result);
         }
 
         if ($result->indexFailure !== null) {

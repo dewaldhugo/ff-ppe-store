@@ -23,7 +23,7 @@
                 loading="lazy"
                 width="300"
                 height="300"
-                class="h-full w-full object-contain"
+                class="card-picture"
             >
         @endif
 

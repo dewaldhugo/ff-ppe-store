@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 use App\Domain\VendorSync\Images\SubjectAligner;
 
-// The subject (shoe or boot) of a product photo is put on a common baseline: 6% of the height under it, never scaled up, scaled
-// down only when it would leave less than 2% above it, and never moved sideways.
+// The main image of a product is cropped to its subject, tight on all four sides with a hair of padding, and scaled down (never
+// up) to a longest side. The margins and the baseline are the storefront's (the cards' padding, object-bottom), not the file's.
 
 /**
  * A 400 x 300 image with a rectangle as the subject.
  *
  * @param  bool  $transparent  A transparent canvas, or an opaque white one.
  */
-function alignerImage(int $x, int $y, int $width, int $height, bool $transparent = true): GdImage
+function cropImage(int $x, int $y, int $width, int $height, bool $transparent = true): GdImage
 {
     $image = imagecreatetruecolor(400, 300);
     imagealphablending($image, false);
@@ -24,13 +24,13 @@ function alignerImage(int $x, int $y, int $width, int $height, bool $transparent
 }
 
 /**
- * The box round what is not background, as [left, top, right, bottom] inclusive, at full resolution.
+ * The box round what is not background, as [left, top, right, bottom] inclusive.
  *
  * @return array{0: int, 1: int, 2: int, 3: int}
  */
-function alignerBox(GdImage $image, bool $transparent = true): array
+function cropBox(GdImage $image, bool $transparent = true): array
 {
-    $box = [400, 300, -1, -1];
+    $box = [imagesx($image), imagesy($image), -1, -1];
 
     for ($y = 0; $y < imagesy($image); $y++) {
         for ($x = 0; $x < imagesx($image); $x++) {
@@ -46,201 +46,93 @@ function alignerBox(GdImage $image, bool $transparent = true): array
     return $box;
 }
 
-it('moves a shoe floating in the middle down to the baseline', function (): void {
-    $image = alignerImage(100, 100, 200, 80);
+it('crops the picture to the subject with the padding all round', function (): void {
+    // A 200 x 80 subject: 2% of its longer side is 4 px.
+    $cropped = (new SubjectAligner)->crop(cropImage(100, 100, 200, 80), 0.02, 1200);
 
-    $box = alignerBox((new SubjectAligner)->align($image, 0.06, 0.02));
-
-    // The baseline is 94% of 300 = 282. The size and the sideways position are as they were.
-    expect($box[3])->toBeGreaterThanOrEqual(280)->toBeLessThanOrEqual(283)
-        ->and($box[3] - $box[1] + 1)->toBeGreaterThanOrEqual(79)->toBeLessThanOrEqual(82)
-        ->and($box[0])->toBeGreaterThanOrEqual(98)->toBeLessThanOrEqual(102)
-        ->and($box[2])->toBeGreaterThanOrEqual(297)->toBeLessThanOrEqual(302);
+    expect(imagesx($cropped))->toBe(208)->and(imagesy($cropped))->toBe(88)
+        // The subject starts 4 px in from the left and the top, and ends 4 px from the right and the bottom.
+        ->and(cropBox($cropped))->toBe([4, 4, 203, 83]);
 });
 
-it('gives a subject that touches the bottom edge some room under it', function (): void {
-    $image = alignerImage(100, 220, 200, 80);
+it('keeps at least 2 pixels of padding, even with none asked for', function (): void {
+    $cropped = (new SubjectAligner)->crop(cropImage(100, 100, 200, 80), 0.0, 1200);
 
-    $box = alignerBox((new SubjectAligner)->align($image, 0.06, 0.02));
-
-    expect($box[3])->toBeGreaterThanOrEqual(280)->toBeLessThanOrEqual(283)
-        ->and($box[3] - $box[1] + 1)->toBeGreaterThanOrEqual(79)->toBeLessThanOrEqual(82);
+    expect(imagesx($cropped))->toBe(204)->and(imagesy($cropped))->toBe(84)
+        ->and(cropBox($cropped))->toBe([2, 2, 201, 81]);
 });
 
-it('scales down a boot that fills the height so that it fits above the baseline, and keeps it centred', function (): void {
-    $image = alignerImage(100, 0, 200, 300);
+it('crops a subject in a corner just the same, cutting the padding where the picture ends', function (): void {
+    $cropped = (new SubjectAligner)->crop(cropImage(0, 0, 100, 50), 0.02, 1200);
 
-    $box = alignerBox((new SubjectAligner)->align($image, 0.06, 0.02));
-
-    // 282 - 6 = 276 high, bottom on the baseline, still centred on x = 200.
-    expect($box[3])->toBeGreaterThanOrEqual(280)->toBeLessThanOrEqual(283)
-        ->and($box[3] - $box[1] + 1)->toBeGreaterThanOrEqual(273)->toBeLessThanOrEqual(279)
-        ->and(($box[0] + $box[2]) / 2)->toBeGreaterThan(197)->toBeLessThan(203);
+    // Nothing is added beyond the original: 2 px of padding at the right and the bottom only.
+    expect(imagesx($cropped))->toBe(102)->and(imagesy($cropped))->toBe(52)
+        ->and(cropBox($cropped))->toBe([0, 0, 99, 49]);
 });
 
-it('never scales a subject up', function (): void {
-    $image = alignerImage(150, 120, 100, 50);
+it('returns the same image when the subject fills it already and nothing needs shrinking', function (): void {
+    $image = cropImage(0, 0, 400, 300);
 
-    $box = alignerBox((new SubjectAligner)->align($image, 0.06, 0.02));
-
-    expect($box[3] - $box[1] + 1)->toBeLessThanOrEqual(52)->toBeGreaterThanOrEqual(48)
-        ->and($box[2] - $box[0] + 1)->toBeLessThanOrEqual(102)->toBeGreaterThanOrEqual(98);
+    expect((new SubjectAligner)->crop($image, 0.02, 1200))->toBe($image);
 });
 
-it('returns the same image when the subject is already on the baseline', function (): void {
-    $image = alignerImage(100, 202, 200, 80);
+it('scales the cropped picture down to the longest side, never up', function (): void {
+    // A 360 x 100 subject cropped to 374 x 114 (7 px of padding), then shrunk so the longer side is 187.
+    $shrunk = (new SubjectAligner)->crop(cropImage(20, 100, 360, 100), 0.02, 187);
 
-    expect((new SubjectAligner)->align($image, 0.06, 0.02))->toBe($image);
+    expect(imagesx($shrunk))->toBe(187)->and(imagesy($shrunk))->toBe(57);
+
+    // A large limit never enlarges a small picture.
+    $kept = (new SubjectAligner)->crop(cropImage(100, 100, 200, 80), 0.02, 5000);
+
+    expect(imagesx($kept))->toBe(208)->and(imagesy($kept))->toBe(88);
+});
+
+it('limits a tall subject by its height, not its width', function (): void {
+    // A 100 x 280 boot: cropped to 112 x 292 (6 px of padding), shrunk so the longer side (the height) is 146.
+    $cropped = (new SubjectAligner)->crop(cropImage(150, 10, 100, 280), 0.02, 146);
+
+    expect(imagesy($cropped))->toBe(146)->and(imagesx($cropped))->toBe(56);
 });
 
 it('returns the same image when it finds no subject', function (): void {
-    $image = alignerImage(0, 0, 1, 1);
+    $image = cropImage(0, 0, 1, 1);
     imagefill($image, 0, 0, (int) imagecolorallocatealpha($image, 0, 0, 0, 127));
 
-    expect((new SubjectAligner)->align($image, 0.06, 0.02))->toBe($image);
+    expect((new SubjectAligner)->crop($image, 0.02, 1200))->toBe($image);
+});
+
+it('takes a speck for noise, not a subject', function (): void {
+    $image = cropImage(10, 10, 3, 3);
+
+    expect((new SubjectAligner)->crop($image, 0.02, 1200))->toBe($image);
 });
 
 it('finds the subject on an opaque background too, and keeps that background', function (): void {
-    $image = alignerImage(100, 100, 200, 80, transparent: false);
+    $cropped = (new SubjectAligner)->crop(cropImage(100, 100, 200, 80, transparent: false), 0.02, 1200);
 
-    $aligned = (new SubjectAligner)->align($image, 0.06, 0.02);
-    $box = alignerBox($aligned, transparent: false);
-
-    expect($box[3])->toBeGreaterThanOrEqual(280)->toBeLessThanOrEqual(283)
-        // The corner is still white, and the old position is white now.
-        ->and(imagecolorat($aligned, 0, 0) & 0xFFFFFF)->toBe(0xFFFFFF)
-        ->and(imagecolorat($aligned, 200, 110) & 0xFFFFFF)->toBe(0xFFFFFF);
+    expect(imagesx($cropped))->toBe(208)->and(imagesy($cropped))->toBe(88)
+        ->and(cropBox($cropped, transparent: false))->toBe([4, 4, 203, 83])
+        // The corner of the crop is the photo's own white, still opaque.
+        ->and(imagecolorat($cropped, 0, 0) & 0xFFFFFF)->toBe(0xFFFFFF)
+        ->and((imagecolorat($cropped, 0, 0) >> 24) & 127)->toBe(0);
 });
 
 it('keeps the transparency of a transparent image', function (): void {
-    $aligned = (new SubjectAligner)->align(alignerImage(100, 100, 200, 80), 0.06, 0.02);
+    $cropped = (new SubjectAligner)->crop(cropImage(100, 100, 200, 80), 0.02, 1200);
 
-    expect((imagecolorat($aligned, 0, 0) >> 24) & 127)->toBe(127)
-        ->and((imagecolorat($aligned, 200, 110) >> 24) & 127)->toBe(127);
+    expect((imagecolorat($cropped, 0, 0) >> 24) & 127)->toBe(127)
+        ->and((imagecolorat($cropped, 100, 40) >> 24) & 127)->toBe(0);
 });
 
-it('ignores a faint shadow under the subject', function (): void {
-    $image = alignerImage(100, 100, 200, 80);
-    // A shadow below the shoe, mostly transparent (alpha 110 of 127).
+it('does not let a faint shadow under the subject stretch the crop', function (): void {
+    $image = cropImage(100, 100, 200, 80);
+    // A shadow below the shoe, mostly transparent (alpha 110 of 127): not part of the subject.
     imagefilledrectangle($image, 120, 181, 280, 200, (int) imagecolorallocatealpha($image, 0, 0, 0, 110));
 
-    $box = alignerBox((new SubjectAligner)->align($image, 0.06, 0.02));
+    $cropped = (new SubjectAligner)->crop($image, 0.02, 1200);
 
-    // The shoe, not the shadow, sits on the baseline.
-    expect($box[3])->toBeGreaterThanOrEqual(280)->toBeLessThanOrEqual(283);
-});
-
-it('moves the faint shadow with the shoe, so it is still under it', function (): void {
-    $image = alignerImage(100, 100, 200, 80);
-    // A shadow just under the shoe (rows 181 to 200), mostly transparent.
-    imagefilledrectangle($image, 120, 181, 280, 200, (int) imagecolorallocatealpha($image, 0, 0, 0, 110));
-
-    $aligned = (new SubjectAligner)->align($image, 0.12, 0.02);
-    $shoe = alignerBox($aligned);
-
-    // The shoe's bottom is on the baseline (88% of 300 = 264). A few rows under it the shadow is still there, not cut off:
-    // not fully transparent, and not as solid as the shoe.
-    $shadowAlpha = (imagecolorat($aligned, 200, $shoe[3] + 6) >> 24) & 127;
-
-    expect($shoe[3])->toBeGreaterThanOrEqual(262)->toBeLessThanOrEqual(266)
-        ->and($shadowAlpha)->toBeLessThan(127)->toBeGreaterThan(80);
-});
-
-it('keeps a wide subject clear of the sides, scaling it down to fit and keeping it centred', function (): void {
-    // A shoe that fills the whole width: columns 0 to 399.
-    $image = alignerImage(0, 100, 400, 80);
-
-    $box = alignerBox((new SubjectAligner)->align($image, 0.06, 0.02, 0.04));
-
-    // 4% of 400 = 16 px each side, so at most 368 wide, still centred, and on the baseline.
-    expect($box[0])->toBeGreaterThanOrEqual(15)->toBeLessThanOrEqual(18)
-        ->and($box[2])->toBeGreaterThanOrEqual(381)->toBeLessThanOrEqual(384)
-        ->and(($box[0] + $box[2]) / 2)->toBeGreaterThan(197)->toBeLessThan(203)
-        ->and($box[3])->toBeGreaterThanOrEqual(280)->toBeLessThanOrEqual(283);
-});
-
-it('pushes a subject that is off to one side in from that side without changing its size', function (): void {
-    // 10 px from the left edge, 120 wide: not wide, but too close to the left.
-    $image = alignerImage(4, 100, 120, 80);
-
-    $box = alignerBox((new SubjectAligner)->align($image, 0.06, 0.02, 0.04));
-
-    expect($box[0])->toBeGreaterThanOrEqual(15)->toBeLessThanOrEqual(18)
-        ->and($box[2] - $box[0] + 1)->toBeGreaterThanOrEqual(118)->toBeLessThanOrEqual(122);
-});
-
-it('leaves a subject alone that is on the baseline and clear of the sides', function (): void {
-    $image = alignerImage(60, 202, 280, 80);
-
-    expect((new SubjectAligner)->align($image, 0.06, 0.02, 0.04))->toBe($image);
-});
-
-it('does not move a subject sideways when there is no side margin asked for', function (): void {
-    $image = alignerImage(0, 100, 400, 80);
-
-    $box = alignerBox((new SubjectAligner)->align($image, 0.06, 0.02));
-
-    expect($box[0])->toBeLessThanOrEqual(1)->and($box[2])->toBeGreaterThanOrEqual(398);
-});
-
-it('puts a wide picture on a square canvas, with the subject on that canvas\'s baseline', function (): void {
-    // 400 x 300 becomes 400 x 400: the baseline is 94% of 400 = 376.
-    $aligned = (new SubjectAligner)->align(alignerImage(40, 100, 320, 100), 0.06, 0.02, 0.04, 1.0);
-
-    $box = alignerBox($aligned);
-
-    expect(imagesx($aligned))->toBe(400)->and(imagesy($aligned))->toBe(400)
-        ->and($box[3])->toBeGreaterThanOrEqual(374)->toBeLessThanOrEqual(377)
-        // Not scaled: it fits (320 wide is inside the 4% margins of 400, which allow 368).
-        ->and($box[2] - $box[0] + 1)->toBeGreaterThanOrEqual(318)->toBeLessThanOrEqual(322);
-});
-
-it('puts a wide shoe and a tall boot on the same baseline of the same canvas', function (): void {
-    $shoe = (new SubjectAligner)->align(alignerImage(20, 120, 360, 90), 0.06, 0.02, 0.04, 1.0);
-    $boot = (new SubjectAligner)->align(alignerImage(120, 0, 160, 300), 0.06, 0.02, 0.04, 1.0);
-
-    expect(imagesy($shoe))->toBe(imagesy($boot))
-        ->and(abs(alignerBox($shoe)[3] - alignerBox($boot)[3]))->toBeLessThanOrEqual(3);
-});
-
-it('keeps the canvas as it is when no shape is asked for', function (): void {
-    $aligned = (new SubjectAligner)->align(alignerImage(100, 100, 200, 80), 0.06, 0.02, 0.04, null);
-
-    expect(imagesx($aligned))->toBe(400)->and(imagesy($aligned))->toBe(300);
-});
-
-it('enlarges a subject that is clearly too small for its room, up to the pixels of the original', function (): void {
-    // A 400 x 300 photo with a 100 x 60 boot in it, resampled to a 200 wide square (a plain resize would halve it).
-    $image = alignerImage(150, 120, 100, 60);
-
-    $result = (new SubjectAligner)->align($image, 0.11, 0.02, 0.04, 1.0, 200, 1.0);
-    [$left, $top, $right, $bottom] = alignerBox($result);
-
-    expect(imagesx($result))->toBe(200)->and(imagesy($result))->toBe(200)
-        // 1.0 is the original's pixels: the boot is 100 wide there, twice what a plain resize makes it.
-        ->and($right - $left + 1)->toBeGreaterThan(95)->toBeLessThan(105)
-        ->and($bottom + 1)->toBeGreaterThan(176)->toBeLessThan(180);
-});
-
-it('enlarges a small subject until it fills the room, when the limit allows', function (): void {
-    // 70 x 60 is 3.5% of the picture: a subject under 3% of it is taken for noise and left alone.
-    $image = alignerImage(165, 130, 70, 60);
-
-    $result = (new SubjectAligner)->align($image, 0.11, 0.02, 0.04, 1.0, 200, 3.0);
-    [$left, $top, $right, $bottom] = alignerBox($result);
-
-    // Room is 91% of 200 = 182 high, 92% wide: the 70 x 60 subject grows until its width fills the room (about 2.6 times), and is never beyond 3x of the source.
-    expect($bottom - $top + 1)->toBeGreaterThan(110)->toBeLessThanOrEqual(182)
-        ->and($bottom + 1)->toBeGreaterThan(176)->toBeLessThan(180)
-        // Still centred.
-        ->and(abs((($left + $right) / 2) - 100))->toBeLessThan(6);
-});
-
-it('does not enlarge a subject that already fills most of its room', function (): void {
-    $image = alignerImage(70, 10, 260, 280);
-
-    $result = (new SubjectAligner)->align($image, 0.11, 0.02, 0.04, 1.0, 400, 3.0);
-    [$left, , $right] = alignerBox($result);
-
-    expect($right - $left + 1)->toBeLessThanOrEqual(262);
+    // The subject and its 4 px of padding: the shadow inside the padding is kept, the rest of it is cut.
+    expect(imagesy($cropped))->toBe(88)
+        ->and((imagecolorat($cropped, 100, 85) >> 24) & 127)->toBeLessThan(127);
 });

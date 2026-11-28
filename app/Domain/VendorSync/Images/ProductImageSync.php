@@ -15,6 +15,7 @@ use App\Domain\VendorSync\Models\VendorRawRecord;
 use Carbon\CarbonInterface;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Lunar\Models\Product;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -256,6 +257,142 @@ final readonly class ProductImageSync
         $link->update(['image_urls_hash' => $newHash]);
 
         return $result;
+    }
+
+    /**
+     * Brings the product's MAIN images (the first picture of each colour) to the current rules and touches nothing else. The
+     * other pictures are not read, compared, downloaded or replaced, and the product's status, search index entry and image
+     * hash are left as they are: a main image that is not on the current signature is downloaded again and replaces the
+     * stored one in place, so the product keeps its order, its primary image and the colour links of its variants. A main image
+     * that is not stored yet is not fetched here (that is a normal image run's work), and a failed download keeps the stored image.
+     * The search index holds no image, so nothing is sent to it.
+     *
+     * @param  bool  $refresh  Download every main image again, whatever its signature.
+     */
+    public function syncMain(VendorProduct $link, bool $refresh = false, ?CarbonInterface $deadline = null): ImageSyncResult
+    {
+        $result = new ImageSyncResult;
+        $plan = $this->plan($link, $result);
+
+        if ($plan === null) {
+            return $result;
+        }
+
+        /** @var Product $product */
+        $product = Product::query()->findOrFail($link->product_id);
+        $aligned = $this->alignsProduct((string) $link->vendor?->code, $result->collections);
+        $signature = $this->optimiser->signature($aligned);
+        $stored = $this->storedMains($link->product_id);
+
+        foreach ($plan as $index => $image) {
+            if ($image->role !== 'main') {
+                continue;
+            }
+
+            $result->planned++;
+            $existing = $stored->get($this->key($image->url, $image->colour));
+
+            if ($existing === null) {
+                $result->notes[] = basename($image->url).' ('.$image->colour.') is not stored yet; a normal image run fetches it';
+
+                continue;
+            }
+
+            $result->stored++;
+
+            if (! $refresh && $existing->getCustomProperty('optimised') === $signature) {
+                continue;
+            }
+
+            [$content, $downloadedFrom, $failure] = $this->fetch($image, $result, $deadline);
+
+            if ($content === null) {
+                $result->failed[] = "{$image->url}: {$failure}";
+
+                continue;
+            }
+
+            $caption = trim(($product->brand?->name ?? '').' '.$product->translateAttribute('name').' '.$image->colour);
+
+            try {
+                $media = $product
+                    ->addMediaFromString($this->optimiser->optimise($content, $aligned))
+                    ->usingName($caption)
+                    ->usingFileName(Str::slug($caption.' '.$image->role.' '.($index + 1)).'.webp')
+                    ->withCustomProperties([
+                        'colour' => $image->colour,
+                        'role' => $image->role,
+                        // The stored image's own flag: it is still the product's primary image if it was.
+                        'primary' => (bool) $existing->getCustomProperty('primary'),
+                        'source_url' => $image->url,
+                        'downloaded_url' => $downloadedFrom,
+                        'sha256' => hash('sha256', $content),
+                        'optimised' => $signature,
+                    ])
+                    ->toMediaCollection((string) config('lunar.media.collection'));
+            } catch (Throwable $exception) {
+                $result->failed[] = "{$image->url}: ".class_basename($exception).': '.$exception->getMessage();
+
+                continue;
+            } finally {
+                unset($content);
+            }
+
+            // The new file takes the old one's place: its position, and the variants' links to it.
+            $media->update(['order_column' => $existing->order_column]);
+            DB::table('lunar_media_product_variant')->where('media_id', $existing->id)->update(['media_id' => $media->id]);
+            $existing->delete();
+
+            $result->downloaded++;
+            $result->changed = true;
+        }
+
+        return $result;
+    }
+
+    /**
+     * Whether the main images this product has stored are on the current rules, without reading its other pictures: true when
+     * every stored main image of the plan has the current signature (one not stored yet is not this check's concern), and null
+     * when the plan is blocked, so that a job is queued to report it.
+     */
+    public function mainImagesCurrent(VendorProduct $link): ?bool
+    {
+        $result = new ImageSyncResult;
+        $plan = $this->plan($link, $result);
+
+        if ($plan === null) {
+            return null;
+        }
+
+        $signature = $this->optimiser->signature($this->alignsProduct((string) $link->vendor?->code, $result->collections));
+        $stored = $this->storedMains($link->product_id);
+
+        foreach ($plan as $image) {
+            $existing = $image->role === 'main' ? $stored->get($this->key($image->url, $image->colour)) : null;
+
+            if ($existing !== null && $existing->getCustomProperty('optimised') !== $signature) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * The product's stored main images, keyed like the plan's: one query for those and no other picture of the product.
+     *
+     * @return Collection<string, Media>
+     */
+    private function storedMains(int $productId): Collection
+    {
+        return Media::query()
+            ->where('model_type', (new Product)->getMorphClass())
+            ->where('model_id', $productId)
+            ->where('collection_name', (string) config('lunar.media.collection'))
+            ->where('custom_properties->role', 'main')
+            ->get()
+            ->filter(fn (Media $media): bool => filled($media->getCustomProperty('source_url')))
+            ->keyBy(fn (Media $media): string => $this->key($media->getCustomProperty('source_url'), $media->getCustomProperty('colour')));
     }
 
     /**
