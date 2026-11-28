@@ -114,3 +114,15 @@ it('leaves the strip out when the search index cannot be reached, and the rest o
 
     expect($html)->not->toContain('data-home-brands')->toContain('data-home-trust')->toContain('data-home-service');
 });
+
+it('centres View all brands, the same as Browse all categories, with the same space above', function (): void {
+    SearchIndex::use();
+
+    $html = $this->get(route('home'))->assertOk()->getContent();
+
+    preg_match('#<div class="([^"]*)" data-home-brands-all-wrap>#', $html, $brands);
+    preg_match('#<p class="([^"]*)" data-browse-all-categories>#', $html, $categories);
+
+    expect($brands[1] ?? '')->toContain('text-center')->toContain('mt-8')
+        ->and($categories[1] ?? '')->toContain('text-center')->toContain('mt-8');
+});

@@ -1,5 +1,5 @@
 {{-- The home page. Search engines are kept out site-wide by STORE_NOINDEX. --}}
-{{-- Order: hero (with the trust strip at its bottom), industries, PPE Health Check, shop by brand, featured products, spotlight, video, buying guides, testimonials, service strip. --}}
+{{-- Order: hero (with the trust strip at its bottom), industries, shop by category, PPE Health Check, shop by brand, featured products, spotlight, video, buying guides, testimonials, service strip. --}}
 <x-layouts.storefront
     full-title="Frontline Safety Gear"
     description="Streamline your site procurement with a single, dependable UK & EU trade supplier. We stock certified head-to-toe PPE, workwear, and safety footwear ready for rapid nationwide dispatch and competitive bulk pricing."
@@ -26,6 +26,22 @@
         <div class="mt-8">
             <x-industry-slider />
         </div>
+    </div>
+
+    {{-- Shop by category: the five top-level categories, as on /shop, each with its picture (App\Domain\Catalogue\Menu\CategoryCardImage). --}}
+    <div class="pb-12 sm:pb-16" data-home-categories>
+        <x-ui.container>
+            <x-ui.section-heading title="Shop by category">Choose a category, or search by name, brand or safety class.</x-ui.section-heading>
+
+            {{-- A search with a category to look in, then the cards, then the way to the page of every category. --}}
+            <x-storefront.category-search class="mt-6" />
+
+            <x-storefront.category-grid class="mt-8" />
+
+            <p class="mt-8 text-center" data-browse-all-categories>
+                <x-ui.button-outline :href="route('shop')" shape="md">Browse all categories</x-ui.button-outline>
+            </p>
+        </x-ui.container>
     </div>
 
     <x-home.health-check />

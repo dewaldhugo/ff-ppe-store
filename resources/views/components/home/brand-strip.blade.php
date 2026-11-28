@@ -22,7 +22,8 @@
                 @endforeach
             </ul>
 
-            <div class="mt-6">
+            {{-- Centred, like the Browse all categories button under the category cards. --}}
+            <div class="mt-8 text-center" data-home-brands-all-wrap>
                 <x-ui.button-outline :href="route('brands')" shape="md" data-home-brands-all>View all brands</x-ui.button-outline>
             </div>
         </x-ui.container>

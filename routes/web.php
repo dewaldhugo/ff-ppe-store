@@ -16,6 +16,7 @@ use App\Http\Controllers\BrandIndexController;
 use App\Http\Controllers\CardReturnController;
 use App\Http\Controllers\FavouriteController;
 use App\Http\Controllers\OrderConfirmationController;
+use App\Http\Middleware\RedirectSearchToCategory;
 use App\Http\Middleware\RedirectTrailingSlash;
 use App\Http\Middleware\ResolveBrandSlugs;
 use App\Http\Middleware\ResolveCategoryPath;
@@ -58,7 +59,8 @@ Route::middleware(RedirectTrailingSlash::class)->group(function () use ($policie
         ->middleware(ResolveProductSlug::class)
         ->name('product');
 
-    Route::get('/search', CategoryListing::class)->name('search');
+    // A `category` in the query (the home page's search with a category drop-down) sends the search on to that category's page.
+    Route::get('/search', CategoryListing::class)->middleware(RedirectSearchToCategory::class)->name('search');
 
     Route::get('/brands', BrandIndexController::class)->name('brands');
 
