@@ -51,7 +51,9 @@
                                 </p>
                             @endif
 
-                            <x-ui.card-cta class="mt-3" data-view-product>View product</x-ui.card-cta>
+                            <x-storefront.compare-toggle :product="$product" class="mt-3" />
+
+                            <x-ui.card-cta class="mt-2" data-view-product>View product</x-ui.card-cta>
                         </div>
                     </li>
                 @endforeach
