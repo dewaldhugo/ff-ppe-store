@@ -92,12 +92,12 @@ it('has the footer columns with the right links', function (): void {
         ->and($products[1])->not->toContain('href="'.route('category', 'non-safety-footwear/wellingtons').'"');
 });
 
-it('uses the white logo on the brand-blue footer', function (): void {
+it('uses the white logo on the brand-charcoal footer', function (): void {
     $footer = footer($this->get(route('shop'))->getContent());
 
     preg_match('#<a href="'.preg_quote(route('home'), '#').'"[^>]*data-footer-logo.*?</a>#s', $footer, $logo);
 
-    expect($footer)->toContain('bg-brand-blue')
+    expect($footer)->toContain('bg-brand-charcoal')->not->toContain('bg-brand-blue')
         ->and($logo[0])->toContain(asset('images/frontline-logo-white.png'))
         ->and($logo[0])->not->toContain('frontline-logo.png');
 });

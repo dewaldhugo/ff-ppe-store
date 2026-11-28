@@ -128,10 +128,14 @@ return [
     /*
      * The buying guides row, between the video and the testimonials: one card per item, each a link to a page
      * of the site by its route name. `title` and `text` frame the page, `link` is the link's words, `icon` is
-     * the picture beside the title (`ruler` or `shield`; none when left out or unknown), `image` is a photo
-     * behind the card under a dark overlay (`file` in public/images/home, with its `width` and `height`; a plain
-     * white card when left out). The photos are copies of ones the site already uses (hero-bg-1 and hero-bg-7). An item
-     * whose route does not exist is left out, and with none left the section is not shown.
+     * the picture beside the title (`ruler` or `shield`; none when left out or unknown), `panel` is a
+     * picture on a white panel beside the words, shown whole and with no overlay (`file` in public/images/home, `width`, `height` and its `alt`
+     * words, and `padded` => false to run the picture edge to edge; below the words on a phone): a diagram, or a photo that should be seen whole. `image` is a photo behind the card under a dark
+     * charcoal overlay (`file`, `width` and `height`; the overlay is at least 62% charcoal, for white words over a bright photo). A card has a
+     * panel or a photo, not both (a photo wins); a plain white card when it has neither. Both cards use a panel, 816 x 550: the size guide's
+     * is a photograph supplied by the client (a worker lacing a boot on scaffolding), the technical features' a diagram supplied by the
+     * client (a Safety Jogger boot with its icons). An item whose route does not exist is left out, and with none left the section is
+     * not shown.
      */
     'guides' => [
         'title' => 'Buying guides',
@@ -140,7 +144,14 @@ return [
             [
                 'route' => 'size-guide',
                 'icon' => 'ruler',
-                'image' => ['file' => 'guide-size-guide.jpg', 'width' => 1000, 'height' => 459],
+                'panel' => [
+                    'file' => 'guide-size-guide-panel.jpg',
+                    'width' => 816,
+                    'height' => 550,
+                    'alt' => 'A worker lacing up a safety boot on a scaffold platform, getting the fit right',
+                    // A photo fills its panel, edge to edge; a diagram on a white ground keeps the padding round it.
+                    'padded' => false,
+                ],
                 'title' => 'Size guide',
                 'text' => 'UK to EU size conversions and measuring advice for footwear, workwear and gloves.',
                 'link' => 'Open the size guide',
@@ -148,10 +159,15 @@ return [
             [
                 'route' => 'technical-features',
                 'icon' => 'shield',
-                'image' => ['file' => 'guide-technical-features.jpg', 'width' => 1000, 'height' => 459],
+                'panel' => [
+                    'file' => 'guide-technical-features-diagram.webp',
+                    'width' => 816,
+                    'height' => 550,
+                    'alt' => 'A cutaway of a Safety Jogger safety boot, with its safety icons: waterproof, anti-static, fire resistant, slip resistant and more',
+                ],
                 'title' => 'Technical features',
                 'text' => 'Safety icons, toe caps, slip resistance, waterproofing, ESD and more, explained.',
-                'link' => 'See the technical features',
+                'link' => 'See technical features',
             ],
         ],
     ],

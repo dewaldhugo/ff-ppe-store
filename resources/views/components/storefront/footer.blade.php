@@ -5,7 +5,7 @@
     $emailHref = \App\Support\Store::emailHref();
 @endphp
 
-<footer class="surface-dark bg-brand-blue text-white">
+<footer class="surface-dark bg-brand-charcoal text-white">
     <x-ui.container class="grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-5">
         <div class="space-y-3 text-sm sm:col-span-2 lg:col-span-1">
             <a href="{{ route('home') }}" class="inline-block" data-footer-logo>

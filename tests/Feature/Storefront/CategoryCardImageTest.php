@@ -92,3 +92,33 @@ it('lays the five cards out in one row on desktop, with the subcategories as pla
         ->and(substr_count(substr($grid, 0, (int) strpos($grid, '</ul>')), '<a '))->toBe(5)
         ->and($grid)->toContain('Safety Boots');
 });
+
+it('zooms the picture on a category card on hover and on keyboard focus, clipped to the card', function (): void {
+    $grid = shopGrid($this->get(route('shop'))->assertOk()->getContent());
+
+    preg_match_all('#<li class="([^"]*)" data-category-card>#', $grid, $cards);
+    preg_match_all('#<img[^>]*data-category-image[^>]*>#s', $grid, $images);
+
+    expect($cards[1])->toHaveCount(5)->and($images[0])->toHaveCount(5);
+
+    foreach ($cards[1] as $card) {
+        // The card is the group the zoom follows, and it clips the zoomed picture to its rounded corners.
+        expect($card)->toContain('group')->toContain('overflow-hidden')->toContain('rounded-lg');
+    }
+
+    foreach ($images[0] as $image) {
+        // A zoom to 110%, smooth, whatever the "reduce motion" setting says (no motion-safe:); also when the card's link has keyboard focus.
+        expect($image)->toContain('transition-transform')->toContain('duration-500')
+            ->toContain('group-hover:scale-110')->toContain('group-focus-within:scale-110')->not->toContain('motion-safe:')
+            ->toContain('object-cover')->toContain('alt=""');
+    }
+});
+
+it('zooms the pictures on the home page category cards too, which are the same cards', function (): void {
+    $html = $this->get(route('home'))->assertOk()->getContent();
+
+    preg_match('#<div[^>]*data-home-categories.*?</ul>#s', $html, $section);
+
+    expect(substr_count($section[0], 'group-hover:scale-110'))->toBe(5)
+        ->and(substr_count($section[0], 'data-category-card'))->toBe(5);
+});

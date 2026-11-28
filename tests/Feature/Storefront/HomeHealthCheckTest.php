@@ -94,3 +94,14 @@ it('shows the same example scorecard as the Health Check page', function (): voi
         ->and($home)->toContain('Developing')->toContain('Lowest-scoring section:')
         ->and($home)->toBe($page);
 });
+
+it('is on brand-charcoal, the colour of the footer and the top bar, with a teal eyebrow that is readable on it', function (): void {
+    $html = $this->get(route('home'))->assertOk()->getContent();
+
+    preg_match('#<section[^>]*data-home-health-check[^>]*>#', $html, $open);
+    preg_match('#<section[^>]*data-home-health-check.*?</section>#s', $html, $section);
+
+    expect($open[0])->toContain('bg-brand-charcoal')->not->toContain('bg-brand-navy')->not->toContain('bg-brand-teal-dark')->toContain('surface-dark')->toContain('text-white')
+        // The teal is 6.7:1 on the charcoal, the same pair as the teal accents on the top bar.
+        ->and($section[0])->toMatch('#<p class="[^"]*\btext-brand-teal\b(?!-)[^"]*">[^<]+</p>#');
+});
