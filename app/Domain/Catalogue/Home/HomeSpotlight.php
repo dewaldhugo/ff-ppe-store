@@ -46,43 +46,6 @@ final class HomeSpotlight
         return $this->fromConfig();
     }
 
-    /**
-     * Copies the campaigns of config/homepage.php into the admin's list as banners (the picture is copied to the public disk), for a
-     * store that wants to edit them there. A campaign whose product is not published, or whose picture file is missing, is skipped,
-     * and a product that already has a banner is left alone, so it can be run again. Returns how many were added.
-     */
-    public function importStandard(): int
-    {
-        $position = (int) SpotlightBanner::query()->max('position');
-        $added = 0;
-
-        foreach ($this->fromConfig() as $campaign) {
-            $spotlight = $campaign['spotlight'];
-            $product = $campaign['product'];
-            $source = public_path('images/home/'.$spotlight['file'].'.jpg');
-
-            if (! is_file($source) || SpotlightBanner::query()->where('product_id', $product->id)->exists()) {
-                continue;
-            }
-
-            $path = SpotlightBanner::DIRECTORY.'/'.$spotlight['file'].'.jpg';
-
-            Storage::disk(SpotlightBanner::DISK)->put($path, (string) file_get_contents($source), 'public');
-
-            SpotlightBanner::query()->create([
-                'product_id' => $product->id,
-                'image' => $path,
-                'alt' => $spotlight['alt'] ?? null,
-                'active' => true,
-                'position' => ++$position,
-            ]);
-
-            $added++;
-        }
-
-        return $added;
-    }
-
     /** @return list<array{spotlight: array<string, mixed>, product: Product}> */
     private function fromAdmin(): array
     {

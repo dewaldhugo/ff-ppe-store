@@ -6,6 +6,9 @@ use App\Admin\Resources\HeroContentResource;
 use App\Admin\Resources\HeroContentResource\Pages\CreateHeroContent;
 use App\Admin\Resources\HeroContentResource\Pages\EditHeroContent;
 use App\Admin\Resources\HeroContentResource\Pages\ListHeroContents;
+use App\Admin\Resources\HomeVideoResource;
+use App\Admin\Resources\SpotlightBannerResource;
+use App\Admin\WebsiteContent;
 use App\Domain\Catalogue\Home\HeroContents;
 use App\Models\HeroContent;
 use Filament\Facades\Filament;
@@ -122,14 +125,6 @@ it('turns a path of the site into its full address and keeps an https address', 
     expect(HeroContents::url('/brands'))->toBe(url('/brands'))->and(HeroContents::url('https://example.test/x'))->toBe('https://example.test/x');
 });
 
-it('copies the standard headings into the list once, and not again', function (): void {
-    $added = app(HeroContents::class)->importStandard();
-
-    expect($added)->toBe(count(config('homepage.hero_headings')))
-        ->and(HeroContent::query()->count())->toBe($added)
-        ->and(app(HeroContents::class)->importStandard())->toBe(0);
-});
-
 // --- The admin -------------------------------------------------------------------------------------
 
 it('lists the existing sets in the admin', function (): void {
@@ -179,14 +174,6 @@ it('edits and deletes a set', function (): void {
     expect(HeroContent::query()->count())->toBe(0);
 });
 
-it('adds the standard headings from a button on the list', function (): void {
-    heroAdmin();
-
-    Livewire::test(ListHeroContents::class)->callAction('importStandard')->assertNotified();
-
-    expect(HeroContent::query()->count())->toBe(count(config('homepage.hero_headings')));
-});
-
 it('is not for a member of staff with no permissions', function (): void {
     heroAdmin(admin: false);
 
@@ -201,4 +188,11 @@ it('is for staff who manage products', function (): void {
     expect(HeroContentResource::canViewAny())->toBeTrue();
 
     $this->get(HeroContentResource::getUrl('index'))->assertOk();
+});
+
+it('puts Hero content, Spotlight banners and Home videos together under one Website Content menu item', function (): void {
+    expect(WebsiteContent::GROUP)->toBe('Website Content')
+        ->and(HeroContentResource::getNavigationGroup())->toBe('Website Content')
+        ->and(SpotlightBannerResource::getNavigationGroup())->toBe('Website Content')
+        ->and(HomeVideoResource::getNavigationGroup())->toBe('Website Content');
 });

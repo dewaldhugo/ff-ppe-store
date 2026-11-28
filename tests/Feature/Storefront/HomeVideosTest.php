@@ -95,15 +95,6 @@ it('shows the added videos on the home page', function (): void {
     expect(substr_count($section[0] ?? '', '<video'))->toBe(1)->and($section[0])->toContain('Only one')->toContain('https://cdn.example.test/toecaps.mp4#t=1');
 });
 
-it('copies the standard videos into the list once, and not again', function (): void {
-    $added = app(HomeVideos::class)->importStandard();
-
-    expect($added)->toBe(count(config('homepage.videos')))
-        ->and(HomeVideo::query()->count())->toBe($added)
-        ->and(app(HomeVideos::class)->importStandard())->toBe(0)
-        ->and(HomeVideo::query()->count())->toBe($added);
-});
-
 // --- The Videos page and the menu ------------------------------------------------------------------
 
 it('has a Videos page listing every active video, none of them autoplaying', function (): void {
@@ -224,14 +215,6 @@ it('deletes the uploaded file with the video', function (): void {
     $video->delete();
 
     Storage::disk(HomeVideo::DISK)->assertMissing('videos/home/gone.mp4');
-});
-
-it('adds the standard videos from a button on the list', function (): void {
-    videoAdmin();
-
-    Livewire::test(ListHomeVideos::class)->callAction('importStandard')->assertNotified();
-
-    expect(HomeVideo::query()->count())->toBe(count(config('homepage.videos')));
 });
 
 it('is not for a member of staff with no permissions', function (): void {
