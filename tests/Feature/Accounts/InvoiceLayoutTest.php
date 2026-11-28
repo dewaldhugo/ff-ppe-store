@@ -330,16 +330,17 @@ it('has a line for each size with colour, UK size, EU size, quantity, unit price
     preg_match_all('#<tr[^>]*data-invoice-line>(.*?)</tr>#s', $html, $rows);
     $first = preg_replace('/\s+/', ' ', strip_tags($rows[1][0]));
 
-    // The sizes run smallest first (the order was 9 then 8), so size 8 is the first row and 9 the second.
+    // The lines are sorted by product name first, and each size here is its own product (named in the order they were added), so
+    // the size 9 is the first row and the size 8 the second. (Sizes within one product run smallest first: AdminInvoicesTest.)
     // £27.90 a pair ex VAT, 20% VAT, 2 pairs of the size 9: £55.80, and 3 pairs of the size 8: £83.70.
     $second = preg_replace('/\s+/', ' ', strip_tags($rows[1][1]));
 
     expect($rows[1][0])->toContain('data-line-colour>Light grey')
-        ->toContain('data-line-size>8')
-        ->toContain('data-line-eu>42')
-        ->and($first)->toContain('3')->toContain('27.90')->toContain('20%')->toContain('83.70')
-        ->and($rows[1][1])->toContain('data-line-size>9')->toContain('data-line-eu>43')
-        ->and($second)->toContain('2')->toContain('55.80');
+        ->toContain('data-line-size>9')
+        ->toContain('data-line-eu>43')
+        ->and($first)->toContain('2')->toContain('27.90')->toContain('20%')->toContain('55.80')
+        ->and($rows[1][1])->toContain('data-line-size>8')->toContain('data-line-eu>42')
+        ->and($second)->toContain('3')->toContain('83.70');
 });
 
 it('shows the totals as subtotal, delivery, total VAT and total', function (): void {
