@@ -11,7 +11,8 @@
 --}}
 @php
     $section = (array) config('homepage.video_section', []);
-    $videos = array_values((array) config('homepage.videos', []));
+    // The videos added in the admin (Home videos), or the standard list in config/homepage.php while there are none.
+    $videos = app(\App\Domain\Catalogue\Home\HomeVideos::class)->active();
     $perPage = max(1, min((int) ($section['count'] ?? 2), count($videos)));
     shuffle($videos);
     $pageCount = $videos === [] ? 0 : (int) ceil(count($videos) / $perPage);
