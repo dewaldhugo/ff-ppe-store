@@ -222,7 +222,8 @@
     will-change: transform;
 }
 
-.industry-row:hover .industry-row-track {
+/* The pointer does not stop the row: a card shows a teal frame and an arrow on hover to show it is a link. A link with keyboard focus does hold it still, so it does not drift away from under the keyboard. */
+.industry-row:focus-within .industry-row-track {
     animation-play-state: paused;
 }
 
