@@ -1,31 +1,62 @@
 {{--
-    The Product Spotlight: one campaign, picked at random on each page load (App\Domain\Catalogue\Home\HomeSpotlight,
-    config/homepage.php). The campaign image sits beside the top of the product page, as it is there: the brand, the
+    The Product Spotlight: every campaign is on the page (App\Domain\Catalogue\Home\HomeSpotlight: the admin's Spotlight banners,
+    or config/homepage.php), one picked at random to show first, and the arrows beside the heading (the video section's) slide the next or
+    previous one in, round and round. The others are inert until they are shown. The campaign image sits beside the top of the product page, as it is there: the brand, the
     name, the title, the short description, the price (signed-in customers only, like every price), whether it is in
     stock, the colour and size options, and two buttons: Order now (a guest sees Log in to order) and View product.
     It is all read from the catalogue, so nothing is written twice. The colours are swatches that open the product
     page on that colour; sizes are shown, as to a guest on the product page, and are chosen there. Not shown when
     no campaign has a published product. Images are served from public/images/home.
 --}}
-@if ($pick)
-    @php
-        $spotlight = $pick['spotlight'];
-        $product = $pick['product'];
-        $name = (string) $product->translateAttribute('name');
-        $title = (string) $product->translateAttribute('title');
-        $short = \App\Support\PlainText::from($product->translateAttribute('short_description'));
-        $price = $priceDisplay->fromPrice($product);
-        $hasRange = $product->variants->flatMap->prices->pluck('price.value')->unique()->count() > 1;
-        $url = route('product', $product->defaultUrl?->slug ?? $spotlight['slug']);
-        $selectedColour = collect($options)->firstWhere('handle', 'colour')['selected'] ?? null;
-        $orderUrl = $url.($selectedColour !== null ? '?colour='.$selectedColour : '');
-        $signedIn = $priceDisplay->visible();
-    @endphp
-    <section class="py-12 sm:py-16" aria-labelledby="home-featured" data-home-featured>
+@if ($campaigns !== [])
+    <section
+        class="py-12 sm:py-16"
+        aria-labelledby="home-featured"
+        data-home-featured
+        x-data="{ page: {{ $start }}, count: {{ count($campaigns) }}, show(i) { this.page = (i + this.count) % this.count; } }"
+    >
         <x-ui.container>
-            <x-ui.section-heading id="home-featured" title="Product Spotlight" />
+            <div class="relative">
+                <x-ui.section-heading id="home-featured" title="Product Spotlight" />
 
-            <div class="mt-8 grid items-center gap-8 rounded-lg border border-border p-5 sm:p-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-12" data-spotlight>
+                @if (count($campaigns) > 1)
+                    {{-- Beside the heading, at the right, as in the video section: previous, where you are, next. Needs JavaScript (Alpine). --}}
+                    <div class="absolute right-0 top-0 flex items-center gap-3" x-cloak data-spotlight-pager>
+                        <button type="button" class="flex size-10 items-center justify-center rounded-full border border-border-strong bg-white text-ink transition-colors hover:border-brand-teal hover:bg-brand-teal-light focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-blue" aria-label="Previous spotlight" x-on:click="show(page - 1)" data-spotlight-prev>
+                            <svg class="size-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15.75 19.5 8.25 12l7.5-7.5"/></svg>
+                        </button>
+
+                        <span class="min-w-12 text-center text-sm text-ink-muted" aria-live="polite" data-spotlight-position><span x-text="page + 1">{{ $start + 1 }}</span> / {{ count($campaigns) }}</span>
+
+                        <button type="button" class="flex size-10 items-center justify-center rounded-full border border-border-strong bg-white text-ink transition-colors hover:border-brand-teal hover:bg-brand-teal-light focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-blue" aria-label="Next spotlight" x-on:click="show(page + 1)" data-spotlight-next>
+                            <svg class="size-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8.25 4.5 7.5 7.5-7.5 7.5"/></svg>
+                        </button>
+                    </div>
+                @endif
+            </div>
+
+            {{-- A row of slides inside a clipped viewport; the arrows slide the row. A slide out of sight is inert, so a keyboard never lands in it. --}}
+            <div class="mt-8 overflow-hidden" data-spotlight-viewport>
+                <div class="flex transition-transform duration-500 ease-in-out" style="transform: translateX(-{{ $start * 100 }}%)" x-bind:style="'transform: translateX(-' + (page * 100) + '%)'" data-spotlight-track>
+                    @foreach ($campaigns as $slide => $pick)
+                        @php
+                            $options = $pick['options'];
+                            $inStock = $pick['inStock'];
+                            $spotlight = $pick['spotlight'];
+                            $product = $pick['product'];
+                            $name = (string) $product->translateAttribute('name');
+                            $title = (string) $product->translateAttribute('title');
+                            $short = \App\Support\PlainText::from($product->translateAttribute('short_description'));
+                            $price = $priceDisplay->fromPrice($product);
+                            $hasRange = $product->variants->flatMap->prices->pluck('price.value')->unique()->count() > 1;
+                            $url = route('product', $product->defaultUrl?->slug ?? $spotlight['slug']);
+                            $selectedColour = collect($options)->firstWhere('handle', 'colour')['selected'] ?? null;
+                            $orderUrl = $url.($selectedColour !== null ? '?colour='.$selectedColour : '');
+                            $signedIn = $priceDisplay->visible();
+                        @endphp
+
+                        <div class="w-full shrink-0" @if ($slide !== $start) inert @endif x-bind:inert="page !== {{ $slide }}" data-spotlight-slide>
+                        <div class="grid items-center gap-8 rounded-lg border border-border p-5 sm:p-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-12" data-spotlight>
                 <figure class="mx-auto w-full max-w-sm lg:max-w-none">
                     <picture>
                         @if ($spotlight['webp'] ?? false)
@@ -150,6 +181,11 @@
 
                         <x-ui.button-outline :href="$url" shape="md" data-spotlight-link>View {{ $name }}</x-ui.button-outline>
                     </div>
+                </div>
+                        </div>
+                        </div>
+                        </div>
+                    @endforeach
                 </div>
             </div>
         </x-ui.container>

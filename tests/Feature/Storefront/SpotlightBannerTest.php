@@ -124,6 +124,66 @@ it('picks one of the active banners at random on each page load', function (): v
     expect(array_keys($seen))->toEqualCanonicalizing([$one->id, $two->id]);
 });
 
+it('puts every campaign on the page as a slide, with arrows to slide to the next or previous one', function (): void {
+    $products = publishedProducts(3);
+
+    foreach ($products as $i => $product) {
+        spotlightBanner($product, ['position' => $i + 1]);
+    }
+
+    $html = $this->get(route('home'))->assertOk()->getContent();
+
+    preg_match('#<section[^>]*data-home-featured.*?</section>#s', $html, $section);
+    preg_match('#<button[^>]*data-spotlight-prev[^>]*>#', $html, $prev);
+    preg_match('#<button[^>]*data-spotlight-next[^>]*>#', $html, $next);
+
+    expect(substr_count($section[0], 'data-spotlight-slide'))->toBe(3)
+        ->and(substr_count($section[0], 'data-spotlight>'))->toBe(3)
+        ->and($section[0])->toContain('data-spotlight-pager')->toContain('x-cloak')->toContain('data-spotlight-viewport')->toContain('overflow-hidden')
+        ->and($prev[0] ?? '')->toContain('aria-label="Previous spotlight"')->toContain('show(page - 1)')
+        ->and($next[0] ?? '')->toContain('aria-label="Next spotlight"')->toContain('show(page + 1)')
+        ->and($section[0])->toMatch('#data-spotlight-position[^>]*>.*?</span>\s*/\s*3#s');
+
+    // Each product has its own slide.
+    foreach ($products as $product) {
+        expect($section[0])->toContain(route('product', $product->defaultUrl->slug));
+    }
+});
+
+it('starts on one slide at random: the others are inert and the row is already moved to it', function (): void {
+    foreach (publishedProducts(3) as $i => $product) {
+        spotlightBanner($product, ['position' => $i + 1]);
+    }
+
+    $starts = [];
+
+    foreach (range(1, 40) as $ignored) {
+        $html = $this->get(route('home'))->assertOk()->getContent();
+
+        preg_match('#style="transform: translateX\(-(\d+)%\)"[^>]*data-spotlight-track#', $html, $track);
+        preg_match_all('#<div class="w-full shrink-0"([^>]*)data-spotlight-slide#', $html, $slides);
+
+        $start = intdiv((int) $track[1], 100);
+        $open = array_keys(array_filter($slides[1], fn (string $attributes): bool => ! str_contains($attributes, ' inert')));
+
+        expect($open)->toBe([$start]);
+
+        $starts[$start] = true;
+    }
+
+    expect(array_keys($starts))->toEqualCanonicalizing([0, 1, 2]);
+});
+
+it('has no arrows for a single campaign', function (): void {
+    [$one] = publishedProducts(1);
+
+    spotlightBanner($one);
+
+    $html = $this->get(route('home'))->assertOk()->getContent();
+
+    expect(substr_count($html, 'data-spotlight-slide'))->toBe(1)->and($html)->not->toContain('data-spotlight-pager');
+});
+
 it('shows no spotlight when banners exist but none can be shown', function (): void {
     [$one] = publishedProducts(1);
 
