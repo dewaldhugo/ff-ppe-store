@@ -18,6 +18,7 @@ use App\Admin\Extensions\OrderInvoicePdfViewExtension;
 use App\Admin\Extensions\ProductVideosResourceExtension;
 use App\Admin\Middleware\EnforceAdminAccess;
 use App\Admin\Pages\FinancialReporting;
+use App\Admin\Resources\HomeVideoResource;
 use App\Admin\Resources\InvoiceResource;
 use App\Admin\Widgets\RecentOrdersWidget;
 use App\Admin\Widgets\SalesTilesWidget;
@@ -29,6 +30,7 @@ use App\Domain\Catalogue\Urls\CollectionPath;
 use App\Domain\Catalogue\Urls\Redirects\CollectionRedirectObserver;
 use App\Domain\Checkout\CardPayments;
 use App\Domain\Checkout\StripeCardPayments;
+use App\Domain\Compare\Compare;
 use App\Domain\Favourites\Favourites;
 use App\Domain\Orders\InvoiceNumbers;
 use App\Domain\Orders\NotifyStaffOfNewOrder;
@@ -96,7 +98,7 @@ final class AppServiceProvider extends ServiceProvider
             // registered with the panel as well, or Livewire cannot find it when the page loads it.
             ->widgets([SalesTilesWidget::class, RecentOrdersWidget::class])
             // Invoices, under Sales beside Orders: the list, with the Invoice PDF download.
-            ->resources([InvoiceResource::class])
+            ->resources([InvoiceResource::class, HomeVideoResource::class])
             // Financial reporting, under Sales: a page for each year (revenue, gross profit, units, margin and the charts).
             ->pages([FinancialReporting::class])
             // Keeps staff out of the pages their permissions do not cover (Lunar only hides them from the menu).
@@ -111,6 +113,7 @@ final class AppServiceProvider extends ServiceProvider
 
         $this->app->scoped(CatalogueKeys::class);
         $this->app->scoped(Favourites::class);
+        $this->app->scoped(Compare::class);
         $this->app->bind(CardPayments::class, StripeCardPayments::class);
         $this->app->scoped(CollectionPath::class);
         $this->app->scoped(CollectionRedirectObserver::class);

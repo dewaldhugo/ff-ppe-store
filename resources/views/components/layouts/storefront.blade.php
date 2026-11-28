@@ -63,6 +63,8 @@
 
     <x-storefront.footer />
 
+    <x-storefront.compare-bar />
+
     @livewireScripts
 </body>
 </html>

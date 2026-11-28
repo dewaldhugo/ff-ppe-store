@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Domain\Catalogue\Media\PlaceholderImageGenerator;
 use App\Domain\Catalogue\Media\ProductMediaDefinitions;
+use App\Domain\Catalogue\Related\RelatedProductIds;
 use App\Livewire\Catalogue\ProductPage;
 use App\Models\User;
 use Database\Seeders\FixtureCatalogueSeeder;
@@ -340,6 +341,20 @@ it('fills the related products with in-stock products from the same category whe
         ->and($section)->not->toContain(relatedTestUrl('Classic'));
 });
 
+it('offers up to six related products, in two rows of three, six across on a very wide screen', function (): void {
+    expect(RelatedProductIds::MINIMUM)->toBe(6)
+        ->and(RelatedProductIds::MAXIMUM)->toBe(6);
+
+    SearchIndex::use();
+
+    $html = $this->get(route('product', 'safety-jogger-ligero'))->assertOk()->getContent();
+
+    preg_match('#<section[^>]*data-testid="related".*?<ul class="([^"]*)"#s', $html, $grid);
+
+    expect($grid[1] ?? '')->toContain('grid-cols-2')->toContain('md:grid-cols-3')->toContain('2xl:grid-cols-6')
+        ->and(substr_count(relatedSection($html), 'data-related-product='))->toBeLessThanOrEqual(6);
+});
+
 it('shows the related products on the same card as the listings', function (): void {
     SearchIndex::use();
 
@@ -388,7 +403,7 @@ it('shows the safety class beside the product name, 20% smaller, on the light te
     $heading = $heading[0] ?? '';
 
     expect($heading)->toContain('LIGERO')
-        ->and($heading)->toMatch('#<span class="[^"]*bg-brand-teal-light[^"]*text-\[1\.5rem\][^"]*text-brand-navy[^"]*" data-name-class>S1P</span>#')
+        ->and($heading)->toMatch('#<span class="[^"]*bg-brand-teal-light[^"]*text-\[1\.35rem\][^"]*text-brand-navy[^"]*" data-name-class>S1P</span>#')
         // After the name, in the same heading.
         ->and(strpos($heading, 'LIGERO'))->toBeLessThan(strpos($heading, 'data-name-class'));
 });
@@ -708,7 +723,7 @@ it('puts the vendor links first and tops the list up from the category', functio
 
         expect($section)->toContain(route('product', 'safety-jogger-duplicate-2'))
             ->and(strpos($section, route('product', 'safety-jogger-duplicate-2')))->toBeLessThan(strpos($section, relatedTestUrl('FS65')))
-            ->and(substr_count($section, 'data-related-product='))->toBeLessThanOrEqual(4);
+            ->and(substr_count($section, 'data-related-product='))->toBeLessThanOrEqual(6);
     } finally {
         app(Client::class)->index((new Product)->searchableAs())->deleteDocuments($ids);
         SearchIndex::settle();

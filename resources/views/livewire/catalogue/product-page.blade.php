@@ -81,8 +81,8 @@
             </h1>
             <p class="mt-2 text-lg text-ink-muted">{{ $product->translateAttribute('title') }}</p>
 
-            @if (filled($product->translateAttribute('short_description')))
-                <p class="mt-3 text-ink-muted">{{ $product->translateAttribute('short_description') }}</p>
+            @if (filled(\App\Support\PlainText::from($product->translateAttribute('short_description'))))
+                <p class="mt-3 text-ink-muted">{{ \App\Support\PlainText::from($product->translateAttribute('short_description')) }}</p>
             @endif
 
             @if ($price)
@@ -271,6 +271,10 @@
                 </div>
             @endif
 
+            <x-storefront.compare-toggle :product="$product" class="mt-4" />
+
+            <p class="mt-3 text-sm" data-quote-link><a href="{{ route('quote', ['product' => $product->id]) }}" class="font-semibold text-brand-blue underline">Buying in quantity? Request a quote</a></p>
+
             @if ($showPrices)
                 @if ($added)
                     <p role="status" class="mt-4 rounded border border-success bg-success-surface p-3 text-sm text-success" data-added-to-cart>
@@ -417,11 +421,13 @@
     @if ($related !== [])
         <section aria-labelledby="related-heading" class="mt-10" data-testid="related">
             <h2 id="related-heading" class="text-xl font-bold">Related products</h2>
-            <ul class="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">
+            <ul class="mt-4 grid grid-cols-2 gap-4 md:grid-cols-3 2xl:grid-cols-6">
                 @foreach ($related as $relatedProduct)
                     <x-storefront.product-card :product="$relatedProduct" wire:key="related-{{ $relatedProduct->id }}" data-related-product="{{ $relatedProduct->id }}" />
                 @endforeach
             </ul>
         </section>
     @endif
+
+    <x-storefront.recently-viewed :exclude="$product->id" />
 </article>

@@ -152,8 +152,20 @@
                     <p class="mt-2 text-sm text-ink-muted">Fix the items marked above to continue.</p>
                 @endif
 
-                <p class="mt-4 text-center text-sm"><a href="{{ route('shop') }}" class="font-semibold text-brand-blue hover:underline">Continue shopping</a></p>
+                <p class="mt-4 text-center text-sm"><a href="{{ route('quote', ['cart' => 1]) }}" class="font-semibold text-brand-blue hover:underline" data-quote-link>Buying in quantity? Request a quote for this order</a></p>
+                <p class="mt-2 text-center text-sm"><a href="{{ route('shop') }}" class="font-semibold text-brand-blue hover:underline">Continue shopping</a></p>
             </aside>
         </div>
+
+        @if ($alsoNeed->isNotEmpty())
+            <section aria-labelledby="cart-also-heading" class="mt-10" data-cart-also>
+                <h2 id="cart-also-heading" class="text-xl font-bold">You may also need</h2>
+                <ul class="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">
+                    @foreach ($alsoNeed as $suggested)
+                        <x-storefront.product-card :product="$suggested" wire:key="also-{{ $suggested->id }}" data-also-product="{{ $suggested->id }}" />
+                    @endforeach
+                </ul>
+            </section>
+        @endif
     @endif
 </div>

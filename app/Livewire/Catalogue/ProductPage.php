@@ -13,6 +13,7 @@ use App\Domain\Catalogue\Display\ProductPictograms;
 use App\Domain\Catalogue\Display\SafetyStandardPanel;
 use App\Domain\Catalogue\Media\ProductMediaDefinitions;
 use App\Domain\Catalogue\Media\VideoLink;
+use App\Domain\Catalogue\Recent\RecentlyViewed;
 use App\Domain\Catalogue\Related\RelatedProductIds;
 use App\Domain\Catalogue\Seo\ProductStructuredData;
 use App\Domain\Catalogue\Urls\ProductBreadcrumbs;
@@ -22,6 +23,7 @@ use App\Domain\Pricing\PriceDisplay;
 use App\Domain\Pricing\PriceVisibility;
 use App\Models\ProductVideoLink;
 use App\Support\CartCount;
+use App\Support\PlainText;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\HtmlString;
 use Livewire\Attributes\Locked;
@@ -110,6 +112,8 @@ final class ProductPage extends Component
         $this->productId = $product->id;
         $this->slug = $slug;
         $this->relatedIds = $relatedProducts->for($product);
+
+        app(RecentlyViewed::class)->record($product->id);
 
         $this->sync($this->selection());
     }
@@ -215,7 +219,7 @@ final class ProductPage extends Component
             'pictograms' => app(ProductPictograms::class)->for($product),
             'featureTiles' => app(FeatureHighlights::class)->for($product),
             'productSheet' => $this->productSheet($product, $selection),
-            'paragraphs' => preg_split('/\R{2,}|\R/', trim((string) $product->translateAttribute('description')), flags: PREG_SPLIT_NO_EMPTY) ?: [],
+            'paragraphs' => preg_split('/\R{2,}|\R/', PlainText::from($product->translateAttribute('description')), flags: PREG_SPLIT_NO_EMPTY) ?: [],
             'videoUrl' => $this->videoUrl($product),
             'uploadedVideos' => $this->uploadedVideos($product),
             'linkedVideos' => $this->linkedVideos($product),
@@ -223,7 +227,7 @@ final class ProductPage extends Component
             'missingPrompt' => $this->missingOption === null ? null : $selection->promptFor($this->missingOption),
         ])->layout('components.layouts.storefront', [
             'title' => $this->pageTitle($product),
-            'description' => $product->translateAttribute('short_description') ?: null,
+            'description' => PlainText::from($product->translateAttribute('short_description')) ?: null,
             'canonical' => $canonical,
             'head' => new HtmlString(
                 '<script type="application/ld+json">'.$structuredData->toJson($product, $canonical).'</script>'

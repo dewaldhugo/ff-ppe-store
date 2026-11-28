@@ -2,6 +2,7 @@
     $links = [
         ['route' => 'brands', 'label' => 'Brands', 'active' => request()->routeIs('brands', 'brands.show')],
         ['route' => 'wear-trials', 'label' => 'Wear Trials', 'badge' => 'B2B', 'active' => request()->routeIs('wear-trials')],
+        ['route' => 'videos', 'label' => 'Videos', 'active' => request()->routeIs('videos')],
         ['route' => 'ppe-health-check', 'label' => 'PPE Health Check', 'active' => request()->routeIs('ppe-health-check')],
         ['route' => 'about', 'label' => 'About', 'active' => request()->routeIs('about')],
         ['route' => 'contact', 'label' => 'Contact', 'active' => request()->routeIs('contact')],
@@ -122,16 +123,79 @@
             </a>
 
             {{-- The search box takes the room between the logo and the Tools links (lg:flex-1), so those end at the right edge of the container (before the favourites and cart, when signed in). --}}
-            <form action="{{ route('search') }}" method="get" role="search" class="order-last flex w-full gap-2 lg:order-none lg:w-auto lg:flex-1">
+            <form action="{{ route('search') }}" method="get" role="search"
+                class="order-last flex w-full gap-2 lg:order-none lg:w-auto lg:flex-1"
+                x-data="{
+                    q: @js(request()->routeIs('search') ? (string) request('q') : ''),
+                    results: [],
+                    all: null,
+                    open: false,
+                    active: -1,
+                    seq: 0,
+                    async suggest() {
+                        const term = this.q.trim();
+                        if (term.length < 2) { this.results = []; this.all = null; this.open = false; return; }
+                        const mine = ++this.seq;
+                        try {
+                            const response = await fetch('{{ route('search.suggest') }}?q=' + encodeURIComponent(term), { headers: { 'Accept': 'application/json' } });
+                            if (! response.ok || mine !== this.seq) return;
+                            const data = await response.json();
+                            this.results = data.products;
+                            this.all = data.all;
+                            this.active = -1;
+                            this.open = this.results.length > 0;
+                        } catch (error) {
+                            this.open = false;
+                        }
+                    },
+                    move(step) {
+                        if (! this.open) return;
+                        this.active = (this.active + step + this.results.length) % this.results.length;
+                    },
+                }"
+                x-on:click.outside="open = false"
+                x-on:keydown.escape="open = false"
+            >
                 <label for="site-search" class="sr-only">Search products</label>
-                <input
-                    id="site-search"
-                    type="search"
-                    name="q"
-                    value="{{ request()->routeIs('search') ? request('q') : '' }}"
-                    placeholder="Search by name, brand or safety class"
-                    class="w-full rounded-md border border-border-strong bg-surface-muted px-3 py-2.5 text-sm"
-                >
+                {{-- Suggestions drop below the box as you type (two letters on); the box still submits to /search without JavaScript. --}}
+                <div class="relative min-w-0 flex-1">
+                    <input
+                        id="site-search"
+                        type="search"
+                        name="q"
+                        x-model="q"
+                        autocomplete="off"
+                        role="combobox"
+                        aria-autocomplete="list"
+                        aria-controls="site-search-suggestions"
+                        aria-expanded="false"
+                        x-bind:aria-expanded="open.toString()"
+                        x-on:input.debounce.200ms="suggest()"
+                        x-on:keydown.arrow-down.prevent="move(1)"
+                        x-on:keydown.arrow-up.prevent="move(-1)"
+                        x-on:keydown.enter="if (active >= 0) { $event.preventDefault(); window.location = results[active].url }"
+                        value="{{ request()->routeIs('search') ? request('q') : '' }}"
+                        placeholder="Search by name, brand or safety class"
+                        class="w-full rounded-md border border-border-strong bg-surface-muted px-3 py-2.5 text-sm"
+                    >
+
+                    <ul id="site-search-suggestions" role="listbox" x-show="open" x-cloak class="absolute left-0 right-0 top-full z-40 mt-1 overflow-hidden rounded-md border border-border bg-white shadow-lg" data-search-suggestions>
+                        <template x-for="(item, i) in results" x-bind:key="item.url">
+                            <li role="option" x-bind:aria-selected="(active === i).toString()">
+                                <a x-bind:href="item.url" class="flex items-center gap-3 px-3 py-2 text-sm hover:bg-surface-muted" x-bind:class="active === i && 'bg-surface-muted'">
+                                    <img x-show="item.image" x-bind:src="item.image" alt="" width="40" height="40" class="size-10 shrink-0 rounded object-contain">
+                                    <span class="min-w-0">
+                                        <span class="block truncate font-semibold text-ink" x-text="item.name"></span>
+                                        <span class="block truncate text-xs text-ink-muted" x-text="item.brand"></span>
+                                    </span>
+                                </a>
+                            </li>
+                        </template>
+                        <li x-show="all" class="border-t border-border">
+                            <a x-bind:href="all ? all.url : '#'" class="block px-3 py-2 text-sm font-semibold text-brand-blue hover:bg-surface-muted">See all <span x-text="all ? all.total : ''"></span> results</a>
+                        </li>
+                    </ul>
+                </div>
                 <x-ui.button type="submit" class="px-5 py-2.5 text-sm">Search</x-ui.button>
             </form>
 
