@@ -58,13 +58,22 @@
                     {{ $result->total }} {{ Str::plural('product', $result->total) }}
                 </h2>
 
+                {{-- The sort drop-down is drawn by the page, like the one in the home page's category search: no browser arrow, its own chevron, a teal border on hover and a teal ring on focus. --}}
                 <div class="flex items-center gap-2 text-sm">
                     <label for="sort" class="text-ink-muted">Sort by</label>
-                    <select id="sort" wire:model.live="sort" class="rounded border border-border-strong px-2 py-1">
-                        @foreach ($sorts as $option)
-                            <option value="{{ $option->value }}">{{ $option->label() }}</option>
-                        @endforeach
-                    </select>
+                    <div class="relative" data-sort>
+                        <select
+                            id="sort"
+                            wire:model.live="sort"
+                            class="cursor-pointer appearance-none rounded-md border border-border-strong bg-white py-2 pl-3 pr-9 font-semibold text-brand-navy transition-colors hover:border-brand-teal focus:border-brand-teal focus:outline-none focus:ring-2 focus:ring-brand-teal/40"
+                            data-sort-select
+                        >
+                            @foreach ($sorts as $option)
+                                <option value="{{ $option->value }}">{{ $option->label() }}</option>
+                            @endforeach
+                        </select>
+                        <svg aria-hidden="true" class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-navy" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" data-sort-chevron><path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6"/></svg>
+                    </div>
                 </div>
             </div>
 

@@ -214,6 +214,20 @@ it('keeps the search canonical with its query', function (): void {
         ->assertSee('<link rel="canonical" href="'.e(route('search', ['q' => 'boots'])).'">', false);
 });
 
+it('draws the sort drop-down itself: no browser arrow, its own chevron, a teal border on hover and a teal ring on focus', function (): void {
+    $html = $this->get(route('category', 'safety-footwear'))->assertOk()->getContent();
+
+    preg_match('#<select[^>]*data-sort-select[^>]*>#s', $html, $select);
+    preg_match('#<svg[^>]*data-sort-chevron[^>]*>#', $html, $chevron);
+
+    expect($select[0] ?? '')->toContain('id="sort"')->toContain('wire:model.live="sort"')
+        ->toContain('appearance-none')->toContain('pr-9')->toContain('rounded-md')->toContain('cursor-pointer')
+        ->toContain('border-border-strong')->toContain('hover:border-brand-teal')->toContain('focus:ring-2')
+        // The chevron does not catch clicks, so the whole select opens, and a screen reader skips it.
+        ->and($chevron[0] ?? '')->toContain('pointer-events-none')->toContain('aria-hidden="true"')
+        ->and($html)->toContain('<label for="sort"');
+});
+
 it('sets the product name on a card at 15px with 6px of space above and below', function (): void {
     $html = $this->get(route('category', 'safety-footwear'))->assertOk()->getContent();
 
@@ -222,7 +236,7 @@ it('sets the product name on a card at 15px with 6px of space above and below', 
     expect($headings[1])->not->toBeEmpty();
 
     foreach ($headings[1] as $classes) {
-        expect($classes)->toContain('text-[0.9375rem]')->toContain('font-semibold')->toContain('py-1.5');
+        expect($classes)->toContain('text-[0.84375rem]')->toContain('font-semibold')->toContain('py-1.5');
     }
 });
 
