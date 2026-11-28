@@ -16,13 +16,13 @@ final class EmailColours
     /** Used only when the stylesheet cannot be read, and for a token it does not define. */
     private const array FALLBACK = [
         'white' => '#FFFFFF',
-        'ink' => '#222222',
-        'ink-muted' => '#555555',
-        'surface-muted' => '#F8F8F8',
-        'border' => '#DADDE2',
-        'brand-blue' => '#343A40',
-        'brand-navy' => '#001227',
-        'brand-teal' => '#44BAB1',
+        'ink' => '#111629',
+        'ink-muted' => '#475569',
+        'surface-muted' => '#F8FAFC',
+        'border' => '#E2E8F0',
+        'brand-blue' => '#1F2A44',
+        'brand-navy' => '#111629',
+        'brand-teal' => '#00776E',
     ];
 
     /** @var array<string, string>|null */

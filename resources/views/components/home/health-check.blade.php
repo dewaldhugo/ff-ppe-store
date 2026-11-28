@@ -11,7 +11,7 @@
         <x-ui.container class="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
             <div>
                 @if (trim((string) ($content['eyebrow'] ?? '')) !== '')
-                    <p class="text-sm font-semibold uppercase tracking-wider text-brand-teal">{{ $content['eyebrow'] }}</p>
+                    <p class="text-sm font-semibold uppercase tracking-wider text-brand-teal-bright">{{ $content['eyebrow'] }}</p>
                 @endif
                 <h2 id="home-health-check" class="mt-2 text-3xl text-white sm:text-4xl">{{ $title }}</h2>
                 <p class="mt-4 max-w-xl leading-relaxed text-white/90">{{ $content['text'] ?? '' }}</p>

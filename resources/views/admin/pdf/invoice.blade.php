@@ -28,7 +28,7 @@
     <title>Invoice {{ $invoice->number() }}</title>
     <style>
         @page { margin: 26px 32px; }
-        /* Helvetica is built into every PDF, so it needs no font file; the site's own font (Poppins) is a web font the PDF library cannot read. */
+        /* Helvetica is built into every PDF, so it needs no font file; the site's own font (Inter) is a web font the PDF library cannot read. */
         body { font-family: Helvetica, Arial, sans-serif; font-size: 9.5px; line-height: 1.25; color: {{ $colours['ink'] }}; }
         table { border-collapse: collapse; width: 100%; }
         p { margin: 0 0 2px 0; }

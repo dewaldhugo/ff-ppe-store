@@ -90,7 +90,7 @@
 
                         <span
                             aria-hidden="true"
-                            class="absolute bottom-1 right-1 min-w-5 rounded-full bg-surface-muted px-1.5 text-center text-[0.6875rem] font-semibold leading-5 tabular-nums text-ink-muted group-hover:bg-white"
+                            class="absolute bottom-1 right-1 min-w-5 rounded-full bg-surface-muted px-1.5 text-center text-[0.62rem] font-semibold leading-5 tabular-nums text-ink-muted group-hover:bg-white"
                             data-brand-count
                         >{{ $tile->productCount }}</span>
 

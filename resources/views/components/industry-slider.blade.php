@@ -71,10 +71,10 @@
                         {{-- The label on its dark gradient, with an arrow that slides in on hover and on focus: the card is a link. --}}
                         <div class="absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 bg-linear-to-t from-brand-charcoal/90 via-brand-charcoal/60 to-transparent px-3 pb-3 pt-10">
                             <p class="text-sm font-bold uppercase leading-tight text-white">{{ $label }}</p>
-                            <svg class="size-5 shrink-0 text-brand-teal opacity-0 transition duration-300 -translate-x-2 group-hover:opacity-100 group-focus-visible:opacity-100 group-hover:translate-x-0 group-focus-visible:translate-x-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" data-industry-arrow><path d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/></svg>
+                            <svg class="size-5 shrink-0 text-brand-teal-bright opacity-0 transition duration-300 -translate-x-2 group-hover:opacity-100 group-focus-visible:opacity-100 group-hover:translate-x-0 group-focus-visible:translate-x-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" data-industry-arrow><path d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/></svg>
                         </div>
                         {{-- A teal frame that fades in over the card on hover and on focus (drawn on top, inside the card, so the clipping row does not cut it). --}}
-                        <span class="pointer-events-none absolute inset-0 rounded-lg ring-2 ring-inset ring-transparent transition-colors duration-300 group-hover:ring-brand-teal group-focus-visible:ring-brand-teal" aria-hidden="true" data-industry-ring></span>
+                        <span class="pointer-events-none absolute inset-0 rounded-lg ring-2 ring-inset ring-transparent transition-colors duration-300 group-hover:ring-brand-teal-bright group-focus-visible:ring-brand-teal-bright" aria-hidden="true" data-industry-ring></span>
                     </a>
                 </li>
             @endforeach

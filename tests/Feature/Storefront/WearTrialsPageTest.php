@@ -91,17 +91,18 @@ it('puts the pitch on the left and the photo on the right, under the heading', f
         ->and(strpos($html, 'data-wear-trials-rule'))->toBeLessThan(strpos($html, 'data-wear-trials-steps'))
         ->and($html)->toContain('<hr class="mt-12 border-0 border-t border-border" data-wear-trials-rule>')
         ->and($html)->toMatch('#data-wear-trials-offer[^>]*>That’s why we offer free Wear Trials to approved business customers\.</p>#u')
-        ->and($image[0] ?? '')->toContain('src="'.asset('images/wear-trials/head-to-toe-ppe.webp').'"')
-        ->toContain('width="1470"')->toContain('height="980"')->toMatch('#alt="[^"]+"#');
+        ->and($image[0] ?? '')->toContain('src="'.asset('images/wear-trials/gloves-hi-vis.webp').'"')
+        ->toContain('width="980"')->toContain('height="653"')->toMatch('#alt="[^"]+"#');
 });
 
 it('has the photo on disk as a web image of a sensible size', function (): void {
-    $path = public_path('images/wear-trials/head-to-toe-ppe.webp');
+    $path = public_path('images/wear-trials/gloves-hi-vis.webp');
 
     expect(is_file($path))->toBeTrue()
         ->and(filesize($path))->toBeLessThan(300_000)
         ->and(getimagesize($path)['mime'])->toBe('image/webp')
-        ->and(getimagesize($path)[0])->toBe(1470);
+        ->and(getimagesize($path)[0])->toBe(980)
+        ->and(getimagesize($path)[1])->toBe(653);
 });
 
 it('offers Register to a visitor who is not signed in, and the shortlist email to everyone', function (): void {

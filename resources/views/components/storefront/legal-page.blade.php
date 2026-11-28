@@ -8,16 +8,16 @@
 --}}
 <x-layouts.storefront :title="$title" :description="$description">
     <style>
-        .legal-prose { color: var(--color-ink); font-size: 1rem; line-height: 1.7; }
+        .legal-prose { color: var(--color-ink); font-size: 0.9rem; line-height: 1.7; }
         .legal-prose > * + * { margin-top: 1rem; }
         .legal-prose > :first-child { margin-top: 0; }
-        .legal-prose h2 { margin-top: 2.25rem; font-size: 1.375rem; line-height: 1.3; font-weight: 700; color: var(--color-brand-navy); }
-        .legal-prose h3 { margin-top: 1.5rem; font-size: 1.125rem; line-height: 1.3; font-weight: 700; color: var(--color-brand-blue); }
+        .legal-prose h2 { margin-top: 2.25rem; font-size: 1.2375rem; line-height: 1.3; font-weight: 700; color: var(--color-brand-navy); }
+        .legal-prose h3 { margin-top: 1.5rem; font-size: 1.0125rem; line-height: 1.3; font-weight: 700; color: var(--color-brand-blue); }
         .legal-prose a { color: var(--color-brand-blue); text-decoration: underline; text-underline-offset: 2px; }
         .legal-prose ul { list-style: disc; padding-left: 1.25rem; }
         .legal-prose ol { list-style: decimal; padding-left: 1.25rem; }
         .legal-prose li + li { margin-top: 0.5rem; }
-        .legal-prose table { width: 100%; border-collapse: collapse; font-size: 0.9375rem; }
+        .legal-prose table { width: 100%; border-collapse: collapse; font-size: 0.84375rem; }
         .legal-prose th { text-align: left; background: var(--color-surface-muted); }
         .legal-prose th, .legal-prose td { padding: 0.5rem 0.75rem; border: 1px solid var(--color-border); vertical-align: top; }
         .legal-prose .legal-table-wrap { overflow-x: auto; }

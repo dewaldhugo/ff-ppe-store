@@ -43,13 +43,16 @@ function contrast(string $foreground, string $background): float
 it('defines the brand tokens with the agreed colours', function (): void {
     $tokens = themeTokens();
 
-    expect(strtoupper($tokens['brand-blue']))->toBe('#343A40')
-        ->and(strtoupper($tokens['brand-teal']))->toBe('#44BAB1')
-        ->and(strtoupper($tokens['brand-navy']))->toBe('#001227')
-        ->and(strtoupper($tokens['brand-charcoal']))->toBe('#1F2327')
+    expect(strtoupper($tokens['brand-blue']))->toBe('#1F2A44')
+        ->and(strtoupper($tokens['brand-teal']))->toBe('#00776E')
+        ->and(strtoupper($tokens['brand-teal-active']))->toBe('#1F837B')
+        ->and(strtoupper($tokens['brand-teal-bright']))->toBe('#44BAB1')
+        ->and(strtoupper($tokens['brand-orange']))->toBe('#FAA034')
+        ->and(strtoupper($tokens['brand-navy']))->toBe('#111629')
+        ->and(strtoupper($tokens['brand-charcoal']))->toBe('#101528')
         ->and(contrast($tokens['brand-charcoal'], $tokens['white']))->toBeGreaterThan(contrast($tokens['brand-blue'], $tokens['white']))
-        ->and(strtoupper($tokens['ink']))->toBe('#222222')
-        ->and(strtoupper($tokens['surface-muted']))->toBe('#F8F8F8')
+        ->and(strtoupper($tokens['ink']))->toBe('#111629')
+        ->and(strtoupper($tokens['surface-muted']))->toBe('#F8FAFC')
         ->and(strtoupper($tokens['white']))->toBe('#FFFFFF');
 });
 
@@ -62,23 +65,28 @@ it('meets WCAG AA (4.5:1) for every text and background pair the templates use',
     'body text on alternate sections' => ['ink', 'surface-muted'],
     'muted text' => ['ink-muted', 'white'],
     'muted text on alternate sections' => ['ink-muted', 'surface-muted'],
-    'main menu links' => ['brand-navy', 'brand-teal-light'],
+    'main menu links' => ['white', 'brand-teal'],
+    'main menu current tab' => ['white', 'brand-teal-active'],
+    'text on the B2B badge' => ['brand-navy', 'brand-orange'],
+    'teal text on light surfaces' => ['brand-teal', 'white'],
+    'teal text on alternate sections' => ['brand-teal', 'surface-muted'],
     'brand tile names on hover' => ['ink', 'brand-teal-light'],
     'text in the Products dropdown' => ['ink', 'surface-nav'],
-    'main menu focus outline text' => ['brand-blue', 'brand-teal-light'],
+    'text on a light teal tint' => ['brand-navy', 'brand-teal-light'],
     'links and eyebrows' => ['brand-blue', 'white'],
     'links on alternate sections' => ['brand-blue', 'surface-muted'],
-    'primary button' => ['brand-navy', 'brand-teal'],
+    'primary button' => ['white', 'brand-teal'],
     'price on the product page' => ['brand-navy', 'white'],
     'primary button on hover' => ['white', 'brand-navy'],
     'footer and survey band text' => ['white', 'brand-charcoal'],
     'top bar and hero text' => ['white', 'brand-navy'],
     'top bar text' => ['white', 'brand-charcoal'],
-    'teal accents on the top bar' => ['brand-teal', 'brand-charcoal'],
-    'text on the top bar Register button' => ['brand-navy', 'brand-teal'],
-    'teal accents on the navy bars' => ['brand-teal', 'brand-navy'],
-    'teal accents on the charcoal footer and survey band' => ['brand-teal', 'brand-charcoal'],
-    'text on teal fills' => ['brand-navy', 'brand-teal'],
+    'teal accents on the top bar' => ['brand-teal-bright', 'brand-charcoal'],
+    'text on the top bar Register button' => ['white', 'brand-teal'],
+    'teal accents on the navy bars' => ['brand-teal-bright', 'brand-navy'],
+    'teal accents on the charcoal footer and survey band' => ['brand-teal-bright', 'brand-charcoal'],
+    'text on teal fills' => ['white', 'brand-teal'],
+    'text on bright teal fills' => ['brand-navy', 'brand-teal-bright'],
     'error text' => ['danger', 'white'],
     'success message' => ['success', 'success-surface'],
 ]);
@@ -90,20 +98,22 @@ it('meets 3:1 for the focus ring and the form field border', function (string $u
 })->with([
     'focus ring on light surfaces' => ['brand-blue', 'white'],
     'focus ring on alternate sections' => ['brand-blue', 'surface-muted'],
-    'focus ring on the main menu' => ['brand-blue', 'brand-teal-light'],
+    'focus ring on the main menu' => ['white', 'brand-teal'],
     'focus ring in the Products dropdown' => ['brand-blue', 'surface-nav'],
-    'focus ring on dark surfaces' => ['brand-teal', 'brand-navy'],
-    'focus ring on the footer and survey band' => ['brand-teal', 'brand-charcoal'],
+    'focus ring on dark surfaces' => ['brand-teal-bright', 'brand-navy'],
+    'focus ring on the footer and survey band' => ['brand-teal-bright', 'brand-charcoal'],
     'form field border' => ['border-strong', 'white'],
     'disabled button text' => ['disabled-ink', 'disabled-surface'],
 ]);
 
-it('documents why teal is never a text colour on light surfaces or behind white text', function (): void {
+it('documents why there are two teals: the deep one for light surfaces and white text, the bright one for dark surfaces', function (): void {
     $tokens = themeTokens();
 
-    // White on teal and teal on white both fail AA, which is the reason for the rule.
-    expect(contrast($tokens['white'], $tokens['brand-teal']))->toBeLessThan(4.5)
-        ->and(contrast($tokens['brand-teal'], $tokens['white']))->toBeLessThan(3.0);
+    // The deep teal carries white text and is itself readable on white; the bright teal is not (it is for dark surfaces only).
+    expect(contrast($tokens['white'], $tokens['brand-teal']))->toBeGreaterThanOrEqual(4.5)
+        ->and(contrast($tokens['brand-teal'], $tokens['white']))->toBeGreaterThanOrEqual(4.5)
+        ->and(contrast($tokens['brand-teal-bright'], $tokens['white']))->toBeLessThan(3.0)
+        ->and(contrast($tokens['brand-navy'], $tokens['brand-teal']))->toBeLessThan(4.5);
 });
 
 /**
@@ -150,7 +160,7 @@ it('has no hard-coded colour in any template', function (): void {
     expect($offenders)->toBe([]);
 });
 
-it('never puts white text on a teal fill or teal text on a light surface', function (): void {
+it('never puts dark text on the deep teal, white text on the bright teal, or the bright teal as text on a light surface', function (): void {
     $offenders = [];
 
     foreach (bladeTemplates() as $file) {
@@ -162,29 +172,30 @@ it('never puts white text on a teal fill or teal text on a light surface', funct
         foreach ($classes[1] as $class) {
             $tokens = preg_split('/\s+/', trim($class));
 
-            if (in_array('bg-brand-teal', $tokens, true) && ! in_array('text-brand-navy', $tokens, true)) {
-                $offenders[] = "{$name}: teal fill without brand-navy text ({$class})";
+            // The deep teal takes white text (navy on it is 3.5:1, below AA).
+            if (in_array('bg-brand-teal', $tokens, true) && array_intersect($tokens, ['text-brand-navy', 'text-brand-blue', 'text-ink', 'text-ink-muted']) !== []) {
+                $offenders[] = "{$name}: dark text on the deep teal ({$class})";
             }
 
-            if (in_array('bg-brand-teal', $tokens, true) && in_array('text-white', $tokens, true)) {
-                $offenders[] = "{$name}: white text on teal ({$class})";
+            // The bright teal is for dark surfaces and takes navy text.
+            if (in_array('bg-brand-teal-bright', $tokens, true) && in_array('text-white', $tokens, true)) {
+                $offenders[] = "{$name}: white text on the bright teal ({$class})";
             }
         }
 
-        // Teal text is only for dark surfaces: the eyebrows on the navy bands of the home and Health Check pages, and the arrow on the dark label gradient of an industry card.
-        if (preg_match('/text-brand-teal(?![-\w])/', $source) === 1 && ! in_array(str_replace('\\', '/', $name), ['components/home/hero.blade.php', 'components/home/health-check.blade.php', 'pages/ppe-health-check.blade.php', 'components/industry-slider.blade.php'], true)) {
-            $offenders[] = "{$name}: text-brand-teal outside a dark band";
+        // The bright teal as text is only for dark surfaces: the eyebrows on the navy bands of the home and Health Check pages, and the arrow on the dark label gradient of an industry card.
+        if (preg_match('/text-brand-teal-bright/', $source) === 1 && ! in_array(str_replace('\\', '/', $name), ['components/home/hero.blade.php', 'components/home/health-check.blade.php', 'pages/ppe-health-check.blade.php', 'components/industry-slider.blade.php'], true)) {
+            $offenders[] = "{$name}: text-brand-teal-bright outside a dark band";
         }
     }
 
     expect($offenders)->toBe([]);
 });
-
 it('loads the font from the application, not a CDN', function (): void {
     $css = (string) file_get_contents(resource_path('css/app.css'));
 
-    expect($css)->toContain("font-family: 'Poppins'")
-        ->and($css)->toContain("--font-sans: 'Poppins'")
+    expect($css)->toContain("font-family: 'Inter'")
+        ->and($css)->toContain("--font-sans: 'Inter'")
         ->and($css)->not->toContain('fonts.googleapis.com')
         ->and($css)->not->toContain('fonts.gstatic.com');
 

@@ -18,7 +18,7 @@
 
         <ul class="flex w-full divide-x divide-white/30">
             @foreach ($claims as $claim)
-                <li class="flex flex-1 basis-0 items-center justify-center gap-3 px-4 py-5 text-center text-[1.134rem] font-normal text-white" data-trust-block>
+                <li class="flex flex-1 basis-0 items-center justify-center gap-3 px-4 py-5 text-center text-[1.0206rem] font-normal text-white" data-trust-block>
                     <svg class="size-7 shrink-0 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <path d="{{ $icons[$loop->index % count($icons)] }}"/>
                     </svg>

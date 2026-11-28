@@ -31,7 +31,7 @@
                     @endphp
                     <li class="flex" data-home-guide>
                         <div @class([
-                            'group relative isolate flex w-full flex-col overflow-hidden rounded-lg border p-6 transition-colors hover:border-brand-teal sm:p-8',
+                            'group relative isolate flex w-full flex-col overflow-hidden rounded-lg border p-6 transition-colors hover:border-brand-teal-bright sm:p-8',
                             'lg:flex-row lg:items-end lg:gap-8' => $panel,
                             'surface-dark min-h-[14rem] border-brand-charcoal bg-brand-charcoal' => $dark,
                             'border-border bg-white' => ! $dark,
@@ -56,7 +56,7 @@
                             <div class="flex items-center gap-3">
                                 @if (isset($icons[$item['icon'] ?? '']))
                                     {{-- A teal chip with a navy icon (the brand colours: 6:1), on the photo or on the plain card. --}}
-                                    <span @class(['flex size-11 shrink-0 items-center justify-center rounded-full', 'bg-brand-teal text-brand-navy' => $dark, 'bg-brand-teal-light text-brand-navy' => ! $dark]) data-guide-icon>
+                                    <span @class(['flex size-11 shrink-0 items-center justify-center rounded-full', 'bg-brand-teal-bright text-brand-navy' => $dark, 'bg-brand-teal-light text-brand-navy' => ! $dark]) data-guide-icon>
                                         <svg class="size-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                             @foreach ($icons[$item['icon']] as $path)
                                                 <path d="{{ $path }}"/>
@@ -66,9 +66,9 @@
                                 @endif
                                 <h3 @class(['text-xl font-bold', 'text-white' => $dark, 'text-ink' => ! $dark])>{{ $item['title'] }}</h3>
                             </div>
-                            <p @class(['mt-2 flex-1 text-[0.9rem]', 'text-white' => $dark, 'text-ink-muted' => ! $dark])>{{ $item['text'] ?? '' }}</p>
+                            <p @class(['mt-2 flex-1 text-[0.81rem]', 'text-white' => $dark, 'text-ink-muted' => ! $dark])>{{ $item['text'] ?? '' }}</p>
                             {{-- The whole card is the link: its stretched ::after covers it. It looks like the site's buttons: teal with navy words, white on hover (light teal on the plain card). --}}
-                            <a href="{{ route($item['route']) }}" @class(['mt-5 inline-flex w-fit items-center gap-2 rounded-md bg-brand-teal px-5 py-2.5 font-semibold text-brand-navy transition-colors after:absolute after:inset-0', 'hover:bg-white' => $dark, 'hover:bg-brand-teal-light' => ! $dark])>
+                            <a href="{{ route($item['route']) }}" @class(['mt-5 inline-flex w-fit items-center gap-2 rounded-md px-5 py-2.5 font-semibold transition-colors after:absolute after:inset-0', 'bg-brand-teal-bright text-brand-navy hover:bg-white' => $dark, 'bg-brand-teal text-white hover:bg-brand-navy' => ! $dark])>
                                 {{ $item['link'] ?? $item['title'] }}
                                 <svg class="size-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/></svg>
                             </a>

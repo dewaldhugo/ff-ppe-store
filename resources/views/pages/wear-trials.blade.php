@@ -19,7 +19,7 @@
 <x-layouts.storefront title="Wear Trials" description="Free wear trials for approved business customers: test the build quality, comfort and durability of our PPE on the job before you place a bulk order.">
     <x-ui.section-heading title="Wear Trials" tag="h1" />
 
-    {{-- Two columns from md: the pitch on the left (60%), a photo of the kit on the right (40%), then a rule. --}}
+    {{-- Two columns from md: the pitch on the left (60%), a photo of a worker pulling on work gloves on the right (40%), then a rule. --}}
     <div class="mt-6 grid items-center gap-8 md:grid-cols-[minmax(0,60fr)_minmax(0,40fr)] md:gap-12" data-wear-trials-hero>
         <div>
             <p class="leading-relaxed text-ink" data-wear-trials-intro>Choosing the right ‘head to toe’ PPE for your workforce is a major decision, and specs on a screen only tell half the story. You need to see the build quality, feel the comfort, and test the durability on the job before placing a bulk order.</p>
@@ -29,10 +29,10 @@
         </div>
 
         <img
-            src="{{ asset('images/wear-trials/head-to-toe-ppe.webp') }}"
-            alt="A hard hat, ear defenders, safety goggles and work gloves laid out on a wooden surface"
-            width="1470"
-            height="980"
+            src="{{ asset('images/wear-trials/gloves-hi-vis.webp') }}"
+            alt="A worker in a high-visibility vest pulling on a pair of grey and white work gloves"
+            width="980"
+            height="653"
             class="h-auto w-full rounded-lg"
             data-wear-trials-image
         >
