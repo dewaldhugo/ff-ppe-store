@@ -190,27 +190,28 @@ it('uses the standard page heading on category listings', function (): void {
         ->and($html)->toMatch('#<h1[^>]*class="'.preg_quote($standard[1], '#').'"[^>]*>Safety Footwear</h1>\s*(?:<!--.*?-->\s*)*<div aria-hidden="true" class="[^"]*bg-brand-teal#s');
 });
 
-it('links to technical features straight after the size guide in the Tools menu and the mobile menu', function (): void {
+it('links to technical features straight after the size guide beside the search and in the mobile menu', function (): void {
     $html = $this->get(route('about'))->assertOk()->getContent();
 
     preg_match('#<header.*?</header>#s', $html, $header);
-    preg_match_all('#<a href="([^"]+)"[^>]*>\s*(Size Guide|Technical Features)\s*</a>#', $header[0], $links, PREG_SET_ORDER);
+    preg_match_all('#<a\s+href="([^"]+)"[^>]*data-tool-link#', $header[0], $beside);
+    preg_match('#<ul[^>]*data-drawer-tools.*?</ul>#s', $header[0], $drawer);
+    preg_match_all('#<a href="([^"]+)"#', $drawer[0], $mobile);
 
-    $hrefs = array_column($links, 1);
-
-    // The Tools menu beside the search, then the mobile menu: each lists the size guide first.
-    expect($hrefs)->toBe([route('size-guide'), route('technical-features'), route('size-guide'), route('technical-features')]);
+    // The Tools links beside the search, then the mobile menu: each lists the size guide first.
+    expect($beside[1])->toBe([route('size-guide'), route('technical-features')])
+        ->and($mobile[1])->toBe([route('size-guide'), route('technical-features')]);
 
     preg_match('#<footer.*?</footer>#s', $html, $footer);
 
     expect($footer[0])->toMatch('#href="'.preg_quote(route('size-guide'), '#').'"[^>]*>Size Guide</a></li>\s*<li><a href="'.preg_quote(route('technical-features'), '#').'"[^>]*>Technical Features</a>#');
 });
 
-it('links to the size guide from the Tools menu and the footer, and not from the main menu bar', function (): void {
+it('links to the size guide from the Tools links beside the search and the footer, and not from the main menu bar', function (): void {
     $html = $this->get(route('about'))->assertOk()->getContent();
 
     preg_match('#<nav aria-label="Main".*?</nav>#s', $html, $nav);
-    preg_match('#<details.*?data-tools-menu.*?</details>#s', $html, $tools);
+    preg_match('#<ul[^>]*data-tools-menu.*?</ul>#s', $html, $tools);
     preg_match('#<footer.*?</footer>#s', $html, $footer);
 
     expect($nav[0])->not->toContain('href="'.route('size-guide').'"')->not->toContain('href="'.route('technical-features').'"')
