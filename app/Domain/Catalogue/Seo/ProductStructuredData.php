@@ -6,6 +6,7 @@ namespace App\Domain\Catalogue\Seo;
 
 use App\Domain\Catalogue\Variants\VariantSelection;
 use App\Domain\Pricing\PriceDisplay;
+use App\Support\PlainText;
 use Lunar\Models\Product;
 
 /**
@@ -33,7 +34,7 @@ final class ProductStructuredData
             'url' => $canonicalUrl,
         ];
 
-        $description = $product->translateAttribute('short_description') ?: $product->translateAttribute('description');
+        $description = PlainText::from($product->translateAttribute('short_description')) ?: PlainText::from($product->translateAttribute('description'));
 
         if (filled($description)) {
             $data['description'] = (string) $description;

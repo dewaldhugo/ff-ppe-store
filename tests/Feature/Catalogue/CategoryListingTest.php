@@ -356,8 +356,10 @@ it('puts the card picture on the spotlight backdrop', function (): void {
 
     $css = (string) file_get_contents(resource_path('css/app.css'));
 
-    // A radial spotlight, and the hover turns to the menu's light teal.
-    expect($css)->toContain('.card-backdrop')->toContain('radial-gradient')->toContain('var(--color-brand-teal-light)');
+    // A radial spotlight, 30% lighter than it was (each teal stop mixed 30% of the way to white), deeper on hover.
+    expect($css)->toContain('.card-backdrop')->toContain('radial-gradient')
+        ->toContain('#F2F9F9 65%, #DDF1EF 100%')
+        ->toContain('#DDF2F0 45%, #CAEBE9 70%, #AFE0DB 100%');
 });
 
 it('shows the Industry filter first, above the other filters', function (): void {

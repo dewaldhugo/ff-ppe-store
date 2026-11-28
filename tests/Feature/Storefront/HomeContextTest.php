@@ -206,7 +206,8 @@ it('escapes what the catalogue says, so its text can never add markup to the hom
 
     $section = homeSection($this->get(route('home'))->assertOk()->getContent(), 'data-home-featured');
 
-    expect($section)->toContain('Tough &lt;b&gt;boot&lt;/b&gt; &amp; &lt;script&gt;alert(1)&lt;/script&gt;')
+    // Shown as plain text (App\Support\PlainText drops the tags), and escaped again on the way out.
+    expect($section)->toContain('Tough boot &amp; alert(1)')
         ->not->toContain('<b>boot')
         ->not->toContain('<script');
 });
