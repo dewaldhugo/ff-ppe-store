@@ -1,13 +1,18 @@
 @php
     $links = [
         ['route' => 'brands', 'label' => 'Brands', 'active' => request()->routeIs('brands', 'brands.show')],
-        ['route' => 'size-guide', 'label' => 'Size Guide', 'active' => request()->routeIs('size-guide')],
-        ['route' => 'technical-features', 'label' => 'Technical Features', 'active' => request()->routeIs('technical-features')],
         ['route' => 'wear-trials', 'label' => 'Wear Trials', 'active' => request()->routeIs('wear-trials')],
         ['route' => 'ppe-health-check', 'label' => 'PPE Health Check', 'active' => request()->routeIs('ppe-health-check')],
         ['route' => 'about', 'label' => 'About', 'active' => request()->routeIs('about')],
         ['route' => 'contact', 'label' => 'Contact', 'active' => request()->routeIs('contact')],
     ];
+    // The reference pages, in a Tools menu beside the search (out of the main menu bar, which was left crowded): a drop down on a
+    // large screen, a group in the mobile drawer.
+    $tools = [
+        ['route' => 'size-guide', 'label' => 'Size Guide', 'active' => request()->routeIs('size-guide')],
+        ['route' => 'technical-features', 'label' => 'Technical Features', 'active' => request()->routeIs('technical-features')],
+    ];
+    $toolsActive = collect($tools)->contains('active', true);
     // The menu bar is brand-teal-light, a quiet tint of the teal, so the links are brand-navy (well above 4.5:1). The page you are on
     // gets a thin (2px) underline in navy at 60%, and a hovered link a fainter one (30%). Every link reserves the same 2px border, so nothing shifts when
     // the current one changes. The underline sits 6px under the text (pb-1.5) and 8px above the bar's bottom edge (the bar's pb-2), which with
@@ -118,7 +123,8 @@
                 <x-storefront.logo />
             </a>
 
-            <form action="{{ route('search') }}" method="get" role="search" class="order-last flex w-full gap-2 lg:order-none lg:w-auto lg:flex-1">
+            {{-- A search box that is long enough for what is typed in it, not the whole width of the bar (lg:max-w-lg, 32rem). --}}
+            <form action="{{ route('search') }}" method="get" role="search" class="order-last flex w-full gap-2 lg:order-none lg:w-auto lg:max-w-lg lg:flex-1">
                 <label for="site-search" class="sr-only">Search products</label>
                 <input
                     id="site-search"
@@ -131,12 +137,34 @@
                 <x-ui.button type="submit" class="px-5 py-2.5 text-sm">Search</x-ui.button>
             </form>
 
+            {{--
+                Tools, beside the search (large screens; the mobile drawer has the same links). A native details element, so it opens
+                and closes without JavaScript; Alpine only closes it on a click outside or Escape.
+            --}}
+            <details
+                class="group relative hidden lg:block"
+                x-data
+                x-on:click.outside="$el.removeAttribute('open')"
+                x-on:keydown.escape="$el.removeAttribute('open')"
+                data-tools-menu
+            >
+                <summary class="inline-flex cursor-pointer list-none items-center gap-1 rounded-md border border-border-strong px-3 py-2.5 text-sm font-semibold text-brand-navy hover:bg-surface-muted [&::-webkit-details-marker]:hidden {{ $toolsActive ? 'bg-surface-muted' : '' }}" data-tools-button>
+                    Tools
+                    <svg aria-hidden="true" class="h-4 w-4 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6"/></svg>
+                </summary>
+                <div class="absolute left-0 top-full z-50 mt-2 w-52 rounded-md border border-border bg-white py-1 text-sm text-ink shadow-lg" data-tools-list>
+                    @foreach ($tools as $tool)
+                        <a href="{{ route($tool['route']) }}" class="block px-4 py-2 hover:bg-surface-muted {{ $tool['active'] ? 'font-semibold text-brand-blue' : '' }}" @if ($tool['active']) aria-current="page" @endif>{{ $tool['label'] }}</a>
+                    @endforeach
+                </div>
+            </details>
+
             {{-- Guests cannot see prices or order, so they get no cart. --}}
             @if ($customer)
             {{-- Saved products. The count is kept current by the heart buttons (favourites-updated). --}}
             <a
                 href="{{ route('favourites') }}"
-                class="relative ml-auto inline-flex h-11 w-11 items-center justify-center rounded-md text-brand-blue hover:bg-surface-muted lg:ml-0"
+                class="relative ml-auto inline-flex h-11 w-11 items-center justify-center rounded-md text-brand-blue hover:bg-surface-muted"
                 aria-label="Favourites, {{ $favouriteCount }} saved"
                 data-favourites-link
                 x-data="{ count: {{ $favouriteCount }} }"
@@ -323,6 +351,17 @@
                                         <a href="{{ $category['url'] }}" class="block py-2 font-semibold text-ink">{{ $category['name'] }}</a>
                                     @endif
                                 </li>
+                            @endforeach
+                        </ul>
+                    </li>
+
+                    {{-- The same two pages as the Tools menu beside the search. --}}
+                    <li>
+                        <span class="block py-3 font-semibold text-ink">Tools</span>
+
+                        <ul class="mb-3 space-y-1 border-l-2 border-brand-teal pl-4 text-base" data-drawer-tools>
+                            @foreach ($tools as $tool)
+                                <li><a href="{{ route($tool['route']) }}" class="block py-2 font-semibold {{ $tool['active'] ? 'text-brand-blue' : 'text-ink' }}" @if ($tool['active']) aria-current="page" @endif>{{ $tool['label'] }}</a></li>
                             @endforeach
                         </ul>
                     </li>
