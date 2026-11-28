@@ -147,8 +147,9 @@ it('marks the current page in the main menu with a thin, lighter navy underline,
         (preg_match_all('#<(?:a|button)[^>]*(?<![:\w-])border-brand-navy/60(?![\w-])[^>]*>.*?</(?:a|button)>#s', $nav, $m, PREG_SET_ORDER) ? $m : []),
     )));
 
-    expect($current($nav('size-guide')))->toBe(['Size Guide'])
-        ->and($current($nav('technical-features')))->toBe(['Technical Features'])
+    // The size guide and technical features are in the Tools menu beside the search, not in this bar: nothing here is current.
+    expect($current($nav('size-guide')))->toBe([])
+        ->and($current($nav('technical-features')))->toBe([])
         ->and($current($nav('home')))->toBe(['Home'])
         ->and($current($nav('shop')))->toBe(['Products'])
         ->and($current($nav('category', 'safety-footwear')))->toBe(['Products']);
@@ -189,7 +190,7 @@ it('uses the standard page heading on category listings', function (): void {
         ->and($html)->toMatch('#<h1[^>]*class="'.preg_quote($standard[1], '#').'"[^>]*>Safety Footwear</h1>\s*(?:<!--.*?-->\s*)*<div aria-hidden="true" class="[^"]*bg-brand-teal#s');
 });
 
-it('links to technical features straight after the size guide in the desktop and mobile menus', function (): void {
+it('links to technical features straight after the size guide in the Tools menu and the mobile menu', function (): void {
     $html = $this->get(route('about'))->assertOk()->getContent();
 
     preg_match('#<header.*?</header>#s', $html, $header);
@@ -197,7 +198,7 @@ it('links to technical features straight after the size guide in the desktop and
 
     $hrefs = array_column($links, 1);
 
-    // Desktop nav, then the mobile menu: each lists the size guide first.
+    // The Tools menu beside the search, then the mobile menu: each lists the size guide first.
     expect($hrefs)->toBe([route('size-guide'), route('technical-features'), route('size-guide'), route('technical-features')]);
 
     preg_match('#<footer.*?</footer>#s', $html, $footer);
@@ -205,13 +206,15 @@ it('links to technical features straight after the size guide in the desktop and
     expect($footer[0])->toMatch('#href="'.preg_quote(route('size-guide'), '#').'"[^>]*>Size Guide</a></li>\s*<li><a href="'.preg_quote(route('technical-features'), '#').'"[^>]*>Technical Features</a>#');
 });
 
-it('links to the size guide from the menus and the footer', function (): void {
+it('links to the size guide from the Tools menu and the footer, and not from the main menu bar', function (): void {
     $html = $this->get(route('about'))->assertOk()->getContent();
 
     preg_match('#<nav aria-label="Main".*?</nav>#s', $html, $nav);
+    preg_match('#<details.*?data-tools-menu.*?</details>#s', $html, $tools);
     preg_match('#<footer.*?</footer>#s', $html, $footer);
 
-    expect($nav[0])->toContain('href="'.route('size-guide').'"')
+    expect($nav[0])->not->toContain('href="'.route('size-guide').'"')->not->toContain('href="'.route('technical-features').'"')
+        ->and($tools[0])->toContain('href="'.route('size-guide').'"')
         ->and($footer[0])->toContain('href="'.route('size-guide').'"')
         ->and($html)->toContain('>Size Guide<');
 });
