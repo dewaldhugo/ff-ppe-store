@@ -122,8 +122,8 @@
                 <x-storefront.logo />
             </a>
 
-            {{-- A search box that is long enough for what is typed in it, not the whole width of the bar (lg:max-w-lg, 32rem). --}}
-            <form action="{{ route('search') }}" method="get" role="search" class="order-last flex w-full gap-2 lg:order-none lg:w-auto lg:max-w-lg lg:flex-1">
+            {{-- The search box takes the room between the logo and the Tools links (lg:flex-1), so those end at the right edge of the container (before the favourites and cart, when signed in). --}}
+            <form action="{{ route('search') }}" method="get" role="search" class="order-last flex w-full gap-2 lg:order-none lg:w-auto lg:flex-1">
                 <label for="site-search" class="sr-only">Search products</label>
                 <input
                     id="site-search"
