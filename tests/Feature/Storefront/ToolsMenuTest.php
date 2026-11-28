@@ -5,7 +5,7 @@ use App\Models\User;
 
 // The Size Guide and Technical Features links are two links with an icon each beside the search box
 // (resources/views/components/storefront/header.blade.php), not items of the main menu bar and not a drop down, and the search box
-// is no longer the whole width of the bar.
+// takes the room between the logo and them, so they end at the right of the container.
 
 /**
  * The two Tools links beside the search, as the markup of each.
@@ -109,12 +109,13 @@ it('keeps the Tools links in the mobile menu, in a group of their own, with the 
         ->and(substr_count($drawer[0], 'href="'.route('technical-features').'"'))->toBe(1);
 });
 
-it('does not stretch the search box across the whole bar', function (): void {
+it('lets the search box take the room between the logo and the Tools links, so they end at the right of the container', function (): void {
     $html = $this->get(route('home'))->assertOk()->getContent();
 
     preg_match('#<form[^>]*role="search"[^>]*>#', $html, $form);
 
-    expect($form[0])->toContain('lg:max-w-lg')->toContain('lg:flex-1')->toContain('w-full');
+    // It grows to fill the row (flex-1) with no maximum width, and is the full width on a phone, on a row of its own.
+    expect($form[0])->toContain('lg:flex-1')->toContain('w-full')->not->toContain('max-w');
 });
 
 it('keeps the favourites and cart at the right of the bar', function (): void {
