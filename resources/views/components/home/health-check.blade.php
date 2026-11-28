@@ -5,9 +5,9 @@
     $surveyUrl = (string) config('store.ppe_health_check_url');
 @endphp
 
-{{-- A navy band above "Shop by brand": the pitch and the buttons on the left, an example scorecard on the right. --}}
+{{-- A charcoal band (brand-charcoal, as the top bar and the footer) above "Shop by brand": the pitch and the buttons on the left, an example scorecard on the right. --}}
 @if ($title !== '' && $surveyUrl !== '')
-    <section class="surface-dark bg-brand-navy py-12 text-white sm:py-16" aria-labelledby="home-health-check" data-home-health-check>
+    <section class="surface-dark bg-brand-charcoal py-12 text-white sm:py-16" aria-labelledby="home-health-check" data-home-health-check>
         <x-ui.container class="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
             <div>
                 @if (trim((string) ($content['eyebrow'] ?? '')) !== '')
