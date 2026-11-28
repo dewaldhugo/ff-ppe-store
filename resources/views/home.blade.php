@@ -1,5 +1,5 @@
 {{-- The home page. Search engines are kept out site-wide by STORE_NOINDEX. --}}
-{{-- Order: hero (with the trust strip at its bottom), industries, shop by category, PPE Health Check, shop by brand, featured products, spotlight, video, buying guides, testimonials, service strip. --}}
+{{-- Order: hero (with the trust strip at its bottom), industries, shop by category, PPE Health Check, shop by brand, featured products, spotlight, video, buying guides, testimonials, recently viewed (only once something has been viewed), service strip. --}}
 <x-layouts.storefront
     full-title="Frontline Safety Gear"
     description="Streamline your site procurement with a single, dependable UK & EU trade supplier. We stock certified head-to-toe PPE, workwear, and safety footwear ready for rapid nationwide dispatch and competitive bulk pricing."
@@ -57,6 +57,9 @@
     <x-home.guides />
 
     <x-home.testimonials />
+
+    {{-- What this visitor opened lately: nothing is drawn until something has been viewed. --}}
+    <x-storefront.recently-viewed class="mx-auto w-full max-w-7xl px-4 pb-12 sm:px-6 lg:px-8 2xl:max-w-[92rem]" data-home-recent />
 
     <x-home.service-strip />
 </x-layouts.storefront>

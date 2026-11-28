@@ -23,11 +23,11 @@ use Throwable;
  */
 final class RelatedProductIds
 {
-    /** Fewer than this many vendor links and the list is topped up from the category. */
-    public const int MINIMUM = 4;
+    /** Fewer than this many vendor links and the list is topped up from the category: six, two rows of three. */
+    public const int MINIMUM = 6;
 
     /** The most products ever shown. */
-    public const int MAXIMUM = 8;
+    public const int MAXIMUM = 6;
 
     public function __construct(
         private readonly CatalogueSearch $search,

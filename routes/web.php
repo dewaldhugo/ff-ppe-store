@@ -14,8 +14,10 @@ use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\BrandIndexController;
 use App\Http\Controllers\CardReturnController;
+use App\Http\Controllers\CompareController;
 use App\Http\Controllers\FavouriteController;
 use App\Http\Controllers\OrderConfirmationController;
+use App\Http\Controllers\SearchSuggestController;
 use App\Http\Middleware\RedirectSearchToCategory;
 use App\Http\Middleware\RedirectTrailingSlash;
 use App\Http\Middleware\ResolveBrandSlugs;
@@ -59,6 +61,9 @@ Route::middleware(RedirectTrailingSlash::class)->group(function () use ($policie
         ->middleware(ResolveProductSlug::class)
         ->name('product');
 
+    // Type-ahead for the search box: JSON, rate limited. Before /search, which it must not be taken for.
+    Route::get('/search/suggest', SearchSuggestController::class)->middleware('throttle:60,1')->name('search.suggest');
+
     // A `category` in the query (the home page's search with a category drop-down) sends the search on to that category's page.
     Route::get('/search', CategoryListing::class)->middleware(RedirectSearchToCategory::class)->name('search');
 
@@ -71,12 +76,19 @@ Route::middleware(RedirectTrailingSlash::class)->group(function () use ($policie
         ->middleware(ResolveBrandSlugs::class)
         ->name('brands.show');
 
+    Route::view('/request-a-quote', 'pages.request-quote')->name('quote');
+    Route::view('/videos', 'pages.videos')->name('videos');
     Route::view('/size-guide', 'pages.size-guide')->name('size-guide');
     Route::view('/technical-features', 'pages.technical-features')->name('technical-features');
     Route::view('/wear-trials', 'pages.wear-trials')->name('wear-trials');
     Route::view('/ppe-health-check', 'pages.ppe-health-check')->name('ppe-health-check');
     Route::view('/about', 'pages.about')->name('about');
     Route::view('/contact', 'pages.contact')->name('contact');
+
+    // Compare up to four products side by side: open to everyone, the choice is in the session. `clear` first, as the id is a number.
+    Route::get('/compare', [CompareController::class, 'show'])->name('compare');
+    Route::post('/compare/clear', [CompareController::class, 'clear'])->name('compare.clear');
+    Route::post('/compare/{productId}', [CompareController::class, 'toggle'])->where('productId', '[0-9]+')->name('compare.toggle');
 
     // Customer accounts. Every route names the `web` guard: staff use the separate
     // `staff` guard (Lunar) and are never customers.

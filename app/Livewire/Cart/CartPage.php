@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Cart;
 
+use App\Domain\Cart\CartCrossSell;
 use App\Domain\Cart\CartLineViews;
 use App\Domain\Cart\CartRejected;
 use App\Domain\Cart\CustomerCart;
@@ -105,6 +106,7 @@ final class CartPage extends Component
             'suffix' => DisplayPrice::SUFFIX,
             // Checkout opens only when every line can be bought as it stands.
             'canCheckout' => $views->canCheckout($lines),
+            'alsoNeed' => $cart === null || $lines === [] ? collect() : app(CartCrossSell::class)->for($cart),
         ])->layout('components.layouts.storefront', [
             'title' => 'Cart',
             'noindex' => true,

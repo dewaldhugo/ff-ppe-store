@@ -177,7 +177,7 @@ it('lets a visitor without JavaScript reach the menus as plain links', function 
     // beside `hidden` would show it next to the Products button.
     preg_match('#<a[^>]*data-products-link[^>]*>#', $html, $fallback);
 
-    expect($fallback[0])->toContain('class="hidden no-js:inline-block ')
+    expect($fallback[0])->toContain('class="hidden no-js:inline-flex ')
         ->and($fallback[0])->not->toMatch('#\s(?:inline-block|inline-flex|block|flex)\s#')
         ->and($html)->toContain('<html lang="en-GB" class="no-js">')
         ->and($html)->toContain("document.documentElement.classList.remove('no-js')")

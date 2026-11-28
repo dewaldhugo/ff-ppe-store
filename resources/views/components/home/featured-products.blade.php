@@ -13,7 +13,7 @@
         $product = $pick['product'];
         $name = (string) $product->translateAttribute('name');
         $title = (string) $product->translateAttribute('title');
-        $short = (string) $product->translateAttribute('short_description');
+        $short = \App\Support\PlainText::from($product->translateAttribute('short_description'));
         $price = $priceDisplay->fromPrice($product);
         $hasRange = $product->variants->flatMap->prices->pluck('price.value')->unique()->count() > 1;
         $url = route('product', $product->defaultUrl?->slug ?? $spotlight['slug']);

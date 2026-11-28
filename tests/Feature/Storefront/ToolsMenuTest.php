@@ -80,7 +80,7 @@ it('takes the size guide and technical features out of the main menu bar', funct
 
     expect($nav[0])->not->toContain('Size Guide')->not->toContain('Technical Features')
         // The rest of the bar is as it was.
-        ->and($nav[0])->toContain('>Brands<')->toContain('>Wear Trials<')->toContain('>PPE Health Check<')->toContain('>About<')->toContain('>Contact<');
+        ->and($nav[0])->toContain('>Brands<')->toContain('Wear Trials')->toContain('>PPE Health Check<')->toContain('>About<')->toContain('>Contact<');
 });
 
 it('marks the link of the page you are on as current, and only that one', function (): void {
