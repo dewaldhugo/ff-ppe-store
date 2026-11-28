@@ -388,7 +388,7 @@ it('sets the card paragraphs 10% smaller: 0.9rem, not the 1rem of body text', fu
     expect($card)->toHaveCount(2);
 
     foreach ($card as $class) {
-        expect($class)->toContain('text-[0.9rem]')->toContain('text-white');
+        expect($class)->toContain('text-[0.81rem]')->toContain('text-white');
     }
 });
 

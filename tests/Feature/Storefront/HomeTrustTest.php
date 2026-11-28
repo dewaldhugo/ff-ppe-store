@@ -31,7 +31,7 @@ it('sits inside the hero at the bottom, as a full width band of bordered thirds 
         ->and($strip)->toContain('trust-scrim')->toContain('w-full')
         ->and($strip)->toContain('divide-x')->toContain('divide-white/30')
         ->and($strip)->toContain('flex-1')->toContain('basis-0')
-        ->and($strip)->toContain('text-[1.134rem]')->not->toContain('text-[1.05rem]')->toContain('font-normal')->not->toContain('font-semibold')
+        ->and($strip)->toContain('text-[1.0206rem]')->not->toContain('text-[1.05rem]')->toContain('font-normal')->not->toContain('font-semibold')
         ->and($strip)->not->toContain('container')
         ->and($strip)->not->toContain('bg-surface-muted')
         ->and(substr_count($strip, 'data-trust-block'))->toBe(3)

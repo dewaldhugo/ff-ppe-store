@@ -8,13 +8,13 @@
     ];
 @endphp
 
-{{-- Service claims with icons, the last section of the home page: a brand-teal band with navy text, so it stands out between the page and the charcoal footer. Each claim is a navy disc with a white icon, a bold label and a line under it, with a thin rule between them from the lg breakpoint. The lines under the labels are a draft for the client to confirm. --}}
-<section class="bg-brand-teal text-brand-navy" aria-labelledby="home-service" data-home-service>
+{{-- Service claims with icons, the last section of the home page: a brand-teal band with white text, so it stands out between the page and the charcoal footer. Each claim is a navy disc with a white icon, a bold label and a line under it, with a thin rule between them from the lg breakpoint. The lines under the labels are a draft for the client to confirm. --}}
+<section class="bg-brand-teal text-white" aria-labelledby="home-service" data-home-service>
     <h2 id="home-service" class="sr-only">Our service</h2>
 
     <ul class="mx-auto grid max-w-7xl grid-cols-1 gap-y-8 px-4 py-12 sm:grid-cols-2 sm:px-6 lg:grid-cols-4 lg:px-8 2xl:max-w-[92rem]">
         @foreach ($items as $item)
-            <li @class(['flex items-center gap-4', 'lg:border-l lg:border-brand-navy/25 lg:pl-8' => ! $loop->first]) data-service-item>
+            <li @class(['flex items-center gap-4', 'lg:border-l lg:border-white/25 lg:pl-8' => ! $loop->first]) data-service-item>
                 <span class="flex size-14 shrink-0 items-center justify-center rounded-full bg-brand-navy text-white">
                     <svg class="size-7" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         @foreach ($item['paths'] as $path)
@@ -24,8 +24,8 @@
                 </span>
 
                 <span class="flex flex-col">
-                    <span class="text-lg font-semibold leading-snug text-brand-navy">{{ $item['label'] }}</span>
-                    <span class="text-sm text-brand-navy" data-service-text>{{ $item['text'] }}</span>
+                    <span class="text-lg font-semibold leading-snug text-white">{{ $item['label'] }}</span>
+                    <span class="text-sm text-white" data-service-text>{{ $item['text'] }}</span>
                 </span>
             </li>
         @endforeach

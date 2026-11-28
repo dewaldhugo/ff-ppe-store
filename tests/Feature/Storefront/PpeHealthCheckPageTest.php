@@ -21,29 +21,41 @@ it('serves the page at /ppe-health-check in the standard layout with one heading
         ->and($html)->toContain('data-health-check');
 });
 
-it('has the hero photo behind a dark overlay, with a taller hero', function (): void {
+it('has a plain navy hero with no photo or overlay behind it, and a taller hero', function (): void {
     $html = $this->get(route('ppe-health-check'))->assertOk()->getContent();
 
     preg_match('#<section[^>]*data-health-check>.*?</section>#s', $html, $hero);
 
-    expect($hero[0] ?? '')->toMatch('#<img[^>]*src="'.preg_quote(asset('images/hero-bg-9.jpg'), '#').'"[^>]*alt=""[^>]*data-health-check-hero-image#')
-        ->toContain('data-health-check-hero-overlay')
-        ->toContain('bg-brand-navy/80')
-        // The photo and overlay sit behind the content, and the text is not lazy loaded (it is above the fold).
-        ->not->toContain('loading="lazy"')
-        ->toContain('-z-10')
-        ->toContain('py-[5.5rem]')
-        ->and(is_file(public_path('images/hero-bg-9.jpg')))->toBeTrue();
+    expect($hero[0] ?? '')->toContain('bg-brand-navy')->toContain('py-[5.5rem]')
+        ->not->toContain('<img')
+        ->not->toContain('data-health-check-hero-image')
+        ->not->toContain('data-health-check-hero-overlay')
+        ->not->toContain('-z-10')
+        ->and($html)->not->toContain('images/hero-bg-9.jpg');
 });
 
-it('sends people to the survey from both buttons, in a new tab, safely', function (): void {
+it('ends after what it measures: no banner, About, How it works or closing call to action', function (): void {
+    $html = $this->get(route('ppe-health-check'))->assertOk()->getContent();
+
+    expect($html)->toContain('data-health-check-measures')
+        ->and($html)->not->toContain('data-health-check-banner')
+        ->and($html)->not->toContain('data-health-check-about')
+        ->and($html)->not->toContain('data-health-check-steps')
+        ->and($html)->not->toContain('data-health-check-end')
+        ->and($html)->not->toContain('images/hero-bg-7.jpg')
+        ->and($html)->not->toContain('Practical PPE support, not just products.')
+        // What it measures is the last section of the page, so the footer follows it.
+        ->and(strpos($html, 'data-health-check-measures'))->toBeLessThan(strpos($html, '<footer'));
+});
+
+it('sends people to the survey from the button, in a new tab, safely', function (): void {
     expect(config('store.ppe_health_check_url'))->toBe('https://frontline-general-health-and-safety.scoreapp.com/');
 
     $html = $this->get(route('ppe-health-check'))->assertOk()->getContent();
 
     preg_match_all('#<a\s[^>]*data-health-check-link[^>]*>.*?</a>#s', $html, $links);
 
-    expect($links[0])->toHaveCount(2);
+    expect($links[0])->toHaveCount(1);
 
     foreach ($links[0] as $link) {
         expect($link)->toContain('href="https://frontline-general-health-and-safety.scoreapp.com/"')
@@ -53,32 +65,26 @@ it('sends people to the survey from both buttons, in a new tab, safely', functio
             ->toContain('(opens in a new tab)');
     }
 });
-
 it('follows the survey address in config', function (): void {
     config()->set('store.ppe_health_check_url', 'https://survey.example.test/check');
 
     $html = $this->get(route('ppe-health-check'))->assertOk()->getContent();
 
-    expect(substr_count($html, 'href="https://survey.example.test/check"'))->toBe(2);
+    expect(substr_count($html, 'href="https://survey.example.test/check"'))->toBe(1);
 });
 
-it('has the client copy: the five areas, the three steps and the privacy note', function (): void {
+it('has the client copy: the five areas and the privacy note', function (): void {
     $html = $this->get(route('ppe-health-check'))->assertOk()->getContent();
 
     preg_match('#data-health-check-areas.*?</ul>#s', $html, $areas);
-    preg_match('#data-health-check-steps.*?</ol>#s', $html, $steps);
 
     preg_match_all('#<h3[^>]*>(.*?)</h3>#s', $areas[0] ?? '', $areaTitles);
-    preg_match_all('#<h3[^>]*>(.*?)</h3>#s', $steps[0] ?? '', $stepTitles);
 
     expect(array_map(trim(...), $areaTitles[1]))->toBe(['Compliance and Standards', 'Selection and Fit', 'Purchasing and Spend', 'Supply Reliability', 'Supplier Service and Admin'])
-        ->and(array_map(trim(...), $stepTitles[1]))->toBe(['Answer 12 short questions', 'See your score straight away', 'Know where to start'])
         ->and($html)->toContain('Five areas that decide how well your PPE protects you.')
-        ->and($html)->toContain('Practical PPE support, not just products.')
         ->and($html)->toContain('There is no obligation.')
-        ->and($html)->toContain('<em>before they become problems.</em>')
         // The privacy note links to this site's own policy, not the survey site's.
-        ->and(substr_count($html, 'href="'.route('privacy').'"'))->toBeGreaterThanOrEqual(2);
+        ->and(substr_count($html, 'href="'.route('privacy').'"'))->toBeGreaterThanOrEqual(1);
 });
 
 it('shows an example scorecard whose lowest score is the one it names', function (): void {
@@ -94,12 +100,6 @@ it('shows an example scorecard whose lowest score is the one it names', function
         ->and($scores)->toHaveCount(3)
         ->and(array_key_first($scores))->toBe('Purchasing and Spend')
         ->and($html)->toContain('Lowest-scoring section: <span class="font-semibold text-ink">Purchasing and Spend</span>');
-});
-
-it('links to the wear trials from the About Frontline section', function (): void {
-    preg_match('#data-health-check-about.*?</section>#s', $this->get(route('ppe-health-check'))->assertOk()->getContent(), $about);
-
-    expect($about[0] ?? '')->toContain('href="'.route('wear-trials').'"');
 });
 
 it('is linked from the header and the footer, with the current page marked in the header', function (): void {

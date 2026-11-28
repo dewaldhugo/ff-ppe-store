@@ -76,7 +76,7 @@
             <h1 id="product-heading" class="flex flex-wrap items-center gap-x-3 gap-y-1 text-3xl font-bold leading-tight tracking-tight">
                 {{ $product->translateAttribute('name') }}
                 @if (($safetyStandard['class'] ?? null) !== null)
-                    <span class="rounded bg-brand-teal-light px-3 text-[1.5rem] text-brand-navy" data-name-class>{{ $safetyStandard['class'] }}</span>
+                    <span class="rounded bg-brand-teal-light px-3 text-[1.35rem] text-brand-navy" data-name-class>{{ $safetyStandard['class'] }}</span>
                 @endif
             </h1>
             <p class="mt-2 text-lg text-ink-muted">{{ $product->translateAttribute('title') }}</p>
@@ -90,7 +90,7 @@
                     @if ($pricesVary)
                         <span class="text-ink-muted">From</span>
                     @endif
-                    <span class="text-[2.16rem] font-semibold text-brand-navy">{{ $price->formatted() }}</span>
+                    <span class="text-[1.944rem] font-semibold text-brand-navy">{{ $price->formatted() }}</span>
                     <span class="text-sm text-ink-muted">{{ $price->suffix() }}</span>
                 </p>
             @endif
@@ -261,7 +261,7 @@
                             form="add-to-cart-form"
                             @disabled(! $canAdd)
                             data-add-to-cart
-                            class="w-full rounded-md border-2 border-brand-teal bg-brand-teal px-8 py-3 text-lg font-bold text-brand-navy transition-colors hover:border-brand-navy hover:bg-brand-navy hover:text-white disabled:cursor-not-allowed disabled:border-disabled-surface disabled:bg-disabled-surface disabled:text-disabled-ink sm:w-72"
+                            class="w-full rounded-md border-2 border-brand-teal bg-brand-teal px-8 py-3 text-lg font-bold text-white transition-colors hover:border-brand-navy hover:bg-brand-navy disabled:cursor-not-allowed disabled:border-disabled-surface disabled:bg-disabled-surface disabled:text-disabled-ink sm:w-72"
                         >
                             Add to cart
                         </button>

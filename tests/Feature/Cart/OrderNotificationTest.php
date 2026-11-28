@@ -347,7 +347,7 @@ it('takes every colour from the site design tokens, and uses no other', function
 
     expect($found[0])->not->toBeEmpty()
         ->and(array_diff(array_map('strtoupper', array_unique($found[0])), $tokens))->toBe([])
-        ->and(strtoupper(EmailColours::all()['brand-navy']))->toBe('#001227')
+        ->and(strtoupper(EmailColours::all()['brand-navy']))->toBe('#111629')
         ->and($html)->toContain(EmailColours::all()['brand-navy']);
 
     // The stylesheet is the source: the helper reads the same @theme block the site uses.

@@ -406,9 +406,9 @@ it('shows the price 44% larger than it started, in weight 600, in navy', functio
 
     preg_match('#<p[^>]*data-price>.*?</p>#s', $html, $price);
 
-    // text-2xl was 1.5rem; 20% more is 1.8rem, and another 20% is 2.16rem.
+    // text-2xl was 1.5rem; 20% more is 1.8rem, and another 20% is 2.16rem; the whole site's type is then 10% smaller: 1.944rem.
     expect($price[0] ?? '')->toContain('£68.90')
-        ->and($price[0])->toMatch('#<span class="text-\[2\.16rem\] font-semibold text-brand-navy">£68\.90</span>#');
+        ->and($price[0])->toMatch('#<span class="text-\[1\.944rem\] font-semibold text-brand-navy">£68\.90</span>#');
 });
 
 it('gives the product name some room above and below', function (): void {

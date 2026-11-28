@@ -19,12 +19,12 @@ final class InvoicePdf
 {
     /** The invoice's colours: the design tokens brand-blue, ink, ink-muted, border and surface-muted, and white. */
     public const array COLOURS = [
-        'bar' => '#343A40',
+        'bar' => '#1F2A44',
         'bar_text' => '#FFFFFF',
-        'ink' => '#222222',
-        'muted' => '#555555',
-        'border' => '#DADDE2',
-        'head' => '#F8F8F8',
+        'ink' => '#111629',
+        'muted' => '#475569',
+        'border' => '#E2E8F0',
+        'head' => '#F8FAFC',
     ];
 
     /** Only a placed order has an invoice. */

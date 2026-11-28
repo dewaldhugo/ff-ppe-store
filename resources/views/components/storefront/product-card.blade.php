@@ -48,7 +48,7 @@
     @endif
 
     <p class="mt-3 text-xs uppercase tracking-wide text-ink-muted">{{ $product->brand?->name }}</p>
-    <h3 class="py-1.5 text-[0.9375rem] font-semibold">
+    <h3 class="py-1.5 text-[0.84375rem] font-semibold">
         <a href="{{ route('product', $product->defaultUrl?->slug ?? $product->id) }}" class="after:absolute after:inset-0 hover:underline">
             {{ $product->translateAttribute('name') }}
         </a>

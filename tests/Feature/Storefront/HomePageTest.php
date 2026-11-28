@@ -52,9 +52,9 @@ it('makes the hero 20% taller on desktop and the heading 15% smaller on a phone'
     // Tablet height is unchanged (33rem); from lg it is 33rem x 1.2 = 39.6rem.
     expect($section[0] ?? '')->toContain('sm:min-h-[33rem]')->toContain('lg:min-h-[39.6rem]')
         // Phone heading: 2.0625rem x 0.85 = 1.753rem. Tablet and desktop sizes are unchanged.
-        ->and($heading[1] ?? '')->toContain('text-[1.753rem]')
-        ->toContain('sm:text-[2.475rem]')
-        ->toContain('lg:text-[2.75rem]')
+        ->and($heading[1] ?? '')->toContain('text-[1.5777rem]')
+        ->toContain('sm:text-[2.2275rem]')
+        ->toContain('lg:text-[2.475rem]')
         ->not->toContain('text-[2.0625rem]');
 });
 
@@ -668,14 +668,14 @@ it('leaves out a product that is in neither category, and takes one from PPE & G
 it('styles the industries heading like the others, 20% larger, with a left aligned intro', function (): void {
     $html = $this->get(route('home'))->assertOk()->getContent();
 
-    $start = (int) strpos($html, '[&_h2]:text-[1.8rem]');
+    $start = (int) strpos($html, '[&_h2]:text-[1.62rem]');
     // From the heading wrapper to the industries slider.
     $block = substr($html, $start, (int) strpos($html, 'data-industry-row', $start) - $start);
 
     expect($start)->toBeGreaterThan(0)
-        ->and($block)->toContain('sm:[&_h2]:text-[2.25rem]')
+        ->and($block)->toContain('sm:[&_h2]:text-[2.025rem]')
         ->and($block)->toContain('h-1 w-12') // the teal rule, like the other headings
-        ->and($block)->toContain('text-[1.2rem]')
+        ->and($block)->toContain('text-[1.08rem]')
         ->and($block)->not->toContain('text-center')
         ->and($block)->not->toContain('mx-auto');
 });
