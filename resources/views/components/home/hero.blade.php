@@ -103,9 +103,8 @@
     <span class="hero-scrim absolute inset-0 -z-10" aria-hidden="true" data-hero-scrim></span>
 
     @php
-        // One of the headings in config/homepage.php, at random on each page load.
-        $heroHeadings = array_values(array_filter((array) config('homepage.hero_headings'), fn ($heading): bool => is_string($heading) && trim($heading) !== ''));
-        $heroHeading = $heroHeadings === [] ? '' : $heroHeadings[random_int(0, count($heroHeadings) - 1)];
+        // One set of words (heading, sub-heading, first button) at random on each page load: from the admin's Hero content, or the standard headings of config/homepage.php (App\Domain\Catalogue\Home\HeroContents).
+        $heroSet = app(\App\Domain\Catalogue\Home\HeroContents::class)->pick();
     @endphp
 
     {{-- my-auto centres the content in the space above the trust strip, which sits at the bottom of the hero. --}}
@@ -114,13 +113,15 @@
             {{-- Shifted down, as a block, from the sm breakpoint. Moved up by 10% of the hero's minimum height (3.3rem of 33rem, 3.96rem of 39.6rem on a laptop), so both land on 3.3rem. --}}
             <div data-hero-text class="sm:translate-y-[3.3rem]">
                 {{-- From sm up the heading wraps onto the next line at 60% of the text column's width. On a phone it uses the full width. --}}
-                <h1 id="home-hero-title" class="hero-text-shadow sm:max-w-[60%] text-[1.5777rem] text-white sm:text-[2.2275rem] lg:text-[2.475rem]" data-hero-heading>{{ $heroHeading }}</h1>
+                <h1 id="home-hero-title" class="hero-text-shadow sm:max-w-[60%] text-[1.5777rem] text-white sm:text-[2.2275rem] lg:text-[2.475rem]" data-hero-heading>{{ $heroSet['heading'] }}</h1>
                 {{-- Not shown on a phone (below the sm breakpoint, 640px): the heading and the buttons are enough there. --}}
-                <p class="hero-text-shadow mt-4 hidden max-w-2xl text-[1.11375rem] text-white/90 sm:block" data-hero-subheading>EN-compliant safety footwear, head, eye, and hearing protection ready for immediate dispatch. Bulk trade pricing available.</p>
+                @if (filled($heroSet['sub_heading']))
+                    <p class="hero-text-shadow mt-4 hidden max-w-2xl text-[1.11375rem] text-white/90 sm:block" data-hero-subheading>{{ $heroSet['sub_heading'] }}</p>
+                @endif
 
                 <div class="mt-8 flex flex-wrap gap-4">
                     {{-- The primary (dark grey) button, with a thin light border so it stands out against the dark photos. --}}
-                    <x-ui.button :href="route('shop')" class="border border-white/40">View all products</x-ui.button>
+                    <x-ui.button :href="$heroSet['cta_url']" class="border border-white/40" data-hero-cta>{{ $heroSet['cta_text'] }}</x-ui.button>
                     @guest('web')
                         <x-ui.button-outline :href="route('register')" :on-dark="true" shape="md">Open a trade account</x-ui.button-outline>
                     @endguest
