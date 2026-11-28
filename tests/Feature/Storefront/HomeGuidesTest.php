@@ -298,7 +298,7 @@ it('puts a picture on a white panel beside the words on both cards, shown whole 
     }
 
     // Each has its own words for the picture, not an empty alt.
-    preg_match_all('#<img[^>]*data-guide-diagram[^>]*alt="([^"]+)"#s', $section, $alts);
+    preg_match_all('#<img[^>]*alt="([^"]+)"[^>]*data-guide-diagram#s', $section, $alts);
 
     expect($alts[1])->toHaveCount(2)
         ->and($alts[1][0])->toContain('safety boot')->toContain('scaffold')

@@ -45,7 +45,7 @@ it('has a picture file for every top-level category', function (): void {
 it('shows one decorative picture on each top-level category card on /shop', function (): void {
     $grid = shopGrid($this->get(route('shop'))->assertOk()->getContent());
 
-    expect(substr_count($grid, 'data-category-image'))->toBe(count(topLevelHandles()));
+    expect(preg_match_all('#data-category-image(?![-\w])#', $grid))->toBe(count(topLevelHandles()));
 
     foreach (topLevelHandles() as $handle) {
         expect($grid)->toContain(asset(CategoryCardImage::DIRECTORY.'/'.$handle.'.jpg'));
@@ -68,7 +68,7 @@ it('leaves a card without a picture when its category has no file', function ():
     $grid = shopGrid($this->get(route('shop'))->assertOk()->getContent());
 
     expect($grid)->toContain('Test Hi-Vis')
-        ->and(substr_count($grid, 'data-category-image'))->toBe(count(topLevelHandles()));
+        ->and(preg_match_all('#data-category-image(?![-\w])#', $grid))->toBe(count(topLevelHandles()));
 });
 
 it('refuses a handle that could point outside the images folder', function (): void {
@@ -86,7 +86,7 @@ it('lays the five cards out in one row on desktop, with the subcategories as pla
     $grid = shopGrid($html);
 
     expect($ul[0] ?? '')->toContain('lg:grid-cols-5')
-        ->and(substr_count($grid, 'data-category-image'))->toBe(5)
+        ->and(preg_match_all('#data-category-image(?![-\w])#', $grid))->toBe(5)
         ->and($grid)->not->toContain('data-category-children')
         // One link per card: the category itself. The subcategory names are text.
         ->and(substr_count(substr($grid, 0, (int) strpos($grid, '</ul>')), '<a '))->toBe(5)
@@ -121,4 +121,23 @@ it('zooms the pictures on the home page category cards too, which are the same c
 
     expect(substr_count($section[0], 'group-hover:scale-110'))->toBe(5)
         ->and(substr_count($section[0], 'data-category-card'))->toBe(5);
+});
+
+it('keeps the zoomed picture inside its own frame, so it never grows over the category name', function (): void {
+    $grid = shopGrid($this->get(route('shop'))->assertOk()->getContent());
+
+    preg_match_all('#<div class="([^"]*)" data-category-image-frame>\s*<img([^>]*)>\s*</div>#s', $grid, $frames, PREG_SET_ORDER);
+
+    expect($frames)->toHaveCount(5);
+
+    foreach ($frames as $frame) {
+        // The frame has the picture's shape and clips what sticks out of it; the picture fills the frame and is what zooms.
+        expect($frame[1])->toContain('aspect-[4/3]')->toContain('w-full')->toContain('overflow-hidden')
+            ->and($frame[2])->toContain('h-full')->toContain('w-full')->toContain('object-cover')->toContain('group-hover:scale-110')->not->toContain('aspect-');
+    }
+
+    // The frame comes before the words, and the words are not inside it.
+    preg_match('#data-category-image-frame>.*?</div>\s*<div class="flex flex-1 flex-col#s', $grid, $order);
+
+    expect($order)->not->toBeEmpty();
 });

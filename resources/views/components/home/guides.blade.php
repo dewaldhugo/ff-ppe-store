@@ -2,11 +2,9 @@
     // Cards from config/homepage.php. An item whose route does not exist, or with no title, is skipped; with none left the section is not shown.
     $heading = (string) config('homepage.guides.title', '');
     $intro = (string) config('homepage.guides.intro', '');
-    // Heroicons (MIT) style outline paths, by the `icon` name in the config: a ruler for sizes, a shield with a tick for features and standards.
-    $icons = [
-        'ruler' => ['M3.75 7.5h16.5a.75.75 0 0 1 .75.75v7.5a.75.75 0 0 1-.75.75H3.75a.75.75 0 0 1-.75-.75v-7.5a.75.75 0 0 1 .75-.75Z', 'M7.5 7.5v3M12 7.5v4.5M16.5 7.5v3'],
-        'shield' => ['M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z'],
-    ];
+    // The outline paths, by the `icon` name in the config: a ruler for sizes, a shield with a tick for features and standards. The same icons
+    // are the Tools links' beside the header's search box (App\Support\GuideIcons).
+    $icons = \App\Support\GuideIcons::PATHS;
     $items = array_values(array_filter(
         (array) config('homepage.guides.items', []),
         fn (mixed $item): bool => is_array($item) && filled($item['title'] ?? null) && filled($item['route'] ?? null) && \Illuminate\Support\Facades\Route::has((string) $item['route']),

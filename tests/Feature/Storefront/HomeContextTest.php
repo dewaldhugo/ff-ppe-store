@@ -46,6 +46,17 @@ it('frames the video with a heading and an intro from the config', function (): 
         ->toContain('A different intro.');
 });
 
+it('lets the intro of the video section run the full width, while other headings keep a readable line', function (): void {
+    $html = $this->get(route('home'))->assertOk()->getContent();
+
+    // The heading block of the video section is not held to max-w-2xl; the one of Shop by category still is.
+    preg_match('#(<div[^>]*>)\s*<h2[^>]*id="home-video"#', $html, $video);
+    preg_match('#(<div[^>]*>)\s*<h2[^>]*>Shop by category</h2>#', $html, $category);
+
+    expect($video[1])->not->toContain('max-w-2xl')
+        ->and($category[1])->toContain('max-w-2xl');
+});
+
 it('puts a caption and a link under the video, from the clip that is playing', function (): void {
     config(['homepage.videos' => [[
         'label' => 'Slip resistance',
@@ -94,9 +105,11 @@ it('rotates only the footwear and technology clips, and keeps the other four for
     $labels = array_column($held, 'label');
 
     foreach (range(1, 40) as $ignored) {
-        preg_match('#data-video-label="([^"]+)"#', $this->get(route('home'))->assertOk()->getContent(), $playing);
+        preg_match_all('#data-video-label="([^"]+)"#', $this->get(route('home'))->assertOk()->getContent(), $playing);
 
-        expect($labels)->not->toContain(html_entity_decode($playing[1]));
+        foreach ($playing[1] as $label) {
+            expect($labels)->not->toContain(html_entity_decode($label));
+        }
     }
 });
 
@@ -140,7 +153,7 @@ it('shows the colours and sizes as the product page does: colours open the produ
         ->toMatch('#<a\s+href="'.preg_quote($product.'?colour=black', '#').'"[^>]*aria-current="true"[^>]*data-spotlight-colour#')
         // Brown has none in stock: shown, struck out, and not a link.
         ->toMatch('#data-value="brown">\s*<span[^>]*line-through#')
-        ->and(substr_count($colour[0], '<a '))->toBe(1);
+        ->and(preg_match_all('#<a\s#', $colour[0]))->toBe(1);
 
     // Size: both shown, with the size guide, and chosen on the product page.
     expect($size[0])->toContain('Size')->toContain('8')->toContain('9')
@@ -155,7 +168,7 @@ it('shows an option with a single value as a plain line, like the product page',
     $section = homeSection($this->get(route('home'))->assertOk()->getContent(), 'data-home-featured');
 
     expect($section)->toMatch('#<p data-option="colour" data-fixed>\s*<span class="font-semibold">Colour:</span>\s*Black#')
-        ->toMatch('#<p data-option="shoe_size" data-fixed>\s*<span class="font-semibold">Size:</span>\s*One Size#')
+        ->toMatch('#<p data-option="shoe_size" data-fixed>\s*<span class="font-semibold">UK size:</span>\s*One Size#')
         ->toContain('href="'.route('size-guide').'"')
         ->and($product->translateAttribute('name'))->toBe('Spotlight Single');
 });

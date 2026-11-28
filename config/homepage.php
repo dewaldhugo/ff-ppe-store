@@ -45,12 +45,14 @@ return [
     ],
 
     /*
-     * The video section under the industries slider. The heading and intro frame it; one of the videos below is
-     * picked at random on every page load. `src` is the full file URL (a #t=0.5 fragment makes the browser show a
-     * frame from half a second in instead of a black box). Optional: `caption` (a line under the player, the label
-     * is used when there is none), `link` (a `route` name and a `label`, shown beside the caption), `poster`
-     * (an image shown before it plays), `loop` and `preload`. The files are hosted by frontline-footwear.com, not by
-     * this site, so a video that is moved or removed there stops playing here: check them now and then.
+     * The video section under the industries slider. The heading and intro frame it; the videos below are shuffled
+     * on every page load and shown `count` (2) at a time, side by side, with arrows to page through them. None plays
+     * until the visitor presses play. `src` is the full file URL (a #t=1 fragment makes the browser show the frame
+     * one second in instead of a black box; the page adds it when it is missing). Optional: `caption` (a line under
+     * the player, the label is used when there is none), `link` (a `route` name and a `label`, shown beside the
+     * caption), `loop` and `preload`. There is no poster image: the frame one second in is the picture shown before
+     * play. The files are hosted by frontline-footwear.com, not by this site, so a video that is moved or removed
+     * there stops playing here: check them now and then.
      *
      * Only footwear and technology clips rotate for now. The others are kept in `videos_held` until their
      * categories launch (workwear, gloves, head protection): move one up to `videos` then. The captions are worded
@@ -59,26 +61,27 @@ return [
     'video_section' => [
         'title' => 'See how it works',
         'intro' => 'Short films on the features that matter on site, from toe caps and midsoles to slip resistance.',
+        'count' => 2,
     ],
 
     'videos' => [
-        ['label' => 'Professional applications', 'src' => 'https://frontline-footwear.com/shop/datasheets/PROFESSIONAL%20APPLICATIONS_360p.mp4#t=0.5', 'caption' => 'Safety footwear for professional workplaces.', 'link' => ['route' => 'shop', 'label' => 'Shop safety footwear']],
-        ['label' => 'Industrial applications', 'src' => 'https://frontline-footwear.com/shop/datasheets/INDUSTRIAL%20APPLICATIONS_360p.mp4#t=0.5', 'caption' => 'Safety footwear for industrial workplaces.', 'link' => ['route' => 'shop', 'label' => 'Shop safety footwear']],
-        ['label' => 'Tiger Grip technology', 'src' => 'https://frontline-footwear.com/shop/datasheets/TIGER%20GRIP%20TECHNOLOGY_360p.mp4#t=0.5', 'caption' => 'How the Tiger Grip technology works.', 'link' => ['route' => 'technical-features', 'label' => 'See the technical features']],
-        ['label' => 'Midsoles', 'src' => 'https://frontline-footwear.com/shop/datasheets/MIDSOLES_360p.mp4#t=0.5', 'caption' => 'What the midsole does in safety footwear.', 'link' => ['route' => 'technical-features', 'label' => 'See the technical features']],
-        ['label' => 'Toecaps', 'src' => 'https://frontline-footwear.com/shop/datasheets/TOECAPS_360p.mp4#t=0.5', 'caption' => 'The toe caps used in safety footwear.', 'link' => ['route' => 'technical-features', 'label' => 'See the technical features']],
-        ['label' => 'Slip resistance', 'src' => 'https://frontline-footwear.com/shop/datasheets/SLIP%20RESISTANCE_360p.mp4#t=0.5', 'caption' => 'How slip resistance is built into safety footwear.', 'link' => ['route' => 'technical-features', 'label' => 'See the technical features']],
-        ['label' => 'Tiger Grip', 'src' => 'https://frontline-footwear.com/shop/datasheets/TIGERGRIP_540p%20.mp4#t=0.5', 'preload' => 'metadata', 'caption' => 'Tiger Grip in use.', 'link' => ['route' => 'technical-features', 'label' => 'See the technical features']],
-        ['label' => 'Taman', 'src' => 'https://frontline-footwear.com/shop/datasheets/TAMAN.mp4#t=0.5', 'preload' => 'metadata', 'link' => ['route' => 'shop', 'label' => 'Shop safety footwear']],
-        ['label' => 'CADOR colours that work', 'src' => 'https://frontline-footwear.com/shop/datasheets/CADOR%20Colours%20that%20work.mp4', 'poster' => 'https://frontline-footwear.com/v1.jpg', 'loop' => true, 'preload' => 'metadata', 'caption' => 'The CADOR range, in a choice of colours.', 'link' => ['route' => 'shop', 'label' => 'Shop safety footwear']],
+        ['label' => 'Professional applications', 'src' => 'https://frontline-footwear.com/shop/datasheets/PROFESSIONAL%20APPLICATIONS_360p.mp4#t=1', 'caption' => 'Safety footwear for professional workplaces.', 'link' => ['route' => 'shop', 'label' => 'Shop safety footwear']],
+        ['label' => 'Industrial applications', 'src' => 'https://frontline-footwear.com/shop/datasheets/INDUSTRIAL%20APPLICATIONS_360p.mp4#t=1', 'caption' => 'Safety footwear for industrial workplaces.', 'link' => ['route' => 'shop', 'label' => 'Shop safety footwear']],
+        ['label' => 'Tiger Grip technology', 'src' => 'https://frontline-footwear.com/shop/datasheets/TIGER%20GRIP%20TECHNOLOGY_360p.mp4#t=1', 'caption' => 'How the Tiger Grip technology works.', 'link' => ['route' => 'technical-features', 'label' => 'See the technical features']],
+        ['label' => 'Midsoles', 'src' => 'https://frontline-footwear.com/shop/datasheets/MIDSOLES_360p.mp4#t=1', 'caption' => 'What the midsole does in safety footwear.', 'link' => ['route' => 'technical-features', 'label' => 'See the technical features']],
+        ['label' => 'Toecaps', 'src' => 'https://frontline-footwear.com/shop/datasheets/TOECAPS_360p.mp4#t=1', 'caption' => 'The toe caps used in safety footwear.', 'link' => ['route' => 'technical-features', 'label' => 'See the technical features']],
+        ['label' => 'Slip resistance', 'src' => 'https://frontline-footwear.com/shop/datasheets/SLIP%20RESISTANCE_360p.mp4#t=1', 'caption' => 'How slip resistance is built into safety footwear.', 'link' => ['route' => 'technical-features', 'label' => 'See the technical features']],
+        ['label' => 'Tiger Grip', 'src' => 'https://frontline-footwear.com/shop/datasheets/TIGERGRIP_540p%20.mp4#t=1', 'preload' => 'metadata', 'caption' => 'Tiger Grip in use.', 'link' => ['route' => 'technical-features', 'label' => 'See the technical features']],
+        ['label' => 'Taman', 'src' => 'https://frontline-footwear.com/shop/datasheets/TAMAN.mp4#t=1', 'preload' => 'metadata', 'link' => ['route' => 'shop', 'label' => 'Shop safety footwear']],
+        ['label' => 'CADOR colours that work', 'src' => 'https://frontline-footwear.com/shop/datasheets/CADOR%20Colours%20that%20work.mp4#t=1', 'loop' => true, 'preload' => 'metadata', 'caption' => 'The CADOR range, in a choice of colours.', 'link' => ['route' => 'shop', 'label' => 'Shop safety footwear']],
     ],
 
     // Clips for products that are not on the site yet. Not shown: move one to `videos` when its category launches.
     'videos_held' => [
-        ['label' => 'Eye protection', 'src' => 'https://frontline-footwear.com/shop/datasheets/EYE%20PROTECTION_360p.mp4#t=0.5'],
-        ['label' => 'Head protection', 'src' => 'https://frontline-footwear.com/shop/datasheets/HEAD%20PROTECTION_360p.mp4#t=0.5'],
-        ['label' => 'High visibility clothing', 'src' => 'https://frontline-footwear.com/shop/datasheets/HIGH%20VISIBILITY%20CLOTHING_360p.mp4#t=0.5'],
-        ['label' => 'Work jackets', 'src' => 'https://frontline-footwear.com/shop/datasheets/WORK%20JACKETS_360p%20(1).mp4#t=0.5'],
+        ['label' => 'Eye protection', 'src' => 'https://frontline-footwear.com/shop/datasheets/EYE%20PROTECTION_360p.mp4#t=1'],
+        ['label' => 'Head protection', 'src' => 'https://frontline-footwear.com/shop/datasheets/HEAD%20PROTECTION_360p.mp4#t=1'],
+        ['label' => 'High visibility clothing', 'src' => 'https://frontline-footwear.com/shop/datasheets/HIGH%20VISIBILITY%20CLOTHING_360p.mp4#t=1'],
+        ['label' => 'Work jackets', 'src' => 'https://frontline-footwear.com/shop/datasheets/WORK%20JACKETS_360p%20(1).mp4#t=1'],
     ],
 
     /*
