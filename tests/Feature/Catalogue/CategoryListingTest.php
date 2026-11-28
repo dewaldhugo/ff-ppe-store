@@ -165,11 +165,25 @@ it('goes back to page one when a filter changes and clears filters', function ()
         ->assertSet('in_stock', false);
 });
 
-it('paginates 24 products per page', function (): void {
-    expect(ListingQuery::PER_PAGE)->toBe(24);
+it('paginates 40 products per page: 10 rows of the 4 cards of a wide screen', function (): void {
+    expect(ListingQuery::PER_PAGE)->toBe(40)
+        // Ten rows of four on a wide screen, and whole rows of two on a phone.
+        ->and(ListingQuery::PER_PAGE % 4)->toBe(0)->and(intdiv(ListingQuery::PER_PAGE, 4))->toBe(10)
+        ->and(ListingQuery::PER_PAGE % 2)->toBe(0);
 
     Livewire::test(CategoryListing::class, ['collectionId' => footwearId()])
-        ->assertViewHas('result', fn ($result): bool => $result->perPage === 24 && $result->lastPage === 1);
+        ->assertViewHas('result', fn ($result): bool => $result->perPage === 40 && $result->lastPage === 1);
+});
+
+it('gives the product grid 2 columns, then 3, then 4, then 5 at the largest breakpoint', function (): void {
+    $html = $this->get(route('category', 'safety-footwear'))->assertOk()->getContent();
+
+    preg_match('#<ul[^>]*data-testid="product-grid"[^>]*>#', $html, $grid);
+
+    expect($grid[0])->toContain('grid-cols-2')->toContain('md:grid-cols-3')->toContain('xl:grid-cols-4')->toContain('2xl:grid-cols-5');
+
+    // 40 a page is whole rows of 2, 4 and 5 (8 rows of 5); 3 across leaves one card in the last row, as it must for any page size that suits 4 and 5.
+    expect(ListingQuery::PER_PAGE % 5)->toBe(0)->and(intdiv(ListingQuery::PER_PAGE, 5))->toBe(8);
 });
 
 it('searches across the catalogue', function (): void {
@@ -340,4 +354,25 @@ it('shows the Industry filter first, above the other filters', function (): void
     // The desktop and the phone copy of the filters are both on the page: the first facet of the first copy is Industry.
     expect($facets[1])->not->toBeEmpty()
         ->and($facets[1][0])->toBe('industry');
+});
+
+it('gives the filter sidebar 16.16rem, 1% more than 16rem, from lg', function (): void {
+    $html = $this->get(route('category', 'safety-footwear'))->assertOk()->getContent();
+
+    preg_match('#<div class="[^"]*lg:grid-cols-\[([^\]]+)\][^"]*">\s*<aside aria-label="Filters">#', $html, $layout);
+
+    expect($layout[1] ?? '')->toBe('16.16rem_1fr');
+});
+
+it('keeps the left edge of each checkbox inside its scrolling list, and the list where it was', function (): void {
+    $html = $this->get(route('category', 'safety-footwear'))->assertOk()->getContent();
+
+    preg_match_all('#<ul class="([^"]*)" data-facet-list>#', $html, $lists);
+
+    expect($lists[1])->not->toBeEmpty();
+
+    foreach ($lists[1] as $list) {
+        // Room on the left for the checkbox's edge and focus ring (pl-1.5), taken back with -ml-1.5 so the checkboxes and words stay put.
+        expect($list)->toContain('overflow-y-auto')->toContain('pl-1.5')->toContain('-ml-1.5')->toContain('pr-1')->toContain('max-h-64');
+    }
 });

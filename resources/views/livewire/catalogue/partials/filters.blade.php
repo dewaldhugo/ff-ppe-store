@@ -14,7 +14,8 @@
     @foreach ($facetGroups as $group)
         <fieldset data-facet="{{ $group['name'] }}">
             <legend class="font-semibold">{{ $group['title'] }}</legend>
-            <ul class="mt-2 max-h-64 space-y-1 overflow-y-auto pr-1">
+            {{-- The list scrolls, so it clips what sticks out of it: pl-1.5 keeps the left edge of each checkbox and its focus ring inside, and -ml-1.5 takes the room back so nothing moves. --}}
+            <ul class="-ml-1.5 mt-2 max-h-64 space-y-1 overflow-y-auto pl-1.5 pr-1" data-facet-list>
                 @foreach ($group['values'] as $value)
                     <li wire:key="{{ $idPrefix }}-{{ $group['name'] }}-{{ $value['value'] }}">
                         <label

@@ -38,7 +38,7 @@
         </ul>
     @endif
 
-    <div class="mt-6 grid gap-8 lg:grid-cols-[16rem_1fr]">
+    <div class="mt-6 grid gap-8 lg:grid-cols-[16.16rem_1fr]">
         <aside aria-label="Filters">
             <details class="lg:hidden" @if ($hasFilters) open @endif>
                 <summary class="rounded border border-border-strong px-4 py-2 font-semibold">Filters</summary>
@@ -76,7 +76,7 @@
                     @endif
                 </p>
             @else
-                <ul class="mt-4 grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4" data-testid="product-grid">
+                <ul class="mt-4 grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5" data-testid="product-grid">
                     @foreach ($products as $product)
                         <x-storefront.product-card :product="$product" wire:key="product-{{ $product->id }}" />
                     @endforeach

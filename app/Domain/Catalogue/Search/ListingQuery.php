@@ -18,7 +18,8 @@ final readonly class ListingQuery
      */
     public const string PRICE_FIELD = 'price_min_ex_vat';
 
-    public const int PER_PAGE = 24;
+    /** Products on a page of a listing or a search: 10 rows of the 4 cards of a wide screen (the grid is 2, 3 or 4 across). */
+    public const int PER_PAGE = 40;
 
     /**
      * Facet name in the URL => field in the search index.
